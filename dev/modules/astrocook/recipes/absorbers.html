@@ -517,7 +517,9 @@
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_b"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">50.0</span><span class="p">,</span> <span class="s2">"gt"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"max"</span><span class="p">:</span> <span class="mi">300</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_logN"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">19.0</span><span class="p">,</span> <span class="s2">"gt"</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span> <span class="s2">"max"</span><span class="p">:</span> <span class="mi">23</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on logN in the fits; damped systems (logN &gt; 19) are to be fitted by hand."</span><span class="p">},</span>
             <span class="c1"># New generic region limiter</span>
-            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"region_limit"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"None"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Search and fit only in a region: 'red_side', 'lya_forest', or 'None' for the whole spectrum."</span><span class="p">}</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"region_limit"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"None"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Search and fit only in a region: 'red_side', 'lya_forest', or 'None' for the whole spectrum."</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"mask"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"new"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Mask of the absorbed pixels used to find the regions: 'new' (made again with the defaults of Find absorbed regions) or 'session' (the 'abs_mask' already in the session, e.g. from Auto-estimate continuum with other parameters)."</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"z_em_margin_kms"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">3000.0</span><span class="p">,</span> <span class="s2">"min"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"How far beyond z_em a candidate system can lie (km/s): the associated absorbers and the uncertainty of z_em."</span><span class="p">},</span>
         <span class="p">],</span>
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"absorbers_cb.html#components_auto"</span>
     <span class="p">},</span>
@@ -525,13 +527,15 @@
     <span class="s2">"doublets_auto"</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Auto-fit metal doublets (Red Side)."</span><span class="p">,</span>
         <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"z_em"</span><span class="p">,</span> <span class="s2">"resolution"</span><span class="p">,</span> <span class="s2">"continuum"</span><span class="p">),</span>
-        <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Finds and fits metal doublets (CIV, SiIV, MgII by default) on the red side of the Lyman-alpha emission, where the forest does not confuse them; candidates are kept up to 3000 km/s beyond z_em."</span><span class="p">,</span>
+        <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Finds and fits metal doublets (CIV, SiIV, MgII by default) on the red side of the Lyman-alpha emission, where the forest does not confuse them; candidates are kept up to z_em_margin_kms beyond z_em."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"multiplets"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"CIV,SiIV,MgII"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Comma-separated doublets to search for."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"score_threshold"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span> <span class="s2">"min"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"max"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Minimum score (0-1, the R^2 of the match of the two lines) to accept a candidate."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"z_window_kms"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">20.0</span><span class="p">,</span> <span class="s2">"gt"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Half-width of the window in which the redshift of a component can move in the fit (km/s)."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_b"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">50.0</span><span class="p">,</span> <span class="s2">"gt"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"max"</span><span class="p">:</span> <span class="mi">300</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_logN"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">19.0</span><span class="p">,</span> <span class="s2">"gt"</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span> <span class="s2">"max"</span><span class="p">:</span> <span class="mi">23</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on logN in the fits; damped systems (logN &gt; 19) are to be fitted by hand."</span><span class="p">}</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_logN"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">19.0</span><span class="p">,</span> <span class="s2">"gt"</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span> <span class="s2">"max"</span><span class="p">:</span> <span class="mi">23</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on logN in the fits; damped systems (logN &gt; 19) are to be fitted by hand."</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"mask"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"new"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Mask of the absorbed pixels used to find the regions: 'new' (made again with the defaults of Find absorbed regions) or 'session' (the 'abs_mask' already in the session, e.g. from Auto-estimate continuum with other parameters)."</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"z_em_margin_kms"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">3000.0</span><span class="p">,</span> <span class="s2">"min"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"How far beyond z_em a candidate system can lie (km/s): the associated absorbers and the uncertainty of z_em."</span><span class="p">},</span>
         <span class="p">],</span>
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"absorbers_cb.html#doublets_auto"</span>
     <span class="p">},</span>
@@ -544,7 +548,9 @@
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"min_b"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">,</span> <span class="s2">"min"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Lines narrower than this (km/s) are removed as interlopers."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"z_window_kms"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">,</span> <span class="s2">"gt"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Half-width of the window in which the redshift of a component can move in the fit (km/s)."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_b"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">50.0</span><span class="p">,</span> <span class="s2">"gt"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"max"</span><span class="p">:</span> <span class="mi">300</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_logN"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">19.0</span><span class="p">,</span> <span class="s2">"gt"</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span> <span class="s2">"max"</span><span class="p">:</span> <span class="mi">23</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on logN in the fits; damped systems (logN &gt; 19) are to be fitted by hand."</span><span class="p">}</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_logN"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">19.0</span><span class="p">,</span> <span class="s2">"gt"</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span> <span class="s2">"max"</span><span class="p">:</span> <span class="mi">23</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on logN in the fits; damped systems (logN &gt; 19) are to be fitted by hand."</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"mask"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"new"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Mask of the absorbed pixels used to find the regions: 'new' (made again with the defaults of Find absorbed regions) or 'session' (the 'abs_mask' already in the session, e.g. from Auto-estimate continuum with other parameters)."</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"z_em_margin_kms"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">3000.0</span><span class="p">,</span> <span class="s2">"min"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"How far beyond z_em a candidate system can lie (km/s): the associated absorbers and the uncertainty of z_em."</span><span class="p">},</span>
         <span class="p">],</span>
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"absorbers_cb.html#lya_auto"</span>
     <span class="p">},</span>
@@ -557,7 +563,8 @@
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"min_b"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">,</span> <span class="s2">"min"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Lyman systems narrower than this (km/s) are removed."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"z_window_kms"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">20.0</span><span class="p">,</span> <span class="s2">"gt"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Half-width of the window in which the redshift of a component can move in the fit (km/s)."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_b"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">50.0</span><span class="p">,</span> <span class="s2">"gt"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"max"</span><span class="p">:</span> <span class="mi">300</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_logN"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">19.0</span><span class="p">,</span> <span class="s2">"gt"</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span> <span class="s2">"max"</span><span class="p">:</span> <span class="mi">23</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on logN in the fits; damped systems (logN &gt; 19) are to be fitted by hand."</span><span class="p">}</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_logN"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">19.0</span><span class="p">,</span> <span class="s2">"gt"</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span> <span class="s2">"max"</span><span class="p">:</span> <span class="mi">23</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Upper bound on logN in the fits; damped systems (logN &gt; 19) are to be fitted by hand."</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"z_em_margin_kms"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">3000.0</span><span class="p">,</span> <span class="s2">"min"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"How far beyond z_em a candidate system can lie (km/s): the associated absorbers and the uncertainty of z_em."</span><span class="p">},</span>
         <span class="p">],</span>
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"absorbers_cb.html#forest_auto"</span>
     <span class="p">},</span>
@@ -587,6 +594,7 @@
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"score_threshold"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span> <span class="s2">"min"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"max"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Minimum score (0-1, the R^2 of the match of the lines) to accept a candidate."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"bypass_scoring"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Accept every candidate found by the positions of its lines, without the score (for debugging)."</span><span class="p">,</span> <span class="s2">"agents"</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"debug_rating"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Show the plots of the scores (for debugging)."</span><span class="p">,</span> <span class="s2">"agents"</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"z_em_margin_kms"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">3000.0</span><span class="p">,</span> <span class="s2">"min"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"How far beyond z_em a candidate system can lie (km/s): the associated absorbers and the uncertainty of z_em."</span><span class="p">},</span>
         <span class="p">],</span>
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"absorbers_cb.html#identify_lines"</span>
     <span class="p">},</span>
@@ -1031,7 +1039,9 @@
                         <span class="n">mask_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"abs_mask"</span><span class="p">,</span>
                         <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">20.0</span><span class="p">,</span>
                         <span class="n">region_limit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"None"</span><span class="p">,</span>
-                        <span class="n">max_b</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">50.0</span><span class="p">,</span> <span class="n">max_logN</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">19.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+                        <span class="n">max_b</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">50.0</span><span class="p">,</span> <span class="n">max_logN</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">19.0</span><span class="p">,</span>
+                        <span class="n">mask</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"new"</span><span class="p">,</span>
+                        <span class="n">z_em_margin_kms</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">3000.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Auto-detect and fit components.</span>
 
@@ -1071,6 +1081,16 @@
 <span class="sd">            systems stay within reach; damped systems are to be fitted by</span>
 <span class="sd">            hand. Components that end at the bound can be refitted with</span>
 <span class="sd">            :meth:`refit_all`. Defaults to ``19.0``.</span>
+<span class="sd">        mask : str, optional</span>
+<span class="sd">            The mask of the absorbed pixels used to find the regions:</span>
+<span class="sd">            ``'new'`` (made again with the defaults of</span>
+<span class="sd">            :meth:`~astrocook.recipes.continuum.RecipeContinuumV2.find_absorbed`)</span>
+<span class="sd">            or ``'session'`` (the ``abs_mask`` already in the session, e.g.</span>
+<span class="sd">            from ``estimate_auto`` with other parameters). Defaults to</span>
+<span class="sd">            ``'new'`` (F50, phase 6-bis, PR 6b).</span>
+<span class="sd">        z_em_margin_kms : float, optional</span>
+<span class="sd">            How far beyond ``z_em`` a candidate system can lie (km/s).</span>
+<span class="sd">            Defaults to ``3000.0`` (F55, phase 6-bis, PR 6b).</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1092,18 +1112,30 @@
         <span class="c1"># restricted by region_limit, is used only inside the pipeline (F50)</span>
         <span class="n">user_mask</span> <span class="o">=</span> <span class="n">session_current</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">mask_col</span><span class="p">)</span>
         
-        <span class="c1"># --- 0. FORCE MASK REGENERATION ---</span>
-        <span class="c1"># Always generate a fresh mask to ensure it matches current z_em/flux state.</span>
-        <span class="c1"># This prevents "stale mask" bugs when running recipes sequentially.</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Finding the absorbed regions (column '</span><span class="si">{</span><span class="n">mask_col</span><span class="si">}</span><span class="s2">')."</span><span class="p">)</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.continuum</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeContinuumV2</span>
-        <span class="n">rec_cont</span> <span class="o">=</span> <span class="n">RecipeContinuumV2</span><span class="p">(</span><span class="n">session_current</span><span class="p">)</span>
-        <span class="n">session_current</span> <span class="o">=</span> <span class="n">rec_cont</span><span class="o">.</span><span class="n">find_absorbed</span><span class="p">(</span>
-            <span class="n">smooth_len_lya</span><span class="o">=</span><span class="s2">"5000.0"</span><span class="p">,</span> 
-            <span class="n">smooth_len_out</span><span class="o">=</span><span class="s2">"400.0"</span><span class="p">,</span>
-            <span class="n">kappa</span><span class="o">=</span><span class="s2">"2.0"</span><span class="p">,</span>
-            <span class="n">template</span><span class="o">=</span><span class="s2">"False"</span>
-        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">mask</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"new"</span><span class="p">,</span> <span class="s2">"session"</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">InvalidParameter</span><span class="p">(</span><span class="sa">f</span><span class="s2">"mask: </span><span class="si">{</span><span class="n">mask</span><span class="si">!r}</span><span class="s2"> is not 'new' or 'session'."</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">mask</span> <span class="o">==</span> <span class="s2">"session"</span><span class="p">:</span>
+            <span class="c1"># The mask of the session, e.g. of Auto-estimate continuum with</span>
+            <span class="c1"># other parameters (F50, phase 6-bis, PR 6b)</span>
+            <span class="k">if</span> <span class="n">user_mask</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">MissingPrerequisite</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"The session has no mask '</span><span class="si">{</span><span class="n">mask_col</span><span class="si">}</span><span class="s2">' to use (mask='session'): "</span>
+                    <span class="s2">"make it with Find absorbed regions or Auto-estimate continuum, "</span>
+                    <span class="s2">"or use mask='new'."</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Using the absorbed regions of the session (column '</span><span class="si">{</span><span class="n">mask_col</span><span class="si">}</span><span class="s2">')."</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># --- 0. FORCE MASK REGENERATION ---</span>
+            <span class="c1"># Always generate a fresh mask to ensure it matches current z_em/flux state.</span>
+            <span class="c1"># This prevents "stale mask" bugs when running recipes sequentially.</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Finding the absorbed regions (column '</span><span class="si">{</span><span class="n">mask_col</span><span class="si">}</span><span class="s2">')."</span><span class="p">)</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.continuum</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeContinuumV2</span>
+            <span class="n">rec_cont</span> <span class="o">=</span> <span class="n">RecipeContinuumV2</span><span class="p">(</span><span class="n">session_current</span><span class="p">)</span>
+            <span class="n">session_current</span> <span class="o">=</span> <span class="n">rec_cont</span><span class="o">.</span><span class="n">find_absorbed</span><span class="p">(</span>
+                <span class="n">smooth_len_lya</span><span class="o">=</span><span class="s2">"5000.0"</span><span class="p">,</span> 
+                <span class="n">smooth_len_out</span><span class="o">=</span><span class="s2">"400.0"</span><span class="p">,</span>
+                <span class="n">kappa</span><span class="o">=</span><span class="s2">"2.0"</span><span class="p">,</span>
+                <span class="n">template</span><span class="o">=</span><span class="s2">"False"</span>
+            <span class="p">)</span>
         <span class="n">kept_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">user_mask</span> <span class="k">if</span> <span class="n">user_mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
                      <span class="k">else</span> <span class="n">session_current</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">[</span><span class="n">mask_col</span><span class="p">])</span>
 
@@ -1156,7 +1188,8 @@
             <span class="n">merge_dv</span><span class="o">=</span><span class="n">merge_dv</span><span class="p">,</span> 
             <span class="n">score_threshold</span><span class="o">=</span><span class="n">score_threshold</span><span class="p">,</span>
             <span class="n">bypass_scoring</span><span class="o">=</span><span class="s2">"False"</span><span class="p">,</span> 
-            <span class="n">debug_rating</span><span class="o">=</span><span class="s2">"False"</span>
+            <span class="n">debug_rating</span><span class="o">=</span><span class="s2">"False"</span><span class="p">,</span>
+            <span class="n">z_em_margin_kms</span><span class="o">=</span><span class="n">z_em_margin_kms</span>
         <span class="p">)</span>
         
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"&gt;&gt; PROGRESS: 30"</span><span class="p">)</span>
@@ -1231,7 +1264,9 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">doublets_auto</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">multiplets</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"CIV,SiIV,MgII"</span><span class="p">,</span>
                       <span class="n">score_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
                       <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">20.0</span><span class="p">,</span>
-                      <span class="n">max_b</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">50.0</span><span class="p">,</span> <span class="n">max_logN</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">19.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+                      <span class="n">max_b</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">50.0</span><span class="p">,</span> <span class="n">max_logN</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">19.0</span><span class="p">,</span>
+                      <span class="n">mask</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"new"</span><span class="p">,</span>
+                      <span class="n">z_em_margin_kms</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">3000.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Auto-fit metal doublets (Red Side).</span>
 
@@ -1252,6 +1287,16 @@
 <span class="sd">        max_logN : float, optional</span>
 <span class="sd">            Upper bound on logN in the fits, see :meth:`components_auto`.</span>
 <span class="sd">            Defaults to ``19.0``.</span>
+<span class="sd">        mask : str, optional</span>
+<span class="sd">            The mask of the absorbed pixels used to find the regions:</span>
+<span class="sd">            ``'new'`` (made again with the defaults of</span>
+<span class="sd">            :meth:`~astrocook.recipes.continuum.RecipeContinuumV2.find_absorbed`)</span>
+<span class="sd">            or ``'session'`` (the ``abs_mask`` already in the session, e.g.</span>
+<span class="sd">            from ``estimate_auto`` with other parameters). Defaults to</span>
+<span class="sd">            ``'new'`` (F50, phase 6-bis, PR 6b).</span>
+<span class="sd">        z_em_margin_kms : float, optional</span>
+<span class="sd">            How far beyond ``z_em`` a candidate system can lie (km/s).</span>
+<span class="sd">            Defaults to ``3000.0`` (F55, phase 6-bis, PR 6b).</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1264,7 +1309,9 @@
             <span class="n">z_window_kms</span><span class="o">=</span><span class="n">z_window_kms</span><span class="p">,</span>
             <span class="n">region_limit</span><span class="o">=</span><span class="s2">"red_side"</span><span class="p">,</span>  <span class="c1"># &lt;--- FORCE RED SIDE</span>
             <span class="n">max_b</span><span class="o">=</span><span class="n">max_b</span><span class="p">,</span>
-            <span class="n">max_logN</span><span class="o">=</span><span class="n">max_logN</span>
+            <span class="n">max_logN</span><span class="o">=</span><span class="n">max_logN</span><span class="p">,</span>
+            <span class="n">mask</span><span class="o">=</span><span class="n">mask</span><span class="p">,</span>
+            <span class="n">z_em_margin_kms</span><span class="o">=</span><span class="n">z_em_margin_kms</span>
         <span class="p">)</span></div>
 
 
@@ -1273,7 +1320,8 @@
     <span class="nd">@typed_recipe</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">lya_auto</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">score_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span> <span class="n">min_b</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">10.0</span><span class="p">,</span>
                  <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">100.0</span><span class="p">,</span> <span class="n">max_b</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">50.0</span><span class="p">,</span>
-                 <span class="n">max_logN</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">19.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+                 <span class="n">max_logN</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">19.0</span><span class="p">,</span> <span class="n">mask</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"new"</span><span class="p">,</span>
+                 <span class="n">z_em_margin_kms</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">3000.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Auto-fit Ly-alpha forest.</span>
 
@@ -1295,6 +1343,16 @@
 <span class="sd">        max_logN : float, optional</span>
 <span class="sd">            Upper bound on logN in the fits, see :meth:`components_auto`.</span>
 <span class="sd">            Defaults to ``19.0``.</span>
+<span class="sd">        mask : str, optional</span>
+<span class="sd">            The mask of the absorbed pixels used to find the regions:</span>
+<span class="sd">            ``'new'`` (made again with the defaults of</span>
+<span class="sd">            :meth:`~astrocook.recipes.continuum.RecipeContinuumV2.find_absorbed`)</span>
+<span class="sd">            or ``'session'`` (the ``abs_mask`` already in the session, e.g.</span>
+<span class="sd">            from ``estimate_auto`` with other parameters). Defaults to</span>
+<span class="sd">            ``'new'`` (F50, phase 6-bis, PR 6b).</span>
+<span class="sd">        z_em_margin_kms : float, optional</span>
+<span class="sd">            How far beyond ``z_em`` a candidate system can lie (km/s).</span>
+<span class="sd">            Defaults to ``3000.0`` (F55, phase 6-bis, PR 6b).</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1312,7 +1370,9 @@
             <span class="n">mask_col</span><span class="o">=</span><span class="s1">'abs_mask'</span><span class="p">,</span>
             <span class="n">region_limit</span><span class="o">=</span><span class="s1">'lya_forest'</span><span class="p">,</span> <span class="c1"># &lt;--- FORCE FOREST</span>
             <span class="n">max_b</span><span class="o">=</span><span class="n">max_b</span><span class="p">,</span>
-            <span class="n">max_logN</span><span class="o">=</span><span class="n">max_logN</span>
+            <span class="n">max_logN</span><span class="o">=</span><span class="n">max_logN</span><span class="p">,</span>
+            <span class="n">mask</span><span class="o">=</span><span class="n">mask</span><span class="p">,</span>
+            <span class="n">z_em_margin_kms</span><span class="o">=</span><span class="n">z_em_margin_kms</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_stop_requested</span><span class="p">():</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
         
@@ -1345,7 +1405,8 @@
     <span class="nd">@typed_recipe</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">forest_auto</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">score_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span> <span class="n">min_b</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">10.0</span><span class="p">,</span>
                     <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">20.0</span><span class="p">,</span> <span class="n">max_b</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">50.0</span><span class="p">,</span>
-                    <span class="n">max_logN</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">19.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+                    <span class="n">max_logN</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">19.0</span><span class="p">,</span>
+                    <span class="n">z_em_margin_kms</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">3000.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Auto-fit full Lyman series.</span>
 
@@ -1366,6 +1427,9 @@
 <span class="sd">        max_logN : float, optional</span>
 <span class="sd">            Upper bound on logN in the fits, see :meth:`components_auto`.</span>
 <span class="sd">            Defaults to ``19.0``.</span>
+<span class="sd">        z_em_margin_kms : float, optional</span>
+<span class="sd">            How far beyond ``z_em`` a candidate system can lie (km/s).</span>
+<span class="sd">            Defaults to ``3000.0`` (F55, phase 6-bis, PR 6b).</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1382,6 +1446,7 @@
         <span class="n">session_id_only</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">identify_lines</span><span class="p">(</span>
             <span class="n">multiplets</span><span class="o">=</span><span class="s2">"Ly_a"</span><span class="p">,</span> 
             <span class="n">score_threshold</span><span class="o">=</span><span class="n">score_threshold</span><span class="p">,</span>
+            <span class="n">z_em_margin_kms</span><span class="o">=</span><span class="n">z_em_margin_kms</span><span class="p">,</span>
             <span class="c1"># We can't easily pass region mask to identify_lines directly via public API without</span>
             <span class="c1"># duplicating the logic in components_auto. </span>
             <span class="c1"># Ideally, identify_lines should support region_limit, but for now, </span>
@@ -1553,7 +1618,8 @@
                        <span class="n">merge_dv</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">10.0</span><span class="p">,</span>
                        <span class="n">score_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
                        <span class="n">bypass_scoring</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-                       <span class="n">debug_rating</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+                       <span class="n">debug_rating</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                       <span class="n">z_em_margin_kms</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">3000.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Identify likely absorption systems.</span>
 
@@ -1578,6 +1644,9 @@
 <span class="sd">            Defaults to ``False``.</span>
 <span class="sd">        debug_rating : bool, optional</span>
 <span class="sd">            If ``True``, show debug plots. Defaults to ``False``.</span>
+<span class="sd">        z_em_margin_kms : float, optional</span>
+<span class="sd">            How far beyond ``z_em`` a candidate system can lie (km/s).</span>
+<span class="sd">            Defaults to ``3000.0`` (F55, phase 6-bis, PR 6b).</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1595,7 +1664,8 @@
             <span class="n">merge_dv</span><span class="o">=</span><span class="n">merge_dv</span><span class="p">,</span>
             <span class="n">score_threshold</span><span class="o">=</span><span class="n">score_threshold</span><span class="p">,</span>
             <span class="n">bypass_scoring</span><span class="o">=</span><span class="n">bypass_scoring</span><span class="p">,</span>
-            <span class="n">debug_rating</span><span class="o">=</span><span class="n">debug_rating</span>
+            <span class="n">debug_rating</span><span class="o">=</span><span class="n">debug_rating</span><span class="p">,</span>
+            <span class="n">z_em_margin_kms</span><span class="o">=</span><span class="n">z_em_margin_kms</span>
         <span class="p">)</span>
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">_identification_extra</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="n">report</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
