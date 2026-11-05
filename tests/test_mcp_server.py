@@ -424,7 +424,10 @@ def test_recipe_on_unknown_session():
 def test_j0103_continuum_and_identification():
     *_, result = calls(
         build_server(),
-        ("session_open", {"path": str(J0103_SESSION), "z_em": J0103_Z_EM}),
+        # identify_lines needs the resolution, as in the GUI: the server
+        # says so since phase 6-bis (PR 8), instead of running without it
+        ("session_open", {"path": str(J0103_SESSION), "z_em": J0103_Z_EM,
+                          "resol": 45000}),
         ("continuum_estimate_auto", {"session_id": J0103_SESSION.stem}),
         ("absorbers_identify_lines", {"session_id": J0103_SESSION.stem}))
     ident = result.structured_content["identification"]
