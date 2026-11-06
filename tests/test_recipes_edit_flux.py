@@ -100,6 +100,30 @@ def test_set_properties_current_keeps_values():
     np.testing.assert_array_equal(out.spec.resolution(), 20000.0)
 
 
+
+def _with_meta(meta):
+    import dataclasses
+    spec = _spec()
+    return _session(SpectrumV2(dataclasses.replace(spec._data, meta=dict(meta))))
+
+
+def test_set_properties_current_object_without_one():
+    """F108 (phase 6-ter): the object left at '_current_' on a spectrum without
+    one is written as ''."""
+    out = _with_meta({}).edit.set_properties(z_em="3.5")
+    assert out.spec.meta["OBJECT"] == ""
+    assert out.spec.history[-1] == "Set properties (z_em=3.5, Object='')"
+
+
+def test_set_properties_current_object_rewrites_the_eso_target():
+    """F108: the object left at '_current_' is written again, and the ESO
+    target name with it."""
+    out = _with_meta({"OBJECT": "QSO", "HIERARCH ESO OBS TARG NAME": "TARGET"}
+                     ).edit.set_properties(z_em="3.5")
+    assert out.spec.meta["OBJECT"] == "QSO"
+    assert out.spec.meta["HIERARCH ESO OBS TARG NAME"] == "QSO"
+    assert out.spec.history[-1] == "Set properties (z_em=3.5, Object='QSO')"
+
 def test_set_properties_pixel_fwhm():
     # "Npx": R = median(lambda) / (N * median(d lambda))
     session = _session()
