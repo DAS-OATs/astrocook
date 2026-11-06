@@ -37,6 +37,13 @@ J0103_WINDOW_NM = (570.0, 700.0)
 J0103_RESOL = 45000.0
 
 
+@pytest.fixture(autouse=True)
+def _gaps_file(tmp_path, monkeypatch):
+    """The gaps recorded by a test (phase 6-ter, PR 5b) go to a file of the
+    test, never to the one of the user."""
+    monkeypatch.setenv("ASTROCOOK_GAPS_FILE", str(tmp_path / "gaps.jsonl"))
+
+
 def pytest_addoption(parser):
     parser.addoption(
         "--update-snapshots", action="store_true", default=False,

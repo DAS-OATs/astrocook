@@ -499,7 +499,10 @@ class ColumnInfo(BaseModel):
 
 
 class NoteInfo(BaseModel):
-    kind: str = Field(description="'note': written with session_note.")
+    kind: str = Field(description=(
+        "'note' or 'gap': written with session_note; 'gap_seen': a gap seen "
+        "by the server (a prerequisite that no recipe estimates, a tool that "
+        "failed on a valid request, a recipe undone)."))
     text: str
 
 
@@ -578,3 +581,26 @@ class CloseResult(BaseModel):
     session_id: str
     closed: bool
     open_sessions: list[str]
+
+
+class GapGroup(BaseModel):
+    kind: str = Field(description=(
+        "'declared' (by an agent), 'prerequisite' (needed and no recipe "
+        "estimates it), 'failed' (a tool failed on a valid request), "
+        "'undone' (a recipe whose result was undone)."))
+    text: str = Field(description="The first text of the group.")
+    count: int
+    sessions: int = Field(description="How many different sessions.")
+    versions: list[str]
+    first: str = Field(description="Date of the first.")
+    last: str = Field(description="Date of the last.")
+    examples: list[str] = Field(description="Up to three different texts of the group.")
+
+
+class GapsSummary(BaseModel):
+    """The gaps of the collection of recipes, grouped."""
+
+    enabled: bool = Field(description="False if the record is turned off.")
+    groups: list[GapGroup]
+    n_groups: int = Field(description="Groups before max_groups cut the list.")
+    skipped_lines: int = Field(description="Lines of the file that could not be read.")

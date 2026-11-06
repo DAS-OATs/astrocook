@@ -32,7 +32,8 @@ from astrocook.mcp_server.outputs import (
 from astrocook.mcp_server.progress import report_progress
 from astrocook.mcp_server.schemas import parameters_schema
 from astrocook.mcp_server.sessions import SessionStore
-from astrocook.recipes.errors import MissingPrerequisite
+from astrocook.recipes.errors import MissingPrerequisite, RecipeError
+from astrocook.recipes.prerequisites import missing as missing_prerequisites
 from astrocook.recipes.registry import RecipeSpec, all_recipes
 from astrocook.recipes.result import run as run_registry
 
@@ -155,6 +156,34 @@ def _register(server: MCPServer, fn: Callable, name: str, description: str,
                                       {"model_config": _RecipeArgs.model_config})
 
 
+def _record_gap(store: SessionStore, spec: RecipeSpec, session_id: str,
+                session, error: ToolError) -> None:
+    """Record the failure of a recipe tool as a gap, if it is one (phase
+    6-ter, PR 5b, decision 6). What is a mistake of the agent is not:
+    unknown parameters and sessions (refused before), a value the registry
+    refuses (``InvalidParameter``), what a recipe of the collection provides
+    (``MissingPrerequisite``, the agent runs it) and what the data do not
+    allow (``RecipeFailed``, with a reason the agent can act on). A gap is
+    a prerequisite that no recipe estimates from the data (z_em, the
+    resolution: they must be given), and a failure that is none of the
+    above: the request was valid and the recipe stopped with an unexpected
+    error (usually a bug). The message of the error is not recorded (it may
+    hold a path)."""
+    cause = error.__cause__
+    tool = tool_name(spec)
+    if isinstance(cause, MissingPrerequisite):
+        for gap in missing_prerequisites(session, spec):
+            if gap.automatic is None:
+                store.record_gap(
+                    session_id, "prerequisite",
+                    f"{tool} needs {_NEEDS.get(gap.name, gap.name)}, which no recipe "
+                    f"estimates from the data.", once=True)
+    elif cause is not None and not isinstance(cause, (RecipeError, ToolError)):
+        store.record_gap(
+            session_id, "failed",
+            f"{tool} failed on a valid request: {type(cause).__name__}.", once=True)
+
+
 def run_tool(store: SessionStore, spec: RecipeSpec, session_id: str,
              params: dict, provide_missing: bool, max_listed: int,
              ctx: Context | None = None, reason: str | None = None) -> RecipeInfo:
@@ -181,8 +210,12 @@ def run_tool(store: SessionStore, spec: RecipeSpec, session_id: str,
                 hint = PROVIDE_HINT if "provides it with its defaults" in str(e) else ""
                 raise ToolError(as_tools(str(e)) + hint) from e
 
-        with report_progress(ctx, tool_name(spec)):
-            result, _ = run_recipe(tool_name(spec), call)
+        try:
+            with report_progress(ctx, tool_name(spec)):
+                result, _ = run_recipe(tool_name(spec), call)
+        except ToolError as e:
+            _record_gap(store, spec, session_id, before, e)
+            raise
         removed = dict(result.extra.get("removed", {}))
         out: dict[str, Any] = {"recipe": recipe,
                                "not_fitted": [str(u) for u in result.extra.get("not_fitted", ())]}

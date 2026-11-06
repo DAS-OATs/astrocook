@@ -93,7 +93,8 @@ itself. Other tools handle the sessions:
 | `session_undo`, `session_redo` | Go back to the state before the last recipe (or several), and forward again, as *Edit > Undo* and *Redo* in the GUI. |
 | `session_duplicate` | Makes a copy of a session, with its history and log, to try something without touching the original. |
 | `session_close` | Closes a session; refuses if it has changes not saved, unless asked to discard them. |
-| `session_note` | Writes a note in the session log, at the current state: what the agent did or decided outside the tools. |
+| `session_note` | Writes a note in the session log, at the current state: what the agent did or decided outside the tools; with `kind="gap"`, a gap of the collection of recipes (see "Gaps" below). |
+| `gaps_summary` | Summarizes, grouped, the gaps recorded in your local file (see "Gaps" below). |
 
 Three tools let the agent look into a session, without changing it:
 
@@ -126,6 +127,35 @@ saw. The instructions of the server ask the agent for both. A note is not
 a step: it makes no new state, the replay of the log skips it, and it is
 undone with the state it was written at. `session_history` shows the
 reason of each recipe and the notes of each state.
+
+**Gaps.** A gap is something the analysis needed and no recipe provided:
+the list of the gaps is where to direct the work on the recipes. Two
+sources. The agent declares one (`session_note` with `kind="gap"`: what
+was needed and what it did instead, e.g. "Needed z_em: no recipe
+estimates it; measured the peak of Ly-a on the flux with my own code")
+every time it works outside the tools; the instructions of the server ask
+for it. The server sees three kinds by itself: a prerequisite that no
+recipe estimates from the data (z_em and the resolution: they must be
+given), a tool that failed with an unexpected error on a valid request
+(not a wrong parameter, not a failure with a reason that the agent can act
+on), and a recipe whose result the agent undid with `session_undo` (which
+takes an optional `reason`: why). The gaps are kept with the session, in
+its log (the notes of kind `gap` and `gap_seen`, shown as `# gap:` in the
+Log Scripter), and appended to a file on your computer, one JSON line
+each: date, version, kind (`declared`, `prerequisite`, `failed`,
+`undone`), text and the name of the session; nothing else of yours, and
+the file is never sent anywhere. It is here:
+
+| System | File |
+|---|---|
+| macOS | `~/Library/Application Support/Astrocook/gaps.jsonl` |
+| Linux | `$XDG_DATA_HOME/astrocook/gaps.jsonl`, or `~/.local/share/astrocook/gaps.jsonl` |
+| Windows | `%APPDATA%\Astrocook\gaps.jsonl` |
+
+Set the environment variable `ASTROCOOK_GAPS_FILE` to another path to move
+it, or to `off` to record nothing. The command `astrocook-gaps` (options
+`--since YYYY-MM-DD`, `--kind`, `--json`, `--path`) and the tool
+`gaps_summary` summarize the file, grouped by kind and text.
 
 It returns the session after the call (the spectrum in a few numbers, the
 number of log entries), what the recipe did in one line (`summary`) and

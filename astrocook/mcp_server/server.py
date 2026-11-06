@@ -48,6 +48,13 @@ session_note what you did or decided outside the tools (e.g. a value
 measured with your own code, a range you chose by eye). Notes make no new
 state and the replay skips them.
 
+Whenever you work outside the tools because no recipe does what the analysis
+needs (e.g. z_em measured with your own code), declare a gap: session_note
+with kind='gap', saying what was needed and what you did instead. These
+gaps, with the tools that failed on a valid request and the recipes undone
+(give session_undo a 'reason'), are collected in a local file of the user,
+never sent anywhere, to decide which recipes to add; gaps_summary lists them.
+
 A recipe that needs something the session lacks (the emission redshift,
 the resolution, a continuum) does not run: the tool says what is missing
 and which tool provides it. z_em and the resolution are set with
