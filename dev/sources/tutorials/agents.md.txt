@@ -94,6 +94,14 @@ itself. Other tools handle the sessions:
 | `session_duplicate` | Makes a copy of a session, with its history and log, to try something without touching the original. |
 | `session_close` | Closes a session; refuses if it has changes not saved, unless asked to discard them. |
 
+Three tools let the agent look into a session, without changing it:
+
+| Tool | What it does |
+|---|---|
+| `components_list` | The absorption components, by redshift, with their errors, the reduced chi2 and flags of their last fit, their fit group (the components fitted together, as *Refit All* groups them), their velocity from the first of the group and their constraints (fixed or linked parameters); filters by series, redshift and flags, in pages. |
+| `spectrum_read` | The columns of the spectrum in a range, as numbers; a long range is averaged in blocks of pixels (for reading only). |
+| `spectrum_plot` | A plot of a range (PNG): the flux and its error, the continuum, the model, and a tick at each line of each component. |
+
 **Nothing is lost.** Every state of a session is kept, as in the GUI: if
 a recipe removes components (e.g. *Auto-detect Doublets* replaces those
 on the red side), its result says so, with the reason for each, and
@@ -183,7 +191,6 @@ replay the log as a script.
 
 ## 6. Limits of the Pilot
 
-- No tools yet to list the components or read the spectrum (coming).
 - Paths are on the computer where the server runs; give them in full.
 - `absorbers_doublets_auto` replaces the components already on the red
   side. It finds the absorbed regions on a new mask made with the default

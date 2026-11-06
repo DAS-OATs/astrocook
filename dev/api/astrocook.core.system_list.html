@@ -845,6 +845,39 @@ instrumental FWHM are blended (findings register F14, see
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="astrocook.core.system_list.SystemListV2.fit_groups">
+<span class="sig-name descname"><span class="pre">fit_groups</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seed_uuids</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_depth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../modules/astrocook/core/system_list.html#SystemListV2.fit_groups"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.system_list.SystemListV2.fit_groups" title="Link to this definition">#</a></dt>
+<dd><p>The groups of components that are fitted together, as <em>Refit All</em>
+fits them (moved here from <code class="docutils literal notranslate"><span class="pre">refit_all</span></code> in phase 6-ter, PR 3, so
+that the MCP server shows the same groups).</p>
+<p>The seeds are taken by increasing redshift (then series): the group
+of a seed is <a class="reference internal" href="#astrocook.core.system_list.SystemListV2.get_connected_group" title="astrocook.core.system_list.SystemListV2.get_connected_group"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_connected_group()</span></code></a> (it can take in components
+that are not seeds), and its members are not seeds again. A group
+larger than <code class="docutils literal notranslate"><span class="pre">max_size</span></code> is split in chunks of <code class="docutils literal notranslate"><span class="pre">max_size</span></code>
+components, by redshift.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>seed_uuids</strong> (<em>iterable</em><em> of </em><em>str</em>) – The components to group (e.g. those in the region of the fit).</p></li>
+<li><p><strong>max_depth</strong> (<em>int</em>) – Depth of the friends-of-friends expansion
+(<a class="reference internal" href="#astrocook.core.system_list.SystemListV2.get_connected_group" title="astrocook.core.system_list.SystemListV2.get_connected_group"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_connected_group()</span></code></a>).</p></li>
+<li><p><strong>spec</strong> (<a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><em>SpectrumV2</em></a><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – The spectrum the components are fitted to (its resolution sets
+which lines are blended).</p></li>
+<li><p><strong>max_size</strong> (<em>int</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – The largest group fitted at once; None: no limit.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The groups, each sorted by redshift (then series), in the order
+of their seeds. A component pulled in by two seeds is in both
+groups, as in <code class="docutils literal notranslate"><span class="pre">refit_all</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of list of str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="astrocook.core.system_list.SystemListV2.merge">
 <span class="sig-name descname"><span class="pre">merge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><span class="pre">SystemListV2</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">copy_uuids</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><span class="pre">SystemListV2</span></a></span></span><a class="reference internal" href="../modules/astrocook/core/system_list.html#SystemListV2.merge"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.system_list.SystemListV2.merge" title="Link to this definition">#</a></dt>
 <dd><p>Merge components from another system list into this one.</p>
@@ -1042,6 +1075,7 @@ existing components. Lower this to de-blend close doublets (default: 10.0).</p><
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.system_list.SystemListV2.update_constraint"><code class="docutils literal notranslate"><span class="pre">SystemListV2.update_constraint()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.system_list.SystemListV2.delete_component"><code class="docutils literal notranslate"><span class="pre">SystemListV2.delete_component()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.system_list.SystemListV2.get_connected_group"><code class="docutils literal notranslate"><span class="pre">SystemListV2.get_connected_group()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.system_list.SystemListV2.fit_groups"><code class="docutils literal notranslate"><span class="pre">SystemListV2.fit_groups()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.system_list.SystemListV2.merge"><code class="docutils literal notranslate"><span class="pre">SystemListV2.merge()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.system_list.SystemListV2.optimize_hierarchy"><code class="docutils literal notranslate"><span class="pre">SystemListV2.optimize_hierarchy()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.system_list.SystemListV2.remove_in_region"><code class="docutils literal notranslate"><span class="pre">SystemListV2.remove_in_region()</span></code></a></li>

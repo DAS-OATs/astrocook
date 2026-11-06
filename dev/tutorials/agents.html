@@ -614,6 +614,26 @@ itself. Other tools handle the sessions:</p>
 </tbody>
 </table>
 </div>
+<p>Three tools let the agent look into a session, without changing it:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Tool</p></th>
+<th class="head"><p>What it does</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">components_list</span></code></p></td>
+<td><p>The absorption components, by redshift, with their errors, the reduced chi2 and flags of their last fit, their fit group (the components fitted together, as <em>Refit All</em> groups them), their velocity from the first of the group and their constraints (fixed or linked parameters); filters by series, redshift and flags, in pages.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">spectrum_read</span></code></p></td>
+<td><p>The columns of the spectrum in a range, as numbers; a long range is averaged in blocks of pixels (for reading only).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">spectrum_plot</span></code></p></td>
+<td><p>A plot of a range (PNG): the flux and its error, the continuum, the model, and a tick at each line of each component.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
 <p><strong>Nothing is lost.</strong> Every state of a session is kept, as in the GUI: if
 a recipe removes components (e.g. <em>Auto-detect Doublets</em> replaces those
 on the red side), its result says so, with the reason for each, and
@@ -698,7 +718,6 @@ replay the log as a script.</p>
 <section id="limits-of-the-pilot">
 <h2>6. Limits of the Pilot<a class="headerlink" href="#limits-of-the-pilot" title="Link to this heading">#</a></h2>
 <ul class="simple">
-<li><p>No tools yet to list the components or read the spectrum (coming).</p></li>
 <li><p>Paths are on the computer where the server runs; give them in full.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">absorbers_doublets_auto</span></code> replaces the components already on the red
 side. It finds the absorbed regions on a new mask made with the default

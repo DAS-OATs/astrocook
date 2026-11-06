@@ -613,8 +613,30 @@ one call:</p>
 session it gave, and the GUI writes it in the session log
 as a step of its own, before the recipe.</p>
 </section>
+<section id="looking-at-a-session">
+<h2>4. Looking at a Session<a class="headerlink" href="#looking-at-a-session" title="Link to this heading">#</a></h2>
+<p>A few functions read a session without changing it, as the System
+Inspector and the main plot of the GUI do (the AI agents use them too):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.plotting</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_spectrum</span>
+
+<span class="c1"># The flux, error, continuum and model in a range (nm), averaged in</span>
+<span class="c1"># blocks of pixels if there are more than 200</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">fitted</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">columns_in_range</span><span class="p">([</span><span class="s2">"y"</span><span class="p">,</span> <span class="s2">"dy"</span><span class="p">,</span> <span class="s2">"cont"</span><span class="p">],</span> <span class="mi">449</span><span class="p">,</span> <span class="mi">451</span><span class="p">,</span> <span class="n">max_points</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+<span class="n">data</span><span class="p">[</span><span class="s2">"columns"</span><span class="p">][</span><span class="s2">"y"</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="s2">"binned_by"</span><span class="p">]</span>
+
+<span class="c1"># The groups of components that Refit All fits together</span>
+<span class="n">uuids</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">uuid</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">fitted</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">components</span><span class="p">]</span>
+<span class="n">groups</span> <span class="o">=</span> <span class="n">fitted</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">fit_groups</span><span class="p">(</span><span class="n">uuids</span><span class="p">,</span> <span class="n">max_depth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">spec</span><span class="o">=</span><span class="n">fitted</span><span class="o">.</span><span class="n">spec</span><span class="p">)</span>
+
+<span class="c1"># A plot of a range, normalized to the continuum, with a tick at each line</span>
+<span class="c1"># of each component; in a notebook, the figure shows itself</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plot_spectrum</span><span class="p">(</span><span class="n">fitted</span><span class="p">,</span> <span class="mi">445</span><span class="p">,</span> <span class="mi">452</span><span class="p">,</span> <span class="n">normalized</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s2">"doublet.png"</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
 <section id="saving-the-result">
-<h2>4. Saving the Result<a class="headerlink" href="#saving-the-result" title="Link to this heading">#</a></h2>
+<h2>5. Saving the Result<a class="headerlink" href="#saving-the-result" title="Link to this heading">#</a></h2>
 <p>Save a session as an <code class="docutils literal notranslate"><span class="pre">.acs2</span></code> archive; passing the original session as
 <code class="docutils literal notranslate"><span class="pre">initial_session</span></code> stores the original data in the archive too, as the GUI
 does:</p>
@@ -623,7 +645,7 @@ does:</p>
 </div>
 </section>
 <section id="seeing-astrocook-s-messages">
-<h2>5. Seeing Astrocook’s Messages<a class="headerlink" href="#seeing-astrocook-s-messages" title="Link to this heading">#</a></h2>
+<h2>6. Seeing Astrocook’s Messages<a class="headerlink" href="#seeing-astrocook-s-messages" title="Link to this heading">#</a></h2>
 <p>Astrocook reports its progress with Python’s <code class="docutils literal notranslate"><span class="pre">logging</span></code> module and, like
 other libraries, leaves its configuration to your script: by default only
 warnings and errors are shown. To see the progress messages as well, add
@@ -696,8 +718,9 @@ hide the messages of the fits:</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#opening-a-session">1. Opening a Session</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#running-recipes">2. Running Recipes</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-a-recipe-needs">3. What a Recipe Needs</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#saving-the-result">4. Saving the Result</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#seeing-astrocook-s-messages">5. Seeing Astrocook’s Messages</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#looking-at-a-session">4. Looking at a Session</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#saving-the-result">5. Saving the Result</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#seeing-astrocook-s-messages">6. Seeing Astrocook’s Messages</a></li>
 </ul>
   </nav></div>
 

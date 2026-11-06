@@ -1416,6 +1416,69 @@
         <span class="k">return</span> <span class="n">group_uuids</span></div>
 
 
+<div class="viewcode-block" id="SystemListV2.fit_groups">
+<a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.fit_groups">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit_groups</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seed_uuids</span><span class="p">,</span> <span class="n">max_depth</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">spec</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">'SpectrumV2'</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                   <span class="n">max_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        The groups of components that are fitted together, as *Refit All*</span>
+<span class="sd">        fits them (moved here from ``refit_all`` in phase 6-ter, PR 3, so</span>
+<span class="sd">        that the MCP server shows the same groups).</span>
+
+<span class="sd">        The seeds are taken by increasing redshift (then series): the group</span>
+<span class="sd">        of a seed is :meth:`get_connected_group` (it can take in components</span>
+<span class="sd">        that are not seeds), and its members are not seeds again. A group</span>
+<span class="sd">        larger than ``max_size`` is split in chunks of ``max_size``</span>
+<span class="sd">        components, by redshift.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        seed_uuids : iterable of str</span>
+<span class="sd">            The components to group (e.g. those in the region of the fit).</span>
+<span class="sd">        max_depth : int</span>
+<span class="sd">            Depth of the friends-of-friends expansion</span>
+<span class="sd">            (:meth:`get_connected_group`).</span>
+<span class="sd">        spec : SpectrumV2, optional</span>
+<span class="sd">            The spectrum the components are fitted to (its resolution sets</span>
+<span class="sd">            which lines are blended).</span>
+<span class="sd">        max_size : int, optional</span>
+<span class="sd">            The largest group fitted at once; None: no limit.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list of list of str</span>
+<span class="sd">            The groups, each sorted by redshift (then series), in the order</span>
+<span class="sd">            of their seeds. A component pulled in by two seeds is in both</span>
+<span class="sd">            groups, as in ``refit_all``.</span>
+<span class="sd">        """</span>
+        <span class="n">comp_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">c</span><span class="o">.</span><span class="n">uuid</span><span class="p">:</span> <span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">}</span>
+        <span class="n">todo</span> <span class="o">=</span> <span class="p">{</span><span class="n">u</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">seed_uuids</span> <span class="k">if</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">comp_map</span><span class="p">}</span>
+        <span class="c1"># Seeds in a deterministic order (increasing z): the depth-limited</span>
+        <span class="c1"># group depends on the seed, and the iteration order of a set of</span>
+        <span class="c1"># random UUIDs changes from run to run</span>
+        <span class="n">seed_order</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">todo</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">u</span><span class="p">:</span> <span class="p">(</span><span class="n">comp_map</span><span class="p">[</span><span class="n">u</span><span class="p">]</span><span class="o">.</span><span class="n">z</span><span class="p">,</span> <span class="n">comp_map</span><span class="p">[</span><span class="n">u</span><span class="p">]</span><span class="o">.</span><span class="n">series</span><span class="p">))</span>
+        <span class="n">groups</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">seed</span> <span class="ow">in</span> <span class="n">seed_order</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">seed</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">todo</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_connected_group</span><span class="p">([</span><span class="n">seed</span><span class="p">],</span> <span class="n">max_depth</span><span class="o">=</span><span class="n">max_depth</span><span class="p">,</span> <span class="n">spec</span><span class="o">=</span><span class="n">spec</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">group</span><span class="p">:</span>
+                <span class="n">todo</span><span class="o">.</span><span class="n">discard</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+                <span class="k">continue</span>
+            <span class="n">group_list</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">u</span><span class="p">:</span> <span class="p">(</span><span class="n">comp_map</span><span class="p">[</span><span class="n">u</span><span class="p">]</span><span class="o">.</span><span class="n">z</span><span class="p">,</span> <span class="n">comp_map</span><span class="p">[</span><span class="n">u</span><span class="p">]</span><span class="o">.</span><span class="n">series</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">max_size</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">group_list</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">max_size</span><span class="p">:</span>
+                <span class="n">groups</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">group_list</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">by_z</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">uuid</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">((</span><span class="n">comp_map</span><span class="p">[</span><span class="n">u</span><span class="p">]</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">group_list</span><span class="p">),</span>
+                                               <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">c</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">z</span><span class="p">)]</span>
+                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">by_z</span><span class="p">),</span> <span class="n">max_size</span><span class="p">):</span>
+                    <span class="n">groups</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">by_z</span><span class="p">[</span><span class="n">k</span><span class="p">:</span><span class="n">k</span> <span class="o">+</span> <span class="n">max_size</span><span class="p">])</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  -&gt; Split massive group (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">group_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> comps) into "</span>
+                             <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">by_z</span><span class="p">)</span><span class="o">//</span><span class="n">max_size</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> chunks."</span><span class="p">)</span>
+            <span class="n">todo</span><span class="o">.</span><span class="n">difference_update</span><span class="p">(</span><span class="n">group</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">groups</span></div>
+
+
     <span class="k">def</span><span class="w"> </span><span class="nf">_sanitize_after_fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">systs</span><span class="p">:</span> <span class="s1">'SystemListV2'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SystemListV2'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Removes the 'active_components' mask from a system list.</span>
