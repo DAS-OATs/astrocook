@@ -1010,8 +1010,11 @@ the MCP server); None if not given (phase 6-ter, PR 5a)</p>
 
 <dl class="py data">
 <dt class="sig sig-object py" id="astrocook.core.structures.NOTE_KINDS">
-<span class="sig-prename descclassname"><span class="pre">astrocook.core.structures.</span></span><span class="sig-name descname"><span class="pre">NOTE_KINDS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('note',)</span></span><a class="headerlink" href="#astrocook.core.structures.NOTE_KINDS" title="Link to this definition">#</a></dt>
-<dd><p>The kinds of the notes of a log that <a class="reference internal" href="#astrocook.core.structures.HistoryLogV2.add_note" title="astrocook.core.structures.HistoryLogV2.add_note"><code class="xref py py-meth docutils literal notranslate"><span class="pre">HistoryLogV2.add_note()</span></code></a> takes</p>
+<span class="sig-prename descclassname"><span class="pre">astrocook.core.structures.</span></span><span class="sig-name descname"><span class="pre">NOTE_KINDS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('note',</span> <span class="pre">'gap',</span> <span class="pre">'gap_seen')</span></span><a class="headerlink" href="#astrocook.core.structures.NOTE_KINDS" title="Link to this definition">#</a></dt>
+<dd><p>The kinds of the notes of a log that <a class="reference internal" href="#astrocook.core.structures.HistoryLogV2.add_note" title="astrocook.core.structures.HistoryLogV2.add_note"><code class="xref py py-meth docutils literal notranslate"><span class="pre">HistoryLogV2.add_note()</span></code></a> takes:
+<code class="docutils literal notranslate"><span class="pre">note</span></code> (what was done or decided outside the recipes), <code class="docutils literal notranslate"><span class="pre">gap</span></code> (what the
+analysis needed and no recipe provided, declared by the agent) and
+<code class="docutils literal notranslate"><span class="pre">gap_seen</span></code> (a gap seen by the MCP server); phase 6-ter, PR 5b</p>
 </dd></dl>
 
 <dl class="py class">

@@ -838,8 +838,11 @@
 
 
 
-<span class="c1">#: The kinds of the notes of a log that :meth:`HistoryLogV2.add_note` takes</span>
-<span class="n">NOTE_KINDS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"note"</span><span class="p">,)</span>
+<span class="c1">#: The kinds of the notes of a log that :meth:`HistoryLogV2.add_note` takes:</span>
+<span class="c1">#: ``note`` (what was done or decided outside the recipes), ``gap`` (what the</span>
+<span class="c1">#: analysis needed and no recipe provided, declared by the agent) and</span>
+<span class="c1">#: ``gap_seen`` (a gap seen by the MCP server); phase 6-ter, PR 5b</span>
+<span class="n">NOTE_KINDS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"note"</span><span class="p">,</span> <span class="s2">"gap"</span><span class="p">,</span> <span class="s2">"gap_seen"</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="LogNoteV2">

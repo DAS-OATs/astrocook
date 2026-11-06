@@ -612,7 +612,10 @@ itself. Other tools handle the sessions:</p>
 <td><p>Closes a session; refuses if it has changes not saved, unless asked to discard them.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">session_note</span></code></p></td>
-<td><p>Writes a note in the session log, at the current state: what the agent did or decided outside the tools.</p></td>
+<td><p>Writes a note in the session log, at the current state: what the agent did or decided outside the tools; with <code class="docutils literal notranslate"><span class="pre">kind=&quot;gap&quot;</span></code>, a gap of the collection of recipes (see “Gaps” below).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">gaps_summary</span></code></p></td>
+<td><p>Summarizes, grouped, the gaps recorded in your local file (see “Gaps” below).</p></td>
 </tr>
 </tbody>
 </table>
@@ -660,6 +663,46 @@ saw. The instructions of the server ask the agent for both. A note is not
 a step: it makes no new state, the replay of the log skips it, and it is
 undone with the state it was written at. <code class="docutils literal notranslate"><span class="pre">session_history</span></code> shows the
 reason of each recipe and the notes of each state.</p>
+<p><strong>Gaps.</strong> A gap is something the analysis needed and no recipe provided:
+the list of the gaps is where to direct the work on the recipes. Two
+sources. The agent declares one (<code class="docutils literal notranslate"><span class="pre">session_note</span></code> with <code class="docutils literal notranslate"><span class="pre">kind=&quot;gap&quot;</span></code>: what
+was needed and what it did instead, e.g. “Needed z_em: no recipe
+estimates it; measured the peak of Ly-a on the flux with my own code”)
+every time it works outside the tools; the instructions of the server ask
+for it. The server sees three kinds by itself: a prerequisite that no
+recipe estimates from the data (z_em and the resolution: they must be
+given), a tool that failed with an unexpected error on a valid request
+(not a wrong parameter, not a failure with a reason that the agent can act
+on), and a recipe whose result the agent undid with <code class="docutils literal notranslate"><span class="pre">session_undo</span></code> (which
+takes an optional <code class="docutils literal notranslate"><span class="pre">reason</span></code>: why). The gaps are kept with the session, in
+its log (the notes of kind <code class="docutils literal notranslate"><span class="pre">gap</span></code> and <code class="docutils literal notranslate"><span class="pre">gap_seen</span></code>, shown as <code class="docutils literal notranslate"><span class="pre">#</span> <span class="pre">gap:</span></code> in the
+Log Scripter), and appended to a file on your computer, one JSON line
+each: date, version, kind (<code class="docutils literal notranslate"><span class="pre">declared</span></code>, <code class="docutils literal notranslate"><span class="pre">prerequisite</span></code>, <code class="docutils literal notranslate"><span class="pre">failed</span></code>,
+<code class="docutils literal notranslate"><span class="pre">undone</span></code>), text and the name of the session; nothing else of yours, and
+the file is never sent anywhere. It is here:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>System</p></th>
+<th class="head"><p>File</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>macOS</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">~/Library/Application</span> <span class="pre">Support/Astrocook/gaps.jsonl</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Linux</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">$XDG_DATA_HOME/astrocook/gaps.jsonl</span></code>, or <code class="docutils literal notranslate"><span class="pre">~/.local/share/astrocook/gaps.jsonl</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Windows</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">%APPDATA%\Astrocook\gaps.jsonl</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Set the environment variable <code class="docutils literal notranslate"><span class="pre">ASTROCOOK_GAPS_FILE</span></code> to another path to move
+it, or to <code class="docutils literal notranslate"><span class="pre">off</span></code> to record nothing. The command <code class="docutils literal notranslate"><span class="pre">astrocook-gaps</span></code> (options
+<code class="docutils literal notranslate"><span class="pre">--since</span> <span class="pre">YYYY-MM-DD</span></code>, <code class="docutils literal notranslate"><span class="pre">--kind</span></code>, <code class="docutils literal notranslate"><span class="pre">--json</span></code>, <code class="docutils literal notranslate"><span class="pre">--path</span></code>) and the tool
+<code class="docutils literal notranslate"><span class="pre">gaps_summary</span></code> summarize the file, grouped by kind and text.</p>
 <p>It returns the session after the call (the spectrum in a few numbers, the
 number of log entries), what the recipe did in one line (<code class="docutils literal notranslate"><span class="pre">summary</span></code>) and
 what else is worth knowing (<code class="docutils literal notranslate"><span class="pre">notes</span></code>), the warnings, and what changed,
