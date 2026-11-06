@@ -1031,11 +1031,12 @@
             <span class="k">raise</span> <span class="n">InvalidParameter</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
 
         <span class="c1"># 2. Handle text inputs</span>
-        <span class="n">current_meta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">meta</span>
-        
         <span class="c1"># Determine new values, falling back to current if '_current_' is passed</span>
         <span class="n">new_name</span> <span class="o">=</span> <span class="n">name</span> <span class="k">if</span> <span class="n">name</span> <span class="o">!=</span> <span class="s1">'_current_'</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">name</span>
-        <span class="n">new_object</span> <span class="o">=</span> <span class="nb">object</span> <span class="k">if</span> <span class="nb">object</span> <span class="o">!=</span> <span class="s1">'_current_'</span> <span class="k">else</span> <span class="n">current_meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'OBJECT'</span><span class="p">,</span> <span class="s1">''</span><span class="p">)</span>
+        <span class="c1"># The object left at '_current_' is not written again: None leaves the</span>
+        <span class="c1"># header as it is (F108: it wrote OBJECT = '' when there was none, and</span>
+        <span class="c1"># copied OBJECT over the ESO target name)</span>
+        <span class="n">new_object</span> <span class="o">=</span> <span class="nb">object</span> <span class="k">if</span> <span class="nb">object</span> <span class="o">!=</span> <span class="s1">'_current_'</span> <span class="k">else</span> <span class="kc">None</span>
         
         <span class="c1"># 3. Apply changes via SpectrumV2.with_properties</span>
         <span class="n">new_spec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">with_properties</span><span class="p">(</span>
