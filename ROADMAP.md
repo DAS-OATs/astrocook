@@ -2729,6 +2729,38 @@ record):
     undone. The result of a recipe that removed components or columns
     says that `session_undo` restores them (`undo_hint`); the
     instructions of the server say that every state is kept.
+  - PR 3 (inspection, `mcp_server/inspect_tools.py`): `components_list`
+    (by z; errors, chi2 and flags of the last fit, the fit group, the
+    velocity from the first component of the group with the same series,
+    the constraints: 'fixed' or 'linked: <expression>'; filters by series,
+    z and flags, pages with `offset`), `spectrum_read` (the columns in a
+    range of x, averaged in blocks of pixels beyond `max_points`, for
+    reading only: the session is not rebinned) and `spectrum_plot` (a PNG
+    as MCP image content: flux, error, continuum, model, a tick per line
+    of each component). The fit group is that of Refit All before it
+    splits the large groups: the pilot inferred it from equal chi2. These
+    tools change nothing and log nothing. Guido's question on the PR (why
+    these tools, could they be recipes, could existing functions replace
+    them): they are needed because the state of a session lives only in
+    the server (the pilot's agent read the original FITS with its own
+    Python, not the state after the recipes, and only with access to the
+    disk); `export_ascii` writes every pixel to disk, without groups or
+    constraints; the GUI is Qt and shows the user, not the agent; no plot
+    without the GUI existed. Not recipes: they change nothing and would
+    only add noise to the log, and the GUI has these views already. But
+    what they compute belongs in the package, not in the server (the
+    constraint of the phase): moved, before the merge, to
+    `SystemListV2.fit_groups` (the grouping of Refit All, which now calls
+    it: one criterion, not two copies), `SpectrumV2.columns_in_range` and
+    the new `astrocook/plotting.py` (`plot_spectrum`, matplotlib's
+    `Figure` without pyplot or Qt, for the headless image; the palettes of
+    the plots moved there from `gui/plot_style.py`, which imports them);
+    the tools are thin wrappers. Documented for scripts (*Using Astrocook
+    from Python*, "Looking at a Session"). Seen along the way: the
+    continuum of the J0103-1305 archive of the tests is stored without a
+    unit (dimensionless, values in flux units), while a continuum
+    estimated now has the unit of the flux; the tools report the units as
+    stored.
     Refinements of the decisions, found in the code: `fit_bayesian` is
     offered always (offering it only with the `[bayes]` extra would name a
     recipe in the server; without the extra it fails with the message that
@@ -3574,6 +3606,6 @@ recipe API is stable after phase 6-bis.
 | 5-bis – GUI look and ergonomics | done (November 2026): order of the phase agreed (all the findings proposed, F73, F76, F77, F80 included); F67, F71 fixed (PR 1, #664); F69 (PR 2, #665); F70 (PR 3, #666); #630 (PR 4, #667); F81, F75 (PR 5, #668); F78 (PR 6, #669); F85, the boxes of the System Inspector (PR 6-bis, #670); F77, F80 (PR 7, #671); F73 (PR 8, #672); F76 (PR 9, #673), found F86; F86 (PR 9-bis, #674); theme module, PR A (no visible change; Select icon, #675), found F87; PR B (dark mode, F87, #676); the toolbar of the plots redesigned (Guido's request, #677); View > Appearance and View > Show Toolbar, F88 (#678); the visual review, found F89, F90; the bugs of the review (F89, F90, the links and placeholders of the dark palette) and F91 (reported by Guido), found F92 (#679); the pass on the texts, with F92 (#680); the main plot (names of the emission lines in spectroscopic notation on a white ground, the ticks of the systems in two rows and softer, no title, the unit of the flux in the usual order; agreed with Guido, #681); the System Inspector (the error of z in km/s, btur hidden while not in use with a menu of the columns, the boxes above the plot in three groups on one row, to keep the plot aligned with the table: Guido; #682); the System Inspector without a continuum or systems (a message with a button instead of empty panels, the fits disabled, the transitions typed shown without a component, #683); the status bar (outcome of the last recipe, coordinates moved from the toolbars) and the keys of the System Inspector (#684; with it, the axes of the main plot on whole pixels: the constrained layout moved them by ~1e-13 px between draws); the toolbar floating over the plot and fading as the cards (Guido's request; as a card with its tab, as wide as the cards, #685); the minor points of the review: the Identifications window as a table, the formats of the Data Inspector (found F93: the identification by doublets, for phase 7; #686); the main window and the menus (the welcome screen with Open Session and the recent files, File > Open Recent, the window geometry remembered, Import Systems in Absorbers, several files loaded in the background with their progress, Guido's request; #687); the script console left as it is (Guido: kept in the code until it is clear whether it is needed with the MCP server, or can be given another use); the colours of the plots (Guido's choice after a comparison on the main plot and the System Inspector, with simulations of colour blindness: View > Plot Colours, the standard palette with a thinner model, or a colour-blind safe one from the Okabe-Ito palette, where model, selection and residuals of the velocity plot no longer turn one olive for a deuteranope; with it, the CIV/SiIV system of the screenshots of the System Inspector refined with Optimize System, Guido's request; #688); closing: result of the phase in "Result of the phase" |
 | 6 – Error handling | done (November 2026): plan, inventory of the broad except clauses, rule of the log messages (PR 1, #691); F94 (PR 2, #692); loggers per module, F96 (PR 3, #693); rows N and R of core, fitting and io and their messages, found F97 (PR 4a, #694); their rows D (PR 4b, #695); rows N, R and B of the recipes and their messages, found F98 (PR 5a, #696); their rows D (PR 5b, #697); prerequisites of the fits, F99, the scheme of the prerequisites for 6-bis (PR 5c, #698); rows N and C of the GUI and its messages, `V1LogArtifact` removed (PR 6a, #699); rows B and D of the GUI and of the launcher, the hook for unexpected errors (PR 6b, #700); the warnings of the libraries, warnings as errors in the tests (PR 7, #701); closing: result of the phase in "Result of the phase" |
 | 6-bis – Recipe API | done (November 2026): plan of the phase (PR 0, #705); the typed registry, F79, half of F12 (PR 1, #706); typed parameters of continuum, flux and file, the log of the values used (PR 2a, #707); Edit, F46 and the bounds (PR 2b, #708); Absorbers, all the recipes typed (PR 2c, #709); exceptions, continuum, flux and file (PR 3a, #710); edit (PR 3b, #711); absorbers, no recipe returns 0 (PR 3c, #712); structured result, `run` (PR 4a, #713); region and score of the candidates, `not_fitted`, the reasons of the removals (PR 4b, #714); F102, the notes of a result in the status bar and the log (PR 4c, #715); prerequisites, core and scripts, F103 (PR 5a, #716); the GUI asks for the continuum, F104 (PR 5b, #717); descriptions reviewed, F48, the parameters not for agents (PR 6a, #718); the dialogs with the longer texts (PR 6a-bis, #719); the mask and the margin on z_em of the pipelines (PR 6b, #720); the kinds of the parameters, F105 (PR 6c, #721); the custom multiplets without the global table, F12 (PR 7, #722); the MCP pilot on the new API, the generator of the schemas of the tools (PR 8); closing: result of the phase in "Result of the phase" |
-| 6-ter – Full MCP server | started (November 2026): plan of the phase agreed (PR 0, #726); the tools generated from the registry, F106 found (PR 1, #729); F106 fixed (PR 1-bis, #730); the tools of the sessions, undo and redo (PR 2) |
+| 6-ter – Full MCP server | started (November 2026): plan of the phase agreed (PR 0, #726); the tools generated from the registry, F106 found (PR 1, #729); F106 fixed (PR 1-bis, #730); the tools of the sessions, undo and redo (PR 2, #731); the tools of inspection (PR 3) |
 | 6-quater – Review of the recipe parameters | not started |
 | 7 – Robust components | not started |

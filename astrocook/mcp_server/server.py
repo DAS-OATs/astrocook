@@ -19,6 +19,7 @@ a subprocess, e.g. ``claude mcp add astrocook -- astrocook-mcp``.
 from mcp.server.mcpserver import MCPServer
 
 from astrocook import __version__
+from astrocook.mcp_server.inspect_tools import register_inspect_tools
 from astrocook.mcp_server.session_tools import register_session_tools
 from astrocook.mcp_server.sessions import SessionStore
 from astrocook.mcp_server.tools import menus_text, register_recipe_tools
@@ -55,6 +56,12 @@ components a recipe removed) and session_redo forward, without running
 anything again. To try something on a copy, use session_duplicate.
 session_list lists the open sessions; session_close closes one, and
 refuses if it has changes not saved.
+
+To look into a session: session_describe (its columns), components_list
+(the components with their errors, flags, fit groups and constraints),
+spectrum_read (the columns in a range, as numbers) and spectrum_plot (a
+plot of a range, with the continuum, the model and the components). They
+change nothing.
 """
 
 
@@ -72,6 +79,7 @@ def build_server() -> MCPServer:
     store = SessionStore()
 
     register_session_tools(server, store)
+    register_inspect_tools(server, store)
     register_recipe_tools(server, store)
     return server
 

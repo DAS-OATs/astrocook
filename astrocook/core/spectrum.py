@@ -15,6 +15,25 @@ from astrocook.core.spectrum_expressions import ExpressionsMixin
 from astrocook.core.spectrum_flux import FluxMixin
 from astrocook.core.spectrum_lines import LinesMixin
 
+
+def _block_means(values: np.ndarray, n: int, error: bool = False) -> np.ndarray:
+    """Means over blocks of ``n`` values (the last block may be shorter);
+    an error column (``error``) as the error of the mean. NaN are skipped."""
+    if n == 1:
+        return values
+    starts = np.arange(0, len(values), n)
+    out = np.empty(len(starts))
+    for k, start in enumerate(starts):
+        block = values[start:start + n]
+        good = block[np.isfinite(block)]
+        if not good.size:
+            out[k] = np.nan
+        elif error:
+            out[k] = np.sqrt(np.sum(good ** 2)) / good.size
+        else:
+            out[k] = np.mean(good)
+    return out
+
 logger = logging.getLogger(__name__)
 
 
@@ -371,6 +390,69 @@ class SpectrumV2(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, Line
         """
         return name in self._data.aux_cols
     
+    def columns_in_range(self, names: List[str], x_min: Optional[float] = None,
+                         x_max: Optional[float] = None,
+                         max_points: Optional[int] = None) -> Dict[str, Any]:
+        """
+        The values of some columns in a range of x, to read them (phase
+        6-ter, PR 3: the MCP server, or a script).
+
+        A range of more than ``max_points`` pixels is averaged in blocks of
+        ``ceil(n / max_points)`` pixels: the columns whose name starts with
+        ``d`` (errors) as the error of the mean, the others as the mean.
+        This is for reading only: the spectrum is not rebinned (that is
+        *Rebin*).
+
+        Parameters
+        ----------
+        names : list of str
+            The columns (``x`` is always given).
+        x_min, x_max : float, optional
+            The range, in the unit of x; None: the start (end) of the
+            spectrum.
+        max_points : int, optional
+            The largest number of points; None: every pixel.
+
+        Returns
+        -------
+        dict
+            ``columns`` (name -> ndarray), ``units`` (name -> str),
+            ``n_pixels`` (pixels in the range), ``binned_by``.
+
+        Raises
+        ------
+        KeyError
+            If a column does not exist (the message lists those that do).
+        ValueError
+            If the range is empty or outside the spectrum.
+        """
+        table = self.t
+        available = table.colnames
+        missing = [n for n in names if n not in available]
+        if missing:
+            raise KeyError(f"No column {', '.join(missing)}. The columns: "
+                           f"{', '.join(available)}.")
+        x = self.x.value
+        lo = np.nanmin(x) if x_min is None else x_min
+        hi = np.nanmax(x) if x_max is None else x_max
+        if lo >= hi:
+            raise ValueError(f"Empty range: the start ({lo}) must be less than the "
+                             f"end ({hi}).")
+        sel = (x >= lo) & (x <= hi)
+        n = int(sel.sum())
+        if not n:
+            raise ValueError(f"No pixel between {lo} and {hi} {self.x.unit}: the "
+                             f"spectrum covers {np.nanmin(x):.4g}-{np.nanmax(x):.4g} "
+                             f"{self.x.unit}.")
+        binned_by = 1 if not max_points else max(1, int(np.ceil(n / max_points)))
+        columns, units = {}, {}
+        for name in ["x", *[c for c in names if c != "x"]]:
+            values = np.asarray(table[name].value, dtype=float)[sel]
+            columns[name] = _block_means(values, binned_by, error=name.startswith("d"))
+            units[name] = str(table[name].unit or "")
+        return {"columns": columns, "units": units, "n_pixels": n,
+                "binned_by": binned_by}
+
     def get_column(self, name: str) -> Optional[au.Quantity]:
         """
         Get an auxiliary column as an Astropy Quantity.
