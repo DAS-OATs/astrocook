@@ -100,6 +100,34 @@ def test_set_properties_current_keeps_values():
     np.testing.assert_array_equal(out.spec.resolution(), 20000.0)
 
 
+
+def _with_meta(meta):
+    import dataclasses
+    spec = _spec()
+    return _session(SpectrumV2(dataclasses.replace(spec._data, meta=dict(meta))))
+
+
+def test_set_properties_current_object_without_one():
+    """F108 (phase 6-ter, fixed): the object left at '_current_' on a spectrum
+    without one is not written (it was written as '')."""
+    out = _with_meta({}).edit.set_properties(z_em="3.5")
+    assert "OBJECT" not in out.spec.meta
+    assert out.spec.history[-1] == "Set properties (z_em=3.5)"
+
+
+def test_set_properties_current_object_keeps_the_header():
+    """F108 (fixed): the object left at '_current_' leaves the header as it
+    is (the ESO target name was overwritten with OBJECT); a new object is
+    written to both."""
+    meta = {"OBJECT": "QSO", "HIERARCH ESO OBS TARG NAME": "TARGET"}
+    out = _with_meta(meta).edit.set_properties(z_em="3.5")
+    assert out.spec.meta["OBJECT"] == "QSO"
+    assert out.spec.meta["HIERARCH ESO OBS TARG NAME"] == "TARGET"
+    assert out.spec.history[-1] == "Set properties (z_em=3.5)"
+    renamed = _with_meta(meta).edit.set_properties(object="J0103-1305")
+    assert renamed.spec.meta["OBJECT"] == "J0103-1305"
+    assert renamed.spec.meta["HIERARCH ESO OBS TARG NAME"] == "J0103-1305"
+
 def test_set_properties_pixel_fwhm():
     # "Npx": R = median(lambda) / (N * median(d lambda))
     session = _session()

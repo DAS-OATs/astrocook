@@ -551,11 +551,12 @@ class RecipeEditV2:
             raise InvalidParameter(str(e)) from None
 
         # 2. Handle text inputs
-        current_meta = self._session.spec.meta
-        
         # Determine new values, falling back to current if '_current_' is passed
         new_name = name if name != '_current_' else self._session.name
-        new_object = object if object != '_current_' else current_meta.get('OBJECT', '')
+        # The object left at '_current_' is not written again: None leaves the
+        # header as it is (F108: it wrote OBJECT = '' when there was none, and
+        # copied OBJECT over the ESO target name)
+        new_object = object if object != '_current_' else None
         
         # 3. Apply changes via SpectrumV2.with_properties
         new_spec = self._session.spec.with_properties(
