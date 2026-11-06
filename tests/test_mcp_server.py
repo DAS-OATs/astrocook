@@ -42,7 +42,10 @@ PILOT_TOOLS = {"session_open", "session_save", "continuum_estimate_auto",
 SESSION_TOOLS = {"session_open", "session_save", "session_list", "session_describe",
                  "session_history", "session_undo", "session_redo",
                  "session_duplicate", "session_close"}
-TOOLS = SESSION_TOOLS | {
+#: The tools that read a session (phase 6-ter, PR 3)
+INSPECT_TOOLS = {"components_list", "spectrum_read", "spectrum_plot"}
+IMAGE_TOOLS = {"spectrum_plot"}
+TOOLS = SESSION_TOOLS | INSPECT_TOOLS | {
     f"{s.category}_{s.name}" for s in all_recipes()
     if f"{s.category}.{s.name}" not in EXCLUDED}
 
@@ -88,7 +91,10 @@ def test_tools_have_descriptions_and_schemas():
     assert PILOT_TOOLS <= set(tools)
     for tool in tools.values():
         assert tool.description
-        assert tool.output_schema["properties"]
+        if tool.name in IMAGE_TOOLS:
+            assert tool.output_schema is None  # an image, not structured
+        else:
+            assert tool.output_schema["properties"]
         for name, prop in tool.input_schema["properties"].items():
             assert prop.get("description"), (tool.name, name)
 
