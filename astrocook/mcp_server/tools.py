@@ -53,6 +53,11 @@ SERVER_PARAMS = {
     "max_listed": {"type": "integer", "minimum": 0, "default": 50, "description": (
         "Maximum number of items in each list of the output (components, "
         "regions, systems); the counts are always complete.")},
+    "reason": {"type": ["string", "null"], "default": None, "description": (
+        "Why you run this recipe with these parameters (e.g. 'z_em from the "
+        "peak of Ly-a'), in a sentence or two: stored with the step in the "
+        "session log, for the person who reviews it. A recipe that only "
+        "returns a value logs nothing.")},
 }
 
 #: In the result of a recipe that removed components or columns
@@ -114,7 +119,8 @@ def input_schema(spec: RecipeSpec) -> dict:
     schema["properties"] = {"session_id": SERVER_PARAMS["session_id"],
                             **schema["properties"],
                             "provide_missing": SERVER_PARAMS["provide_missing"],
-                            "max_listed": SERVER_PARAMS["max_listed"]}
+                            "max_listed": SERVER_PARAMS["max_listed"],
+                            "reason": SERVER_PARAMS["reason"]}
     schema["required"] = ["session_id", *schema["required"]]
     return schema
 
@@ -151,9 +157,10 @@ def _register(server: MCPServer, fn: Callable, name: str, description: str,
 
 def run_tool(store: SessionStore, spec: RecipeSpec, session_id: str,
              params: dict, provide_missing: bool, max_listed: int,
-             ctx: Context | None = None) -> RecipeInfo:
+             ctx: Context | None = None, reason: str | None = None) -> RecipeInfo:
     """Run the recipe of a tool and build its output; ``ctx``, the context
-    of the call, receives the progress of the recipe (``progress.py``)."""
+    of the call, receives the progress of the recipe (``progress.py``);
+    ``reason`` goes to the log entry of the recipe (phase 6-ter, PR 5a)."""
     offered = {p.name for p in spec.params if p.agents}
     unknown = sorted(set(params) - offered)
     if unknown:
@@ -183,7 +190,7 @@ def run_tool(store: SessionStore, spec: RecipeSpec, session_id: str,
             all_changes = (result.changes if isinstance(result.changes, tuple)
                            else (result.changes,))
             new_ids = store.branch(session_id, result.sessions, spec.name, result.params,
-                                   provided=result.provided)
+                                   provided=result.provided, reason=reason)
             out["new_sessions"] = [
                 NewSession(session_id=i, spectrum=spectrum_summary(s),
                            summary="; ".join(c.describe()) or "no change")
@@ -193,7 +200,7 @@ def run_tool(store: SessionStore, spec: RecipeSpec, session_id: str,
                                      max_listed))
         elif result.session is not None:
             store.apply(session_id, result.session, spec.name, result.params,
-                        provided=result.provided)
+                        provided=result.provided, reason=reason)
             out["changes"] = changes_summary(result.changes, removed, max_listed)
             if result.changes.components_removed or result.changes.columns_removed:
                 # Decision 1 of the phase: what a recipe removed can be had
@@ -227,10 +234,11 @@ def _make_tool(store: SessionStore, spec: RecipeSpec) -> Callable:
     def tool(session_id: Annotated[str, Field()],
              provide_missing: bool = False,
              max_listed: int = 50,
+             reason: str | None = None,
              recipe_params: dict | None = None,
              ctx: Context | None = None) -> RecipeInfo:
         return run_tool(store, spec, session_id, recipe_params or {},
-                        provide_missing, max_listed, ctx)
+                        provide_missing, max_listed, ctx, reason)
     tool.__name__ = tool_name(spec)
     return tool
 

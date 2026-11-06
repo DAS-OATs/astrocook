@@ -336,7 +336,33 @@ class LogEntryV2:
     """
     recipe_name: str
     params: Dict[str, Any]
-    # We can add more data later, like execution time, success, etc.
+    #: Why the recipe was run, as given by who ran it (e.g. an agent through
+    #: the MCP server); None if not given (phase 6-ter, PR 5a)
+    reason: Optional[str] = None
+
+
+#: The kinds of the notes of a log that :meth:`HistoryLogV2.add_note` takes
+NOTE_KINDS = ("note",)
+
+
+@dataclass
+class LogNoteV2:
+    """
+    A note in the V2 analysis log: text that is not a state change (e.g. what
+    an agent did outside the recipes), skipped by the replay.
+
+    The notes are kept apart from the entries, so that the entries stay
+    1-to-1 with the states of the history, and the logs saved with notes
+    replay in the versions before them, which ignore the notes (phase 6-ter,
+    PR 5a).
+    """
+    text: str
+    #: The number of entries before the note: it was written at the state
+    #: made by the entry ``after - 1`` (0: before any entry)
+    after: int
+    #: One of :data:`NOTE_KINDS`; a log written by a later version may hold
+    #: others, kept as read
+    kind: str = "note"
 
 @dataclass
 class HistoryLogV2:
@@ -355,13 +381,17 @@ class HistoryLogV2:
         #: Pointer to the currently active log entry (state), i.e. the last
         #: valid entry.
         self.current_index: int = -1
+        #: The notes (list of :class:`LogNoteV2`), in the order they were
+        #: written; those written after an entry undone are undone with it.
+        self.notes: List[LogNoteV2] = []
 
     @property
     def is_v2_log(self) -> bool:
         """Return True, indicating this is a V2-native log structure."""
         return True
 
-    def add_entry(self, recipe_name: str, params: Dict[str, Any]):
+    def add_entry(self, recipe_name: str, params: Dict[str, Any],
+                  reason: Optional[str] = None):
         """
         Add a new log entry, truncating any 'future' history (from Undo actions).
 
@@ -371,30 +401,100 @@ class HistoryLogV2:
             The name of the recipe executed.
         params : dict
             The parameters used for the recipe.
+        reason : str, optional
+            Why the recipe was run; empty text is no reason.
         """
-        # 1. Truncate stale future history
+        # 1. Truncate stale future history, with the notes written in it
         if self.current_index < len(self.entries) - 1:
             logger.debug(f"Truncating V2 log from index {self.current_index + 1}")
             del self.entries[self.current_index + 1:]
+        self.notes = [n for n in self.notes if n.after <= self.current_index + 1]
         
         # 2. Add the new entry
-        entry = LogEntryV2(recipe_name=recipe_name, params=params)
+        if not (isinstance(reason, str) and reason.strip()):
+            reason = None
+        entry = LogEntryV2(recipe_name=recipe_name, params=params,
+                           reason=reason.strip() if reason else None)
         self.entries.append(entry)
         
         # 3. Update the index to point to the new entry
         self.current_index = len(self.entries) - 1
         logger.debug(f"Added log entry: {recipe_name}. Index is now {self.current_index}.")
 
-    def undo(self) -> bool:
+    def add_note(self, text: str, kind: str = "note") -> LogNoteV2:
         """
-        Add a new log entry, truncating any 'future' history (from Undo actions).
+        Add a note at the current entry, without a state.
+
+        The entries undone are kept (a note is not a state, so the redo is
+        still possible): the note is undone with the current entry, and
+        dropped with it if a new entry replaces it.
 
         Parameters
         ----------
-        recipe_name : str
-            The name of the recipe executed.
-        params : dict
-            The parameters used for the recipe.
+        text : str
+            The text of the note.
+        kind : str
+            One of :data:`NOTE_KINDS`.
+
+        Returns
+        -------
+        LogNoteV2
+            The note added.
+
+        Raises
+        ------
+        ValueError
+            If the text is empty or the kind is not known.
+        """
+        if not isinstance(text, str) or not text.strip():
+            raise ValueError("A note needs a text.")
+        if kind not in NOTE_KINDS:
+            raise ValueError(f"Unknown kind of note '{kind}': one of "
+                             f"{', '.join(NOTE_KINDS)}.")
+        note = LogNoteV2(text=text.strip(), after=self.current_index + 1, kind=kind)
+        # After the notes of the same entry or earlier ones, before those of
+        # the entries undone
+        i = sum(1 for n in self.notes if n.after <= note.after)
+        self.notes.insert(i, note)
+        return note
+
+    def notes_at(self, after: int) -> List[LogNoteV2]:
+        """The notes written after ``after`` entries (at the state made by
+        the entry ``after - 1``), in the order they were written."""
+        return [n for n in self.notes if n.after == after]
+
+    def timeline(self, include_undone: bool = False) -> List[Tuple[Any, bool]]:
+        """
+        The entries and the notes in the order they were written.
+
+        Parameters
+        ----------
+        include_undone : bool
+            Also the entries undone and not redone, and their notes.
+
+        Returns
+        -------
+        list of tuple
+            ``(item, active)``: a :class:`LogEntryV2` or a
+            :class:`LogNoteV2`, and False if it is undone.
+        """
+        last = len(self.entries) if include_undone else self.current_index + 1
+        items = []
+        for i in range(last + 1):
+            items += [(n, n.after <= self.current_index + 1) for n in self.notes_at(i)]
+            if i < last:
+                items.append((self.entries[i], i <= self.current_index))
+        return items
+
+    def undo(self) -> bool:
+        """
+        Move the history pointer back one step.
+
+        Returns
+        -------
+        bool
+            True if undo was successful, False if already before the first
+            entry.
         """
         if self.current_index > -1:
             self.current_index -= 1
@@ -428,14 +528,24 @@ class HistoryLogV2:
         -------
         dict
             ``{'entries': [{'recipe_name': ..., 'params': ...}, ...],
-            'current_index': ...}``.
+            'current_index': ...}``; an entry has ``'reason'`` if it was
+            given, and the log ``'notes'`` (``[{'text': ..., 'kind': ...,
+            'after': ...}, ...]``) if it has any (phase 6-ter, PR 5a): a log
+            without either is saved as before.
         """
         active = self.entries[:self.current_index + 1]
-        return {
-            'entries': [{'recipe_name': e.recipe_name, 'params': e.params}
-                        for e in active],
-            'current_index': len(active) - 1,
-        }
+        entries = []
+        for e in active:
+            d = {'recipe_name': e.recipe_name, 'params': e.params}
+            if e.reason:
+                d['reason'] = e.reason
+            entries.append(d)
+        out = {'entries': entries, 'current_index': len(active) - 1}
+        notes = [{'text': n.text, 'kind': n.kind, 'after': n.after}
+                 for n in self.notes if n.after <= len(active)]
+        if notes:
+            out['notes'] = notes
+        return out
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'HistoryLogV2':
@@ -455,8 +565,14 @@ class HistoryLogV2:
         log = cls()
         for e in (data or {}).get('entries', []) or []:
             log.entries.append(LogEntryV2(recipe_name=e['recipe_name'],
-                                          params=dict(e.get('params') or {})))
+                                          params=dict(e.get('params') or {}),
+                                          reason=e.get('reason') or None))
         log.current_index = len(log.entries) - 1
+        for n in (data or {}).get('notes', []) or []:
+            after = min(max(int(n.get('after', len(log.entries))), 0), len(log.entries))
+            log.notes.append(LogNoteV2(text=str(n['text']), after=after,
+                                       kind=str(n.get('kind') or 'note')))
+        log.notes.sort(key=lambda n: n.after)  # stable: the order of writing
         return log
 
 # --- V1 Compatibility Wrapper ---

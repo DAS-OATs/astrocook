@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Optional
 # --- V2 Imports ---
 from astrocook.recipes.registry import RECIPES
 from astrocook.core.structures import HistoryLogV2
+from astrocook.gui.log_script import log_to_script
 
 if TYPE_CHECKING:
     from .main_window import MainWindowV2 # Import main window for typing
@@ -146,29 +147,11 @@ class LogScripterDialog(QDialog):
         self.scripter_edit.moveCursor(QTextCursor.MoveOperation.End)
 
     def _populate_v2_script(self):
-        """Populates the scripter from a HistoryLogV2 object."""
-        
-        entries = self.log_object.entries
-        current_idx = self.log_object.current_index
-        
-        if not entries:
-            #self.scripter_edit.setPlainText("# Log is empty.")
-            return
-
-        script_lines = []
-        for i, entry in enumerate(entries):
-            # Format as "recipe_name(param1=value1, param2='value2')"
-            params_str = ", ".join(f"{k}='{v}'" if isinstance(v, str) else f"{k}={v}" 
-                                   for k, v in entry.params.items())
-            line = f"{entry.recipe_name}({params_str})"
-            
-            # Add comment for "undone" actions
-            if i > current_idx:
-                line = f"# {line}"
-                
-            script_lines.append(line)
-
-        self.scripter_edit.setPlainText("\n".join(script_lines))
+        """Populates the scripter from a HistoryLogV2 object: the entries,
+        their reasons and the notes (``log_script.py``)."""
+        lines = log_to_script(self.log_object)
+        if lines:
+            self.scripter_edit.setPlainText("\n".join(lines))
 
 
     def refresh(self):

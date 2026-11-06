@@ -787,6 +787,29 @@ def test_script_run_builds_a_v2_history(ready):
     assert len(history.states) == 3
 
 
+def test_script_run_keeps_reasons_and_notes(ready):
+    # Phase 6-ter, PR 5a: Run All skips the reasons and the notes as steps,
+    # and keeps them in the log it rebuilds
+    from astrocook.gui.log_script import log_to_script
+    from astrocook.gui.qt_workers import ScriptWorker
+    log = ready.active_history.log_manager
+    log.entries[0].reason = "z_em from the header."
+    log.add_note("Checked the header by hand.")
+    script = "\n".join(log_to_script(log) + ["# reason: Noisy.", "smooth(sigma_kms='50.0')",
+                                             "# # note: undone, not kept"])
+    worker = ScriptWorker(script, ready.active_history.states[0], ready)
+    results, errors = [], []
+    worker.signals.finished.connect(results.append)
+    worker.signals.error.connect(errors.append)
+    worker.run()
+    assert errors == []
+    (history,) = results
+    new_log = history.log_manager
+    assert _recipes(new_log) == ["set_properties", "smooth"] and len(history.states) == 3
+    assert [e.reason for e in new_log.entries] == ["z_em from the header.", "Noisy."]
+    assert [(n.text, n.after) for n in new_log.notes] == [("Checked the header by hand.", 1)]
+
+
 def test_open_v1_archive(window, messages):
     # V1 .acs archives are read by io/v1_archive.py (phase 3)
     path = Path(__file__).parent / "data" / "v1_metals_constraints.acs"

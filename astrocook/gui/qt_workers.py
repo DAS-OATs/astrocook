@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Dict
 from astrocook.core.session import SessionV2
 from astrocook.core.session_manager import SessionHistory
 from astrocook.core.structures import HistoryLogV2
+from astrocook.gui.log_script import ScriptComments
 from astrocook.recipes.errors import RecipeError
 from astrocook.recipes.params import resolve_params
 from astrocook.recipes.prerequisites import collect_provided
@@ -204,10 +205,17 @@ class ScriptWorker(QRunnable):
 
             # 2. Process the script line by line
             lines = self.script_text.splitlines()
+            # The reasons and the notes are not steps, but are kept in the
+            # new log (phase 6-ter, PR 5a)
+            comments = ScriptComments()
             for i, line in enumerate(lines):
                 line = line.strip()
                 if not line or line.startswith('#'):
+                    comments.read(line)
                     continue # Skip comments and empty lines
+                for kind, text in comments.notes():
+                    new_log.add_note(text, kind=kind)
+                reason = comments.reason()
 
                 self.signals.progress.emit(f"Running line {i+1}: {line}")
 
@@ -257,10 +265,14 @@ class ScriptWorker(QRunnable):
                 for step in provided:
                     new_log.add_entry(step.recipe.split('.')[1], dict(step.params))
                     new_history.add_state(step.session)
-                new_log.add_entry(recipe_name, resolve_params(recipe_name, params_to_log))
+                new_log.add_entry(recipe_name, resolve_params(recipe_name, params_to_log),
+                                  reason=reason)
 
                 new_history.add_state(new_session_state)
                 current_processing_state = new_session_state
+
+            for kind, text in comments.notes():
+                new_log.add_note(text, kind=kind)
 
             # 4. Success! Emit the final history
             self.signals.finished.emit(new_history)

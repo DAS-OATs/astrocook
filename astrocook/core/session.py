@@ -172,7 +172,7 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
             try:
                 session.log_manager = HistoryLogV2.from_dict(
                     v2_metadata.get('log_history_json'))
-            except (KeyError, TypeError, AttributeError) as e:
+            except (KeyError, TypeError, AttributeError, ValueError) as e:
                 logger.warning(f"Could not restore the session log ({e}): "
                                "the session is opened with an empty log.")
         return session

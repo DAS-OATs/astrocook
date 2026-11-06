@@ -485,7 +485,8 @@ class SessionListItem(BaseModel):
         "Index of the current state (0: as opened); lower than n_states - 1 "
         "after session_undo."))
     unsaved: bool = Field(description=(
-        "True if the current state is not the one last saved or opened."))
+        "True if the current state, or the log (a note), is not the one last "
+        "saved or opened."))
 
 
 class SessionList(BaseModel):
@@ -497,9 +498,22 @@ class ColumnInfo(BaseModel):
     unit: str = Field(description="Unit; empty if dimensionless.")
 
 
+class NoteInfo(BaseModel):
+    kind: str = Field(description="'note': written with session_note.")
+    text: str
+
+
+def note_info(note) -> NoteInfo:
+    return NoteInfo(kind=note.kind, text=note.text)
+
+
 class LogEntryInfo(BaseModel):
+    notes_before: list[NoteInfo] = Field(default_factory=list, description=(
+        "The notes written at the state this recipe ran on, before it."))
     recipe: str = Field(description="The recipe, as in the log (its name).")
     params: dict[str, Any] = Field(description="The values it used.")
+    reason: Optional[str] = Field(None, description=(
+        "Why it was run, if given (the 'reason' of a recipe tool)."))
 
 
 class StateInfo(BaseModel):
@@ -508,9 +522,23 @@ class StateInfo(BaseModel):
         "The recipe that made this state from the previous one; null for "
         "the first."))
     params: dict[str, Any] = Field(default_factory=dict)
+    reason: Optional[str] = Field(None, description=(
+        "Why the recipe was run, if given (the 'reason' of a recipe tool)."))
     summary: str = Field("", description=(
         "What it changed, compared with the previous state."))
+    notes: list[NoteInfo] = Field(default_factory=list, description=(
+        "The notes written at this state (session_note)."))
     current: bool = Field(False, description="True for the current state.")
+
+
+class NoteResult(BaseModel):
+    """A note added to the log of a session."""
+
+    session_id: str
+    state: int = Field(description="The state the note was written at (the current one).")
+    note: NoteInfo
+    unsaved: bool = Field(description=(
+        "True: the note is in the session, saved with it by session_save."))
 
 
 class SessionDescription(SessionListItem):
