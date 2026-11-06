@@ -1,0 +1,7 @@
+astrocook.recipes.progress module
+=================================
+
+.. automodule:: astrocook.recipes.progress
+   :members:
+   :show-inheritance:
+   :undoc-members:

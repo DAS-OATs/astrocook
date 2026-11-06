@@ -661,6 +661,14 @@ runs on does not change, and the result lists the new ones, each with its
 <code class="docutils literal notranslate"><span class="pre">session_id</span></code>, named after the original (<code class="docutils literal notranslate"><span class="pre">J0103-1305-1</span></code>, …). A parameter
 that names another open session (e.g. the reference of <em>Flux &gt; Equalize</em>)
 takes its <code class="docutils literal notranslate"><span class="pre">session_id</span></code>.</p>
+<p><strong>Progress.</strong> A recipe can take minutes. A client that asks for progress
+(the MCP progress token; most clients do for long calls) receives
+notifications while the recipe runs: the pipelines and the Bayesian fit
+report a percentage with the last line of their log (what the GUI shows
+under its progress bar), and every recipe, also those that report nothing
+in between, sends one notification when it starts and one when it ends,
+with the time it took. A recipe that reports nothing in between is silent
+until it ends.</p>
 <p><em>File &gt; Export to ASCII</em> (<code class="docutils literal notranslate"><span class="pre">file_export_ascii</span></code>) writes the files in the
 folder <code class="docutils literal notranslate"><span class="pre">path</span></code>, named after <code class="docutils literal notranslate"><span class="pre">prefix</span></code>, and does not replace files that exist
 unless asked (<code class="docutils literal notranslate"><span class="pre">overwrite=true</span></code>).</p>

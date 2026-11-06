@@ -16,6 +16,7 @@ Submodules
    astrocook.recipes.messages
    astrocook.recipes.params
    astrocook.recipes.prerequisites
+   astrocook.recipes.progress
    astrocook.recipes.registry
    astrocook.recipes.result
 
