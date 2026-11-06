@@ -37,7 +37,12 @@ PILOT_TOOLS = {"session_open", "session_save", "continuum_estimate_auto",
                "absorbers_identify_lines", "absorbers_doublets_auto"}
 #: Phase 6-ter (PR 1): every recipe of the registry is a tool, but those
 #: excluded with a reason
-TOOLS = {"session_open", "session_save"} | {
+#: The tools of the sessions (phase 6-ter, PR 2: list, describe, history,
+#: undo, redo, duplicate, close)
+SESSION_TOOLS = {"session_open", "session_save", "session_list", "session_describe",
+                 "session_history", "session_undo", "session_redo",
+                 "session_duplicate", "session_close"}
+TOOLS = SESSION_TOOLS | {
     f"{s.category}_{s.name}" for s in all_recipes()
     if f"{s.category}.{s.name}" not in EXCLUDED}
 
