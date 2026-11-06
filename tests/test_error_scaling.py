@@ -1,5 +1,5 @@
 """Check of the Voigt-fit uncertainties against the reduced chi-squared
-(phase 1, item 9 of ``ROADMAP.md``).
+(phase 1, item 9 of ``ROADMAP_HISTORY.md``).
 
 Monte Carlo on mock spectra (``astrocook.mocks``, independent of the fitting
 code): one CIV component (z = 2.97, logN = 13.5, b = 12 km/s), R = 45000,

@@ -33,7 +33,7 @@ CLASSES = {"absorbers": RecipeAbsorbersV2, "continuum": RecipeContinuumV2,
 #: in phase 3 (issue #573). To be decided by Guido, one by one.
 KNOWN_DIFFERENCES = {}
 # The 15 differences found in phase 3 were decided by Guido and aligned in
-# phase 4 (#573): see ROADMAP.md, F40, and CHANGELOG.md
+# phase 4 (#573): see ROADMAP_HISTORY.md, F40, and CHANGELOG.md
 
 
 def _schema_parameters():

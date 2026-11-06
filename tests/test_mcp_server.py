@@ -1,4 +1,4 @@
-"""MCP server (pilot, ROADMAP.md section 4.1): tools called through the SDK
+"""MCP server (pilot, ROADMAP_HISTORY.md section 4.1): tools called through the SDK
 client, connected to the server in process."""
 import asyncio
 import dataclasses

@@ -43,7 +43,7 @@ def test_link_with_sqrt_is_refused(caplog):
 
 
 # --- PR 5b: the rows D of the recipes -------------------------------------------------
-# As decided with Guido (ROADMAP.md, phase 6, "Rows D of the recipes"); each
+# As decided with Guido (ROADMAP_HISTORY.md, phase 6, "Rows D of the recipes"); each
 # test reproduces the old fallback, which went on with a result that
 # looked valid.
 
