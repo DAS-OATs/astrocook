@@ -54,6 +54,10 @@ SERVER_PARAMS = {
         "regions, systems); the counts are always complete.")},
 }
 
+#: In the result of a recipe that removed components or columns
+UNDO_HINT = ("session_undo restores the state before this recipe, with what it "
+             "removed.")
+
 #: Added to the message of a prerequisite that a recipe can provide
 PROVIDE_HINT = (" Run it first, or call this tool again with provide_missing=true to "
                 "provide it with its defaults.")
@@ -187,6 +191,10 @@ def run_tool(store: SessionStore, spec: RecipeSpec, session_id: str,
             store.apply(session_id, result.session, spec.name, result.params,
                         provided=result.provided)
             out["changes"] = changes_summary(result.changes, removed, max_listed)
+            if result.changes.components_removed or result.changes.columns_removed:
+                # Decision 1 of the phase: what a recipe removed can be had
+                # back from the history of the session
+                out["undo_hint"] = UNDO_HINT
             out.update(summaries(result, before, result.session, spec.provides,
                                  max_listed))
         else:

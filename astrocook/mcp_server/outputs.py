@@ -399,6 +399,9 @@ class RecipeInfo(SessionInfo):
     fit: Optional[FitSummary] = Field(None, description=(
         "The components added by the recipe, with errors, reduced chi2 and "
         "flags, when it added any."))
+    undo_hint: Optional[str] = Field(None, description=(
+        "How to have back what the recipe removed, when it removed "
+        "components or columns."))
 
 
 def _jsonable(value):
@@ -462,3 +465,88 @@ def summaries(result, before: SessionV2, after: SessionV2, provides,
     if changes.components_added:
         out["fit"] = fit_summary(before, after, max_listed)
     return out
+
+
+# --- The sessions (phase 6-ter, PR 2) -------------------------------------
+
+class SessionListItem(BaseModel):
+    session_id: str
+    origin: str = Field(description=(
+        "'opened' (from a file), 'branched' (by a recipe that opens new "
+        "sessions) or 'duplicated' (session_duplicate)."))
+    parent: Optional[str] = Field(None, description=(
+        "The session it was made from, for a branch or a copy (it may be "
+        "closed since)."))
+    path: Optional[str] = Field(None, description="The file it was opened from.")
+    spectrum: SpectrumSummary
+    n_states: int = Field(description=(
+        "States in its history: the session as opened, then one per recipe."))
+    current_state: int = Field(description=(
+        "Index of the current state (0: as opened); lower than n_states - 1 "
+        "after session_undo."))
+    unsaved: bool = Field(description=(
+        "True if the current state is not the one last saved or opened."))
+
+
+class SessionList(BaseModel):
+    sessions: list[SessionListItem]
+
+
+class ColumnInfo(BaseModel):
+    name: str
+    unit: str = Field(description="Unit; empty if dimensionless.")
+
+
+class LogEntryInfo(BaseModel):
+    recipe: str = Field(description="The recipe, as in the log (its name).")
+    params: dict[str, Any] = Field(description="The values it used.")
+
+
+class StateInfo(BaseModel):
+    index: int = Field(description="0: the session as opened.")
+    recipe: Optional[str] = Field(None, description=(
+        "The recipe that made this state from the previous one; null for "
+        "the first."))
+    params: dict[str, Any] = Field(default_factory=dict)
+    summary: str = Field("", description=(
+        "What it changed, compared with the previous state."))
+    current: bool = Field(False, description="True for the current state.")
+
+
+class SessionDescription(SessionListItem):
+    """A session in full, without the data."""
+
+    columns: list[ColumnInfo] = Field(description="The columns of the spectrum.")
+    components_by_series: dict[str, int] = Field(description=(
+        "Number of absorption components per series (e.g. CIV)."))
+    log_before: list[LogEntryInfo] = Field(default_factory=list, description=(
+        "The log that came with the archive (or from the parent), before the "
+        "first state of this history."))
+    saved_path: Optional[str] = Field(None, description=(
+        "Where it was last saved or opened from."))
+
+
+class HistoryInfo(BaseModel):
+    session_id: str
+    states: list[StateInfo] = Field(description=(
+        "The states of the session, oldest first; session_undo and "
+        "session_redo move between them."))
+    can_undo: bool
+    can_redo: bool
+    truncated: bool = Field(False, description=(
+        "True if only the last max_listed states are listed."))
+
+
+class UndoResult(SessionInfo):
+    """The session after session_undo or session_redo."""
+
+    moved: list[str] = Field(description=(
+        "The recipes undone (or redone), in the order they were moved over."))
+    current_state: int
+    n_states: int
+
+
+class CloseResult(BaseModel):
+    session_id: str
+    closed: bool
+    open_sessions: list[str]
