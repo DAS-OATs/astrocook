@@ -42,6 +42,12 @@ recorded in the session log with its parameters (the log replays). A
 recipe that opens new sessions (e.g. a region extracted) leaves the
 session unchanged and lists the new ones, each with its session_id.
 
+The log is what the person who reviews your work reads: give each recipe
+tool a 'reason' (why this recipe, why these values), and write with
+session_note what you did or decided outside the tools (e.g. a value
+measured with your own code, a range you chose by eye). Notes make no new
+state and the replay skips them.
+
 A recipe that needs something the session lacks (the emission redshift,
 the resolution, a continuum) does not run: the tool says what is missing
 and which tool provides it. z_em and the resolution are set with

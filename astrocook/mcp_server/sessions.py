@@ -63,6 +63,9 @@ class SessionMeta:
     saved_state: Optional[SessionV2] = None
     #: Where it was last saved
     saved_path: Optional[str] = None
+    #: The log as last saved or opened (``HistoryLogV2.to_dict``): a note
+    #: changes the log, not the state (phase 6-ter, PR 5a)
+    saved_log: Optional[dict] = None
 
 
 class SessionStore:
@@ -119,7 +122,7 @@ class SessionStore:
         self._histories[session_id] = history
         self.meta[session_id] = SessionMeta(
             path=str(path), first_entry=log.current_index + 1,
-            saved_state=session, saved_path=str(path))
+            saved_state=session, saved_path=str(path), saved_log=log.to_dict())
         return session_id
 
     def get(self, session_id: str) -> SessionHistory:
@@ -138,26 +141,43 @@ class SessionStore:
                             f"{known}; open one with session_open.") from None
 
     def unsaved(self, session_id: str) -> bool:
-        """Whether the current state differs from the one last saved (or
-        opened)."""
-        return self.get(session_id).current_state is not self.meta[session_id].saved_state
+        """Whether the current state, or the log (a note), differs from the
+        one last saved (or opened)."""
+        history = self.get(session_id)
+        meta = self.meta[session_id]
+        return (history.current_state is not meta.saved_state
+                or history.log_manager.to_dict() != meta.saved_log)
 
     def mark_saved(self, session_id: str, path: str) -> None:
         meta = self.meta[session_id]
-        meta.saved_state = self.get(session_id).current_state
+        history = self.get(session_id)
+        meta.saved_state = history.current_state
+        meta.saved_log = history.log_manager.to_dict()
         meta.saved_path = str(path)
 
     def entry_of(self, session_id: str, state_index: int):
         """The log entry that made the state ``state_index`` (a dict with
-        ``recipe_name`` and ``params``), or None for the first state."""
+        ``recipe_name``, ``params`` and ``reason``), or None for the first
+        state."""
         if state_index == 0:
             return None
         log = self.get(session_id).log_manager
         i = self.meta[session_id].first_entry + state_index - 1
         if 0 <= i < len(log.entries):
             entry = log.entries[i]
-            return {"recipe_name": entry.recipe_name, "params": dict(entry.params)}
+            return {"recipe_name": entry.recipe_name, "params": dict(entry.params),
+                    "reason": entry.reason}
         return None
+
+    def notes_of(self, session_id: str, state_index: int) -> list:
+        """The notes written at the state ``state_index`` (``LogNoteV2``);
+        those of a state undone are kept, as the state is, for a redo."""
+        log = self.get(session_id).log_manager
+        return log.notes_at(self.meta[session_id].first_entry + state_index)
+
+    def note(self, session_id: str, text: str):
+        """Add a note at the current state of a session (no new state)."""
+        return self.get(session_id).log_manager.add_note(text)
 
     def _add_provided(self, history: SessionHistory, provided) -> None:
         """The recipes run first to provide what the session lacked
@@ -170,12 +190,14 @@ class SessionStore:
             history.add_state(step.session)
 
     def apply(self, session_id: str, new_state: SessionV2, recipe_name: str,
-              params: dict[str, Any], provided=()) -> SessionV2:
-        """Record a recipe in the log and make its result the current state."""
+              params: dict[str, Any], provided=(), reason: Optional[str] = None) -> SessionV2:
+        """Record a recipe in the log, with the reason given for it, and make
+        its result the current state."""
         history = self.get(session_id)
         self._add_provided(history, provided)
         # The values the recipe used, defaults included (#573, item 3)
-        history.log_manager.add_entry(recipe_name, resolve_params(recipe_name, params))
+        history.log_manager.add_entry(recipe_name, resolve_params(recipe_name, params),
+                                      reason=reason)
         new_state.log_manager = history.log_manager
         history.add_state(new_state)
         return new_state
@@ -199,7 +221,8 @@ class SessionStore:
         return history
 
     def branch(self, session_id: str, new_states, recipe_name: str,
-               params: dict[str, Any], provided=()) -> list[str]:
+               params: dict[str, Any], provided=(),
+               reason: Optional[str] = None) -> list[str]:
         """Open the sessions made by a branching recipe and return their
         identifiers (``<parent>-1``, ``<parent>-2``, ...).
 
@@ -215,7 +238,7 @@ class SessionStore:
         for new_state in new_states:
             new_id = self._child_id(session_id)
             history = self._copy(session_id, new_id)
-            history.log_manager.add_entry(recipe_name, entry)
+            history.log_manager.add_entry(recipe_name, entry, reason=reason)
             new_state.name = new_id
             new_state._gui = self.context
             history.add_state(new_state)

@@ -85,6 +85,28 @@ def test_the_log_of_an_archive_comes_before_the_history(mock_archive, tmp_path):
     assert not ok(described)["unsaved"]
 
 
+def test_the_states_after_an_archive_log(mock_archive, tmp_path):
+    # Each state made in the server is matched with its own entry, after
+    # those the archive brought (SessionStore.entry_of, first_entry)
+    saved = tmp_path / "with_log.acs2"
+    calls(build_server(), open_mock(mock_archive),
+          ("continuum_estimate_auto", {"session_id": "mock", "kappa": 3}),
+          ("session_save", {"session_id": "mock", "path": str(saved)}))
+    _, _, _, history, undone, described = calls(
+        build_server(), ("session_open", {"path": str(saved)}),
+        ("flux_smooth", {"session_id": "with_log", "sigma_kms": 40}),
+        ("flux_smooth", {"session_id": "with_log", "sigma_kms": 30}),
+        ("session_history", {"session_id": "with_log"}),
+        ("session_undo", {"session_id": "with_log"}),
+        ("session_describe", {"session_id": "with_log"}))
+    states = ok(history)["states"]
+    assert [s["recipe"] for s in states] == [None, "smooth", "smooth"]
+    assert [s["params"].get("sigma_kms") for s in states] == [None, 40.0, 30.0]
+    assert ok(undone)["moved"] == ["smooth"] and ok(undone)["log_entries"] == 3
+    assert [e["recipe"] for e in ok(described)["log_before"]] == [
+        "set_properties", "estimate_auto"]
+
+
 def test_history_undo_redo(mock_archive):
     _, _, history, undone, described, redone, again = calls(
         build_server(), open_mock(mock_archive),
@@ -209,3 +231,121 @@ def test_undo_back_to_the_saved_state_is_not_unsaved(mock_archive, tmp_path):
         ("session_list", {}))
     assert ok(after)["sessions"][0]["unsaved"]
     assert not ok(back)["sessions"][0]["unsaved"]
+
+
+# --- Reasons and notes (phase 6-ter, PR 5a) ----------------------------------
+
+def test_a_reason_goes_to_the_log(mock_archive, tmp_path):
+    saved = tmp_path / "reasons.acs2"
+    results = calls(
+        build_server(), open_mock(mock_archive),
+        ("flux_smooth", {"session_id": "mock", "sigma_kms": 40,
+                         "reason": "Too noisy to see the doublet."}),
+        ("edit_split", {"session_id": "mock", "expression": "x > 450",
+                        "reason": "Only the red half."}),
+        ("session_history", {"session_id": "mock"}),
+        ("session_history", {"session_id": "mock-1"}),
+        ("session_save", {"session_id": "mock", "path": str(saved)}))
+    history, branch = ok(results[3])["states"], ok(results[4])["states"]
+    assert [s["reason"] for s in history] == [None, None, "Too noisy to see the doublet."]
+    assert branch[-1]["recipe"] == "split" and branch[-1]["reason"] == "Only the red half."
+    entries = load_session_from_file(str(saved), "r", None, "auto").log_manager.entries
+    assert [e.reason for e in entries] == [None, "Too noisy to see the doublet."]
+    # Reopened: in the log that came with the archive
+    (described,) = calls(build_server(), ("session_open", {"path": str(saved)}),
+                         ("session_describe", {"session_id": "reasons"}))[1:]
+    assert [e["reason"] for e in ok(described)["log_before"]] == [
+        None, "Too noisy to see the doublet."]
+
+
+def test_a_reason_is_optional_and_checked(mock_archive):
+    _, plain, wrong = calls(
+        build_server(), open_mock(mock_archive),
+        ("flux_smooth", {"session_id": "mock", "reason": None}),
+        ("flux_smooth", {"session_id": "mock", "reason": 3}))
+    ok(plain)
+    assert wrong.is_error
+
+
+def test_a_note_makes_no_state(mock_archive, tmp_path):
+    saved = tmp_path / "noted.acs2"
+    results = calls(
+        build_server(), open_mock(mock_archive),
+        ("session_note", {"session_id": "mock", "text": "z_em from the header."}),
+        ("flux_smooth", {"session_id": "mock", "sigma_kms": 40}),
+        ("session_note", {"session_id": "mock", "text": "Smoothed: no line visible."}),
+        ("session_history", {"session_id": "mock"}),
+        ("session_save", {"session_id": "mock", "path": str(saved)}),
+        ("session_note", {"session_id": "mock", "text": "After saving."}),
+        ("session_list", {}),
+        ("session_close", {"session_id": "mock"}))
+    first, second = ok(results[1]), ok(results[3])
+    assert first["state"] == 1 and first["note"] == {"kind": "note",
+                                                     "text": "z_em from the header."}
+    assert second["state"] == 2 and second["unsaved"]
+    states = ok(results[4])["states"]
+    assert len(states) == 3
+    assert [[n["text"] for n in s["notes"]] for s in states] == [
+        [], ["z_em from the header."], ["Smoothed: no line visible."]]
+    # A note is a change to save: the session is not closed without asking
+    assert ok(results[7])["sessions"][0]["unsaved"]
+    assert "changes not saved" in error_text(results[8])
+    log = load_session_from_file(str(saved), "n", None, "auto").log_manager
+    assert [n.text for n in log.notes] == ["z_em from the header.",
+                                           "Smoothed: no line visible."]
+    assert [e.recipe_name for e in log.entries] == ["set_properties", "smooth"]
+
+
+def test_a_note_is_undone_with_its_state(mock_archive):
+    results = calls(
+        build_server(), open_mock(mock_archive),
+        ("flux_smooth", {"session_id": "mock", "sigma_kms": 40}),
+        ("session_note", {"session_id": "mock", "text": "On the smoothed flux."}),
+        ("session_undo", {"session_id": "mock"}),
+        ("session_note", {"session_id": "mock", "text": "Before smoothing."}),
+        ("session_redo", {"session_id": "mock"}),
+        ("session_history", {"session_id": "mock"}),
+        ("session_undo", {"session_id": "mock"}),
+        ("flux_smooth", {"session_id": "mock", "sigma_kms": 20}),
+        ("session_history", {"session_id": "mock"}))
+    # The note does not drop the redo; the states keep their notes
+    assert ok(results[5])["moved"] == ["smooth"]
+    assert [[n["text"] for n in s["notes"]] for s in ok(results[6])["states"]] == [
+        [], ["Before smoothing."], ["On the smoothed flux."]]
+    # A new recipe after an undo drops the state undone, and its notes
+    states = ok(results[9])["states"]
+    assert [s["params"].get("sigma_kms") for s in states] == [None, None, 20.0]
+    assert [[n["text"] for n in s["notes"]] for s in states] == [
+        [], ["Before smoothing."], []]
+
+
+def test_a_note_needs_a_text(mock_archive):
+    _, empty, blank, missing = calls(
+        build_server(), open_mock(mock_archive),
+        ("session_note", {"session_id": "mock", "text": ""}),
+        ("session_note", {"session_id": "mock", "text": "   "}),
+        ("session_note", {"session_id": "nope", "text": "x"}))
+    assert empty.is_error
+    assert "needs a text" in error_text(blank)
+    assert "No session 'nope'" in error_text(missing)
+
+
+def test_notes_of_an_archive(mock_archive, tmp_path):
+    # The notes that came with an archive: before an entry of its log, or
+    # at the state as opened
+    saved = tmp_path / "arch.acs2"
+    calls(build_server(), open_mock(mock_archive),
+          ("session_note", {"session_id": "mock", "text": "Before smoothing."}),
+          ("flux_smooth", {"session_id": "mock", "sigma_kms": 40}),
+          ("session_note", {"session_id": "mock", "text": "At the end."}),
+          ("session_save", {"session_id": "mock", "path": str(saved)}))
+    _, described, history = calls(
+        build_server(), ("session_open", {"path": str(saved)}),
+        ("session_describe", {"session_id": "arch"}),
+        ("session_history", {"session_id": "arch"}))
+    before = ok(described)["log_before"]
+    assert [(e["recipe"], [n["text"] for n in e["notes_before"]]) for e in before] == [
+        ("set_properties", []), ("smooth", ["Before smoothing."])]
+    (state,) = ok(history)["states"]
+    assert [n["text"] for n in state["notes"]] == ["At the end."]
+    assert not ok(described)["unsaved"]

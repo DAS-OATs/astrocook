@@ -22,9 +22,9 @@ from pydantic import Field
 from astrocook.core.session import SessionV2
 from astrocook.mcp_server.errors import run_recipe
 from astrocook.mcp_server.outputs import (
-    CloseResult, ColumnInfo, HistoryInfo, LogEntryInfo, SaveResult,
+    CloseResult, ColumnInfo, HistoryInfo, LogEntryInfo, NoteResult, SaveResult,
     SessionDescription, SessionInfo, SessionList, SessionListItem, StateInfo,
-    UndoResult, _jsonable, spectrum_summary)
+    UndoResult, _jsonable, note_info, spectrum_summary)
 from astrocook.mcp_server.sessions import SessionStore
 from astrocook.mcp_server.tools import run_tool, session_info
 from astrocook.recipes.registry import get_recipe
@@ -155,8 +155,10 @@ def register_session_tools(server: MCPServer, store: SessionStore) -> None:
                        for c in spec.t.colnames]
             comps = state.systs.components if state.systs else []
             log = history.log_manager
-            before = [LogEntryInfo(recipe=e.recipe_name, params=_params(e.params))
-                      for e in log.entries[:meta.first_entry]]
+            before = [LogEntryInfo(notes_before=[note_info(n) for n in log.notes_at(i)],
+                                   recipe=e.recipe_name, params=_params(e.params),
+                                   reason=e.reason)
+                      for i, e in enumerate(log.entries[:meta.first_entry])]
             return SessionDescription(
                 **list_item(store, session_id), columns=columns,
                 components_by_series=dict(Counter(c.series for c in comps)),
@@ -184,7 +186,9 @@ def register_session_tools(server: MCPServer, store: SessionStore) -> None:
                 states.append(StateInfo(
                     index=i, recipe=entry["recipe_name"] if entry else None,
                     params=_params(entry["params"]) if entry else {},
-                    summary=summary, current=i == history.current_index))
+                    reason=entry["reason"] if entry else None, summary=summary,
+                    notes=[note_info(n) for n in store.notes_of(session_id, i)],
+                    current=i == history.current_index))
             return HistoryInfo(session_id=session_id, states=states[-max_listed:],
                                can_undo=history.can_undo(), can_redo=history.can_redo(),
                                truncated=len(states) > max_listed)
@@ -210,6 +214,29 @@ def register_session_tools(server: MCPServer, store: SessionStore) -> None:
                               n_states=len(history.states))
 
     STEPS = Annotated[int, Field(ge=1, description="How many states to move.")]
+
+    @server.tool()
+    def session_note(
+        session_id: SESSION_ID,
+        text: Annotated[str, Field(min_length=1, description=(
+            "The note: what you did or decided outside the tools (e.g. 'z_em "
+            "= 2.345 from the peak of Ly-a, measured on the flux with my own "
+            "code'), or what you saw in the session."))],
+    ) -> NoteResult:
+        """Write a note in the log of a session, at its current state: for
+        what you did or decided outside the tools, so that the person who
+        reviews the session can read it. It makes no new state and is
+        skipped when the log is replayed; it is undone with its state, and
+        saved with the session by session_save. To say why you run a
+        recipe, give its tool a 'reason' instead."""
+        with store.lock:
+            history = store.get(session_id)
+            try:
+                note = store.note(session_id, text)
+            except ValueError as e:
+                raise ToolError(str(e)) from e
+            return NoteResult(session_id=session_id, state=history.current_index,
+                              note=note_info(note), unsaved=store.unsaved(session_id))
 
     @server.tool()
     def session_undo(session_id: SESSION_ID, steps: STEPS = 1) -> UndoResult:
