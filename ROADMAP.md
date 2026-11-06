@@ -853,6 +853,37 @@ record):
     instructions of the server ask for reasons and notes. Numbers
     unchanged: no recipe, fitting or numerical code touched (the
     snapshots unchanged), so no slow tests.
+  - PR 5b (decision 6: the gaps of the collection of recipes), plan agreed
+    with Guido: `astrocook/gaps.py` (package, no import of `mcp` or the GUI):
+    `record_gap`, `read_gaps`, `summarize`, and the command `astrocook-gaps`
+    (`--since`, `--kind`, `--json`, `--path`, `--file`). The file, one JSON
+    line each with only `date`, `version`, `kind`, `text`, `session` (the
+    name of the session), never sent anywhere: macOS
+    `~/Library/Application Support/Astrocook/gaps.jsonl`, Linux
+    `$XDG_DATA_HOME/astrocook/gaps.jsonl` (else `~/.local/share/...`), Windows
+    `%APPDATA%\Astrocook\gaps.jsonl`; `ASTROCOOK_GAPS_FILE` moves it or, with
+    `off`, turns the record off (the tests redirect it to a temporary file:
+    `conftest.py`). A write that fails never breaks a tool (one warning).
+    Four kinds: `declared` (`session_note(..., kind="gap")`, a note of kind
+    `gap` in the log) and, seen by the server (notes of kind `gap_seen` in the
+    log, which do not make the session unsaved: nothing of the agent is lost
+    by closing it): `prerequisite` (a prerequisite with no `automatic`
+    recipe, z_em and the resolution; once per session and tool), `failed`
+    and `undone` (`session_undo` takes an optional `reason`; the steps
+    provided before a recipe are not counted, the store remembers their log
+    entries). *Failed on a valid request*, told by the exception that
+    `run_recipe` chains: not a gap the unknown parameters and sessions, the
+    `InvalidParameter`, the `MissingPrerequisite` that a recipe provides, and
+    the `RecipeFailed` (the data do not allow it, the agent has the reason:
+    if it works around, it declares it); a gap the exception that is none of
+    these (a bug, once per session and tool), recorded with the type of the
+    error and not its message, which may hold a path. `gaps_summary` (tool)
+    and `format_summary` group by kind and text with the numbers masked; the
+    declared ones are free text, joined by the reader. Seen: the `z_em` or
+    `resol` of `session_open` make a state of their own, so undoing it is
+    recorded as a recipe undone (`edit_set_properties`); left as it is.
+    Numbers unchanged: no recipe, fitting or numerical code touched, so no
+    slow tests.
   Found along the way: the startup hook of the cloud sessions created
   `.venv` without installing the package once (November 2026, at the
   start of this phase); installing again by hand worked. To watch: if
@@ -1294,6 +1325,6 @@ One line per concluded phase; the long rows are in `ROADMAP_HISTORY.md`, "7. Pro
 | 5-bis – GUI look and ergonomics | done (November 2026), PRs #664-#688; release 2.3.0 with phase 5 |
 | 6 – Error handling | done (November 2026), PRs #691-#701; release 2.4.0 |
 | 6-bis – Recipe API | done (November 2026), PRs #705-#723; release 2.5.0 |
-| 6-ter – Full MCP server | started (November 2026): plan of the phase agreed (PR 0, #726); the tools generated from the registry, F106 found (PR 1, #729); F106 fixed (PR 1-bis, #730); the tools of the sessions, undo and redo (PR 2, #731); the tools of inspection (PR 3, #732); progress notifications (PR 4, #733); the agent's decisions in the log (PR 5a) |
+| 6-ter – Full MCP server | started (November 2026): plan of the phase agreed (PR 0, #726); the tools generated from the registry, F106 found (PR 1, #729); F106 fixed (PR 1-bis, #730); the tools of the sessions, undo and redo (PR 2, #731); the tools of inspection (PR 3, #732); progress notifications (PR 4, #733); the agent's decisions in the log (PR 5a); the gaps of the recipes (PR 5b) |
 | 6-quater – Review of the recipe parameters | not started |
 | 7 – Robust components | not started |

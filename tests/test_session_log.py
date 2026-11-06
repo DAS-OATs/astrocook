@@ -229,7 +229,7 @@ def test_a_note_needs_a_text_and_a_known_kind():
         with pytest.raises(ValueError, match="needs a text"):
             log.add_note(text)
     with pytest.raises(ValueError, match="Unknown kind"):
-        log.add_note("x", kind="gap")
+        log.add_note("x", kind="other")
     assert log.notes == []
 
 
@@ -393,3 +393,20 @@ def test_the_comments_of_a_script():
          "smooth(sigma_kms=50.0)"),
         ([], None, "rebin()"),
         ([("note", "Last.")], None, None)]
+
+
+def test_the_gaps_in_a_script():
+    # Phase 6-ter, PR 5b: the notes of kind gap and gap_seen are comments of
+    # their own and are read back with their kind
+    from astrocook.gui.log_script import ScriptComments, log_to_script
+    log = HistoryLogV2()
+    log.add_note("Needed z_em.", kind="gap")
+    log.add_entry("smooth", {})
+    log.add_note("smooth undone.", kind="gap_seen")
+    lines = log_to_script(log)
+    assert lines == ["# gap: Needed z_em.", "smooth()", "# gap_seen: smooth undone."]
+    comments = ScriptComments()
+    for line in lines:
+        if line.startswith("#"):
+            comments.read(line)
+    assert comments.notes() == [("gap", "Needed z_em."), ("gap_seen", "smooth undone.")]

@@ -13,21 +13,22 @@ not the recipes, which reach the server from the registry
 import os
 from collections import Counter
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated, Literal, Optional
 
 from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import Field
 
+from astrocook import gaps
 from astrocook.core.session import SessionV2
 from astrocook.mcp_server.errors import run_recipe
 from astrocook.mcp_server.outputs import (
-    CloseResult, ColumnInfo, HistoryInfo, LogEntryInfo, NoteResult, SaveResult,
+    CloseResult, ColumnInfo, GapGroup, GapsSummary, HistoryInfo, LogEntryInfo, NoteResult, SaveResult,
     SessionDescription, SessionInfo, SessionList, SessionListItem, StateInfo,
     UndoResult, _jsonable, note_info, spectrum_summary)
 from astrocook.mcp_server.sessions import SessionStore
-from astrocook.mcp_server.tools import run_tool, session_info
-from astrocook.recipes.registry import get_recipe
+from astrocook.mcp_server.tools import run_tool, session_info, tool_name
+from astrocook.recipes.registry import find_recipe, get_recipe
 from astrocook.recipes.result import compare_sessions
 
 SESSION_ID = Annotated[str, Field(description=(
@@ -193,7 +194,22 @@ def register_session_tools(server: MCPServer, store: SessionStore) -> None:
                                can_undo=history.can_undo(), can_redo=history.can_redo(),
                                truncated=len(states) > max_listed)
 
-    def move(session_id: str, steps: int, back: bool) -> UndoResult:
+    def undone_gap(session_id: str, index: int, why: Optional[str]) -> None:
+        """Record the result of a recipe that the agent undid (a step provided
+        before a recipe is not a recipe of the agent)."""
+        entry = store.entry_of(session_id, index)
+        if entry is None or store.was_provided(session_id, index):
+            return
+        spec = find_recipe(entry["recipe_name"])
+        text = f"{tool_name(spec) if spec else entry['recipe_name']} undone."
+        if entry["reason"]:
+            text += f" It was run because: {entry['reason']}"
+        if why:
+            text += f" It was undone because: {why}"
+        store.record_gap(session_id, "undone", text)
+
+    def move(session_id: str, steps: int, back: bool,
+             why: Optional[str] = None) -> UndoResult:
         with store.lock:
             history = store.get(session_id)
             can = history.can_undo if back else history.can_redo
@@ -201,13 +217,17 @@ def register_session_tools(server: MCPServer, store: SessionStore) -> None:
                 raise ToolError(f"Nothing to {'undo' if back else 'redo'} in "
                                 f"'{session_id}': it is at state {history.current_index} "
                                 f"of {len(history.states) - 1}.")
-            moved = []
+            moved, undone = [], []
             for _ in range(steps):
                 if not can():
                     break
                 index = history.current_index if back else history.current_index + 1
                 moved.append(_moved_recipe(store, session_id, index))
+                if back:
+                    undone.append(index)
                 history.undo() if back else history.redo()
+            for index in undone:
+                undone_gap(session_id, index, why)
             info = session_info(store, session_id)
             return UndoResult(**info.model_dump(), moved=moved,
                               current_state=history.current_index,
@@ -221,30 +241,47 @@ def register_session_tools(server: MCPServer, store: SessionStore) -> None:
         text: Annotated[str, Field(min_length=1, description=(
             "The note: what you did or decided outside the tools (e.g. 'z_em "
             "= 2.345 from the peak of Ly-a, measured on the flux with my own "
-            "code'), or what you saw in the session."))],
+            "code'), or what you saw in the session. For a gap, what you "
+            "needed and what you did instead."))],
+        kind: Annotated[Literal["note", "gap"], Field(description=(
+            "'note' (default), or 'gap' when you work outside the tools "
+            "because no recipe does what the analysis needs."))] = "note",
     ) -> NoteResult:
         """Write a note in the log of a session, at its current state: for
         what you did or decided outside the tools, so that the person who
         reviews the session can read it. It makes no new state and is
         skipped when the log is replayed; it is undone with its state, and
         saved with the session by session_save. To say why you run a
-        recipe, give its tool a 'reason' instead."""
+        recipe, give its tool a 'reason' instead.
+
+        Declare a gap (kind='gap') every time you do outside the tools
+        something that a recipe should do: what the analysis needed, and
+        what you did instead (e.g. 'Needed z_em: no recipe estimates it.
+        Measured the peak of Ly-a on the flux with my own code: 2.345').
+        Gaps are collected, with the failures and the recipes undone, to
+        decide which recipes to add; they are kept in a local file of the
+        user and never sent anywhere. gaps_summary lists them."""
         with store.lock:
             history = store.get(session_id)
             try:
-                note = store.note(session_id, text)
+                note = store.note(session_id, text, kind)
             except ValueError as e:
                 raise ToolError(str(e)) from e
             return NoteResult(session_id=session_id, state=history.current_index,
                               note=note_info(note), unsaved=store.unsaved(session_id))
 
     @server.tool()
-    def session_undo(session_id: SESSION_ID, steps: STEPS = 1) -> UndoResult:
+    def session_undo(
+        session_id: SESSION_ID, steps: STEPS = 1,
+        reason: Annotated[Optional[str], Field(description=(
+            "Why you undo it (e.g. 'it removed the CIV system I need'), in a "
+            "sentence: recorded with the gap that an undone recipe is."))] = None,
+    ) -> UndoResult:
         """Go back to the state before the last recipe (or the last
         ``steps``): its components, columns and log are those of that state.
         The states undone are kept until another recipe runs, and
         session_redo goes forward again."""
-        return move(session_id, steps, back=True)
+        return move(session_id, steps, back=True, why=reason)
 
     @server.tool()
     def session_redo(session_id: SESSION_ID, steps: STEPS = 1) -> UndoResult:
@@ -276,3 +313,29 @@ def register_session_tools(server: MCPServer, store: SessionStore) -> None:
             store.close(session_id)
             return CloseResult(session_id=session_id, closed=True,
                                open_sessions=store.ids)
+
+    @server.tool()
+    def gaps_summary(
+        since: Annotated[Optional[str], Field(description=(
+            "Only the gaps from this date on, YYYY-MM-DD."))] = None,
+        kind: Annotated[Optional[Literal["declared", "prerequisite", "failed", "undone"]],
+                        Field(description="Only this kind.")] = None,
+        max_groups: Annotated[int, Field(ge=1, description=(
+            "Maximum number of groups listed, the most frequent."))] = 50,
+    ) -> GapsSummary:
+        """Summarize the gaps of the collection of recipes recorded in the
+        local file of the user, grouped: what analyses needed and no recipe
+        provided (declared by agents, prerequisites that no recipe
+        estimates, tools that failed on a valid request, recipes undone).
+        The texts of the declared ones are free: join the similar groups
+        yourself."""
+        path = gaps.gaps_path()
+        if path is None:
+            return GapsSummary(enabled=False, groups=[], n_groups=0, skipped_lines=0)
+        records, skipped = gaps.read_gaps(path)
+        try:
+            groups = gaps.summarize(records, since=since, kind=kind)
+        except ValueError as e:
+            raise ToolError(str(e)) from e
+        return GapsSummary(enabled=True, groups=[GapGroup(**g) for g in groups[:max_groups]],
+                           n_groups=len(groups), skipped_lines=skipped)

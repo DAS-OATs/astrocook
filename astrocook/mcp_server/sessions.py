@@ -21,12 +21,13 @@ changes not saved is not closed without being asked.
 """
 import threading
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Optional
 
 from mcp.server.mcpserver.exceptions import ToolError
 
+from astrocook import gaps
 from astrocook.core.session import SessionV2
 from astrocook.core.session_manager import SessionHistory
 from astrocook.core.structures import HistoryLogV2
@@ -66,6 +67,11 @@ class SessionMeta:
     #: The log as last saved or opened (``HistoryLogV2.to_dict``): a note
     #: changes the log, not the state (phase 6-ter, PR 5a)
     saved_log: Optional[dict] = None
+    #: The indices of the log entries of the steps provided before a
+    #: recipe (a continuum made for it), not run by the agent (PR 5b)
+    provided: set = field(default_factory=set)
+    #: The gaps seen by the server in this session, recorded once each
+    seen_gaps: set = field(default_factory=set)
 
 
 class SessionStore:
@@ -175,17 +181,59 @@ class SessionStore:
         log = self.get(session_id).log_manager
         return log.notes_at(self.meta[session_id].first_entry + state_index)
 
-    def note(self, session_id: str, text: str):
-        """Add a note at the current state of a session (no new state)."""
-        return self.get(session_id).log_manager.add_note(text)
+    def note(self, session_id: str, text: str, kind: str = "note"):
+        """Add a note at the current state of a session (no new state). A
+        gap (``kind="gap"``, declared by the agent) is also recorded in the
+        file of the gaps of the user."""
+        note = self.get(session_id).log_manager.add_note(text, kind)
+        if kind == "gap":
+            gaps.record_gap("declared", note.text, session_id)
+        return note
+
+    def record_gap(self, session_id: str, kind: str, text: str,
+                   once: bool = False) -> None:
+        """Record a gap seen by the server (``kind`` of :data:`astrocook.gaps.KINDS`):
+        a note of the session log, kept with the session, and a line of the
+        file of the gaps. With ``once``, a gap of the same kind and text is
+        recorded once per session. The note does not make the session
+        unsaved: nothing the agent did is lost if it is closed."""
+        meta = self.meta[session_id]
+        if once:
+            if (kind, text) in meta.seen_gaps:
+                return
+            meta.seen_gaps.add((kind, text))
+        was_unsaved = self.unsaved(session_id)
+        self.get(session_id).log_manager.add_note(text, "gap_seen")
+        if not was_unsaved:
+            meta.saved_log = self.get(session_id).log_manager.to_dict()
+        gaps.record_gap(kind, text, session_id)
+
+    def was_provided(self, session_id: str, state_index: int) -> bool:
+        """Whether the state ``state_index`` is a step provided before a
+        recipe, not run by the agent."""
+        return (self.meta[session_id].first_entry + state_index - 1
+                in self.meta[session_id].provided)
+
+    def _prune_provided(self, session_id: str) -> None:
+        """Forget the provided steps whose entries a new entry drops (those
+        after the current one)."""
+        meta, log = self.meta[session_id], self.get(session_id).log_manager
+        meta.provided = {i for i in meta.provided if i <= log.current_index}
 
     def _add_provided(self, history: SessionHistory, provided) -> None:
         """The recipes run first to provide what the session lacked
         (:class:`~astrocook.recipes.prerequisites.ProvidedStep`), each with
         its state and log entry, as in the GUI (phase 6-bis, PR 8): the
         replay of the log runs them."""
+        meta = self.meta.get(history.display_name)
         for step in provided:
-            history.log_manager.add_entry(step.recipe.split('.')[1], dict(step.params))
+            log = history.log_manager
+            if meta is not None:
+                # Entries after the current one are dropped by the new one
+                meta.provided = {i for i in meta.provided if i <= log.current_index}
+            log.add_entry(step.recipe.split('.')[1], dict(step.params))
+            if meta is not None:
+                meta.provided.add(log.current_index)
             step.session.log_manager = history.log_manager
             history.add_state(step.session)
 
@@ -195,6 +243,7 @@ class SessionStore:
         its result the current state."""
         history = self.get(session_id)
         self._add_provided(history, provided)
+        self._prune_provided(session_id)
         # The values the recipe used, defaults included (#573, item 3)
         history.log_manager.add_entry(recipe_name, resolve_params(recipe_name, params),
                                       reason=reason)
@@ -233,6 +282,7 @@ class SessionStore:
         """
         parent = self.get(session_id)
         self._add_provided(parent, provided)
+        self._prune_provided(session_id)
         entry = resolve_params(recipe_name, params)
         ids = []
         for new_state in new_states:
@@ -245,7 +295,8 @@ class SessionStore:
             self._histories[new_id] = history
             self.meta[new_id] = SessionMeta(
                 parent=session_id, origin="branched", made_by=recipe_name,
-                first_entry=self.meta[session_id].first_entry)
+                first_entry=self.meta[session_id].first_entry,
+                provided=set(self.meta[session_id].provided))
             ids.append(new_id)
         return ids
 
@@ -255,7 +306,8 @@ class SessionStore:
         new_id = self._child_id(session_id)
         self._histories[new_id] = self._copy(session_id, new_id)
         self.meta[new_id] = SessionMeta(parent=session_id, origin="duplicated",
-                                        first_entry=self.meta[session_id].first_entry)
+                                        first_entry=self.meta[session_id].first_entry,
+                                        provided=set(self.meta[session_id].provided))
         return new_id
 
     def close(self, session_id: str) -> None:

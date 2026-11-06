@@ -341,8 +341,11 @@ class LogEntryV2:
     reason: Optional[str] = None
 
 
-#: The kinds of the notes of a log that :meth:`HistoryLogV2.add_note` takes
-NOTE_KINDS = ("note",)
+#: The kinds of the notes of a log that :meth:`HistoryLogV2.add_note` takes:
+#: ``note`` (what was done or decided outside the recipes), ``gap`` (what the
+#: analysis needed and no recipe provided, declared by the agent) and
+#: ``gap_seen`` (a gap seen by the MCP server); phase 6-ter, PR 5b
+NOTE_KINDS = ("note", "gap", "gap_seen")
 
 
 @dataclass

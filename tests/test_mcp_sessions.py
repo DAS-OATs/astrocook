@@ -310,12 +310,14 @@ def test_a_note_is_undone_with_its_state(mock_archive):
         ("session_history", {"session_id": "mock"}))
     # The note does not drop the redo; the states keep their notes
     assert ok(results[5])["moved"] == ["smooth"]
-    assert [[n["text"] for n in s["notes"]] for s in ok(results[6])["states"]] == [
+    # (the undo is a gap seen by the server, PR 5b: not a note of the agent)
+    assert [[n["text"] for n in s["notes"] if n["kind"] == "note"]
+            for s in ok(results[6])["states"]] == [
         [], ["Before smoothing."], ["On the smoothed flux."]]
     # A new recipe after an undo drops the state undone, and its notes
     states = ok(results[9])["states"]
     assert [s["params"].get("sigma_kms") for s in states] == [None, None, 20.0]
-    assert [[n["text"] for n in s["notes"]] for s in states] == [
+    assert [[n["text"] for n in s["notes"] if n["kind"] == "note"] for s in states] == [
         [], ["Before smoothing."], []]
 
 

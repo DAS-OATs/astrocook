@@ -87,6 +87,8 @@ mcp = ["mcp>=2.3,<3"]
 astrocook = "astrocook._run_astrocook:main"
 # MCP server for agents, over stdio (needs the [mcp] extra)
 astrocook-mcp = "astrocook.mcp_server.server:main"
+# Summary of the gaps of the collection of recipes recorded in a local file
+astrocook-gaps = "astrocook.gaps:main"
 
 [project.urls]
 Homepage = "https://github.com/DAS-OATs/astrocook"
