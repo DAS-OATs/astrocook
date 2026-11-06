@@ -884,6 +884,47 @@ record):
     recorded as a recipe undone (`edit_set_properties`); left as it is.
     Numbers unchanged: no recipe, fitting or numerical code touched, so no
     slow tests.
+  - PR 5c (decision 5: the natural-language log), plan and draft agreed with
+    Guido (the draft on a real session of J0103-1305 through the server:
+    continuum, doublets, refit; tone, the reason first as written, the
+    median and largest changes, the menus in parentheses):
+    `astrocook/methods_text.py` (package level, as `gaps.py` and
+    `plotting.py`: it reads the registry and the comparison of the recipes,
+    which `core/` should not, see `SessionV2` out of `core/` below):
+    `methods_text(history, menus=True)` returns `MethodsText` (paragraphs,
+    references, `.text`): an opening paragraph (the spectrum, the version,
+    the number of steps), one per recipe (the reason as written; what the
+    recipe did; the parameters it does not quote that differ from their
+    defaults; what it changed, from `compare_sessions` between its state and
+    the one before: components added and removed by series with their range
+    of z, the changed ones one by one up to three, else the median and
+    largest changes of log N, b and velocity, the columns by name, the
+    pixels; the flags of the fit on those components; the notes and declared
+    gaps written there, as written; not the gaps seen by the server), and a
+    closing one (the fit, if a recipe that cites SciPy ran and components
+    are left; the sources of the atomic data of the transitions of the
+    components that fall in the spectrum, from the `*_ref` columns of the
+    table), then the references, sorted. The text of each recipe is in the
+    registry (new keys `methods`, a template of the parameters or a function
+    of them, and `references`, keys of `REFERENCES`), written for all 48; a
+    test requires it of every recipe (a new recipe too); a recipe without it,
+    or unknown (a log of a later version), gets a generic sentence. Nothing
+    names a recipe in the module. The text is made on demand, never stored:
+    a better wording reaches the old sessions. The states map to the entries
+    by the two current indices (the GUI and the server copy the states of a
+    branch); the entries before the first state (an archive opened) are
+    described by their parameters only, and the text says so. References
+    (Guido): Astrocook as Cupani et al. 2020; its algorithms (continuum,
+    identification, AIC) as Cupani et al. 2026 (Proc. SPIE,
+    doi:10.1117/12.3101756; volume and number to add), or the papers after
+    phase 7; SciPy for the fit, emcee and dynesty for the Bayesian fit; no
+    Astropy or NumPy. The tool `session_methods(session_id, menus)` (a thin
+    wrapper, changes nothing; the instructions of the server mention it) and
+    *File > Export Log as Text...* (a dialog: the text read only, *Name the
+    menus of the recipes*, *Copy*, *Save...*). Found: F107 (the labels of
+    the menus are not the `brief` of the registry), F108. Numbers unchanged:
+    no recipe, fitting or numerical code touched (new keys in the schemas,
+    and their text functions), so no slow tests.
   Found along the way: the startup hook of the cloud sessions created
   `.venv` without installing the package once (November 2026, at the
   start of this phase); installing again by hand worked. To watch: if
@@ -1119,6 +1160,8 @@ Exception: anything that loses user data or crashes is reported at once.
 | F93 | `identify_lines` (identifications) | The identification is by doublets only: two absorbed regions are a candidate when they overlap once one is shifted by the separation of the doublet in velocity (the ratio of the wavelengths), and the pair is accepted when the R^2 of F_1 = F_2^gamma (gamma from f and lambda of the two lines) is above 0.5 (metals only redward of Ly_a). Three things found while rebuilding the Identifications window: (1) the pairs are not stored: each region keeps only its candidates ([transition, score]), and the window finds the pairs again from the overlap of the redshift ranges and the shared score; (2) the multiplets with more than two lines (FeII, SiII, NI, ...) are never searched, only those with exactly two members; (3) the regions of the forest that no doublet identified are labelled Ly_a with score 0, an assignment and not an identification (lya_auto calls the recipe with "Ly_a" alone, not a doublet, so all its regions are so labelled). Found in phase 5-bis | behaviour | `test_identification_viewer.py` (the window) | to be discussed in phase 7 (identification, Guido's algorithmic choices): store the pairs with their redshift and score; the window shows the doublets as the recipe finds them and the assumed Ly_a as such |
 | F101 | script console (`gui/scripting.py`) | `AppController.run_recipe`, the `app.run_recipe(...)` of the scripts of the console, calls `MainWindowV2._on_recipe_requested` with a keyword `session_override` that the method does not take: every call fails with a TypeError. Found in phase 6-bis (PR 3a) while adapting the callers of the recipes | bug | — | open: with the decision on the console (kept in the code, phase 5-bis, Guido) |
 | F102 | `lya_auto`, `forest_auto` (cleanup of the narrow lines) | After removing the lines narrower than `min_b`, `_remove_narrow` calls `refit_all` without `region_limit`: every group of the session is refitted, also the components outside the forest (e.g. a CIV doublet on the red side fitted before), whose values change slightly. Found in phase 6-bis (PR 4b) while recording the reasons of the removals. `forest_auto` is not limited to a region at all: it identifies on the whole spectrum and its first refit, before the cleanup, also refits every component of the session | behaviour, numerical | `test_lya_auto_does_not_refit_the_red_side` | `lya_auto` fixed in phase 6-bis (PR 4c, Guido's decision): the refits of the cleanup limited to `lya_forest`, as the pipeline; documented in the tutorial (*Refit All* fits everything again). The mock benchmark does not run `lya_auto`: a targeted test replaces it. `forest_auto`: open, Guido's decision (limiting it means choosing its region, e.g. `all_ly_forest`, for the identification and both refits) |
+| F107 | GUI menus and the registry | The labels of the menus of the GUI are written in `gui/main_menus.py` and differ from the `brief` of the recipes in the registry, which the dialogs show as their title (*Auto-detect Doublets...* opens *Auto-fit metal doublets (Red Side)*; *Set Properties...*, *Set session properties*). The methods text (PR 5c) names a recipe by its menu and `brief`, so the name it gives may differ from the label of the menu. Found in phase 6-ter (PR 5c) | cosmetic | — | open: Guido's decision (menus from the registry, or a `menu` key in it; phase 6-quater?) |
+| F108 | `session_open` (MCP), `set_properties` | `session_open` with `z_em` or `resol` runs `set_properties`, which also writes the OBJECT of the spectrum as `''` when it had none: the result lists "object None → ''", a change that is none. Found in phase 6-ter (PR 5c) on the J0103-1305 session of the draft | cosmetic | — | open |
 
 Closed findings (fixed or accepted: all the others, F1 to F106) are in `ROADMAP_HISTORY.md`, "3.2 Findings register", one row each, to be found by number (`grep "^| F52 "`).
 
@@ -1325,6 +1368,6 @@ One line per concluded phase; the long rows are in `ROADMAP_HISTORY.md`, "7. Pro
 | 5-bis – GUI look and ergonomics | done (November 2026), PRs #664-#688; release 2.3.0 with phase 5 |
 | 6 – Error handling | done (November 2026), PRs #691-#701; release 2.4.0 |
 | 6-bis – Recipe API | done (November 2026), PRs #705-#723; release 2.5.0 |
-| 6-ter – Full MCP server | started (November 2026): plan of the phase agreed (PR 0, #726); the tools generated from the registry, F106 found (PR 1, #729); F106 fixed (PR 1-bis, #730); the tools of the sessions, undo and redo (PR 2, #731); the tools of inspection (PR 3, #732); progress notifications (PR 4, #733); the agent's decisions in the log (PR 5a); the gaps of the recipes (PR 5b) |
+| 6-ter – Full MCP server | started (November 2026): plan of the phase agreed (PR 0, #726); the tools generated from the registry, F106 found (PR 1, #729); F106 fixed (PR 1-bis, #730); the tools of the sessions, undo and redo (PR 2, #731); the tools of inspection (PR 3, #732); progress notifications (PR 4, #733); the agent's decisions in the log (PR 5a); the gaps of the recipes (PR 5b); the log as the text of a methods section (PR 5c) |
 | 6-quater – Review of the recipe parameters | not started |
 | 7 – Robust components | not started |

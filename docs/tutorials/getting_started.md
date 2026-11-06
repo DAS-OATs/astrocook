@@ -183,6 +183,9 @@ This dialog allows you to:
 * **Run All:** Re-run the entire analysis pipeline from the original raw data.
 * **Save Script:** Export your workflow as a Python-compatible JSON script for reproducibility.
 
+To describe the analysis in a paper, use **File > Export Log as Text...**
+(see "Export Log as Text" below).
+
 ### View Menu Tools
 
 The **View** menu also provides access to specialized analysis windows:
@@ -215,6 +218,25 @@ A dialog will appear allowing you to select exactly what to export:
 * **System List (systems)**: Saves your identified absorption lines (including Redshift, Column Density, Doppler Parameter, etc.) into a `_systems.csv` file.
 
 You can choose to export entire structures or pick individual columns. The suggested filename will automatically adjust based on your selection, and Astrocook will warn you if you are about to overwrite existing files.
+
+### Export Log as Text
+**File > Export Log as Text...** writes the session log as the text of a
+methods section, in English, ready to paste in a paper: a first paragraph on
+the spectrum and the version of Astrocook, then one paragraph per recipe
+(the reason given for it, if any, e.g. by an AI agent; what it did, with its
+parameters and the works it relies on; what it changed, e.g. the components
+added and the largest changes of a refit; the notes written at that point),
+then the Voigt fit and the sources of the atomic data of the transitions
+fitted (see [Atomic Data](../atomic_data.md)), and the references. The
+recipes undone are left out. Each recipe is followed by its menu in
+parentheses, to rerun it in the GUI; uncheck **Name the menus of the
+recipes** for a paper. **Copy** puts the text in the clipboard, **Save...**
+writes it to a text file. The text is a draft to edit: it says what was
+done, not why it is right.
+
+For a session just opened from an archive, the log says which recipes were
+run and with which parameters, but not what each one changed: the text says
+so for those steps.
 
 ### Import from ASCII
 If you have manipulated your exported `_spec.csv` data externally, you can bring it back into Astrocook by going to **File > Import from ASCII...**.
