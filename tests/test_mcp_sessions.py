@@ -85,6 +85,28 @@ def test_the_log_of_an_archive_comes_before_the_history(mock_archive, tmp_path):
     assert not ok(described)["unsaved"]
 
 
+def test_the_states_after_an_archive_log(mock_archive, tmp_path):
+    # Each state made in the server is matched with its own entry, after
+    # those the archive brought (SessionStore.entry_of, first_entry)
+    saved = tmp_path / "with_log.acs2"
+    calls(build_server(), open_mock(mock_archive),
+          ("continuum_estimate_auto", {"session_id": "mock", "kappa": 3}),
+          ("session_save", {"session_id": "mock", "path": str(saved)}))
+    _, _, _, history, undone, described = calls(
+        build_server(), ("session_open", {"path": str(saved)}),
+        ("flux_smooth", {"session_id": "with_log", "sigma_kms": 40}),
+        ("flux_smooth", {"session_id": "with_log", "sigma_kms": 30}),
+        ("session_history", {"session_id": "with_log"}),
+        ("session_undo", {"session_id": "with_log"}),
+        ("session_describe", {"session_id": "with_log"}))
+    states = ok(history)["states"]
+    assert [s["recipe"] for s in states] == [None, "smooth", "smooth"]
+    assert [s["params"].get("sigma_kms") for s in states] == [None, 40.0, 30.0]
+    assert ok(undone)["moved"] == ["smooth"] and ok(undone)["log_entries"] == 3
+    assert [e["recipe"] for e in ok(described)["log_before"]] == [
+        "set_properties", "estimate_auto"]
+
+
 def test_history_undo_redo(mock_archive):
     _, _, history, undone, described, redone, again = calls(
         build_server(), open_mock(mock_archive),
