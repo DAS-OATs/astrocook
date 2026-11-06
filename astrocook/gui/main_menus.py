@@ -173,6 +173,14 @@ class MainMenusMixin:
         self.export_action = export_action
         self.export_action.setEnabled(False) # Default disabled
 
+        # The log as the text of a methods section (phase 6-ter, PR 5c)
+        methods_action = QAction("Export &Log as Text...", self)
+        methods_action.setToolTip("The session log as the text of a methods section, "
+                                  "to copy or save.")
+        methods_action.triggered.connect(self._on_export_log_text)
+        self.export_log_text_action = methods_action
+        self.export_log_text_action.setEnabled(False)
+
         import_action = QAction("&Import from ASCII...", self)
         import_action.triggered.connect(self._on_import_requested)
         # Insert it after Save
@@ -510,7 +518,7 @@ class MainMenusMixin:
         for group in ((open_action, self.recent_menu.menuAction()), (save_action,),
                       (import_action, self.import_systems_ascii_action,
                        self.import_systems_action),
-                      (export_action,), (close_action,)):
+                      (export_action, methods_action), (close_action,)):
             if file_menu.actions():
                 file_menu.addSeparator()
             for action in group:
@@ -626,6 +634,17 @@ class MainMenusMixin:
             return
         # No QFileDialog here anymore! Just the dialog.
         self._launch_recipe_dialog("file", "export_ascii")
+
+    def _on_export_log_text(self):
+        """File > Export Log as Text: the log of the active session as the
+        text of a methods section, in a dialog to copy or save it."""
+        if not self.active_history:
+            return
+        from astrocook.gui.methods_text_dialog import MethodsTextDialog
+        dialog = MethodsTextDialog(self.active_history, self)
+        self.methods_text_dialog = dialog
+        dialog.show()
+        dialog.raise_()
 
     def _on_import_requested(self):
         if not self.active_history: return

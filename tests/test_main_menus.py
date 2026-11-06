@@ -22,7 +22,8 @@ MENUS = {
     # In groups (phase 5-bis, Guido): open, save, import, export, close
     "File": ["Open Session...", "Open Recent", SEP, "Save Session...", SEP,
              "Import from ASCII...", "Import Systems from ASCII...",
-             "Import Systems from Session...", SEP, "Export to ASCII...", SEP,
+             "Import Systems from Session...", SEP, "Export to ASCII...",
+             "Export Log as Text...", SEP,
              "Close Session"],
     "View": ["Show Session Panel", "Show Plot Controls", "Show Toolbar", "Appearance", "Plot Colours", SEP,
              "View System Inspector", SEP,
@@ -273,3 +274,30 @@ def test_placeholder_dialogs_are_gone(empty):
     for name in ("_launch_x_convert_dialog", "_launch_y_convert_dialog",
                  "_launch_rebin_dialog"):
         assert not hasattr(empty, name)
+
+
+def test_export_log_as_text(window, qtbot, monkeypatch, tmp_path):
+    """File > Export Log as Text (phase 6-ter, PR 5c): the log of the active
+    session as the text of a methods section, from the package."""
+    from PySide6.QtWidgets import QApplication
+    from astrocook.methods_text import methods_text
+    _actions(window)["Export Log as Text..."].trigger()
+    dialog = window.methods_text_dialog
+    qtbot.addWidget(dialog)
+    assert dialog.isVisible()
+    assert dialog.text == methods_text(window.active_history).text
+    assert dialog.text.startswith("The spectrum of ")
+    dialog.menus_box.setChecked(False)
+    assert dialog.text == methods_text(window.active_history, menus=False).text
+    dialog.copy()
+    assert QApplication.clipboard().text() == dialog.text
+    path = dialog.save(str(tmp_path / "methods.txt"))
+    assert (tmp_path / "methods.txt").read_text(encoding="utf-8") == dialog.text + "\n"
+    assert path == str(tmp_path / "methods.txt")
+    # Save... asks for the file; cancelled, nothing
+    module = sys.modules[type(dialog).__module__]
+    asked = []
+    monkeypatch.setattr(module.QFileDialog, "getSaveFileName",
+                        staticmethod(lambda *a, **k: asked.append(a[2]) or ("", "")))
+    assert dialog.save() is None
+    assert asked[0].endswith("_methods.txt")

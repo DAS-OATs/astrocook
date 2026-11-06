@@ -20,10 +20,12 @@ from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import Field
 
 from astrocook import gaps
+from astrocook.methods_text import methods_text
 from astrocook.core.session import SessionV2
 from astrocook.mcp_server.errors import run_recipe
 from astrocook.mcp_server.outputs import (
-    CloseResult, ColumnInfo, GapGroup, GapsSummary, HistoryInfo, LogEntryInfo, NoteResult, SaveResult,
+    CloseResult, ColumnInfo, GapGroup, GapsSummary, HistoryInfo, LogEntryInfo, MethodsResult,
+    NoteResult, SaveResult,
     SessionDescription, SessionInfo, SessionList, SessionListItem, StateInfo,
     UndoResult, _jsonable, note_info, spectrum_summary)
 from astrocook.mcp_server.sessions import SessionStore
@@ -269,6 +271,27 @@ def register_session_tools(server: MCPServer, store: SessionStore) -> None:
                 raise ToolError(str(e)) from e
             return NoteResult(session_id=session_id, state=history.current_index,
                               note=note_info(note), unsaved=store.unsaved(session_id))
+
+    @server.tool()
+    def session_methods(
+        session_id: SESSION_ID,
+        menus: Annotated[bool, Field(description=(
+            "Name the menu of the GUI of each recipe, in parentheses (for who "
+            "reruns the analysis in the GUI; false for a paper)."))] = True,
+    ) -> MethodsResult:
+        """Write the log of a session as the text of a methods section, in
+        English, ready to paste in a paper: one paragraph per recipe, with
+        the reason you gave it, what it did (with its parameters and the
+        works it relies on), what it changed and the notes you wrote; then
+        the fit and the atomic data, and the references. The recipes undone
+        are left out. It changes nothing in the session. Give it to the user
+        as it is; do not rewrite the numbers."""
+        with store.lock:
+            history = store.get(session_id)
+            out = methods_text(history, menus=menus)
+            return MethodsResult(session_id=session_id, text=out.text,
+                                 paragraphs=[p.text for p in out.paragraphs],
+                                 references=list(out.references))
 
     @server.tool()
     def session_undo(
