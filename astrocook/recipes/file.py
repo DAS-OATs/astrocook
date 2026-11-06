@@ -15,8 +15,16 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+# --- The text of the methods (phase 6-ter, PR 5c: astrocook.methods_text) ---
+from astrocook.methods_text import file_name
+def _methods_import_ascii(p):
+    return (f"Columns were read from the table {file_name(p, 'file_path')} and added "
+            f"to the spectrum{p.menu}")
+
+
 FILE_RECIPES_SCHEMAS = {
     "export_ascii": {
+        "methods": "The data ({targets}) were exported as CSV files{menu}",
         "brief": "Export session data to ASCII.",
         "details": "Writes the chosen data as CSV files in a folder: the columns of the spectrum to <prefix>_spec.csv (always with the wavelength), the system list to <prefix>_systems.csv.",
         "params": [
@@ -31,6 +39,7 @@ FILE_RECIPES_SCHEMAS = {
         "url": "file_cb.html#export"
     },
     "import_ascii": {
+        "methods": _methods_import_ascii,
         "brief": "Import session data from ASCII.",
         "details": "Reads columns from an ASCII/CSV table with a header and adds them to the spectrum, replacing those with the same name; the table must have one row per pixel of the spectrum.",
         "params": [

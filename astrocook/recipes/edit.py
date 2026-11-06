@@ -17,8 +17,132 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+# --- The text of the methods (phase 6-ter, PR 5c: astrocook.methods_text) ---
+from astrocook.methods_text import file_name, fmt, region_words
+def _methods_set_properties(p):
+    parts = []
+    if p.given('name'):
+        parts.append(f"the name of the session to {p['name']}")
+    if p.given('object'):
+        parts.append(f"the name of the object to {p['object']}")
+    if p.given('z_em'):
+        parts.append(f"the emission redshift to z_em = {p['z_em']}")
+    if p.given('resol'):
+        resol = str(p.raw('resol')).strip()
+        if resol.endswith('px'):
+            parts.append(f"the resolution to a line spread function of FWHM {resol[:-2]} pixels")
+        else:
+            try:
+                resol = fmt(float(resol))
+            except ValueError:
+                pass
+            parts.append(f"the resolving power to R = {resol}")
+    p.raw('overwrite_resol_col')
+    if not parts:
+        return f"The properties of the session were left as they were{p.menu}"
+    first = parts[0].removeprefix("the ").replace(" to ", " was set to ", 1)
+    text = "The " + _join_and([first] + parts[1:])
+    return text + p.menu
+
+
+def _join_and(items):
+    return items[0] if len(items) == 1 else ", ".join(items[:-1]) + " and " + items[-1]
+
+
+def _methods_x_convert(p):
+    unit = p['xunit']
+    try:
+        velocity = au.Unit(unit).physical_type == 'speed'
+    except ValueError:
+        velocity = False
+    if velocity:
+        z = f"z = {p['z_ref']}" if p.given('z_ref') else "z_em"
+        return f"The x axis was converted to velocity ({unit}) relative to {z}{p.menu}"
+    p.raw('z_ref')
+    return f"The x axis was converted to {unit}{p.menu}"
+
+
+def _methods_import_systems(p):
+    how = "added to those" if p.raw('append') else "put in place of those"
+    refit = ", and refitted on its spectrum" if p.raw('refit') else ""
+    return (f"The absorption systems of the session {p['source_session']} were "
+            f"copied and {how} of this session{refit}{p.menu}")
+
+
+def _methods_import_systems_ascii(p):
+    how = "added to those of the session" if p.raw('append') else "put in place of those of the session"
+    refit = ", and refitted" if p.raw('refit') else ""
+    return (f"Absorption components were read from the table "
+            f"{file_name(p, 'file_path')} and {how}{refit}{p.menu}")
+
+
+def _methods_delete(p):
+    items = [t.strip() for t in str(p.raw('targets') or '').split(',') if t.strip()]
+    parts = []
+    if 'systems' in items:
+        parts.append("all the components")
+    columns = [t for t in items if t != 'systems']
+    if columns:
+        parts.append(f"the column{'s' if len(columns) > 1 else ''} {', '.join(columns)}")
+    what = _join_and(parts) if parts else "nothing"
+    return f"{what[:1].upper()}{what[1:]} {'was' if what == 'nothing' else 'were'} deleted{p.menu}"
+
+
+def _methods_extract_preset(p):
+    regions = [r.strip() for r in str(p.raw('region')).split(',') if r.strip()]
+    words = [region_words(r, before="") for r in regions]
+    each = "each into a new session" if len(regions) > 1 else "into a new session"
+    return f"The part of the spectrum {_join_and(words)} was copied {each}{p.menu}"
+
+
+def _methods_trim_common(p):
+    z = f"z = {p['z_target']}" if p.given('z_target') else "z_em"
+    return (f"The spectrum was trimmed to the velocity range of +-{p['window_kms']} km/s "
+            f"around {z} that all the sessions cover ({p['trans_self']} in this "
+            f"session; {p['trans_others']} in {p['others_names']}){p.menu}")
+
+
+def _methods_equalize_and_stitch(p):
+    if p.given('manual_factors'):
+        scale = f"was multiplied by the factors {p['manual_factors']}"
+    elif p.given('equalize_ranges'):
+        scale = f"was scaled to match in the ranges {p['equalize_ranges']} nm"
+    else:
+        p.raw('equalize_ranges')
+        scale = "was scaled to match in their overlaps"
+    return (f"The flux of this session and of {p['other_sessions']} {scale}, and the "
+            f"sessions were joined at {p['stitch_wavelengths']} nm{p.menu}")
+
+
+def _grid(p):
+    text = f"a grid with a constant step of {p['dx']} {p['xunit']}"
+    if p.given('xstart') or p.given('xend'):
+        text += f", from {p['xstart'] if p.given('xstart') else 'the start of the data'}"
+        text += f" to {p['xend'] if p.given('xend') else 'the end of the data'} nm"
+    return text
+
+
+def _clipping(p):
+    return (f", with a {p['kappa']}-sigma clipping of outliers" if p.given('kappa')
+            else ", without clipping")
+
+
+def _methods_coadd(p):
+    order = p.raw('equalize_order')
+    if order is None or order < 0:
+        scale = ""
+    elif order == 0:
+        scale = ", each scaled to the first by a constant factor"
+    else:
+        scale = f", each scaled to the first by a polynomial of order {order}"
+    return (f"The sessions {p['session_names']} were co-added with this one on "
+            f"{_grid(p)}, weighting each pixel by its inverse variance"
+            f"{_clipping(p)}{scale}{p.menu}")
+
+
 EDIT_RECIPES_SCHEMAS = {
     "set_properties": {
+        "methods": _methods_set_properties,
         "brief": "Set session properties.",
         "provides": ("z_em", "resolution"),
         "details": "Sets the name of the session, the name of the object, the emission redshift and the resolution of the spectrum. A field left at '_current_' keeps its value.",
@@ -36,6 +160,7 @@ EDIT_RECIPES_SCHEMAS = {
         "url": "edit_cb.html#set_properties"
     },
     "x_convert": {
+        "methods": _methods_x_convert,
         "brief": "Convert X axis.",
         "details": "Converts the x axis to another unit of wavelength (e.g. nm, Angstrom) or to velocity (e.g. km/s) relative to a reference redshift.",
         "params": [
@@ -45,6 +170,7 @@ EDIT_RECIPES_SCHEMAS = {
         "url": "edit_cb.html#convert-x-axis"
     },
     "y_convert": {
+        "methods": "The flux and its error were converted to {yunit}{menu}",
         "brief": "Convert Y axis units.",
         "details": "Converts the flux, its error and the columns like the flux to another unit of flux density.",
         "params": [
@@ -53,6 +179,7 @@ EDIT_RECIPES_SCHEMAS = {
         "url": "edit_cb.html#convert-y-axis"
     },
     "apply_expression": {
+        "methods": "The column {target_col} was computed as {expression}{menu}",
         "brief": "Apply expression to columns.",
         "details": "Evaluates a NumPy expression of the columns and writes it in a column, new or existing. The columns are named as in the GUI (λ, F, dF, cont, model, ...); e.g. 'F / cont', 'F * 2.0', 'log10(F)'.",
         "params": [
@@ -62,6 +189,7 @@ EDIT_RECIPES_SCHEMAS = {
         "url": "edit_cb.html#apply_expression" # Placeholder URL
     },
     "mask_expression": {
+        "methods": "The column {target_col} was masked where {expression}{menu}",
         "brief": "Mask column by expression.",
         "details": "Sets a column to NaN where a boolean expression of the columns is true, e.g. '(λ < 300) | (λ > 400)' or 'dF <= 0'.",
         "params": [
@@ -71,6 +199,7 @@ EDIT_RECIPES_SCHEMAS = {
         "url": "edit_cb.html#mask_expression" # Placeholder URL
     },
     "smooth_column": {
+        "methods": "The column {target_col} was smoothed with a Gaussian kernel of standard deviation {sigma_kms} km/s{menu}",
         "brief": "Smooth a single column.",
         "details": "Smooths one column of the spectrum (e.g. 'dF' or 'cont') with a Gaussian kernel; the other columns are unchanged.",
         "params": [
@@ -81,6 +210,7 @@ EDIT_RECIPES_SCHEMAS = {
         "url": "edit_cb.html#smooth_column" # Placeholder URL
     },
     "import_systems": {
+        "methods": _methods_import_systems,
         "brief": "Import systems from session.",
         "details": "Copies the absorption systems (components and constraints) of another open session into this one.",
         "params": [
@@ -91,6 +221,7 @@ EDIT_RECIPES_SCHEMAS = {
         "url": "absorbers_cb.html#import_systems"
     },
     "import_systems_ascii": {
+        "methods": _methods_import_systems_ascii,
         "brief": "Import systems from an ASCII file.",
         "details": "Read absorption components from an ASCII/CSV table with a header (columns series, z and optionally logN, b, btur, dz, dlogN, db), e.g. the _systems.csv written by Export ASCII.",
         "params": [
@@ -101,6 +232,7 @@ EDIT_RECIPES_SCHEMAS = {
         "url": "absorbers_cb.html#import_systems_ascii"
     },
     "delete": {
+        "methods": _methods_delete,
         "brief": "Delete elements.",
         "details": "Removes columns from the spectrum, or all the components of the system list ('systems').",
         "params": [
@@ -109,6 +241,7 @@ EDIT_RECIPES_SCHEMAS = {
         "url": "edit_cb.html#delete"
     },
     "split": {
+        "methods": "The pixels where {expression} were copied into a new session{menu}",
         "brief": "Split spectrum by expression.",
         "branching": True,
         "details": "Copies the pixels where a boolean expression of the columns is true into a new session, e.g. '(λ > 400) & (λ < 500)'.",
@@ -118,6 +251,7 @@ EDIT_RECIPES_SCHEMAS = {
         "url": "edit_cb.html#split"
     },
     "extract_preset": {
+        "methods": _methods_extract_preset,
         "brief": "Extract region by preset.",
         "branching": True,
         "requires": ("z_em",),
@@ -129,6 +263,7 @@ EDIT_RECIPES_SCHEMAS = {
         "url": "edit_cb.html#extract_preset"
     },
     "trim_common": {
+        "methods": _methods_trim_common,
         "brief": "Trim to common velocity coverage.",
         "details": "Trims this session to the velocity range around a redshift that all the given sessions cover, each with its own transition (e.g. the arms of an instrument, or the lines of a doublet).",
         "params": [
@@ -141,6 +276,7 @@ EDIT_RECIPES_SCHEMAS = {
         "url": "edit_cb.html#trim_common"
     },
     "stitch": {
+        "methods": "This session and {other_sessions} were joined into one spectrum, without equalizing their flux{menu}",
         "brief": "Merge multiple sessions.",
         "details": "Joins this session and other sessions into one spectrum, without equalizing their flux (see Equalize and stitch arms); the step that Equalize and stitch arms ends with.",
         "branching": True,
@@ -151,6 +287,7 @@ EDIT_RECIPES_SCHEMAS = {
         "gui_hidden": True  # Usually called via script
     },
     "equalize_and_stitch": {
+        "methods": _methods_equalize_and_stitch,
         "brief": "Equalize and stitch arms.",
         "branching": True,
         "details": "Scales the flux of the sessions (the arms of an instrument) to match in their overlaps, then joins them into one spectrum, cutting at the given wavelengths.",
@@ -163,6 +300,7 @@ EDIT_RECIPES_SCHEMAS = {
         "url": "edit_cb.html#equalize-and-stitch"
     },
     "coadd": {
+        "methods": _methods_coadd,
         "brief": "Co-add multiple sessions.",
         "branching": True,
         "details": "Combines several sessions on one new grid with a constant step, weighting each pixel with its inverse variance, in one pass.",

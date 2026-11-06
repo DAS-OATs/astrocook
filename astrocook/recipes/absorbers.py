@@ -28,9 +28,191 @@ logger = logging.getLogger(__name__)
 # up to 0.5 dex). Decided with Guido.
 FIT_EXPANSION_DEPTH = 2
 
+# --- The text of the methods (phase 6-ter, PR 5c: astrocook.methods_text) ---
+from astrocook.methods_text import (fit_bounds, mask_words, region_words, series_list,
+                                    series_name)
+def _beyond(p):
+    return f"up to {p['z_em_margin_kms']} km/s beyond z_em"
+
+
+def _methods_components_auto(p):
+    return (f"The candidate systems of {series_list(p.raw('multiplets'))} were "
+            f"searched for{region_words(p.raw('region_limit'))}{p.menu}. The absorbed "
+            f"regions (merged within {p['merge_dv']} km/s, at least "
+            f"{p['min_pix_region']} pixels wide) were found on {mask_words(p)}, and "
+            f"each candidate was scored by the correlation of its lines (accepted for "
+            f"R^2 >= {p['score_threshold']}, {_beyond(p)}; Cupani et al. 2026). The "
+            f"accepted candidates were fitted with Voigt profiles, with {fit_bounds(p)}")
+
+
+def _methods_doublets_auto(p):
+    return (f"The doublets of {series_list(p.raw('multiplets'))} were searched "
+            f"for redward of the Lyman-alpha emission{p.menu}. The absorbed regions "
+            f"were found on {mask_words(p)}, and each candidate was scored by the "
+            f"correlation of its two lines (accepted for R^2 >= {p['score_threshold']}, "
+            f"{_beyond(p)}; Cupani et al. 2026). The accepted candidates were fitted "
+            f"with Voigt profiles, with {fit_bounds(p)}")
+
+
+def _methods_lya_auto(p):
+    return (f"Single Lyman-alpha lines were searched for in the forest, between "
+            f"Lyman-beta and Lyman-alpha{p.menu}. The absorbed regions were found on "
+            f"{mask_words(p)}, and the lines accepted for a score >= "
+            f"{p['score_threshold']} ({_beyond(p)}; Cupani et al. 2026) were fitted "
+            f"with Voigt profiles, with {fit_bounds(p)}. Lines narrower than "
+            f"b = {p['min_b']} km/s were removed as interlopers, and the others refitted")
+
+
+def _methods_forest_auto(p):
+    return (f"Lyman-alpha lines were searched for and fitted each as a Lyman series, "
+            f"from Lyman-alpha to the Lyman limit, so that the higher-order lines "
+            f"constrain the column density{p.menu}. The lines were accepted for a "
+            f"score >= {p['score_threshold']} ({_beyond(p)}; Cupani et al. 2026) and "
+            f"fitted with Voigt profiles, with {fit_bounds(p)}; systems narrower than "
+            f"b = {p['min_b']} km/s were removed")
+
+
+def _methods_metals_auto(p):
+    return (f"For each system, the ions {series_list(p.raw('ions'))} were tried "
+            f"at its redshift, and each was kept only if it decreased the Akaike "
+            f"information criterion by at least {p['aic_penalty']} (Cupani et al. "
+            f"2026){p.menu}; the systems were then refitted, with {fit_bounds(p)}")
+
+
+def _methods_identify_lines(p):
+    for name in ('bypass_scoring', 'debug_rating'):
+        p.raw(name)
+    return (f"The candidate systems of {series_list(p.raw('multiplets'))} were "
+            f"identified in the absorbed regions of the mask {p['mask_col']} (merged "
+            f"within {p['merge_dv']} km/s, at least {p['min_pix_region']} pixels wide), "
+            f"each scored by the correlation of its lines (accepted for R^2 >= "
+            f"{p['score_threshold']}, {_beyond(p)}; Cupani et al. 2026), and written "
+            f"in a new session{p.menu}")
+
+
+def _methods_add_component(p):
+    btur = f", b_tur = {p['btur']} km/s" if p.raw('btur') else ""
+    return (f"A {series_name(str(p.raw('series')))} component was added at "
+            f"z = {p['z']} (starting from log N = {p['logN']}, b = {p['b']} km/s"
+            f"{btur}) and fitted with its neighbours, with {fit_bounds(p)}{p.menu}")
+
+
+_SET_WORDS = (('z', "z = {}"), ('logN', "log N = {}"), ('b', "b = {} km/s"),
+              ('btur', "b_tur = {} km/s"), ('series', "the series {}"),
+              ('resol', "the resolving power R = {}"))
+
+
+def _set_parts(p):
+    parts = []
+    for name, words in _SET_WORDS:
+        if name in p and p.given(name):
+            value = (series_name(str(p.raw(name))) if name == 'series' else p[name])
+            parts.append(words.format(value))
+    return ", ".join(parts) or "nothing"
+
+
+def _methods_update_component(p):
+    p.raw('uuid')
+    return f"The parameters of a component were set by hand: {_set_parts(p)}{p.menu}"
+
+
+def _methods_update_components(p):
+    n = len(p.raw('uuids') or [])
+    return (f"The parameters of {n} component{'s' if n != 1 else ''} were set by "
+            f"hand: {_set_parts(p)}{p.menu}")
+
+
+def _methods_delete_component(p):
+    uuids = list(p.raw('uuids') or [])
+    if p.given('uuid'):
+        uuids.append(p.raw('uuid'))
+    n = len(set(uuids))
+    if n == 1:
+        return f"A component was deleted by hand{p.menu}"
+    return f"{n} components were deleted by hand{p.menu}"
+
+
+def _methods_fit_component(p):
+    p.raw('uuid')
+    return (f"A component was fitted with its neighbours (group depth "
+            f"{p['group_depth']}), with {fit_bounds(p)} and at most {p['max_nfev']} "
+            f"evaluations of the model{p.menu}")
+
+
+def _methods_update_constraint(p):
+    p.raw('uuid'), p.raw('target_uuid')
+    param = p['param'].replace('logN', 'log N').replace('btur', 'b_tur')
+    if p.given('expression'):
+        return (f"The parameter {param} of a component was linked to another "
+                f"component by the expression {p['expression']}{p.menu}")
+    state = "freed" if p.raw('is_free') else "frozen"
+    return f"The parameter {param} of a component was {state}{p.menu}"
+
+
+def _methods_update_constraints_column(p):
+    param = p['param'].replace('logN', 'log N').replace('btur', 'b_tur')
+    state = "freed" if p.raw('is_free') else "frozen"
+    return f"The parameter {param} of all the components was {state}{p.menu}"
+
+
+def _methods_add_linked_system(p):
+    return (f"Components of {series_list(p.raw('series_list'))} were added at "
+            f"z = {p['z']}, with their redshifts linked (starting from log N = "
+            f"{p['logN']}, b = {p['b']} km/s), and fitted, with {fit_bounds(p)}{p.menu}")
+
+
+def _methods_optimize_system(p):
+    p.raw('uuid')
+    return (f"Components were added to a system one at a time where the residuals "
+            f"exceeded {p['threshold_sigma']} sigma, at least {p['min_dv']} km/s from "
+            f"the others and within +-{p['z_window_kms']} km/s of the system, each kept "
+            f"only if it decreased the Akaike information criterion by at least "
+            f"{p['aic_penalty']} (at most {p['max_components']} components, stopping "
+            f"after {p['patience']} tries without an improvement; group depth "
+            f"{p['group_depth']}; Cupani et al. 2026){p.menu}")
+
+
+def _methods_fit_bayesian(p):
+    n = len(p.raw('uuids') or [])
+    group = f"a group of {n} component{'s' if n != 1 else ''}" if n else "a group of components"
+    if p.raw('engine') == 'nested':
+        p.raw('nsteps')
+        how = (f"nested sampling (dynesty; Speagle 2020), with {p['nlive']} live "
+               f"points")
+    else:
+        p.raw('nlive')
+        how = (f"MCMC (emcee; Foreman-Mackey et al. 2013), with {p['nsteps']} steps "
+               f"per walker")
+    return (f"The posterior of the parameters of {group} (group depth "
+            f"{p['group_depth']}) was sampled with {how}{p.menu}")
+
+
+def _methods_refit_all(p):
+    selected = p.raw('selected_uuids')
+    if selected:
+        which = (f"The {len(selected)} selected component{'s' if len(selected) != 1 else ''}"
+                 f" and their groups were refitted")
+    else:
+        which = "All the components were refitted"
+    region = region_words(p.raw('region_limit'), before=", ")
+    return (f"{which}{region} group by group{p.menu}. A group joins the components "
+            f"blended with each other, up to {p['group_depth']} steps away, with at "
+            f"most {p['max_group_size']} components and {p['max_nfev']} evaluations "
+            f"of the model. The fit allowed {fit_bounds(p)}")
+
+
+def _methods_clean_negligible(p):
+    broad = (f"b > {p['max_b']} km/s and log N < 13" if p.raw('combined_check')
+             else f"b > {p['max_b']} km/s")
+    return (f"The components with log N < {p['min_logN']}, b < {p['min_b']} km/s, or "
+            f"{broad} were removed as negligible or unphysical{p.menu}")
+
+
 ABSORBERS_RECIPES_SCHEMAS = {
     # --- 1. THE MASTER PIPELINE ---
     "components_auto": {
+        "methods": _methods_components_auto,
+        "references": ("C26", "SciPy"),
         "brief": "Auto-detect and fit components.",
         "requires": ("z_em", "resolution", "continuum"),
         "details": "Finds the absorbed regions, identifies the candidate systems of the given multiplets (Identify lines), adds them as components and fits them all (Refit all); the pipeline behind the other automatic recipes.",
@@ -52,6 +234,8 @@ ABSORBERS_RECIPES_SCHEMAS = {
     },
     # --- 2. WRAPPERS ---
     "doublets_auto": {
+        "methods": _methods_doublets_auto,
+        "references": ("C26", "SciPy"),
         "brief": "Auto-fit metal doublets (Red Side).",
         "requires": ("z_em", "resolution", "continuum"),
         "details": "Finds and fits metal doublets (CIV, SiIV, MgII by default) on the red side of the Lyman-alpha emission, where the forest does not confuse them; candidates are kept up to z_em_margin_kms beyond z_em.",
@@ -67,6 +251,8 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "url": "absorbers_cb.html#doublets_auto"
     },
     "lya_auto": {
+        "methods": _methods_lya_auto,
+        "references": ("C26", "SciPy"),
         "brief": "Auto-fit Ly-alpha forest.",
         "requires": ("z_em", "resolution", "continuum"),
         "details": "Finds and fits single Lyman-alpha lines in the forest (between Ly-beta and Ly-alpha); lines narrower than min_b (metal lines or noise) are removed and the rest refitted.",
@@ -82,6 +268,8 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "url": "absorbers_cb.html#lya_auto"
     },
     "forest_auto": {
+        "methods": _methods_forest_auto,
+        "references": ("C26", "SciPy"),
         "brief": "Auto-fit full Lyman series.",
         "requires": ("z_em", "resolution", "continuum"),
         "details": "Finds Lyman-alpha lines and fits each as a Lyman series (Ly-alpha to the Lyman limit), so that the higher-order lines constrain the column density; systems narrower than min_b are removed.",
@@ -96,6 +284,8 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "url": "absorbers_cb.html#forest_auto"
     },
     "metals_auto": {
+        "methods": _methods_metals_auto,
+        "references": ("C26", "SciPy"),
         "brief": "Check for associated metals.",
         "requires": ("z_em", "resolution", "continuum"),
         "details": "For each system already in the list, tries to add other metal ions at its redshift and keeps each only if it improves the fit by the AIC penalty; then refits all.",
@@ -109,6 +299,8 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "url": "absorbers_cb.html#metals_auto"
     },
     "identify_lines": {
+        "methods": _methods_identify_lines,
+        "references": ("C26",),
         "brief": "Identify likely absorption systems.",
         "requires": ("z_em", "resolution", "continuum"),
         "branching": True,
@@ -126,6 +318,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "url": "absorbers_cb.html#identify_lines"
     },
     "populate_from_identification": {
+        "methods": "Components were added at the candidate systems of the identification{menu}",
         "brief": "Populate components from identification.",
         "requires": ("continuum",),
         "details": "Populates the system list using the regions and candidates found by 'identify_lines'.",
@@ -138,6 +331,8 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "gui_hidden": True
     },
     "add_component": {
+        "methods": _methods_add_component,
+        "references": ("SciPy",),
         "brief": "Add a single component.",
         "requires": ("resolution", "continuum"),
         "details": "Adds a Voigt component of a transition or multiplet at a redshift and fits it with its neighbours.",
@@ -152,6 +347,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "url": "absorbers_cb.html#add_component" 
     },
     "update_component": {
+        "methods": _methods_update_component,
         "brief": "Update component.",
         "details": "Changes the parameters of a component; a parameter left at None keeps its value.",
         "params": [
@@ -167,6 +363,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "gui_hidden": True
     },
     "update_components": {
+        "methods": _methods_update_components,
         "brief": "Batch update components.",
         "details": "Sets the same parameters on several components; a parameter left at None keeps its value.",
         "params": [
@@ -179,6 +376,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
         ]
     },
     "delete_component": {
+        "methods": _methods_delete_component,
         "brief": "Delete component(s).",
         "details": "Deletes one or more components and recomputes the model.",
         "params": [
@@ -187,6 +385,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
         ]
     },
     "detect_anchor": {
+        "methods": "The redshift at which {trans_self} in this session and {trans_sibling} in the session {sibling_name} overlap best was found{menu}",
         "brief": "Detect doublet anchor redshift.",
         "details": "Finds the redshift at which a transition of this session and one of a sibling session (e.g. the two lines of a doublet, in two sessions) overlap best.",
         "params": [
@@ -197,6 +396,8 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "url": "absorbers_cb.html#detect_anchor"
     },
     "fit_component": {
+        "methods": _methods_fit_component,
+        "references": ("SciPy",),
         "brief": "Fit component.",
         "requires": ("resolution", "continuum"),
         "details": "Fits a component with its neighbours (the components blended with it) using the Voigt fitter.",
@@ -210,6 +411,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "gui_hidden": True
     },
     "update_constraint": {
+        "methods": _methods_update_constraint,
         "brief": "Update constraint.",
         "details": "Freezes or frees a parameter of a component, or links it to a parameter of another component with an expression.",
         "params": [
@@ -223,6 +425,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "gui_hidden": True
     },
     "update_constraints_column": {
+        "methods": _methods_update_constraints_column,
         "brief": "Bulk update constraints.",
         "details": "Freezes or frees a parameter of all the components.",
         "params": [
@@ -233,6 +436,8 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "gui_hidden": True
     },
     "add_linked_system": {
+        "methods": _methods_add_linked_system,
+        "references": ("SciPy",),
         "brief": "Add linked system.",
         "requires": ("resolution", "continuum"),
         "details": "Adds components of several series at the same redshift, with the redshifts linked, and fits them.",
@@ -247,6 +452,8 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "gui_hidden": True
     },
     "optimize_system": {
+        "methods": _methods_optimize_system,
+        "references": ("C26", "SciPy"),
         "brief": "Optimize system (Iterative Fit).",
         "requires": ("resolution", "continuum"),
         "details": "Adds components to a system one at a time where the residuals are significant, keeping each only if it improves the fit by the AIC penalty.",
@@ -263,6 +470,8 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "url": "absorbers_cb.html#optimize_system"
     },
     "fit_bayesian": {
+        "methods": _methods_fit_bayesian,
+        "references": ("emcee", "dynesty"),
         "brief": "Fit Bayesian.",
         "requires": ("resolution", "continuum"),
         "details": "Samples the posterior of the parameters of a group of components, with MCMC (emcee) or nested sampling (dynesty); needs the [bayes] extra.",
@@ -276,6 +485,8 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "gui_hidden": True
     },
     "refit_all": {
+        "methods": _methods_refit_all,
+        "references": ("SciPy",),
         "brief": "Refit all systems.",
         "requires": ("resolution", "continuum"),
         "details": "Fits all the components, group by group (the components blended with each other), each group on its own.",
@@ -292,6 +503,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "url": "absorbers_cb.html#refit_all"
     },
     "clean_negligible": {
+        "methods": _methods_clean_negligible,
         "brief": "Remove unphysical/negligible components.",
         "details": "Removes the components that are too weak, too narrow, or too broad (and weak) to be real absorbers.",
         "params": [

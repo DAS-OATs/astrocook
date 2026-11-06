@@ -12,8 +12,26 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+# --- The text of the methods (phase 6-ter, PR 5c: astrocook.methods_text) ---
+from astrocook.methods_text import fmt
+def _methods_rebin(p):
+    from astrocook.recipes.edit import _clipping, _grid
+    filling = "" if fmt(p.raw('filling')) == "nan" else f"; the pixels without data were set to {p['filling']}"
+    return (f"The spectrum was rebinned onto {_grid(p)}, each new pixel being the "
+            f"inverse-variance weighted mean of the old ones{_clipping(p)}{filling}{p.menu}")
+
+
+def _methods_equalize(p):
+    order = p.raw('order')
+    how = ("a constant factor" if order == 0 else "a spline" if order == -1
+           else f"a polynomial of order {order}")
+    return (f"The flux was scaled to match that of the session {p['reference_session']} "
+            f"where they overlap, by {how}{p.menu}")
+
+
 FLUX_RECIPES_SCHEMAS = {
     "calculate_running_std": {
+        "methods": "The standard deviation of the column {input_col} was computed in a running window of {window_pix} pixels and written in the column {output_col}{menu}",
         "brief": "Calculate running standard deviation.",
         "details": "Computes the standard deviation of a column in a running window, e.g. to estimate the local noise of the flux; written in a new column.",
         "params": [
@@ -24,6 +42,7 @@ FLUX_RECIPES_SCHEMAS = {
         "url": "edit_cb.html#calculate_running_std" # Placeholder URL
     },
     "smooth": {
+        "methods": "The flux, its error and the columns like the flux were smoothed with a Gaussian kernel of standard deviation {sigma_kms} km/s{menu}",
         "brief": "Smooth spectrum.",
         "details": "Apply a Gaussian filter to the flux, its error and the columns like the flux (continuum, model, telluric transmission).",
         "params": [
@@ -32,6 +51,7 @@ FLUX_RECIPES_SCHEMAS = {
         "url": "edit_cb.html#smooth" # Placeholder URL
     },
     "rebin": {
+        "methods": _methods_rebin,
         "brief": "Rebin spectrum.",
         "details": "Rebins the spectrum onto a new grid with a constant step, in velocity (uniform in log wavelength) or in wavelength; the flux of each new pixel is the inverse-variance weighted mean of the old ones.",
         "params": [
@@ -58,6 +78,7 @@ FLUX_RECIPES_SCHEMAS = {
         "url": "edit_cb.html#rebin"
     },
     "equalize": {
+        "methods": _methods_equalize,
         "brief": "Equalize flux to reference.",
         "details": "Scales the flux of this session to match that of another session where they overlap.",
         "params": [
@@ -66,6 +87,7 @@ FLUX_RECIPES_SCHEMAS = {
         ]
     },
     "resample": {
+        "methods": "The spectrum was interpolated onto the wavelength grid of the session {target_session}, into a new session{menu}",
         "brief": "Resample on another grid.",
         "branching": True,
         "details": "Interpolates this spectrum onto the wavelength grid of another open session, into a new session; the first step to combine two sessions pixel by pixel.",
@@ -75,6 +97,7 @@ FLUX_RECIPES_SCHEMAS = {
         "url": "edit_cb.html#resample" # Placeholder URL
     },
     "calibrate_from_magnitudes": {
+        "methods": "The flux was scaled, smoothly with wavelength, to match the magnitudes {magnitudes}{menu}",
         "brief": "Flux calibrate (multi-band).",
         "details": "Scales the flux, smoothly with wavelength, to match the magnitudes of the object in one or more photometric filters.",
         "params": [

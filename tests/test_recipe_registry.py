@@ -249,3 +249,8 @@ def test_build_spec_reads_every_key():
     assert (bare.details, bare.url, bare.params, bare.gui_hidden, bare.branching,
             bare.requires, bare.provides) == ("", None, (), False, False, frozenset(),
                                               frozenset())
+    # The text of the methods (phase 6-ter, PR 5c): none, a generic sentence
+    assert (bare.methods, bare.references) == (None, ())
+    told = build_spec("flux", "s", {"brief": "B.", "methods": "Done{menu}",
+                                    "references": ["C26"]})
+    assert (told.methods, told.references) == ("Done{menu}", ("C26",))

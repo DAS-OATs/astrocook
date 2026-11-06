@@ -36,6 +36,15 @@ Keys of a recipe entry:
     What the recipe gives to the session, among the same names (e.g.
     ``estimate_auto`` the continuum): the recipes named to the user when a
     prerequisite is missing.
+``methods``
+    What the recipe did, as a sentence of the methods section of a paper
+    (:mod:`astrocook.methods_text`, phase 6-ter PR 5c): a template with the
+    parameters as fields (``{kappa}``) and ``{menu}`` where the menu of the
+    recipe goes, or a function of the same values that returns the text,
+    when the text depends on them.
+``references``
+    The keys of the works the text of ``methods`` cites, in
+    :data:`astrocook.methods_text.REFERENCES`.
 
 Keys of a parameter: ``name``, ``type``, ``default``, ``doc`` (optional,
 the name if missing), ``gui_hidden`` (not shown in the dialog), and for the
@@ -65,7 +74,7 @@ CATEGORIES: Tuple[str, ...] = ('file', 'edit', 'flux', 'continuum', 'absorbers')
 REQUIREMENTS = frozenset({'z_em', 'resolution', 'continuum'})
 
 _RECIPE_KEYS = {'brief', 'details', 'url', 'params', 'gui_hidden', 'branching',
-                'requires', 'provides'}
+                'requires', 'provides', 'methods', 'references'}
 _PARAM_KEYS = {'name', 'type', 'default', 'doc', 'gui_hidden', 'optional', 'keep',
                'min', 'max', 'gt', 'allow_nan', 'agents', 'choices', 'kind'}
 
@@ -132,6 +141,11 @@ class RecipeSpec:
     requires: frozenset = frozenset()
     #: What the recipe gives to the session (a subset of :data:`REQUIREMENTS`)
     provides: frozenset = frozenset()
+    #: What the recipe did, for the methods text: a template or a function
+    #: (:mod:`astrocook.methods_text`); None: a generic sentence
+    methods: Any = None
+    #: The keys of the works the methods text cites
+    references: Tuple[str, ...] = ()
 
     def param(self, name: str) -> ParamSpec:
         """The parameter called ``name`` (``KeyError`` if there is none)."""
@@ -184,7 +198,9 @@ def build_spec(category: str, name: str, entry: Mapping[str, Any]) -> RecipeSpec
                       details=entry.get('details', ""), url=entry.get('url'),
                       params=params, gui_hidden=bool(entry.get('gui_hidden', False)),
                       branching=bool(entry.get('branching', False)),
-                      requires=requires, provides=provides)
+                      requires=requires, provides=provides,
+                      methods=entry.get('methods'),
+                      references=tuple(entry.get('references', ())))
 
 
 def _build() -> Mapping[str, Mapping[str, RecipeSpec]]:
