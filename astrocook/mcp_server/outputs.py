@@ -544,6 +544,18 @@ class NoteResult(BaseModel):
         "True: the note is in the session, saved with it by session_save."))
 
 
+class MethodsResult(BaseModel):
+    """The log of a session as the text of a methods section."""
+
+    session_id: str
+    text: str = Field(description=(
+        "The text: an opening paragraph, one per recipe of the log (with its "
+        "reason, what it did and changed, and the notes written there), the "
+        "fit and the atomic data, and the references."))
+    paragraphs: list[str] = Field(description="The paragraphs of the text, in order.")
+    references: list[str] = Field(description="The works the text cites.")
+
+
 class SessionDescription(SessionListItem):
     """A session in full, without the data."""
 

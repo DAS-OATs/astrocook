@@ -12,8 +12,51 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 # --- Schemas for the Continuum Menu ---
+# --- The text of the methods (phase 6-ter, PR 5c: astrocook.methods_text) ---
+def _clip_text(p):
+    return (f"the absorbed pixels were found by an iterative kappa-sigma clipping of "
+            f"the smoothed flux (kappa = {p['kappa']}; smoothing length "
+            f"{p['smooth_len_lya']} km/s in the Lyman-alpha forest and "
+            f"{p['smooth_len_out']} km/s outside it; Cupani et al. 2026)")
+
+
+def _fit_text(p, mask="the other pixels"):
+    if p.given('fudge'):
+        scale = f"multiplied by {p['fudge']}"
+    else:
+        p.raw('fudge')
+        scale = "rescaled to the unabsorbed pixels"
+    return (f"the continuum was interpolated through {mask}, smoothed with a "
+            f"Gaussian of FWHM {p['smooth_fwhm']} km/s and {scale}")
+
+
+def _methods_estimate_auto(p):
+    template = (", with the Lyman-alpha emission traced by a quasar template"
+                if p.raw('template') else "")
+    return (f"The continuum was estimated automatically{p.menu}. First, "
+            f"{_clip_text(p)}. Then, {_fit_text(p)}{template}")
+
+
+def _methods_find_absorbed(p):
+    p.raw('template')  # not implemented: ignored
+    text = _clip_text(p)
+    return f"{text[:1].upper()}{text[1:]}{p.menu}"
+
+
+def _methods_fit_continuum(p):
+    text = _fit_text(p, f"the pixels that the mask {p['mask_col']} does not mark as absorbed")
+    return f"{text[:1].upper()}{text[1:]}{p.menu}"
+
+
+def _methods_update_from_knots(p):
+    n = len(p.raw('knots_x') or [])
+    return f"The continuum was set by hand, as a spline through {n} knots{p.menu}"
+
+
 CONTINUUM_RECIPES_SCHEMAS = {
     "estimate_auto": {
+        "methods": _methods_estimate_auto,
+        "references": ("C26",),
         "brief": "Auto-estimate continuum (single-click).",
         "provides": ("continuum",),
         "requires": ("z_em",),
@@ -30,6 +73,8 @@ CONTINUUM_RECIPES_SCHEMAS = {
         "url": "continuum_cb.html#estimate_auto"
     },
     "find_absorbed": {
+        "methods": _methods_find_absorbed,
+        "references": ("C26",),
         "brief": "Find absorbed regions (V1 logic).",
         "requires": ("z_em",),
         "details": "Finds the absorbed pixels with an iterative kappa-sigma clipping of the smoothed flux (the V1 'clip_flux' algorithm), with a longer smoothing in the Lyman-alpha forest; writes the 'abs_mask' column (True for the absorbed pixels).",
@@ -42,6 +87,8 @@ CONTINUUM_RECIPES_SCHEMAS = {
         "url": "continuum_cb.html#find_absorbed"
     },
     "fit_continuum": {
+        "methods": _methods_fit_continuum,
+        "references": ("C26",),
         "brief": "Fit continuum to mask (V1 logic).",
         "provides": ("continuum",),
         "details": "Fits the continuum to the pixels that a mask marks as unabsorbed: interpolates them, smooths the result and optionally centres it; writes 'cont'.",
@@ -55,6 +102,7 @@ CONTINUUM_RECIPES_SCHEMAS = {
         "url": "continuum_cb.html#fit_continuum"
     },
     "fit_powerlaw": {
+        "methods": "A power law was fitted to the rest-frame regions {regions} nm, with a {kappa}-sigma clipping of outliers, and written in the column cont_pl{menu}",
         "brief": "Fit power-law continuum.",
         "requires": ("z_em",),
         "details": "Fits a power law (a line in log flux vs log wavelength) to rest-frame regions free of emission and absorption, with clipping of outliers; writes 'cont_pl' (copy it to 'cont' with Apply expression to use it).",
@@ -65,6 +113,7 @@ CONTINUUM_RECIPES_SCHEMAS = {
         "url": "continuum_cb.html#fit_powerlaw" # Placeholder URL
     },
     "update_from_knots": {
+        "methods": _methods_update_from_knots,
         "brief": "Update continuum from manual knots.",
         "provides": ("continuum",),
         "details": "Interpolates a spline through knots placed on the plot and writes it as the continuum.",

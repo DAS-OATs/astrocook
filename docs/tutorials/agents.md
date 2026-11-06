@@ -94,6 +94,7 @@ itself. Other tools handle the sessions:
 | `session_duplicate` | Makes a copy of a session, with its history and log, to try something without touching the original. |
 | `session_close` | Closes a session; refuses if it has changes not saved, unless asked to discard them. |
 | `session_note` | Writes a note in the session log, at the current state: what the agent did or decided outside the tools; with `kind="gap"`, a gap of the collection of recipes (see "Gaps" below). |
+| `session_methods` | Writes the session log as the text of a methods section, in English (see "The log as text" below). |
 | `gaps_summary` | Summarizes, grouped, the gaps recorded in your local file (see "Gaps" below). |
 
 Three tools let the agent look into a session, without changing it:
@@ -127,6 +128,18 @@ saw. The instructions of the server ask the agent for both. A note is not
 a step: it makes no new state, the replay of the log skips it, and it is
 undone with the state it was written at. `session_history` shows the
 reason of each recipe and the notes of each state.
+
+**The log as text.** `session_methods` writes the log of a session as the
+text of a methods section, ready to paste in a paper, as *File > Export Log
+as Text* does in the GUI: one paragraph per recipe, with the reason the
+agent gave, what the recipe did (its parameters, the works it relies on),
+what it changed and the notes written there; then the fit, the sources of
+the atomic data of the transitions fitted, and the references. The recipes
+undone are left out; `menus=false` leaves out the menus of the GUI that
+follow each recipe. The text is made by Astrocook from the log, not by the
+agent: the same log gives the same text. So the reasons and notes are the
+only words of the agent in it: the instructions of the server tell the
+agent so.
 
 **Gaps.** A gap is something the analysis needed and no recipe provided:
 the list of the gaps is where to direct the work on the recipes. Two

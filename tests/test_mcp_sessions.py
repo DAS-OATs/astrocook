@@ -351,3 +351,35 @@ def test_notes_of_an_archive(mock_archive, tmp_path):
     (state,) = ok(history)["states"]
     assert [n["text"] for n in state["notes"]] == ["At the end."]
     assert not ok(described)["unsaved"]
+
+
+def test_methods_text(mock_archive, tmp_path):
+    """session_methods (phase 6-ter, PR 5c): the log as the text of a methods
+    section, from the package; it changes nothing."""
+    saved = tmp_path / "methods.acs2"
+    _, _, _, text, plain, history, _, reopened = calls(
+        build_server(), open_mock(mock_archive),
+        ("flux_smooth", {"session_id": "mock", "sigma_kms": 40,
+                         "reason": "Too noisy to see the doublet."}),
+        ("session_note", {"session_id": "mock", "text": "Checked by eye"}),
+        ("session_methods", {"session_id": "mock"}),
+        ("session_methods", {"session_id": "mock", "menus": False}),
+        ("session_history", {"session_id": "mock"}),
+        ("session_save", {"session_id": "mock", "path": str(saved)}),
+        ("session_open", {"path": str(saved)}))
+    out = ok(text)
+    assert out["session_id"] == "mock"
+    assert out["text"].startswith("The spectrum of mock (")
+    smooth = out["paragraphs"][2]
+    assert smooth.startswith("Too noisy to see the doublet. The flux, its error and the "
+                             "columns like the flux were smoothed with a Gaussian kernel "
+                             "of standard deviation 40 km/s (Flux > Smooth spectrum).")
+    assert smooth.endswith("Checked by eye.")
+    assert out["references"] == ["Cupani G. et al. 2020, Proc. SPIE 11452, 114521U"]
+    assert " > " not in ok(plain)["text"]
+    assert len(ok(history)["states"]) == 3  # nothing added by the tool
+    # An archive opened: its log, without what each recipe changed
+    reopened_id = ok(reopened)["session_id"]
+    (again,) = calls(build_server(), ("session_open", {"path": str(saved)}),
+                     ("session_methods", {"session_id": reopened_id}))[1:]
+    assert "For the first two steps, read from the log of the archive" in ok(again)["text"]
