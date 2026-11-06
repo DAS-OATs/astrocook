@@ -3,7 +3,7 @@
 Each session is a :class:`~astrocook.core.session_manager.SessionHistory`,
 as in the GUI, under an identifier that the tools return and take. The log
 entries are added here, after each recipe, as the GUI does: the recipes
-do not write them (``ROADMAP.md``, section 4.1).
+do not write them (``ROADMAP_HISTORY.md``, section 4.1).
 
 The recipes that read another open session by its name (a parameter of
 kind ``session`` in the registry, e.g. ``reference_session`` of

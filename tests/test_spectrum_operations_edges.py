@@ -1,7 +1,7 @@
 """Edge cases of the pure functions of ``core/spectrum_operations.py``.
 
 Written after mutation testing (``mutmut``, phase 1, item 6 of
-``ROADMAP.md``): the snapshots exercise these functions on regular input,
+``ROADMAP_HISTORY.md``): the snapshots exercise these functions on regular input,
 but changing the handling of bad pixels, thresholds or fallbacks did not
 make any test fail. These tests pin the current behaviour on degenerate
 input: invalid pixels, windows as long as the array, exact thresholds,

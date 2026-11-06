@@ -1,8 +1,11 @@
 # CLAUDE.md
 
-Context for Claude Code sessions on Astrocook. The full plan (analysis,
-phases, scientific assessment, v3 vision) is in `ROADMAP.md`: read it before
-starting any non-trivial work.
+Context for Claude Code sessions on Astrocook. The plan is in `ROADMAP.md`
+(about 1300 lines): do not read it whole. Read the section of the phase in
+progress (phase 6-ter), "Rules and decisions in force", and the open rows of
+the findings register (section 3.2) and of the issues (section 3.1).
+`ROADMAP_HISTORY.md` is the archive of the concluded phases: search it with
+`grep` for a detail (a finding, an issue, a PR), never read it whole.
 
 ## Language
 Everything committed to the repository (code, comments, docs, commit
@@ -136,228 +139,26 @@ Current version: 2.5.0. Python ≥3.12.
   mocks and on its synthetic twin.
 
 ## Current status
-Phases 0, 1, 1-bis, 2, 2-bis, 3, 3-bis, 4, 5, 5-bis, 6 and 6-bis done (October-November 2026; details per item in `ROADMAP.md`).
-The safety net: numerical snapshots (pure functions, continuum,
-identification, Voigt model and fit, SpectrumV2 methods, full chain on
-J0103-1305 and on a mock, with intent checks), V1/V2 parity tests, mock
-generator, recipe-level and GUI smoke tests, `.acs2` round trips,
-error-scaling check, mutation testing (`mutmut`, config in
-`pyproject.toml`, run by hand), timing benchmarks of the fit
-(`benchmarks/bench_fitting.py`) and of the GUI (`benchmarks/bench_gui.py`),
-run by hand. Slow tests (`pytest --run-slow`) run in a separate CI job.
-Still waiting for data from Guido: sessions for log replay, sample files for the loaders, X-Shooter
-VIS/NIR data (F15). V1 `.acs` archives: received in phase 3 (two sessions,
-cut down and anonymised in `tests/data/v1_*.acs`).
+Phases 0, 1, 1-bis, 2, 2-bis, 3, 3-bis, 4, 5, 5-bis, 6 and 6-bis are done
+(October-November 2026; detail in `ROADMAP.md`, short summaries, and in
+`ROADMAP_HISTORY.md`). Release 2.5.0 (November 2026) is on GitHub with the
+macOS app, not on PyPI. The results on the mock benchmark are those of 2.2.0
+(`benchmarks/results/validate_mocks_baseline.json`): phases that must not
+change them are checked with `validate_mocks.py --compare`.
 
-Phase 1-bis (findings register, `ROADMAP.md` section 3.2) fixed F1, F2, F5,
-F10 (minimal), F11, F16, F19, F20, F23, F24, F25, F26, F27, F29, F32, F33
-and issues #480, #442; F3 accepted. Deferred to GitHub issues, scheduled
-for phase 4: #526 (resolution as a single column, exact
-convolution: F8, F22, rest of F10, F9, F14), #465 (continuum: spikes, F30,
-F17), #517
-(components at the bounds, F21), #518 (editable z window, F4). F15 waits
-for data.
+Phase in progress: 6-ter, the full MCP server, its tools generated from the
+recipe registry and open to the recipes that later phases add (`ROADMAP.md`,
+phase 6-ter: plan, "Done" list, next PRs). Then 6-quater (review of the recipe
+parameters, recipe by recipe) and phase 7 (robust components, measured on the
+benchmark of phase 4).
 
-Release 2.0.2 (October 2026) includes phase 1-bis and #534 (errors scaled
-with the chi2 of the final model). Sequence agreed with Guido (October
-2026, revised after phase 3; `ROADMAP.md`, section 3):
-1. phase 2 – cleanup and packaging (done, release 2.0.3);
-2. phase 3 – decoupling from `legacy/` (done);
-3. phase 3-bis – small fixes before the release (done): #575 (F41),
-   F6, F13, #559 (F36, brought forward from phase 4), F45 (version in the
-   `.acs2` archive), #560 (`norm` of `rebin` no longer offered);
-4. release 2.1.0, on GitHub with the macOS app, not on PyPI (done);
-5. MCP pilot (3–4 recipes, separate module, installed from GitHub;
-   `ROADMAP.md`, section 4) (done);
-6. phase 4 – scientific correctness: first a validation on mocks
-   (baseline of continuum, identification, doublet fit), then, each
-   measured on it, #573, #518, #568, F55/F49/F50, #465, #526, #517
-   (plan agreed, `ROADMAP.md` "Plan of the phase") (done);
-7. release 2.2.0 (done);
-8. phase 5 – splitting large files, with the GUI performance (timing
-   benchmark of the GUI; the System Inspector opens in ~4-6 s on
-   J0103-1305); pure refactoring and performance, no visible change
-   (done);
-9. phase 5-bis – GUI look and ergonomics (the open proposals of the GUI
-   review, agreed one by one) (done);
-10. release 2.3.0 (done);
-11. phase 6 – error handling (done), then release 2.4.0 (done);
-12. phase 6-bis – recipe API (typed parameters, structured results,
-    exceptions), from the report of the MCP pilot; with F12 (moved from
-    phase 5) (done), then release 2.5.0 (Guido);
-13. phase 6-ter – full MCP server, with a headless Docker image, its
-    tools generated from the recipe registry (named after 2.5.0, Guido:
-    each step a phase with its own name);
-14. phase 6-quater – review of the recipe parameters, recipe by recipe,
-    for the recipes that phase 7 does not rewrite;
-15. phase 7 – robust components: emission model and
-    absorption identification, algorithmic choices by Guido, measured
-    on the benchmark of phase 4.
-
-LICENSE (#549) and the first publication on PyPI are an independent step:
-they go into the first release after INAF answers (2.1.1 if before phase
-4, otherwise 2.2.0 or the current version then).
-
-Phase 2 done, released as 2.0.3 (packaging, no numerical changes).
-LICENSE (GPLv3 or later) waits for INAF: PR #549 stays a draft. Docker:
-no renewal for now; the V1 image (`containers/`, broken) is removed in
-phase 3.
-
-Phase 2-bis done (October 2026): F34 (window icon), Ruff warnings (full
-`ruff check .` in CI), Sphinx warnings, optional `[bayes]` extra (emcee,
-dynesty, corner); found F36 and F37 (#559 and #560, fixed in phase 3-bis).
-
-Phase 3 done (October 2026, PRs #565-#584): `astrocook/legacy/` removed;
-V1 `.acs` archives read by `io/v1_archive.py` (saving in `.acs` removed);
-the V1 routines of the parity tests in `tests/reference/v1/`; logging left
-to the application; the data files used only by V1 removed (telluric data
-kept as assets of the pre-release `data-telluric-2026`); docs published per
-version. Fixed F42-F44; found F38-F41 (#568 and #573 in phase 4, #575 in
-phase 3-bis); #566 (centralized messages) in phase 6.
-
-Phase 3-bis done (October 2026, PRs #587-#592): branching recipes logged
-only in the new session (#575, F41); the core no longer imports the GUI
-(F6, `core/debug_hooks.py`); link colours of the System Inspector
-recomputed and stable (F13); `dbtur` stored after a fit (#559, F36: 0 when
-`btur` is frozen, the default); `.acs2` archives record the Astrocook
-version (F45, `SessionV2.saved_with_version`); `norm` of `rebin` no longer
-offered (#560, F37, Guido's decision). Note on F8 for #526 (`rebin` keeps
-the old `resol` meta key).
-
-Release 2.1.0 (October 2026): phases 3 and 3-bis, on GitHub with the
-macOS app, not on PyPI (steps of a release in `ROADMAP.md`, "Releases").
-
-MCP pilot done (October 2026, PRs #595-#600; `ROADMAP.md`, sections 4.1
-and 4.2): `astrocook/mcp_server/` (`[mcp]` extra, `astrocook-mcp`, five
-tools, a thin layer over the recipes, defaults from the recipe schemas),
-docs page "Using Astrocook from an AI Agent"; report from two trials with
-fresh agents and Guido's own trial; found F46-F55 (phases 4, 6-bis, 7).
-
-Phase 4 done (October 2026): plan agreed (`ROADMAP.md`, phase 4,
-"Plan of the phase"). Validation on mocks done: extended mocks (#602),
-`benchmarks/validate_mocks.py` (#603), baseline of 2.1.0 in
-`benchmarks/results/validate_mocks_baseline_2.1.0.json` and in `ROADMAP.md`
-("Baseline"); every fix of the phase is measured with
-`validate_mocks.py --compare` (full grid, ~26 min with 4 workers) and
-the PR states the changes (only for PRs that can change the
-results, see "How to work"). Done: #573 (one default per recipe
-parameter, #605), #518 (fit window in the System Inspector, #606),
-#568 (single table of atomic data with sources, #607-#609, docs page
-"Atomic Data"), F49 (one candidate per doublet, #611), F55
-(candidates within 3000 km/s of z_em, #612), F50 (the pipelines keep
-the mask of the user, #613), #465 (robust automatic continuum, #614),
-F14 (blend threshold of the grouping from the instrumental FWHM, k = 1,
-#618; developed in parallel with #526 PR 3, a one-off exception agreed
-with Guido), F61 (damping parameter (1 + z) too large, found in #617,
-#619), F62 (runaway logN in the automatic forest fits: `max_logN` = 19 in the pipelines, Guido's decision, #624).
-#526 (resolution as a single column and exact convolution, #615-#617, #625).
-#623 (refit of old sessions with pixel edges without a unit, a regression of #617, #626).
-#517 (components at the bounds, F21, with F52 partly): flags on the components (#627), cleanup of the pipeline output (#628), GUI cues, "Only flagged" and "Select flagged", and F65 (`min_b` of `forest_auto`) in PR 3 (#629).
-F63 (the dialogs showed "0.0" for the parameters at their current value: data loss in *Set session properties*), fixed before the release (#631).
-Closing of the phase: result against the baseline in `ROADMAP.md` ("Result of the phase": duplicates /3, spurious components 428 → 11, system column at R = 8900 0.39 → 0.095 dex; component pulls wider because the systems are fitted with fewer components, F58, phase 7), review of the user documentation.
-
-Release 2.2.0 (October 2026): phase 4, on GitHub with the macOS app, not
-on PyPI (INAF has not answered, #549). New docs pages *Science* (with
-*Atomic Data*) and *Accuracy* (the results on the mock benchmark, to be
-updated when a phase changes them). The baseline of the benchmark is now
-that of 2.2.0 (`benchmarks/results/validate_mocks_baseline.json`):
-phases 5, 6 and 6-bis must leave it unchanged.
-
-Phase 5 done (October 2026, PRs #634-#662; `ROADMAP.md`, phase 5,
-"Result of the phase"): the GUI benchmark (`benchmarks/bench_gui.py`, run
-by hand like `bench_fitting.py`, before and after each change of the GUI);
-the System Inspector ~7× faster to open (5.1 → 0.7 s on one machine), the
-selection of a row ~3× (0.59 → 0.21 s); `SpectrumV2` split into five
-mixins (`spectrum.py` 2826 → 774 lines), the GUI into mixins and modules
-(`main_window.py` 4831 → 541, `pyside_plot.py` 2884 → 1266,
-`system_inspector.py` 2239 → 1085), each part covered by characterization
-tests first (coverage 67% → 81%); tests in parallel (pytest-xdist). Fixed:
-F7, F66, F74, F82 (data loss: the ASCII export overwrote a file without
-asking), F83, the calibration (#642). Found F66-F84: for phase 5-bis
-F67, F69, F70, F71 (agreed) and F75, F78, F81 (proposed), for Guido's
-decision F73, F76, F77, F80; F79, F84 for phase 6-bis; F68, F72 for
-phase 7. The snapshots and the mock benchmark unchanged. The private data
-of `DAS-OATs/astrocook-data` (spectra of the screenshots) are cloned next
-to the repository when needed.
-
-Phase 5-bis done (October-November 2026, PRs #664-#688; `ROADMAP.md`,
-phase 5-bis, "Result of the phase"): dark mode and *View > Appearance*,
-colours in `gui/theme.py`; the toolbar of the plots redesigned and
-floating as the side cards; a status bar in both windows; one rule for the
-texts; the main plot without title and legend, emission lines in
-spectroscopic notation; the System Inspector (error of z in km/s, menu of
-the columns, keys, a message without a continuum); the *Identifications*
-window as a table of doublets; recent files, window geometry, files loaded
-in the background; *View > Plot Colours* (standard or colour-blind safe).
-Fixed F67, F69, F70, F71, F73, F75-F78, F80, F81, F85-F92, #630; F93 for
-phase 7. The snapshots and the mock benchmark unchanged; numbers change
-only in the calibration (F69, F70) and in the errors of linked parameters
-(#630). GUI benchmark: no regression (the main plot redraws in 0.10 s
-instead of 0.13 s, without the legend). Coverage 82% (the GUI 84%, the
-core 90%). The script console kept in the code (Guido).
-
-Release 2.3.0 (November 2026): phases 5 and 5-bis, on GitHub with the
-macOS app, not on PyPI (INAF has not answered, #549). The results on the
-mock benchmark unchanged (the *Accuracy* page as for 2.2.0); numbers
-change only in the calibration (F69, F70) and in the errors of linked
-parameters (#630).
-
-Phase 6 done (November 2026, PRs #691-#701; `ROADMAP.md`, phase 6,
-"Result of the phase"): the broad `except` clauses 189 → 47, all
-boundaries (`tests/test_broad_excepts.py` holds the count per file); the
-others narrowed (in the GUI to `DATA_ERRORS`, `QT_ERRORS` of
-`gui/errors.py`) or removed: an error is logged once, where it is caught,
-with its context; the fallbacks that went on with a result that looked
-valid (F95, 24 rows, each decided with Guido) stop with their reason.
-One logger per module (#566) and one rule for the messages of the whole
-package (`ROADMAP.md`, phase 6, "Rule of the log messages"), shared
-messages in `recipes/messages.py`; a hook shows the unexpected errors of
-the GUI in a dialog (`install_excepthook`); the fast suite without
-warnings, and warnings are errors in the tests. Fixed F94 (data loss when
-a save fails), F95, F96, F98, F99; F97 and F100 right after the phase. For 6-bis: the
-scheme of the prerequisites of the recipes (MCP, GUI, scripts), the lists
-of the GUI to the registry, the flag `not_fitted`. The snapshots and the
-mock benchmark unchanged.
-
-Release 2.4.0 (November 2026): phase 6, with F97 and F100, on GitHub
-with the macOS app, not on PyPI (INAF has not answered, #549). The
-results on the mock benchmark unchanged (the *Accuracy* page as for
-2.2.0); the behaviour on failures changes (a minor version, not 2.3.1).
-
-Phase 6-bis done (November 2026, PRs #705-#723; `ROADMAP.md`, phase
-6-bis, "Result of the phase"): one read-only registry of the recipes
-(`recipes/registry.py`: types, bounds, choices, kinds, `requires` and
-`provides`, the parameters offered to agents), typed parameters converted
-at the boundary (`typed_recipe`), exceptions (`recipes/errors.py`) instead
-of `return 0`, the structured result (`recipes/result.py`, `run`), the
-prerequisites (`recipes/prerequisites.py`: the policy of the scripts, the
-GUI asks, the MCP server says), all the texts reviewed, the MCP pilot on
-the new API and the generator of the schemas of the tools
-(`mcp_server/schemas.py`). Numbers unchanged but F102 and F103 (Guido's
-decisions). Found and fixed F49 (rest), F50/F55 (parameters), F102-F105;
-left F101 (script console), F102 for `forest_auto`. For later: the review
-of the parameters recipe by recipe (phase 6-quater, phase 7 for the
-recipes it rewrites), the collections of elements to fill parameters
-(phase 7).
-
-Release 2.5.0 (November 2026): phase 6-bis, on GitHub with the macOS
-app, not on PyPI (INAF has not answered, #549). The results on the mock
-benchmark unchanged (the *Accuracy* page as for 2.2.0); changed on
-purpose F103 (spectra without a continuum) and F102 (`lya_auto`); the
-interface of the recipes for scripts changes (exceptions instead of 0), a
-minor version as 2.4.0.
-
-Next: phase 6-ter, the full MCP server (`ROADMAP.md`, phase 6-ter and
-section 4): plan of the phase agreed in PR 0 (#726), a server open to the
-recipes that phase 7 and later phases add (no server code per recipe);
-then phase 6-quater (the review of the recipe parameters) and phase 7.
-Work in
-small PRs, one at a time; wait for the merge before the next. While #549 is open, each new PR goes on its own
-`claude/...` branch (agreed with Guido; say which branch).
-
-Questionable behaviour found along the way goes in the findings register
-(`ROADMAP.md`, section 3.2), reviewed with Guido;
-anything that loses user data or crashes is reported at once. Open GitHub
-issues are scheduled in `ROADMAP.md`, section 3.1. Wait for each PR to be
-merged before opening the next. Update this section and the table in
-`ROADMAP.md` at the end of each phase.
+Open constraints:
+- #549 (LICENSE and first PyPI publication) waits for INAF; while it is open
+  each new PR goes on its own `claude/...` branch (say which).
+- Waiting for data from Guido: sessions for the log replay, sample files for
+  the loaders, X-Shooter VIS/NIR data (F15).
+- One PR at a time: wait for the merge before opening the next.
+- Questionable behaviour found along the way goes in the findings register
+  (`ROADMAP.md`, section 3.2), reviewed with Guido; anything that loses user
+  data or crashes is reported at once. Update this section and the progress
+  table of `ROADMAP.md` at the end of each phase.

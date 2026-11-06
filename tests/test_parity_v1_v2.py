@@ -1,4 +1,4 @@
-"""V1/V2 parity tests (ROADMAP.md, phase 1, item 11).
+"""V1/V2 parity tests (ROADMAP_HISTORY.md, phase 1, item 11).
 
 The V1 code is the validated reference behind the published papers; the
 routines used here are verbatim copies of ``astrocook/legacy/`` in

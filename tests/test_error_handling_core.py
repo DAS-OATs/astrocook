@@ -82,7 +82,7 @@ def test_split_keeps_the_type_of_the_error():
 
 # --- PR 4b: the rows D of core, fitting and io ------------------------------------
 # Each case reproduces the failure: the fallbacks went on with a result
-# that looked valid (decided with Guido; ROADMAP.md, phase 6, "Rows D of
+# that looked valid (decided with Guido; ROADMAP_HISTORY.md, phase 6, "Rows D of
 # core, fitting and io").
 
 import dataclasses  # noqa: E402

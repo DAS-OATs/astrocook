@@ -2,7 +2,7 @@
 
 Exposes a few recipes as tools of the Model Context Protocol, so that an
 LLM agent (Claude Code, Claude Desktop, ...) can drive an analysis. Scope,
-tools and design: ``ROADMAP.md``, section 4.1.
+tools and design: ``ROADMAP_HISTORY.md``, section 4.1.
 
 The server is a thin layer over the recipes: it does not change them, and
 what it would need from them goes into the findings register instead.

@@ -78,7 +78,7 @@ docs = [
 # macOS app (build_app.sh, Astrocook.spec), which includes the Bayesian
 # fit; the DMG also needs create-dmg (brew install create-dmg)
 build = ["pyinstaller", "astrocook[bayes]"]
-# MCP server for agents (astrocook/mcp_server, ROADMAP.md section 4.1);
+# MCP server for agents (astrocook/mcp_server, ROADMAP_HISTORY.md section 4.1);
 # the 2.x API differs from 1.x
 mcp = ["mcp>=2.3,<3"]
 
@@ -149,7 +149,7 @@ exclude_lines = [
     "if TYPE_CHECKING:",
 ]
 
-# Mutation testing (phase 1, item 6 of ROADMAP.md): run by hand, not in CI.
+# Mutation testing (phase 1, item 6 of ROADMAP_HISTORY.md): run by hand, not in CI.
 #   mutmut run --max-children 4; mutmut results; mutmut show <mutant>
 # The GUI and full-chain tests are left out: slow, and the chain runs in a
 # subprocess that the mutants do not reach.

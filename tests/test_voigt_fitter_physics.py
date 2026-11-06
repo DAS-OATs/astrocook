@@ -1,7 +1,7 @@
 """Physics of the Voigt fitter not pinned by the snapshots.
 
 Written after mutation testing of ``fitting/`` (``mutmut``, phase 1, item 6
-of ``ROADMAP.md``): the turbulent broadening could be changed (e.g.
+of ``ROADMAP_HISTORY.md``): the turbulent broadening could be changed (e.g.
 sqrt(b^2 - btur^2)) without any test failing, and no test fitted a line
 broader than 50 km/s. Data from the mock generator (independent of the
 fitting code). F32 (findings register): a penalty on b > 50 km/s biased the
