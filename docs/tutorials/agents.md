@@ -131,6 +131,15 @@ runs on does not change, and the result lists the new ones, each with its
 that names another open session (e.g. the reference of *Flux > Equalize*)
 takes its `session_id`.
 
+**Progress.** A recipe can take minutes. A client that asks for progress
+(the MCP progress token; most clients do for long calls) receives
+notifications while the recipe runs: the pipelines and the Bayesian fit
+report a percentage with the last line of their log (what the GUI shows
+under its progress bar), and every recipe, also those that report nothing
+in between, sends one notification when it starts and one when it ends,
+with the time it took. A recipe that reports nothing in between is silent
+until it ends.
+
 *File > Export to ASCII* (`file_export_ascii`) writes the files in the
 folder `path`, named after `prefix`, and does not replace files that exist
 unless asked (`overwrite=true`).

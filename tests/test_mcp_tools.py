@@ -5,6 +5,8 @@ the registry reaches the agents with no code of the server. The tests check
 it with a recipe that exists only in the test.
 """
 import asyncio
+import logging
+import sys
 from types import MappingProxyType
 
 import numpy as np
@@ -12,7 +14,7 @@ import pytest
 
 pytest.importorskip("mcp")
 
-from mcp import Client  # noqa: E402
+from mcp import Client, StdioServerParameters  # noqa: E402
 
 from astrocook.core.session import SessionV2, load_session_from_file  # noqa: E402
 from astrocook.mcp_server.schemas import parameters_schema  # noqa: E402
@@ -24,6 +26,9 @@ from astrocook.recipes import registry  # noqa: E402
 from astrocook.recipes.flux import RecipeFluxV2  # noqa: E402
 from astrocook.recipes.params import typed_recipe  # noqa: E402
 from astrocook.recipes.registry import all_recipes, build_spec, get_recipe  # noqa: E402
+
+
+logger = logging.getLogger("astrocook.test_mcp_tools")
 
 
 def calls(server, *steps):
@@ -114,7 +119,15 @@ def new_recipe(monkeypatch):
     def measure_test(self):
         return float(np.nanmedian(self._session.spec.y.value))
 
-    for fn in (scale_test, measure_test):
+    def progress_test(self, steps: int = 4):
+        for i in range(steps + 1):
+            logger.info("Step %d of %d", i, steps)
+            logger.info(">> PROGRESS: %d", 100 * i // steps)
+            if i == 1:
+                logger.info(">> PROGRESS: %d", 100 * i // steps)  # repeated
+        return float(steps)
+
+    for fn in (scale_test, measure_test, progress_test):
         monkeypatch.setattr(RecipeFluxV2, fn.__name__, typed_recipe(fn), raising=False)
     flux = dict(registry.RECIPES["flux"])
     flux["scale_test"] = build_spec("flux", "scale_test", {
@@ -127,6 +140,10 @@ def new_recipe(monkeypatch):
              "doc": "Column written."}]})
     flux["measure_test"] = build_spec("flux", "measure_test", {
         "brief": "Measure the flux (test).", "details": "The median flux."})
+    flux["progress_test"] = build_spec("flux", "progress_test", {
+        "brief": "Log its progress (test).", "details": "Writes progress lines.",
+        "params": [{"name": "steps", "type": int, "default": 4, "gt": 0,
+                    "doc": "Number of steps."}]})
     recipes = dict(registry.RECIPES)
     recipes["flux"] = MappingProxyType(flux)
     monkeypatch.setattr(registry, "RECIPES", MappingProxyType(recipes))
@@ -257,3 +274,96 @@ def test_export_ascii_as_a_tool(mock_archive, tmp_path):
     assert "out_spec.csv already exists" in error_text(again)
     assert forced.structured_content["value"] is True
     assert (tmp_path / "out_spec.csv").is_file()
+
+
+# --- Progress notifications (phase 6-ter, PR 4) ----------------------------
+
+def calls_with_progress(server, *steps):
+    """Run the steps; return their results and, for each, the notifications
+    of progress received as (progress, total, message)."""
+    async def go():
+        async with Client(server) as client:
+            out = []
+            for tool, args in steps:
+                seen = []
+
+                async def on_progress(progress, total, message, seen=seen):
+                    seen.append((progress, total, message))
+                out.append((await client.call_tool(tool, args, progress_callback=on_progress),
+                            seen))
+            return out
+    return asyncio.run(go())
+
+
+def test_the_context_is_not_a_parameter_of_the_tools(new_recipe):
+    for name, tool in list_tools(build_server()).items():
+        assert "ctx" not in tool.input_schema["properties"], name
+
+
+def test_progress_lines_are_sent_as_notifications(new_recipe, mock_archive):
+    _, (result, seen) = calls_with_progress(
+        build_server(),
+        ("session_open", {"path": str(mock_archive)}),
+        ("flux_progress_test", {"session_id": "mock", "steps": 4}))
+    assert not result.is_error
+    values = [p for p, _, _ in seen]
+    # The start, the lines (the repeated one and the 0 of the first are not
+    # sent: the value must increase), the end
+    assert values == [0, 25, 50, 75, 99, 100]
+    assert all(t == 100 for _, t, _ in seen)
+    # The message is the last status line, as in the GUI; the lines of the
+    # recipe stop at 99, the end of the tool is 100
+    assert [m for _, _, m in seen[:-1]] == [
+        "Running flux_progress_test", "Step 1 of 4", "Step 2 of 4", "Step 3 of 4",
+        "Step 4 of 4"]
+    assert seen[-1][2].startswith("flux_progress_test done in ")
+
+
+def test_a_recipe_without_progress_lines_sends_a_start_and_an_end(new_recipe, mock_archive):
+    _, (_, seen) = calls_with_progress(
+        build_server(),
+        ("session_open", {"path": str(mock_archive)}),
+        ("flux_scale_test", {"session_id": "mock"}))
+    assert [(p, t) for p, t, _ in seen] == [(0, 100), (100, 100)]
+    assert seen[0][2] == "Running flux_scale_test"
+
+
+def test_a_failed_recipe_leaves_the_logger_as_it_was(new_recipe, mock_archive):
+    package = logging.getLogger("astrocook")
+    level, handlers = package.level, list(package.handlers)
+    _, (bad, seen) = calls_with_progress(
+        build_server(),
+        ("session_open", {"path": str(mock_archive)}),
+        ("flux_scale_test", {"session_id": "mock", "factor": -1}))
+    assert bad.is_error
+    assert package.level == level and package.handlers == handlers
+
+
+def test_no_progress_is_sent_when_the_client_does_not_ask(new_recipe, mock_archive):
+    _, ok = calls(build_server(),
+                  ("session_open", {"path": str(mock_archive)}),
+                  ("flux_progress_test", {"session_id": "mock"}))
+    assert not ok.is_error and ok.structured_content["value"] == 4.0
+
+
+def test_progress_over_stdio(new_recipe, mock_archive):
+    # The notifications go through the protocol, with the lines of the log
+    # written to stderr: stdout stays clean (a real recipe, no fake one: the
+    # subprocess has not the recipe of the test)
+    async def go():
+        seen = []
+
+        async def on_progress(progress, total, message):
+            seen.append((progress, message))
+        params = StdioServerParameters(
+            command=sys.executable, args=["-m", "astrocook.mcp_server.server"])
+        async with Client(params) as client:
+            await client.call_tool("session_open", {"path": str(mock_archive)})
+            result = await client.call_tool(
+                "flux_smooth", {"session_id": "mock", "sigma_kms": 20},
+                progress_callback=on_progress)
+        return result, seen
+    result, seen = asyncio.run(go())
+    assert not result.is_error
+    assert [p for p, _ in seen] == [0, 100]
+    assert seen[0][1] == "Running flux_smooth"

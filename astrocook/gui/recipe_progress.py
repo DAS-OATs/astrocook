@@ -10,6 +10,8 @@ from PySide6.QtCore import QObject, Qt, Signal
 from PySide6.QtWidgets import (QApplication, QDialog, QHBoxLayout, QLabel, QProgressBar,
                                QPushButton, QVBoxLayout)
 
+from astrocook.recipes.progress import is_progress_line, parse_progress
+
 
 class LogSignalBridge(QObject):
     """Thread-safe bridge to emit log messages as Qt signals."""
@@ -96,13 +98,10 @@ class RecipeProgressDialog(QDialog):
         - '>> PROGRESS: 50' -> Updates bar.
         - Other text -> Updates status label.
         """
-        if ">> PROGRESS:" in message:
-            try:
-                parts = message.split(">> PROGRESS:")
-                val = int(parts[1].strip())
-                self.progress_bar.setValue(val)
-            except ValueError:
-                pass
+        if is_progress_line(message):
+            value = parse_progress(message)
+            if value is not None:
+                self.progress_bar.setValue(value)
             return
 
         clean_msg = message.strip()

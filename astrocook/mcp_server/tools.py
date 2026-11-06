@@ -20,7 +20,7 @@ checked and converted by the registry, as for the GUI and the scripts
 """
 from typing import Annotated, Any, Callable
 
-from mcp.server.mcpserver import MCPServer
+from mcp.server.mcpserver import Context, MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp.server.mcpserver.utilities.func_metadata import ArgModelBase
 from pydantic import ConfigDict, Field
@@ -29,6 +29,7 @@ from astrocook.mcp_server.errors import run_recipe
 from astrocook.mcp_server.outputs import (
     NewSession, RecipeInfo, SessionInfo, _value, changes_summary,
     spectrum_summary, summaries)
+from astrocook.mcp_server.progress import report_progress
 from astrocook.mcp_server.schemas import parameters_schema
 from astrocook.mcp_server.sessions import SessionStore
 from astrocook.recipes.errors import MissingPrerequisite
@@ -149,8 +150,10 @@ def _register(server: MCPServer, fn: Callable, name: str, description: str,
 
 
 def run_tool(store: SessionStore, spec: RecipeSpec, session_id: str,
-             params: dict, provide_missing: bool, max_listed: int) -> RecipeInfo:
-    """Run the recipe of a tool and build its output."""
+             params: dict, provide_missing: bool, max_listed: int,
+             ctx: Context | None = None) -> RecipeInfo:
+    """Run the recipe of a tool and build its output; ``ctx``, the context
+    of the call, receives the progress of the recipe (``progress.py``)."""
     offered = {p.name for p in spec.params if p.agents}
     unknown = sorted(set(params) - offered)
     if unknown:
@@ -171,7 +174,8 @@ def run_tool(store: SessionStore, spec: RecipeSpec, session_id: str,
                 hint = PROVIDE_HINT if "provides it with its defaults" in str(e) else ""
                 raise ToolError(as_tools(str(e)) + hint) from e
 
-        result, _ = run_recipe(tool_name(spec), call)
+        with report_progress(ctx, tool_name(spec)):
+            result, _ = run_recipe(tool_name(spec), call)
         removed = dict(result.extra.get("removed", {}))
         out: dict[str, Any] = {"recipe": recipe,
                                "not_fitted": [str(u) for u in result.extra.get("not_fitted", ())]}
@@ -223,9 +227,10 @@ def _make_tool(store: SessionStore, spec: RecipeSpec) -> Callable:
     def tool(session_id: Annotated[str, Field()],
              provide_missing: bool = False,
              max_listed: int = 50,
-             recipe_params: dict | None = None) -> RecipeInfo:
+             recipe_params: dict | None = None,
+             ctx: Context | None = None) -> RecipeInfo:
         return run_tool(store, spec, session_id, recipe_params or {},
-                        provide_missing, max_listed)
+                        provide_missing, max_listed, ctx)
     tool.__name__ = tool_name(spec)
     return tool
 
