@@ -81,12 +81,25 @@ recipes that the GUI runs from the System Inspector (e.g.
 `absorbers_fit_component`). The tools are made from the same description
 of the recipes as the dialogs of the GUI: the same parameters, defaults,
 bounds and texts, and a recipe added to Astrocook becomes a tool by
-itself. Two more tools handle the sessions:
+itself. Other tools handle the sessions:
 
 | Tool | What it does |
 |---|---|
 | `session_open` | Opens a spectrum or a session file (`.acs2`, V1 `.acs`) as a new session; optionally sets z_em and the resolving power (*Edit > Set Properties*). |
 | `session_save` | Saves the session as `.acs2`, with the original data and the session log. |
+| `session_list` | Lists the open sessions: where each comes from, its spectrum in a few numbers, its history, whether it has changes not saved. |
+| `session_describe` | Describes a session: the columns of the spectrum, the components per series, the log that came with the file. |
+| `session_history` | Lists the states of a session: as opened, then one per recipe, with its parameters and what it changed. |
+| `session_undo`, `session_redo` | Go back to the state before the last recipe (or several), and forward again, as *Edit > Undo* and *Redo* in the GUI. |
+| `session_duplicate` | Makes a copy of a session, with its history and log, to try something without touching the original. |
+| `session_close` | Closes a session; refuses if it has changes not saved, unless asked to discard them. |
+
+**Nothing is lost.** Every state of a session is kept, as in the GUI: if
+a recipe removes components (e.g. *Auto-detect Doublets* replaces those
+on the red side), its result says so, with the reason for each, and
+`session_undo` brings them back without running anything again. The log
+follows the state: a session saved after an undo replays without the
+recipe undone.
 
 Every recipe tool takes the `session_id` of the session to run on, the
 parameters of the recipe, and:
@@ -170,8 +183,7 @@ replay the log as a script.
 
 ## 6. Limits of the Pilot
 
-- No tools yet to list the components, read the spectrum, undo a step,
-  or duplicate and close a session (coming).
+- No tools yet to list the components or read the spectrum (coming).
 - Paths are on the computer where the server runs; give them in full.
 - `absorbers_doublets_auto` replaces the components already on the red
   side. It finds the absorbed regions on a new mask made with the default

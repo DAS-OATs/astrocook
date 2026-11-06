@@ -579,7 +579,7 @@ recipes that the GUI runs from the System Inspector (e.g.
 <code class="docutils literal notranslate"><span class="pre">absorbers_fit_component</span></code>). The tools are made from the same description
 of the recipes as the dialogs of the GUI: the same parameters, defaults,
 bounds and texts, and a recipe added to Astrocook becomes a tool by
-itself. Two more tools handle the sessions:</p>
+itself. Other tools handle the sessions:</p>
 <div class="pst-scrollable-table-container"><table class="table">
 <thead>
 <tr class="row-odd"><th class="head"><p>Tool</p></th>
@@ -593,9 +593,33 @@ itself. Two more tools handle the sessions:</p>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">session_save</span></code></p></td>
 <td><p>Saves the session as <code class="docutils literal notranslate"><span class="pre">.acs2</span></code>, with the original data and the session log.</p></td>
 </tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">session_list</span></code></p></td>
+<td><p>Lists the open sessions: where each comes from, its spectrum in a few numbers, its history, whether it has changes not saved.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">session_describe</span></code></p></td>
+<td><p>Describes a session: the columns of the spectrum, the components per series, the log that came with the file.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">session_history</span></code></p></td>
+<td><p>Lists the states of a session: as opened, then one per recipe, with its parameters and what it changed.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">session_undo</span></code>, <code class="docutils literal notranslate"><span class="pre">session_redo</span></code></p></td>
+<td><p>Go back to the state before the last recipe (or several), and forward again, as <em>Edit &gt; Undo</em> and <em>Redo</em> in the GUI.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">session_duplicate</span></code></p></td>
+<td><p>Makes a copy of a session, with its history and log, to try something without touching the original.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">session_close</span></code></p></td>
+<td><p>Closes a session; refuses if it has changes not saved, unless asked to discard them.</p></td>
+</tr>
 </tbody>
 </table>
 </div>
+<p><strong>Nothing is lost.</strong> Every state of a session is kept, as in the GUI: if
+a recipe removes components (e.g. <em>Auto-detect Doublets</em> replaces those
+on the red side), its result says so, with the reason for each, and
+<code class="docutils literal notranslate"><span class="pre">session_undo</span></code> brings them back without running anything again. The log
+follows the state: a session saved after an undo replays without the
+recipe undone.</p>
 <p>Every recipe tool takes the <code class="docutils literal notranslate"><span class="pre">session_id</span></code> of the session to run on, the
 parameters of the recipe, and:</p>
 <ul class="simple">
@@ -674,8 +698,7 @@ replay the log as a script.</p>
 <section id="limits-of-the-pilot">
 <h2>6. Limits of the Pilot<a class="headerlink" href="#limits-of-the-pilot" title="Link to this heading">#</a></h2>
 <ul class="simple">
-<li><p>No tools yet to list the components, read the spectrum, undo a step,
-or duplicate and close a session (coming).</p></li>
+<li><p>No tools yet to list the components or read the spectrum (coming).</p></li>
 <li><p>Paths are on the computer where the server runs; give them in full.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">absorbers_doublets_auto</span></code> replaces the components already on the red
 side. It finds the absorbed regions on a new mask made with the default
