@@ -59,6 +59,44 @@ def test_every_parameter_is_in_the_signature(spec):
     assert spec.brief
 
 
+#: Parameters of the methods of the recipes that are not in the registry,
+#: each with its reason. F106 (phase 6-ter): ``prefix`` of ``export_ascii``
+#: was missing, and nothing checked this direction, only that the registry
+#: names parameters of the method
+NOT_IN_REGISTRY = {
+    ("edit", "apply_expression", "alias_map"): "filled by the GUI from the names of the sessions",
+    ("edit", "mask_expression", "alias_map"): "filled by the GUI from the names of the sessions",
+    ("edit", "split", "alias_map"): "filled by the GUI from the names of the sessions",
+    ("flux", "rebin", "norm"): "no longer offered (#560, F37)",
+    ("continuum", "estimate_auto", "smooth_std"): "deprecated, kept for old scripts",
+    ("continuum", "fit_continuum", "smooth_std"): "deprecated, kept for old scripts",
+    ("continuum", "fit_continuum", "template"): "not offered since 6-bis; to review in 6-quater",
+    ("absorbers", "update_components", "series"): "kept a string, 'None' for unchanged",
+}
+
+
+@pytest.mark.parametrize("spec", list(registry.all_recipes()),
+                         ids=lambda s: f"{s.category}.{s.name}")
+def test_every_parameter_of_the_method_is_in_the_registry(spec):
+    signature = inspect.signature(getattr(CLASSES[spec.category], spec.name)).parameters
+    declared = {p.name for p in spec.params}
+    for name, p in signature.items():
+        if name == "self" or p.kind in (p.VAR_POSITIONAL, p.VAR_KEYWORD):
+            continue
+        key = (spec.category, spec.name, name)
+        assert name in declared or key in NOT_IN_REGISTRY, (
+            f"{spec.category}.{spec.name}: the parameter {name} is not in the registry")
+        # The exceptions have a default: the registry alone can run the recipe
+        if key in NOT_IN_REGISTRY:
+            assert p.default is not inspect.Parameter.empty, key
+
+
+def test_the_exceptions_are_still_parameters():
+    for (category, name, param), reason in NOT_IN_REGISTRY.items():
+        assert param in inspect.signature(getattr(CLASSES[category], name)).parameters
+        assert reason
+
+
 def test_recipe_names_are_unique_and_found_by_name():
     names = [s.name for s in registry.all_recipes()]
     assert len(names) == len(set(names))

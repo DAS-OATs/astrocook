@@ -37,12 +37,7 @@ from astrocook.recipes.result import run as run_registry
 
 #: The recipes that are not tools, each with its reason. A recipe of the
 #: registry that is neither a tool nor here fails a test.
-EXCLUDED = {
-    "file.export_ascii": (
-        "it needs a 'prefix' that the registry does not declare (the GUI "
-        "gives it from its file dialog), and it overwrites the files without "
-        "asking, as the GUI checks before it (F82): F106"),
-}
+EXCLUDED: dict[str, str] = {}
 
 #: The parameters of every recipe tool, besides those of the recipe
 SERVER_PARAMS = {

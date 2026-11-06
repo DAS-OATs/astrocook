@@ -110,8 +110,9 @@ runs on does not change, and the result lists the new ones, each with its
 that names another open session (e.g. the reference of *Flux > Equalize*)
 takes its `session_id`.
 
-Not a tool, for now: *File > Export to ASCII* (it overwrites files
-without asking).
+*File > Export to ASCII* (`file_export_ascii`) writes the files in the
+folder `path`, named after `prefix`, and does not replace files that exist
+unless asked (`overwrite=true`).
 
 The sessions live in the server while the client is running: save the
 result with `session_save` before closing the client.
@@ -170,7 +171,7 @@ replay the log as a script.
 ## 6. Limits of the Pilot
 
 - No tools yet to list the components, read the spectrum, undo a step,
-  or duplicate and close a session (coming); no export to ASCII.
+  or duplicate and close a session (coming).
 - Paths are on the computer where the server runs; give them in full.
 - `absorbers_doublets_auto` replaces the components already on the red
   side. It finds the absorbed regions on a new mask made with the default
