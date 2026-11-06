@@ -487,10 +487,10 @@ def changes_text(before, after) -> List[str]:
 # --- The atomic data ------------------------------------------------------------
 
 def _observed_range_angstrom(spec) -> Optional[Tuple[float, float]]:
+    import astropy.units as au
     try:
-        import astropy.units as au
         x = spec.x.to(au.Angstrom).value
-    except Exception:
+    except au.UnitConversionError:  # an x axis in velocity
         return None
     x = x[np.isfinite(x)]
     return (float(x.min()), float(x.max())) if len(x) else None
