@@ -488,8 +488,16 @@
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 
+<span class="c1"># --- The text of the methods (phase 6-ter, PR 5c: astrocook.methods_text) ---</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.methods_text</span><span class="w"> </span><span class="kn">import</span> <span class="n">file_name</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_methods_import_ascii</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"Columns were read from the table </span><span class="si">{</span><span class="n">file_name</span><span class="p">(</span><span class="n">p</span><span class="p">,</span><span class="w"> </span><span class="s1">'file_path'</span><span class="p">)</span><span class="si">}</span><span class="s2"> and added "</span>
+            <span class="sa">f</span><span class="s2">"to the spectrum</span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+
 <span class="n">FILE_RECIPES_SCHEMAS</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">"export_ascii"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="s2">"The data (</span><span class="si">{targets}</span><span class="s2">) were exported as CSV files</span><span class="si">{menu}</span><span class="s2">"</span><span class="p">,</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Export session data to ASCII."</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Writes the chosen data as CSV files in a folder: the columns of the spectrum to &lt;prefix&gt;_spec.csv (always with the wavelength), the system list to &lt;prefix&gt;_systems.csv."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
@@ -504,6 +512,7 @@
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"file_cb.html#export"</span>
     <span class="p">},</span>
     <span class="s2">"import_ascii"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="n">_methods_import_ascii</span><span class="p">,</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Import session data from ASCII."</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Reads columns from an ASCII/CSV table with a header and adds them to the spectrum, replacing those with the same name; the table must have one row per pixel of the spectrum."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>

@@ -675,6 +675,8 @@
 <li><p><strong>Run All:</strong> Re-run the entire analysis pipeline from the original raw data.</p></li>
 <li><p><strong>Save Script:</strong> Export your workflow as a Python-compatible JSON script for reproducibility.</p></li>
 </ul>
+<p>To describe the analysis in a paper, use <strong>File &gt; Export Log as Text…</strong>
+(see “Export Log as Text” below).</p>
 </section>
 <section id="view-menu-tools">
 <h3>View Menu Tools<a class="headerlink" href="#view-menu-tools" title="Link to this heading">#</a></h3>
@@ -708,6 +710,25 @@ A dialog will appear allowing you to select exactly what to export:</p>
 <li><p><strong>System List (systems)</strong>: Saves your identified absorption lines (including Redshift, Column Density, Doppler Parameter, etc.) into a <code class="docutils literal notranslate"><span class="pre">_systems.csv</span></code> file.</p></li>
 </ul>
 <p>You can choose to export entire structures or pick individual columns. The suggested filename will automatically adjust based on your selection, and Astrocook will warn you if you are about to overwrite existing files.</p>
+</section>
+<section id="export-log-as-text">
+<h3>Export Log as Text<a class="headerlink" href="#export-log-as-text" title="Link to this heading">#</a></h3>
+<p><strong>File &gt; Export Log as Text…</strong> writes the session log as the text of a
+methods section, in English, ready to paste in a paper: a first paragraph on
+the spectrum and the version of Astrocook, then one paragraph per recipe
+(the reason given for it, if any, e.g. by an AI agent; what it did, with its
+parameters and the works it relies on; what it changed, e.g. the components
+added and the largest changes of a refit; the notes written at that point),
+then the Voigt fit and the sources of the atomic data of the transitions
+fitted (see <a class="reference internal" href="../atomic_data.html"><span class="std std-doc">Atomic Data</span></a>), and the references. The
+recipes undone are left out. Each recipe is followed by its menu in
+parentheses, to rerun it in the GUI; uncheck <strong>Name the menus of the
+recipes</strong> for a paper. <strong>Copy</strong> puts the text in the clipboard, <strong>Save…</strong>
+writes it to a text file. The text is a draft to edit: it says what was
+done, not why it is right.</p>
+<p>For a session just opened from an archive, the log says which recipes were
+run and with which parameters, but not what each one changed: the text says
+so for those steps.</p>
 </section>
 <section id="import-from-ascii">
 <h3>Import from ASCII<a class="headerlink" href="#import-from-ascii" title="Link to this heading">#</a></h3>
@@ -801,6 +822,7 @@ A dialog will appear allowing you to select exactly what to export:</p>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#exporting-and-importing-data">5. Exporting and Importing Data</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#export-to-ascii">Export to ASCII</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#export-log-as-text">Export Log as Text</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#import-from-ascii">Import from ASCII</a></li>
 </ul>
 </li>

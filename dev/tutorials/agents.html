@@ -614,7 +614,10 @@ itself. Other tools handle the sessions:</p>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">session_note</span></code></p></td>
 <td><p>Writes a note in the session log, at the current state: what the agent did or decided outside the tools; with <code class="docutils literal notranslate"><span class="pre">kind=&quot;gap&quot;</span></code>, a gap of the collection of recipes (see “Gaps” below).</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">gaps_summary</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">session_methods</span></code></p></td>
+<td><p>Writes the session log as the text of a methods section, in English (see “The log as text” below).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">gaps_summary</span></code></p></td>
 <td><p>Summarizes, grouped, the gaps recorded in your local file (see “Gaps” below).</p></td>
 </tr>
 </tbody>
@@ -663,6 +666,17 @@ saw. The instructions of the server ask the agent for both. A note is not
 a step: it makes no new state, the replay of the log skips it, and it is
 undone with the state it was written at. <code class="docutils literal notranslate"><span class="pre">session_history</span></code> shows the
 reason of each recipe and the notes of each state.</p>
+<p><strong>The log as text.</strong> <code class="docutils literal notranslate"><span class="pre">session_methods</span></code> writes the log of a session as the
+text of a methods section, ready to paste in a paper, as <em>File &gt; Export Log
+as Text</em> does in the GUI: one paragraph per recipe, with the reason the
+agent gave, what the recipe did (its parameters, the works it relies on),
+what it changed and the notes written there; then the fit, the sources of
+the atomic data of the transitions fitted, and the references. The recipes
+undone are left out; <code class="docutils literal notranslate"><span class="pre">menus=false</span></code> leaves out the menus of the GUI that
+follow each recipe. The text is made by Astrocook from the log, not by the
+agent: the same log gives the same text. So the reasons and notes are the
+only words of the agent in it: the instructions of the server tell the
+agent so.</p>
 <p><strong>Gaps.</strong> A gap is something the analysis needed and no recipe provided:
 the list of the gaps is where to direct the work on the recipes. Two
 sources. The agent declares one (<code class="docutils literal notranslate"><span class="pre">session_note</span></code> with <code class="docutils literal notranslate"><span class="pre">kind=&quot;gap&quot;</span></code>: what

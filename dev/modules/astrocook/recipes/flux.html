@@ -485,8 +485,26 @@
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
+<span class="c1"># --- The text of the methods (phase 6-ter, PR 5c: astrocook.methods_text) ---</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.methods_text</span><span class="w"> </span><span class="kn">import</span> <span class="n">fmt</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_methods_rebin</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.edit</span><span class="w"> </span><span class="kn">import</span> <span class="n">_clipping</span><span class="p">,</span> <span class="n">_grid</span>
+    <span class="n">filling</span> <span class="o">=</span> <span class="s2">""</span> <span class="k">if</span> <span class="n">fmt</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'filling'</span><span class="p">))</span> <span class="o">==</span> <span class="s2">"nan"</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">"; the pixels without data were set to </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'filling'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
+    <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"The spectrum was rebinned onto </span><span class="si">{</span><span class="n">_grid</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="si">}</span><span class="s2">, each new pixel being the "</span>
+            <span class="sa">f</span><span class="s2">"inverse-variance weighted mean of the old ones</span><span class="si">{</span><span class="n">_clipping</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="si">}{</span><span class="n">filling</span><span class="si">}{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_methods_equalize</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="n">order</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'order'</span><span class="p">)</span>
+    <span class="n">how</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"a constant factor"</span> <span class="k">if</span> <span class="n">order</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="s2">"a spline"</span> <span class="k">if</span> <span class="n">order</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span>
+           <span class="k">else</span> <span class="sa">f</span><span class="s2">"a polynomial of order </span><span class="si">{</span><span class="n">order</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"The flux was scaled to match that of the session </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'reference_session'</span><span class="p">]</span><span class="si">}</span><span class="s2"> "</span>
+            <span class="sa">f</span><span class="s2">"where they overlap, by </span><span class="si">{</span><span class="n">how</span><span class="si">}{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+
 <span class="n">FLUX_RECIPES_SCHEMAS</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">"calculate_running_std"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="s2">"The standard deviation of the column </span><span class="si">{input_col}</span><span class="s2"> was computed in a running window of </span><span class="si">{window_pix}</span><span class="s2"> pixels and written in the column </span><span class="si">{output_col}{menu}</span><span class="s2">"</span><span class="p">,</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Calculate running standard deviation."</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Computes the standard deviation of a column in a running window, e.g. to estimate the local noise of the flux; written in a new column."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
@@ -497,6 +515,7 @@
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"edit_cb.html#calculate_running_std"</span> <span class="c1"># Placeholder URL</span>
     <span class="p">},</span>
     <span class="s2">"smooth"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="s2">"The flux, its error and the columns like the flux were smoothed with a Gaussian kernel of standard deviation </span><span class="si">{sigma_kms}</span><span class="s2"> km/s</span><span class="si">{menu}</span><span class="s2">"</span><span class="p">,</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Smooth spectrum."</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Apply a Gaussian filter to the flux, its error and the columns like the flux (continuum, model, telluric transmission)."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
@@ -505,6 +524,7 @@
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"edit_cb.html#smooth"</span> <span class="c1"># Placeholder URL</span>
     <span class="p">},</span>
     <span class="s2">"rebin"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="n">_methods_rebin</span><span class="p">,</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Rebin spectrum."</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Rebins the spectrum onto a new grid with a constant step, in velocity (uniform in log wavelength) or in wavelength; the flux of each new pixel is the inverse-variance weighted mean of the old ones."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
@@ -531,6 +551,7 @@
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"edit_cb.html#rebin"</span>
     <span class="p">},</span>
     <span class="s2">"equalize"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="n">_methods_equalize</span><span class="p">,</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Equalize flux to reference."</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Scales the flux of this session to match that of another session where they overlap."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
@@ -539,6 +560,7 @@
         <span class="p">]</span>
     <span class="p">},</span>
     <span class="s2">"resample"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="s2">"The spectrum was interpolated onto the wavelength grid of the session </span><span class="si">{target_session}</span><span class="s2">, into a new session</span><span class="si">{menu}</span><span class="s2">"</span><span class="p">,</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Resample on another grid."</span><span class="p">,</span>
         <span class="s2">"branching"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Interpolates this spectrum onto the wavelength grid of another open session, into a new session; the first step to combine two sessions pixel by pixel."</span><span class="p">,</span>
@@ -548,6 +570,7 @@
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"edit_cb.html#resample"</span> <span class="c1"># Placeholder URL</span>
     <span class="p">},</span>
     <span class="s2">"calibrate_from_magnitudes"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="s2">"The flux was scaled, smoothly with wavelength, to match the magnitudes </span><span class="si">{magnitudes}{menu}</span><span class="s2">"</span><span class="p">,</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Flux calibrate (multi-band)."</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Scales the flux, smoothly with wavelength, to match the magnitudes of the object in one or more photometric filters."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>

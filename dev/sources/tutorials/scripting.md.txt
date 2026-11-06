@@ -135,6 +135,21 @@ fig = plot_spectrum(fitted, 445, 452, normalized=True)
 fig.savefig("doublet.png")
 ```
 
+The log of a session as the text of a methods section, as *File > Export
+Log as Text* writes it (one paragraph per recipe, with the reasons, what it
+changed and the notes, then the references):
+```python
+from astrocook.core.session_manager import SessionHistory
+from astrocook.methods_text import methods_text
+
+text = methods_text(history)        # a SessionHistory: the states and the log
+print(text)                          # or text.paragraphs, text.references
+methods_text(history, menus=False)  # without the menus, for a paper
+```
+A session alone (`methods_text(session)`) gives its log, without what each
+recipe changed: the states before and after it are kept by the history (the
+GUI and the MCP server keep one per session).
+
 ## 5. Saving the Result
 
 Save a session as an `.acs2` archive; passing the original session as

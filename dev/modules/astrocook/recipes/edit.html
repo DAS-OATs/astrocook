@@ -490,8 +490,132 @@
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
+<span class="c1"># --- The text of the methods (phase 6-ter, PR 5c: astrocook.methods_text) ---</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.methods_text</span><span class="w"> </span><span class="kn">import</span> <span class="n">file_name</span><span class="p">,</span> <span class="n">fmt</span><span class="p">,</span> <span class="n">region_words</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_methods_set_properties</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="n">parts</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">given</span><span class="p">(</span><span class="s1">'name'</span><span class="p">):</span>
+        <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"the name of the session to </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'name'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">given</span><span class="p">(</span><span class="s1">'object'</span><span class="p">):</span>
+        <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"the name of the object to </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'object'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">given</span><span class="p">(</span><span class="s1">'z_em'</span><span class="p">):</span>
+        <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"the emission redshift to z_em = </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'z_em'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">given</span><span class="p">(</span><span class="s1">'resol'</span><span class="p">):</span>
+        <span class="n">resol</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'resol'</span><span class="p">))</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">resol</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">'px'</span><span class="p">):</span>
+            <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"the resolution to a line spread function of FWHM </span><span class="si">{</span><span class="n">resol</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s2"> pixels"</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">resol</span> <span class="o">=</span> <span class="n">fmt</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">resol</span><span class="p">))</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"the resolving power to R = </span><span class="si">{</span><span class="n">resol</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'overwrite_resol_col'</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">parts</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"The properties of the session were left as they were</span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">"</span>
+    <span class="n">first</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">removeprefix</span><span class="p">(</span><span class="s2">"the "</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">" to "</span><span class="p">,</span> <span class="s2">" was set to "</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="s2">"The "</span> <span class="o">+</span> <span class="n">_join_and</span><span class="p">([</span><span class="n">first</span><span class="p">]</span> <span class="o">+</span> <span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+    <span class="k">return</span> <span class="n">text</span> <span class="o">+</span> <span class="n">p</span><span class="o">.</span><span class="n">menu</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_join_and</span><span class="p">(</span><span class="n">items</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">items</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">items</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="s2">" and "</span> <span class="o">+</span> <span class="n">items</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_methods_x_convert</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="n">unit</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s1">'xunit'</span><span class="p">]</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">velocity</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">Unit</span><span class="p">(</span><span class="n">unit</span><span class="p">)</span><span class="o">.</span><span class="n">physical_type</span> <span class="o">==</span> <span class="s1">'speed'</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="n">velocity</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="n">velocity</span><span class="p">:</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"z = </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'z_ref'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">given</span><span class="p">(</span><span class="s1">'z_ref'</span><span class="p">)</span> <span class="k">else</span> <span class="s2">"z_em"</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"The x axis was converted to velocity (</span><span class="si">{</span><span class="n">unit</span><span class="si">}</span><span class="s2">) relative to </span><span class="si">{</span><span class="n">z</span><span class="si">}{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">"</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'z_ref'</span><span class="p">)</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"The x axis was converted to </span><span class="si">{</span><span class="n">unit</span><span class="si">}{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">"</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_methods_import_systems</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="n">how</span> <span class="o">=</span> <span class="s2">"added to those"</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'append'</span><span class="p">)</span> <span class="k">else</span> <span class="s2">"put in place of those"</span>
+    <span class="n">refit</span> <span class="o">=</span> <span class="s2">", and refitted on its spectrum"</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'refit'</span><span class="p">)</span> <span class="k">else</span> <span class="s2">""</span>
+    <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"The absorption systems of the session </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'source_session'</span><span class="p">]</span><span class="si">}</span><span class="s2"> were "</span>
+            <span class="sa">f</span><span class="s2">"copied and </span><span class="si">{</span><span class="n">how</span><span class="si">}</span><span class="s2"> of this session</span><span class="si">{</span><span class="n">refit</span><span class="si">}{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_methods_import_systems_ascii</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="n">how</span> <span class="o">=</span> <span class="s2">"added to those of the session"</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'append'</span><span class="p">)</span> <span class="k">else</span> <span class="s2">"put in place of those of the session"</span>
+    <span class="n">refit</span> <span class="o">=</span> <span class="s2">", and refitted"</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'refit'</span><span class="p">)</span> <span class="k">else</span> <span class="s2">""</span>
+    <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"Absorption components were read from the table "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">file_name</span><span class="p">(</span><span class="n">p</span><span class="p">,</span><span class="w"> </span><span class="s1">'file_path'</span><span class="p">)</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">how</span><span class="si">}{</span><span class="n">refit</span><span class="si">}{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_methods_delete</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="n">items</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'targets'</span><span class="p">)</span> <span class="ow">or</span> <span class="s1">''</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">','</span><span class="p">)</span> <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span>
+    <span class="n">parts</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="s1">'systems'</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
+        <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"all the components"</span><span class="p">)</span>
+    <span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">items</span> <span class="k">if</span> <span class="n">t</span> <span class="o">!=</span> <span class="s1">'systems'</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">columns</span><span class="p">:</span>
+        <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"the column</span><span class="si">{</span><span class="s1">'s'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">columns</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">''</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">columns</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">what</span> <span class="o">=</span> <span class="n">_join_and</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="k">if</span> <span class="n">parts</span> <span class="k">else</span> <span class="s2">"nothing"</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">what</span><span class="p">[:</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}{</span><span class="n">what</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="s1">'was'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">what</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s1">'nothing'</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'were'</span><span class="si">}</span><span class="s2"> deleted</span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">"</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_methods_extract_preset</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="n">regions</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'region'</span><span class="p">))</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">','</span><span class="p">)</span> <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span>
+    <span class="n">words</span> <span class="o">=</span> <span class="p">[</span><span class="n">region_words</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">before</span><span class="o">=</span><span class="s2">""</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">regions</span><span class="p">]</span>
+    <span class="n">each</span> <span class="o">=</span> <span class="s2">"each into a new session"</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">regions</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="s2">"into a new session"</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"The part of the spectrum </span><span class="si">{</span><span class="n">_join_and</span><span class="p">(</span><span class="n">words</span><span class="p">)</span><span class="si">}</span><span class="s2"> was copied </span><span class="si">{</span><span class="n">each</span><span class="si">}{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">"</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_methods_trim_common</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"z = </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'z_target'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">given</span><span class="p">(</span><span class="s1">'z_target'</span><span class="p">)</span> <span class="k">else</span> <span class="s2">"z_em"</span>
+    <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"The spectrum was trimmed to the velocity range of +-</span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'window_kms'</span><span class="p">]</span><span class="si">}</span><span class="s2"> km/s "</span>
+            <span class="sa">f</span><span class="s2">"around </span><span class="si">{</span><span class="n">z</span><span class="si">}</span><span class="s2"> that all the sessions cover (</span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'trans_self'</span><span class="p">]</span><span class="si">}</span><span class="s2"> in this "</span>
+            <span class="sa">f</span><span class="s2">"session; </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'trans_others'</span><span class="p">]</span><span class="si">}</span><span class="s2"> in </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'others_names'</span><span class="p">]</span><span class="si">}</span><span class="s2">)</span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_methods_equalize_and_stitch</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">given</span><span class="p">(</span><span class="s1">'manual_factors'</span><span class="p">):</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"was multiplied by the factors </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'manual_factors'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
+    <span class="k">elif</span> <span class="n">p</span><span class="o">.</span><span class="n">given</span><span class="p">(</span><span class="s1">'equalize_ranges'</span><span class="p">):</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"was scaled to match in the ranges </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'equalize_ranges'</span><span class="p">]</span><span class="si">}</span><span class="s2"> nm"</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'equalize_ranges'</span><span class="p">)</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="s2">"was scaled to match in their overlaps"</span>
+    <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"The flux of this session and of </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'other_sessions'</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">scale</span><span class="si">}</span><span class="s2">, and the "</span>
+            <span class="sa">f</span><span class="s2">"sessions were joined at </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'stitch_wavelengths'</span><span class="p">]</span><span class="si">}</span><span class="s2"> nm</span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_grid</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"a grid with a constant step of </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'dx'</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'xunit'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
+    <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">given</span><span class="p">(</span><span class="s1">'xstart'</span><span class="p">)</span> <span class="ow">or</span> <span class="n">p</span><span class="o">.</span><span class="n">given</span><span class="p">(</span><span class="s1">'xend'</span><span class="p">):</span>
+        <span class="n">text</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">", from </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'xstart'</span><span class="p">]</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">p</span><span class="o">.</span><span class="n">given</span><span class="p">(</span><span class="s1">'xstart'</span><span class="p">)</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'the start of the data'</span><span class="si">}</span><span class="s2">"</span>
+        <span class="n">text</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">" to </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'xend'</span><span class="p">]</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">p</span><span class="o">.</span><span class="n">given</span><span class="p">(</span><span class="s1">'xend'</span><span class="p">)</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'the end of the data'</span><span class="si">}</span><span class="s2"> nm"</span>
+    <span class="k">return</span> <span class="n">text</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_clipping</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">", with a </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'kappa'</span><span class="p">]</span><span class="si">}</span><span class="s2">-sigma clipping of outliers"</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">given</span><span class="p">(</span><span class="s1">'kappa'</span><span class="p">)</span>
+            <span class="k">else</span> <span class="s2">", without clipping"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_methods_coadd</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="n">order</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'equalize_order'</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">order</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">order</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="s2">""</span>
+    <span class="k">elif</span> <span class="n">order</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="s2">", each scaled to the first by a constant factor"</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">", each scaled to the first by a polynomial of order </span><span class="si">{</span><span class="n">order</span><span class="si">}</span><span class="s2">"</span>
+    <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"The sessions </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'session_names'</span><span class="p">]</span><span class="si">}</span><span class="s2"> were co-added with this one on "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">_grid</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="si">}</span><span class="s2">, weighting each pixel by its inverse variance"</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">_clipping</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="si">}{</span><span class="n">scale</span><span class="si">}{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+
 <span class="n">EDIT_RECIPES_SCHEMAS</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">"set_properties"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="n">_methods_set_properties</span><span class="p">,</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Set session properties."</span><span class="p">,</span>
         <span class="s2">"provides"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"z_em"</span><span class="p">,</span> <span class="s2">"resolution"</span><span class="p">),</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Sets the name of the session, the name of the object, the emission redshift and the resolution of the spectrum. A field left at '_current_' keeps its value."</span><span class="p">,</span>
@@ -509,6 +633,7 @@
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"edit_cb.html#set_properties"</span>
     <span class="p">},</span>
     <span class="s2">"x_convert"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="n">_methods_x_convert</span><span class="p">,</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Convert X axis."</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Converts the x axis to another unit of wavelength (e.g. nm, Angstrom) or to velocity (e.g. km/s) relative to a reference redshift."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
@@ -518,6 +643,7 @@
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"edit_cb.html#convert-x-axis"</span>
     <span class="p">},</span>
     <span class="s2">"y_convert"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="s2">"The flux and its error were converted to </span><span class="si">{yunit}{menu}</span><span class="s2">"</span><span class="p">,</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Convert Y axis units."</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Converts the flux, its error and the columns like the flux to another unit of flux density."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
@@ -526,6 +652,7 @@
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"edit_cb.html#convert-y-axis"</span>
     <span class="p">},</span>
     <span class="s2">"apply_expression"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="s2">"The column </span><span class="si">{target_col}</span><span class="s2"> was computed as </span><span class="si">{expression}{menu}</span><span class="s2">"</span><span class="p">,</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Apply expression to columns."</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Evaluates a NumPy expression of the columns and writes it in a column, new or existing. The columns are named as in the GUI (λ, F, dF, cont, model, ...); e.g. 'F / cont', 'F * 2.0', 'log10(F)'."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
@@ -535,6 +662,7 @@
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"edit_cb.html#apply_expression"</span> <span class="c1"># Placeholder URL</span>
     <span class="p">},</span>
     <span class="s2">"mask_expression"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="s2">"The column </span><span class="si">{target_col}</span><span class="s2"> was masked where </span><span class="si">{expression}{menu}</span><span class="s2">"</span><span class="p">,</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Mask column by expression."</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Sets a column to NaN where a boolean expression of the columns is true, e.g. '(λ &lt; 300) | (λ &gt; 400)' or 'dF &lt;= 0'."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
@@ -544,6 +672,7 @@
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"edit_cb.html#mask_expression"</span> <span class="c1"># Placeholder URL</span>
     <span class="p">},</span>
     <span class="s2">"smooth_column"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="s2">"The column </span><span class="si">{target_col}</span><span class="s2"> was smoothed with a Gaussian kernel of standard deviation </span><span class="si">{sigma_kms}</span><span class="s2"> km/s</span><span class="si">{menu}</span><span class="s2">"</span><span class="p">,</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Smooth a single column."</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Smooths one column of the spectrum (e.g. 'dF' or 'cont') with a Gaussian kernel; the other columns are unchanged."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
@@ -554,6 +683,7 @@
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"edit_cb.html#smooth_column"</span> <span class="c1"># Placeholder URL</span>
     <span class="p">},</span>
     <span class="s2">"import_systems"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="n">_methods_import_systems</span><span class="p">,</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Import systems from session."</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Copies the absorption systems (components and constraints) of another open session into this one."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
@@ -564,6 +694,7 @@
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"absorbers_cb.html#import_systems"</span>
     <span class="p">},</span>
     <span class="s2">"import_systems_ascii"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="n">_methods_import_systems_ascii</span><span class="p">,</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Import systems from an ASCII file."</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Read absorption components from an ASCII/CSV table with a header (columns series, z and optionally logN, b, btur, dz, dlogN, db), e.g. the _systems.csv written by Export ASCII."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
@@ -574,6 +705,7 @@
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"absorbers_cb.html#import_systems_ascii"</span>
     <span class="p">},</span>
     <span class="s2">"delete"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="n">_methods_delete</span><span class="p">,</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Delete elements."</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Removes columns from the spectrum, or all the components of the system list ('systems')."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
@@ -582,6 +714,7 @@
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"edit_cb.html#delete"</span>
     <span class="p">},</span>
     <span class="s2">"split"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="s2">"The pixels where </span><span class="si">{expression}</span><span class="s2"> were copied into a new session</span><span class="si">{menu}</span><span class="s2">"</span><span class="p">,</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Split spectrum by expression."</span><span class="p">,</span>
         <span class="s2">"branching"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Copies the pixels where a boolean expression of the columns is true into a new session, e.g. '(λ &gt; 400) &amp; (λ &lt; 500)'."</span><span class="p">,</span>
@@ -591,6 +724,7 @@
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"edit_cb.html#split"</span>
     <span class="p">},</span>
     <span class="s2">"extract_preset"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="n">_methods_extract_preset</span><span class="p">,</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Extract region by preset."</span><span class="p">,</span>
         <span class="s2">"branching"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
         <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"z_em"</span><span class="p">,),</span>
@@ -602,6 +736,7 @@
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"edit_cb.html#extract_preset"</span>
     <span class="p">},</span>
     <span class="s2">"trim_common"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="n">_methods_trim_common</span><span class="p">,</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Trim to common velocity coverage."</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Trims this session to the velocity range around a redshift that all the given sessions cover, each with its own transition (e.g. the arms of an instrument, or the lines of a doublet)."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
@@ -614,6 +749,7 @@
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"edit_cb.html#trim_common"</span>
     <span class="p">},</span>
     <span class="s2">"stitch"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="s2">"This session and </span><span class="si">{other_sessions}</span><span class="s2"> were joined into one spectrum, without equalizing their flux</span><span class="si">{menu}</span><span class="s2">"</span><span class="p">,</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Merge multiple sessions."</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Joins this session and other sessions into one spectrum, without equalizing their flux (see Equalize and stitch arms); the step that Equalize and stitch arms ends with."</span><span class="p">,</span>
         <span class="s2">"branching"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
@@ -624,6 +760,7 @@
         <span class="s2">"gui_hidden"</span><span class="p">:</span> <span class="kc">True</span>  <span class="c1"># Usually called via script</span>
     <span class="p">},</span>
     <span class="s2">"equalize_and_stitch"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="n">_methods_equalize_and_stitch</span><span class="p">,</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Equalize and stitch arms."</span><span class="p">,</span>
         <span class="s2">"branching"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Scales the flux of the sessions (the arms of an instrument) to match in their overlaps, then joins them into one spectrum, cutting at the given wavelengths."</span><span class="p">,</span>
@@ -636,6 +773,7 @@
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"edit_cb.html#equalize-and-stitch"</span>
     <span class="p">},</span>
     <span class="s2">"coadd"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="n">_methods_coadd</span><span class="p">,</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Co-add multiple sessions."</span><span class="p">,</span>
         <span class="s2">"branching"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Combines several sessions on one new grid with a constant step, weighting each pixel with its inverse variance, in one pass."</span><span class="p">,</span>

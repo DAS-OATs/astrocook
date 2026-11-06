@@ -501,9 +501,191 @@
 <span class="c1"># up to 0.5 dex). Decided with Guido.</span>
 <span class="n">FIT_EXPANSION_DEPTH</span> <span class="o">=</span> <span class="mi">2</span>
 
+<span class="c1"># --- The text of the methods (phase 6-ter, PR 5c: astrocook.methods_text) ---</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.methods_text</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">fit_bounds</span><span class="p">,</span> <span class="n">mask_words</span><span class="p">,</span> <span class="n">region_words</span><span class="p">,</span> <span class="n">series_list</span><span class="p">,</span>
+                                    <span class="n">series_name</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_beyond</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"up to </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'z_em_margin_kms'</span><span class="p">]</span><span class="si">}</span><span class="s2"> km/s beyond z_em"</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_methods_components_auto</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"The candidate systems of </span><span class="si">{</span><span class="n">series_list</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'multiplets'</span><span class="p">))</span><span class="si">}</span><span class="s2"> were "</span>
+            <span class="sa">f</span><span class="s2">"searched for</span><span class="si">{</span><span class="n">region_words</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'region_limit'</span><span class="p">))</span><span class="si">}{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">. The absorbed "</span>
+            <span class="sa">f</span><span class="s2">"regions (merged within </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'merge_dv'</span><span class="p">]</span><span class="si">}</span><span class="s2"> km/s, at least "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'min_pix_region'</span><span class="p">]</span><span class="si">}</span><span class="s2"> pixels wide) were found on </span><span class="si">{</span><span class="n">mask_words</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="si">}</span><span class="s2">, and "</span>
+            <span class="sa">f</span><span class="s2">"each candidate was scored by the correlation of its lines (accepted for "</span>
+            <span class="sa">f</span><span class="s2">"R^2 &gt;= </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'score_threshold'</span><span class="p">]</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">_beyond</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="si">}</span><span class="s2">; Cupani et al. 2026). The "</span>
+            <span class="sa">f</span><span class="s2">"accepted candidates were fitted with Voigt profiles, with </span><span class="si">{</span><span class="n">fit_bounds</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_methods_doublets_auto</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"The doublets of </span><span class="si">{</span><span class="n">series_list</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'multiplets'</span><span class="p">))</span><span class="si">}</span><span class="s2"> were searched "</span>
+            <span class="sa">f</span><span class="s2">"for redward of the Lyman-alpha emission</span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">. The absorbed regions "</span>
+            <span class="sa">f</span><span class="s2">"were found on </span><span class="si">{</span><span class="n">mask_words</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="si">}</span><span class="s2">, and each candidate was scored by the "</span>
+            <span class="sa">f</span><span class="s2">"correlation of its two lines (accepted for R^2 &gt;= </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'score_threshold'</span><span class="p">]</span><span class="si">}</span><span class="s2">, "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">_beyond</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="si">}</span><span class="s2">; Cupani et al. 2026). The accepted candidates were fitted "</span>
+            <span class="sa">f</span><span class="s2">"with Voigt profiles, with </span><span class="si">{</span><span class="n">fit_bounds</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_methods_lya_auto</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"Single Lyman-alpha lines were searched for in the forest, between "</span>
+            <span class="sa">f</span><span class="s2">"Lyman-beta and Lyman-alpha</span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">. The absorbed regions were found on "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">mask_words</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="si">}</span><span class="s2">, and the lines accepted for a score &gt;= "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'score_threshold'</span><span class="p">]</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">_beyond</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="si">}</span><span class="s2">; Cupani et al. 2026) were fitted "</span>
+            <span class="sa">f</span><span class="s2">"with Voigt profiles, with </span><span class="si">{</span><span class="n">fit_bounds</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="si">}</span><span class="s2">. Lines narrower than "</span>
+            <span class="sa">f</span><span class="s2">"b = </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'min_b'</span><span class="p">]</span><span class="si">}</span><span class="s2"> km/s were removed as interlopers, and the others refitted"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_methods_forest_auto</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"Lyman-alpha lines were searched for and fitted each as a Lyman series, "</span>
+            <span class="sa">f</span><span class="s2">"from Lyman-alpha to the Lyman limit, so that the higher-order lines "</span>
+            <span class="sa">f</span><span class="s2">"constrain the column density</span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">. The lines were accepted for a "</span>
+            <span class="sa">f</span><span class="s2">"score &gt;= </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'score_threshold'</span><span class="p">]</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">_beyond</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="si">}</span><span class="s2">; Cupani et al. 2026) and "</span>
+            <span class="sa">f</span><span class="s2">"fitted with Voigt profiles, with </span><span class="si">{</span><span class="n">fit_bounds</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="si">}</span><span class="s2">; systems narrower than "</span>
+            <span class="sa">f</span><span class="s2">"b = </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'min_b'</span><span class="p">]</span><span class="si">}</span><span class="s2"> km/s were removed"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_methods_metals_auto</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"For each system, the ions </span><span class="si">{</span><span class="n">series_list</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'ions'</span><span class="p">))</span><span class="si">}</span><span class="s2"> were tried "</span>
+            <span class="sa">f</span><span class="s2">"at its redshift, and each was kept only if it decreased the Akaike "</span>
+            <span class="sa">f</span><span class="s2">"information criterion by at least </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'aic_penalty'</span><span class="p">]</span><span class="si">}</span><span class="s2"> (Cupani et al. "</span>
+            <span class="sa">f</span><span class="s2">"2026)</span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">; the systems were then refitted, with </span><span class="si">{</span><span class="n">fit_bounds</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_methods_identify_lines</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">'bypass_scoring'</span><span class="p">,</span> <span class="s1">'debug_rating'</span><span class="p">):</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"The candidate systems of </span><span class="si">{</span><span class="n">series_list</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'multiplets'</span><span class="p">))</span><span class="si">}</span><span class="s2"> were "</span>
+            <span class="sa">f</span><span class="s2">"identified in the absorbed regions of the mask </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'mask_col'</span><span class="p">]</span><span class="si">}</span><span class="s2"> (merged "</span>
+            <span class="sa">f</span><span class="s2">"within </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'merge_dv'</span><span class="p">]</span><span class="si">}</span><span class="s2"> km/s, at least </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'min_pix_region'</span><span class="p">]</span><span class="si">}</span><span class="s2"> pixels wide), "</span>
+            <span class="sa">f</span><span class="s2">"each scored by the correlation of its lines (accepted for R^2 &gt;= "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'score_threshold'</span><span class="p">]</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">_beyond</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="si">}</span><span class="s2">; Cupani et al. 2026), and written "</span>
+            <span class="sa">f</span><span class="s2">"in a new session</span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_methods_add_component</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="n">btur</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">", b_tur = </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'btur'</span><span class="p">]</span><span class="si">}</span><span class="s2"> km/s"</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'btur'</span><span class="p">)</span> <span class="k">else</span> <span class="s2">""</span>
+    <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"A </span><span class="si">{</span><span class="n">series_name</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'series'</span><span class="p">)))</span><span class="si">}</span><span class="s2"> component was added at "</span>
+            <span class="sa">f</span><span class="s2">"z = </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'z'</span><span class="p">]</span><span class="si">}</span><span class="s2"> (starting from log N = </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'logN'</span><span class="p">]</span><span class="si">}</span><span class="s2">, b = </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'b'</span><span class="p">]</span><span class="si">}</span><span class="s2"> km/s"</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">btur</span><span class="si">}</span><span class="s2">) and fitted with its neighbours, with </span><span class="si">{</span><span class="n">fit_bounds</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="si">}{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+
+<span class="n">_SET_WORDS</span> <span class="o">=</span> <span class="p">((</span><span class="s1">'z'</span><span class="p">,</span> <span class="s2">"z = </span><span class="si">{}</span><span class="s2">"</span><span class="p">),</span> <span class="p">(</span><span class="s1">'logN'</span><span class="p">,</span> <span class="s2">"log N = </span><span class="si">{}</span><span class="s2">"</span><span class="p">),</span> <span class="p">(</span><span class="s1">'b'</span><span class="p">,</span> <span class="s2">"b = </span><span class="si">{}</span><span class="s2"> km/s"</span><span class="p">),</span>
+              <span class="p">(</span><span class="s1">'btur'</span><span class="p">,</span> <span class="s2">"b_tur = </span><span class="si">{}</span><span class="s2"> km/s"</span><span class="p">),</span> <span class="p">(</span><span class="s1">'series'</span><span class="p">,</span> <span class="s2">"the series </span><span class="si">{}</span><span class="s2">"</span><span class="p">),</span>
+              <span class="p">(</span><span class="s1">'resol'</span><span class="p">,</span> <span class="s2">"the resolving power R = </span><span class="si">{}</span><span class="s2">"</span><span class="p">))</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_set_parts</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="n">parts</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">words</span> <span class="ow">in</span> <span class="n">_SET_WORDS</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">p</span> <span class="ow">and</span> <span class="n">p</span><span class="o">.</span><span class="n">given</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="p">(</span><span class="n">series_name</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="n">name</span><span class="p">)))</span> <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">'series'</span> <span class="k">else</span> <span class="n">p</span><span class="p">[</span><span class="n">name</span><span class="p">])</span>
+            <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">words</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+    <span class="k">return</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">"nothing"</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_methods_update_component</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'uuid'</span><span class="p">)</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"The parameters of a component were set by hand: </span><span class="si">{</span><span class="n">_set_parts</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="si">}{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">"</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_methods_update_components</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'uuids'</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[])</span>
+    <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"The parameters of </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2"> component</span><span class="si">{</span><span class="s1">'s'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">''</span><span class="si">}</span><span class="s2"> were set by "</span>
+            <span class="sa">f</span><span class="s2">"hand: </span><span class="si">{</span><span class="n">_set_parts</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="si">}{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_methods_delete_component</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="n">uuids</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'uuids'</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[])</span>
+    <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">given</span><span class="p">(</span><span class="s1">'uuid'</span><span class="p">):</span>
+        <span class="n">uuids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'uuid'</span><span class="p">))</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">uuids</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"A component was deleted by hand</span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">"</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2"> components were deleted by hand</span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">"</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_methods_fit_component</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'uuid'</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"A component was fitted with its neighbours (group depth "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'group_depth'</span><span class="p">]</span><span class="si">}</span><span class="s2">), with </span><span class="si">{</span><span class="n">fit_bounds</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="si">}</span><span class="s2"> and at most </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'max_nfev'</span><span class="p">]</span><span class="si">}</span><span class="s2"> "</span>
+            <span class="sa">f</span><span class="s2">"evaluations of the model</span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_methods_update_constraint</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'uuid'</span><span class="p">),</span> <span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'target_uuid'</span><span class="p">)</span>
+    <span class="n">param</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s1">'param'</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">'logN'</span><span class="p">,</span> <span class="s1">'log N'</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">'btur'</span><span class="p">,</span> <span class="s1">'b_tur'</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">given</span><span class="p">(</span><span class="s1">'expression'</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"The parameter </span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s2"> of a component was linked to another "</span>
+                <span class="sa">f</span><span class="s2">"component by the expression </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'expression'</span><span class="p">]</span><span class="si">}{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">state</span> <span class="o">=</span> <span class="s2">"freed"</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'is_free'</span><span class="p">)</span> <span class="k">else</span> <span class="s2">"frozen"</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"The parameter </span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s2"> of a component was </span><span class="si">{</span><span class="n">state</span><span class="si">}{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">"</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_methods_update_constraints_column</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="n">param</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s1">'param'</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">'logN'</span><span class="p">,</span> <span class="s1">'log N'</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">'btur'</span><span class="p">,</span> <span class="s1">'b_tur'</span><span class="p">)</span>
+    <span class="n">state</span> <span class="o">=</span> <span class="s2">"freed"</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'is_free'</span><span class="p">)</span> <span class="k">else</span> <span class="s2">"frozen"</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"The parameter </span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s2"> of all the components was </span><span class="si">{</span><span class="n">state</span><span class="si">}{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">"</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_methods_add_linked_system</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"Components of </span><span class="si">{</span><span class="n">series_list</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'series_list'</span><span class="p">))</span><span class="si">}</span><span class="s2"> were added at "</span>
+            <span class="sa">f</span><span class="s2">"z = </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'z'</span><span class="p">]</span><span class="si">}</span><span class="s2">, with their redshifts linked (starting from log N = "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'logN'</span><span class="p">]</span><span class="si">}</span><span class="s2">, b = </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'b'</span><span class="p">]</span><span class="si">}</span><span class="s2"> km/s), and fitted, with </span><span class="si">{</span><span class="n">fit_bounds</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="si">}{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_methods_optimize_system</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'uuid'</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"Components were added to a system one at a time where the residuals "</span>
+            <span class="sa">f</span><span class="s2">"exceeded </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'threshold_sigma'</span><span class="p">]</span><span class="si">}</span><span class="s2"> sigma, at least </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'min_dv'</span><span class="p">]</span><span class="si">}</span><span class="s2"> km/s from "</span>
+            <span class="sa">f</span><span class="s2">"the others and within +-</span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'z_window_kms'</span><span class="p">]</span><span class="si">}</span><span class="s2"> km/s of the system, each kept "</span>
+            <span class="sa">f</span><span class="s2">"only if it decreased the Akaike information criterion by at least "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'aic_penalty'</span><span class="p">]</span><span class="si">}</span><span class="s2"> (at most </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'max_components'</span><span class="p">]</span><span class="si">}</span><span class="s2"> components, stopping "</span>
+            <span class="sa">f</span><span class="s2">"after </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'patience'</span><span class="p">]</span><span class="si">}</span><span class="s2"> tries without an improvement; group depth "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'group_depth'</span><span class="p">]</span><span class="si">}</span><span class="s2">; Cupani et al. 2026)</span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_methods_fit_bayesian</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'uuids'</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[])</span>
+    <span class="n">group</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"a group of </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2"> component</span><span class="si">{</span><span class="s1">'s'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">''</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">n</span> <span class="k">else</span> <span class="s2">"a group of components"</span>
+    <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'engine'</span><span class="p">)</span> <span class="o">==</span> <span class="s1">'nested'</span><span class="p">:</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'nsteps'</span><span class="p">)</span>
+        <span class="n">how</span> <span class="o">=</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"nested sampling (dynesty; Speagle 2020), with </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'nlive'</span><span class="p">]</span><span class="si">}</span><span class="s2"> live "</span>
+               <span class="sa">f</span><span class="s2">"points"</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'nlive'</span><span class="p">)</span>
+        <span class="n">how</span> <span class="o">=</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"MCMC (emcee; Foreman-Mackey et al. 2013), with </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'nsteps'</span><span class="p">]</span><span class="si">}</span><span class="s2"> steps "</span>
+               <span class="sa">f</span><span class="s2">"per walker"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"The posterior of the parameters of </span><span class="si">{</span><span class="n">group</span><span class="si">}</span><span class="s2"> (group depth "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'group_depth'</span><span class="p">]</span><span class="si">}</span><span class="s2">) was sampled with </span><span class="si">{</span><span class="n">how</span><span class="si">}{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_methods_refit_all</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="n">selected</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'selected_uuids'</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">selected</span><span class="p">:</span>
+        <span class="n">which</span> <span class="o">=</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"The </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">selected</span><span class="p">)</span><span class="si">}</span><span class="s2"> selected component</span><span class="si">{</span><span class="s1">'s'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">selected</span><span class="p">)</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">''</span><span class="si">}</span><span class="s2">"</span>
+                 <span class="sa">f</span><span class="s2">" and their groups were refitted"</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">which</span> <span class="o">=</span> <span class="s2">"All the components were refitted"</span>
+    <span class="n">region</span> <span class="o">=</span> <span class="n">region_words</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'region_limit'</span><span class="p">),</span> <span class="n">before</span><span class="o">=</span><span class="s2">", "</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">which</span><span class="si">}{</span><span class="n">region</span><span class="si">}</span><span class="s2"> group by group</span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">. A group joins the components "</span>
+            <span class="sa">f</span><span class="s2">"blended with each other, up to </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'group_depth'</span><span class="p">]</span><span class="si">}</span><span class="s2"> steps away, with at "</span>
+            <span class="sa">f</span><span class="s2">"most </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'max_group_size'</span><span class="p">]</span><span class="si">}</span><span class="s2"> components and </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'max_nfev'</span><span class="p">]</span><span class="si">}</span><span class="s2"> evaluations "</span>
+            <span class="sa">f</span><span class="s2">"of the model. The fit allowed </span><span class="si">{</span><span class="n">fit_bounds</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_methods_clean_negligible</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="n">broad</span> <span class="o">=</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"b &gt; </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'max_b'</span><span class="p">]</span><span class="si">}</span><span class="s2"> km/s and log N &lt; 13"</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'combined_check'</span><span class="p">)</span>
+             <span class="k">else</span> <span class="sa">f</span><span class="s2">"b &gt; </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'max_b'</span><span class="p">]</span><span class="si">}</span><span class="s2"> km/s"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"The components with log N &lt; </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'min_logN'</span><span class="p">]</span><span class="si">}</span><span class="s2">, b &lt; </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'min_b'</span><span class="p">]</span><span class="si">}</span><span class="s2"> km/s, or "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">broad</span><span class="si">}</span><span class="s2"> were removed as negligible or unphysical</span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+
 <span class="n">ABSORBERS_RECIPES_SCHEMAS</span> <span class="o">=</span> <span class="p">{</span>
     <span class="c1"># --- 1. THE MASTER PIPELINE ---</span>
     <span class="s2">"components_auto"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="n">_methods_components_auto</span><span class="p">,</span>
+        <span class="s2">"references"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"C26"</span><span class="p">,</span> <span class="s2">"SciPy"</span><span class="p">),</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Auto-detect and fit components."</span><span class="p">,</span>
         <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"z_em"</span><span class="p">,</span> <span class="s2">"resolution"</span><span class="p">,</span> <span class="s2">"continuum"</span><span class="p">),</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Finds the absorbed regions, identifies the candidate systems of the given multiplets (Identify lines), adds them as components and fits them all (Refit all); the pipeline behind the other automatic recipes."</span><span class="p">,</span>
@@ -525,6 +707,8 @@
     <span class="p">},</span>
     <span class="c1"># --- 2. WRAPPERS ---</span>
     <span class="s2">"doublets_auto"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="n">_methods_doublets_auto</span><span class="p">,</span>
+        <span class="s2">"references"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"C26"</span><span class="p">,</span> <span class="s2">"SciPy"</span><span class="p">),</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Auto-fit metal doublets (Red Side)."</span><span class="p">,</span>
         <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"z_em"</span><span class="p">,</span> <span class="s2">"resolution"</span><span class="p">,</span> <span class="s2">"continuum"</span><span class="p">),</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Finds and fits metal doublets (CIV, SiIV, MgII by default) on the red side of the Lyman-alpha emission, where the forest does not confuse them; candidates are kept up to z_em_margin_kms beyond z_em."</span><span class="p">,</span>
@@ -540,6 +724,8 @@
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"absorbers_cb.html#doublets_auto"</span>
     <span class="p">},</span>
     <span class="s2">"lya_auto"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="n">_methods_lya_auto</span><span class="p">,</span>
+        <span class="s2">"references"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"C26"</span><span class="p">,</span> <span class="s2">"SciPy"</span><span class="p">),</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Auto-fit Ly-alpha forest."</span><span class="p">,</span>
         <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"z_em"</span><span class="p">,</span> <span class="s2">"resolution"</span><span class="p">,</span> <span class="s2">"continuum"</span><span class="p">),</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Finds and fits single Lyman-alpha lines in the forest (between Ly-beta and Ly-alpha); lines narrower than min_b (metal lines or noise) are removed and the rest refitted."</span><span class="p">,</span>
@@ -555,6 +741,8 @@
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"absorbers_cb.html#lya_auto"</span>
     <span class="p">},</span>
     <span class="s2">"forest_auto"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="n">_methods_forest_auto</span><span class="p">,</span>
+        <span class="s2">"references"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"C26"</span><span class="p">,</span> <span class="s2">"SciPy"</span><span class="p">),</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Auto-fit full Lyman series."</span><span class="p">,</span>
         <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"z_em"</span><span class="p">,</span> <span class="s2">"resolution"</span><span class="p">,</span> <span class="s2">"continuum"</span><span class="p">),</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Finds Lyman-alpha lines and fits each as a Lyman series (Ly-alpha to the Lyman limit), so that the higher-order lines constrain the column density; systems narrower than min_b are removed."</span><span class="p">,</span>
@@ -569,6 +757,8 @@
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"absorbers_cb.html#forest_auto"</span>
     <span class="p">},</span>
     <span class="s2">"metals_auto"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="n">_methods_metals_auto</span><span class="p">,</span>
+        <span class="s2">"references"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"C26"</span><span class="p">,</span> <span class="s2">"SciPy"</span><span class="p">),</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Check for associated metals."</span><span class="p">,</span>
         <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"z_em"</span><span class="p">,</span> <span class="s2">"resolution"</span><span class="p">,</span> <span class="s2">"continuum"</span><span class="p">),</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"For each system already in the list, tries to add other metal ions at its redshift and keeps each only if it improves the fit by the AIC penalty; then refits all."</span><span class="p">,</span>
@@ -582,6 +772,8 @@
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"absorbers_cb.html#metals_auto"</span>
     <span class="p">},</span>
     <span class="s2">"identify_lines"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="n">_methods_identify_lines</span><span class="p">,</span>
+        <span class="s2">"references"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"C26"</span><span class="p">,),</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Identify likely absorption systems."</span><span class="p">,</span>
         <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"z_em"</span><span class="p">,</span> <span class="s2">"resolution"</span><span class="p">,</span> <span class="s2">"continuum"</span><span class="p">),</span>
         <span class="s2">"branching"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
@@ -599,6 +791,7 @@
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"absorbers_cb.html#identify_lines"</span>
     <span class="p">},</span>
     <span class="s2">"populate_from_identification"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="s2">"Components were added at the candidate systems of the identification</span><span class="si">{menu}</span><span class="s2">"</span><span class="p">,</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Populate components from identification."</span><span class="p">,</span>
         <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"continuum"</span><span class="p">,),</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Populates the system list using the regions and candidates found by 'identify_lines'."</span><span class="p">,</span>
@@ -611,6 +804,8 @@
         <span class="s2">"gui_hidden"</span><span class="p">:</span> <span class="kc">True</span>
     <span class="p">},</span>
     <span class="s2">"add_component"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="n">_methods_add_component</span><span class="p">,</span>
+        <span class="s2">"references"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"SciPy"</span><span class="p">,),</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Add a single component."</span><span class="p">,</span>
         <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"resolution"</span><span class="p">,</span> <span class="s2">"continuum"</span><span class="p">),</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Adds a Voigt component of a transition or multiplet at a redshift and fits it with its neighbours."</span><span class="p">,</span>
@@ -625,6 +820,7 @@
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"absorbers_cb.html#add_component"</span> 
     <span class="p">},</span>
     <span class="s2">"update_component"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="n">_methods_update_component</span><span class="p">,</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Update component."</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Changes the parameters of a component; a parameter left at None keeps its value."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
@@ -640,6 +836,7 @@
         <span class="s2">"gui_hidden"</span><span class="p">:</span> <span class="kc">True</span>
     <span class="p">},</span>
     <span class="s2">"update_components"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="n">_methods_update_components</span><span class="p">,</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Batch update components."</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Sets the same parameters on several components; a parameter left at None keeps its value."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
@@ -652,6 +849,7 @@
         <span class="p">]</span>
     <span class="p">},</span>
     <span class="s2">"delete_component"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="n">_methods_delete_component</span><span class="p">,</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Delete component(s)."</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Deletes one or more components and recomputes the model."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
@@ -660,6 +858,7 @@
         <span class="p">]</span>
     <span class="p">},</span>
     <span class="s2">"detect_anchor"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="s2">"The redshift at which </span><span class="si">{trans_self}</span><span class="s2"> in this session and </span><span class="si">{trans_sibling}</span><span class="s2"> in the session </span><span class="si">{sibling_name}</span><span class="s2"> overlap best was found</span><span class="si">{menu}</span><span class="s2">"</span><span class="p">,</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Detect doublet anchor redshift."</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Finds the redshift at which a transition of this session and one of a sibling session (e.g. the two lines of a doublet, in two sessions) overlap best."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
@@ -670,6 +869,8 @@
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"absorbers_cb.html#detect_anchor"</span>
     <span class="p">},</span>
     <span class="s2">"fit_component"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="n">_methods_fit_component</span><span class="p">,</span>
+        <span class="s2">"references"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"SciPy"</span><span class="p">,),</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Fit component."</span><span class="p">,</span>
         <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"resolution"</span><span class="p">,</span> <span class="s2">"continuum"</span><span class="p">),</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Fits a component with its neighbours (the components blended with it) using the Voigt fitter."</span><span class="p">,</span>
@@ -683,6 +884,7 @@
         <span class="s2">"gui_hidden"</span><span class="p">:</span> <span class="kc">True</span>
     <span class="p">},</span>
     <span class="s2">"update_constraint"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="n">_methods_update_constraint</span><span class="p">,</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Update constraint."</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Freezes or frees a parameter of a component, or links it to a parameter of another component with an expression."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
@@ -696,6 +898,7 @@
         <span class="s2">"gui_hidden"</span><span class="p">:</span> <span class="kc">True</span>
     <span class="p">},</span>
     <span class="s2">"update_constraints_column"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="n">_methods_update_constraints_column</span><span class="p">,</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Bulk update constraints."</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Freezes or frees a parameter of all the components."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
@@ -706,6 +909,8 @@
         <span class="s2">"gui_hidden"</span><span class="p">:</span> <span class="kc">True</span>
     <span class="p">},</span>
     <span class="s2">"add_linked_system"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="n">_methods_add_linked_system</span><span class="p">,</span>
+        <span class="s2">"references"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"SciPy"</span><span class="p">,),</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Add linked system."</span><span class="p">,</span>
         <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"resolution"</span><span class="p">,</span> <span class="s2">"continuum"</span><span class="p">),</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Adds components of several series at the same redshift, with the redshifts linked, and fits them."</span><span class="p">,</span>
@@ -720,6 +925,8 @@
         <span class="s2">"gui_hidden"</span><span class="p">:</span> <span class="kc">True</span>
     <span class="p">},</span>
     <span class="s2">"optimize_system"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="n">_methods_optimize_system</span><span class="p">,</span>
+        <span class="s2">"references"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"C26"</span><span class="p">,</span> <span class="s2">"SciPy"</span><span class="p">),</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Optimize system (Iterative Fit)."</span><span class="p">,</span>
         <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"resolution"</span><span class="p">,</span> <span class="s2">"continuum"</span><span class="p">),</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Adds components to a system one at a time where the residuals are significant, keeping each only if it improves the fit by the AIC penalty."</span><span class="p">,</span>
@@ -736,6 +943,8 @@
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"absorbers_cb.html#optimize_system"</span>
     <span class="p">},</span>
     <span class="s2">"fit_bayesian"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="n">_methods_fit_bayesian</span><span class="p">,</span>
+        <span class="s2">"references"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"emcee"</span><span class="p">,</span> <span class="s2">"dynesty"</span><span class="p">),</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Fit Bayesian."</span><span class="p">,</span>
         <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"resolution"</span><span class="p">,</span> <span class="s2">"continuum"</span><span class="p">),</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Samples the posterior of the parameters of a group of components, with MCMC (emcee) or nested sampling (dynesty); needs the [bayes] extra."</span><span class="p">,</span>
@@ -749,6 +958,8 @@
         <span class="s2">"gui_hidden"</span><span class="p">:</span> <span class="kc">True</span>
     <span class="p">},</span>
     <span class="s2">"refit_all"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="n">_methods_refit_all</span><span class="p">,</span>
+        <span class="s2">"references"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"SciPy"</span><span class="p">,),</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Refit all systems."</span><span class="p">,</span>
         <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"resolution"</span><span class="p">,</span> <span class="s2">"continuum"</span><span class="p">),</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Fits all the components, group by group (the components blended with each other), each group on its own."</span><span class="p">,</span>
@@ -765,6 +976,7 @@
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"absorbers_cb.html#refit_all"</span>
     <span class="p">},</span>
     <span class="s2">"clean_negligible"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="n">_methods_clean_negligible</span><span class="p">,</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Remove unphysical/negligible components."</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Removes the components that are too weak, too narrow, or too broad (and weak) to be real absorbers."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
