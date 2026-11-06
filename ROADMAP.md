@@ -2737,11 +2737,26 @@ record):
     range of x, averaged in blocks of pixels beyond `max_points`, for
     reading only: the session is not rebinned) and `spectrum_plot` (a PNG
     as MCP image content: flux, error, continuum, model, a tick per line
-    of each component; matplotlib's `Figure`, no pyplot, no display). The
-    fit group is that of Refit All before it splits the large groups
-    (`get_connected_group` from seeds by increasing z, depth
-    `FIT_EXPANSION_DEPTH`): the pilot inferred it from equal chi2. These
-    tools change nothing and log nothing. Seen along the way: the
+    of each component). The fit group is that of Refit All before it
+    splits the large groups: the pilot inferred it from equal chi2. These
+    tools change nothing and log nothing. Guido's question on the PR (why
+    these tools, could they be recipes, could existing functions replace
+    them): they are needed because the state of a session lives only in
+    the server (the pilot's agent read the original FITS with its own
+    Python, not the state after the recipes, and only with access to the
+    disk); `export_ascii` writes every pixel to disk, without groups or
+    constraints; the GUI is Qt and shows the user, not the agent; no plot
+    without the GUI existed. Not recipes: they change nothing and would
+    only add noise to the log, and the GUI has these views already. But
+    what they compute belongs in the package, not in the server (the
+    constraint of the phase): moved, before the merge, to
+    `SystemListV2.fit_groups` (the grouping of Refit All, which now calls
+    it: one criterion, not two copies), `SpectrumV2.columns_in_range` and
+    the new `astrocook/plotting.py` (`plot_spectrum`, matplotlib's
+    `Figure` without pyplot or Qt, for the headless image; the palettes of
+    the plots moved there from `gui/plot_style.py`, which imports them);
+    the tools are thin wrappers. Documented for scripts (*Using Astrocook
+    from Python*, "Looking at a Session"). Seen along the way: the
     continuum of the J0103-1305 archive of the tests is stored without a
     unit (dimensionless, values in flux units), while a continuum
     estimated now has the unit of the flux; the tools report the units as

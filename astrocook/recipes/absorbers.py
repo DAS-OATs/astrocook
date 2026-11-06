@@ -2042,43 +2042,12 @@ class RecipeAbsorbersV2:
             work_units = [[c.uuid] for c in sorted_comps]
         else:
             logger.debug(f"Refit All: Strategy = Connected Groups (depth={depth_i}).")
-            # Initialize 'todo' set with only valid UUIDs
-            # (We only start groups from valid seeds, but neighbors outside region can still be pulled in)
-            todo_uuids = uuids_in_region.copy()
-            comp_map = {c.uuid: c for c in current_session.systs.components}
-            # Seeds in a deterministic order (increasing z): the depth-limited
-            # group depends on the seed, and the iteration order of a set of
-            # random UUIDs changes from run to run
-            seed_order = sorted(todo_uuids,
-                                key=lambda u: (comp_map[u].z, comp_map[u].series))
-
-            for seed in seed_order:
-                if seed not in todo_uuids: continue
-                    
-                # Find group (physics-based)
-                group = current_session.systs.get_connected_group([seed], max_depth=depth_i,
-                                                                  spec=current_session.spec)
-                    
-                if not group: 
-                    todo_uuids.remove(seed); continue
-                    
-                group_list = sorted(group, key=lambda u: (comp_map[u].z, comp_map[u].series))
-                    
-                # Chunking Logic
-                if len(group_list) <= max_size_i:
-                    work_units.append(group_list)
-                else:
-                    sorted_group = sorted([comp_map[u] for u in group_list], key=lambda c: c.z)
-                    sorted_uuids = [c.uuid for c in sorted_group]
-                        
-                    for k in range(0, len(sorted_uuids), max_size_i):
-                        chunk = sorted_uuids[k : k + max_size_i]
-                        work_units.append(chunk)
-                        
-                    logger.debug(f"  -> Split massive group ({len(group_list)} comps) into {len(sorted_uuids)//max_size_i + 1} chunks.")
-
-                # Remove found items from todo list
-                todo_uuids.difference_update(group)
+            # The groups of the components in the region; their neighbours
+            # outside it can be pulled in (moved to SystemListV2.fit_groups
+            # in phase 6-ter, PR 3: the MCP server shows the same groups)
+            work_units = current_session.systs.fit_groups(
+                uuids_in_region, max_depth=depth_i, spec=current_session.spec,
+                max_size=max_size_i)
 
         total_units = len(work_units)
         logger.info(f"Fitting {total_units} groups of components.")

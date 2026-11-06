@@ -4,18 +4,20 @@ the spectrum in a range, a plot.
 The pilot showed that the agents need to see the data to judge a result,
 and worked around the server to do it (Python on the FITS file: section
 4.2 of ``ROADMAP.md``). These tools read the current state of a session;
-they change nothing and log nothing.
+they change nothing and log nothing. What they compute is in the package,
+for scripts too (phase 6-ter, PR 3, Guido): the fit groups in
+:meth:`~astrocook.core.system_list.SystemListV2.fit_groups` (those of
+Refit All), the reading of a range in
+:meth:`~astrocook.core.spectrum.SpectrumV2.columns_in_range`, the plot in
+:mod:`astrocook.plotting`.
 """
-import io
 from typing import Annotated, Optional
 
-import astropy.units as au
 import numpy as np
 from mcp.server.mcpserver import Image, MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import BaseModel, Field
 
-from astrocook.core.system_list import get_all_w_rest
 from astrocook.mcp_server.outputs import _jsonable
 from astrocook.mcp_server.session_tools import SESSION_ID
 from astrocook.mcp_server.sessions import SessionStore
@@ -66,22 +68,17 @@ class ComponentList(BaseModel):
 
 def fit_groups(session) -> dict[str, int]:
     """The fit group of each component: the groups of Refit All before it
-    splits the large ones (seeds by increasing z, the friends of friends of
-    ``get_connected_group`` at the depth of the fits)."""
+    splits the large ones (:meth:`SystemListV2.fit_groups` at the depth of
+    the fits). A component pulled in by two groups gets the first."""
     systs = session.systs
     if not systs or not systs.components:
         return {}
-    comps = sorted(systs.components, key=lambda c: (c.z, c.series))
+    groups = systs.fit_groups([c.uuid for c in systs.components],
+                              max_depth=FIT_EXPANSION_DEPTH, spec=session.spec)
     group_of: dict[str, int] = {}
-    n = 0
-    for c in comps:
-        if c.uuid in group_of:
-            continue
-        members = systs.get_connected_group([c.uuid], max_depth=FIT_EXPANSION_DEPTH,
-                                            spec=session.spec)
-        for u in members | {c.uuid}:
+    for n, members in enumerate(groups):
+        for u in members:
             group_of.setdefault(u, n)
-        n += 1
     return group_of
 
 
@@ -117,35 +114,6 @@ class SpectrumRange(BaseModel):
 
 
 DEFAULT_COLUMNS = ("y", "dy", "cont", "model")
-
-
-def _range_mask(spec, x_min, x_max) -> np.ndarray:
-    x = spec.x.value
-    lo = np.nanmin(x) if x_min is None else x_min
-    hi = np.nanmax(x) if x_max is None else x_max
-    if lo >= hi:
-        raise ToolError(f"Empty range: x_min ({lo}) must be less than x_max ({hi}).")
-    sel = (x >= lo) & (x <= hi)
-    if not sel.any():
-        raise ToolError(f"No pixel between {lo} and {hi} {spec.x.unit}: the spectrum "
-                        f"covers {np.nanmin(x):.4g}-{np.nanmax(x):.4g} {spec.x.unit}.")
-    return sel
-
-
-def _binned(values: np.ndarray, n: int, error: bool) -> np.ndarray:
-    """Means over blocks of ``n`` (an error column: the error of the mean)."""
-    if n == 1:
-        return values
-    m = len(values) // n * n
-    blocks = values[:m].reshape(-1, n)
-    rest = values[m:]
-    if error:
-        out = np.sqrt(np.nanmean(blocks ** 2, axis=1) / n)
-        tail = [np.sqrt(np.nanmean(rest ** 2) / len(rest))] if len(rest) else []
-    else:
-        out = np.nanmean(blocks, axis=1)
-        tail = [np.nanmean(rest)] if len(rest) else []
-    return np.concatenate([out, tail])
 
 
 def register_inspect_tools(server: MCPServer, store: SessionStore) -> None:
@@ -219,26 +187,22 @@ def register_inspect_tools(server: MCPServer, store: SessionStore) -> None:
         at the shape, spectrum_plot is cheaper."""
         with store.lock:
             spec = store.get(session_id).current_state.spec
-            names = spec.t.colnames
             if columns is None:
-                columns = [c for c in DEFAULT_COLUMNS if c in names]
-            missing = [c for c in columns if c not in names]
-            if missing:
-                raise ToolError(f"No column {', '.join(missing)} in '{session_id}'. "
-                                f"Its columns: {', '.join(names)}.")
-            sel = _range_mask(spec, x_min, x_max)
-            n = int(sel.sum())
-            binned_by = int(np.ceil(n / max_points))
-            out, units = {}, {}
-            for name in ["x", *[c for c in columns if c != "x"]]:
-                values = np.asarray(spec.t[name], dtype=float)[sel]
-                values = _binned(values, binned_by, error=name.startswith("d"))
-                out[name] = [_jsonable(float(v)) for v in values]
-                units[name] = str(spec.t[name].unit or "")
-            x = spec.x.value[sel]
-            return SpectrumRange(session_id=session_id, x_unit=str(spec.x.unit),
-                                 x_min=float(x.min()), x_max=float(x.max()), n_pixels=n,
-                                 binned_by=binned_by, columns=out, units=units)
+                columns = [c for c in DEFAULT_COLUMNS if c in spec.t.colnames]
+            try:
+                data = spec.columns_in_range(columns, x_min, x_max, max_points)
+            except KeyError as e:
+                raise ToolError(f"{e.args[0]} (session '{session_id}')") from None
+            except ValueError as e:
+                raise ToolError(str(e)) from None
+            x = data["columns"]["x"]
+            return SpectrumRange(
+                session_id=session_id, x_unit=str(spec.x.unit),
+                x_min=float(np.nanmin(x)), x_max=float(np.nanmax(x)),
+                n_pixels=data["n_pixels"], binned_by=data["binned_by"],
+                columns={k: [_jsonable(float(v)) for v in vals]
+                         for k, vals in data["columns"].items()},
+                units=data["units"])
 
     @server.tool()
     def spectrum_plot(
@@ -254,46 +218,13 @@ def register_inspect_tools(server: MCPServer, store: SessionStore) -> None:
         """Plot the spectrum of a session in a range of x, as a PNG image:
         the flux and its error, the continuum and the model (if any), and a
         tick at each line of each component, labelled with its series."""
+        from astrocook.plotting import figure_png, plot_spectrum
         with store.lock:
             session = store.get(session_id).current_state
-            return [Image(data=_plot(session, x_min, x_max, normalized), format="png"),
+            try:
+                fig = plot_spectrum(session, x_min, x_max, normalized)
+            except ValueError as e:
+                raise ToolError(str(e)) from None
+            return [Image(data=figure_png(fig), format="png"),
                     f"{session_id}: spectrum plotted"
                     + (" (normalized)" if normalized and session.spec.cont is not None else "")]
-
-
-def _plot(session, x_min, x_max, normalized) -> bytes:
-    """The PNG of :func:`spectrum_plot` (matplotlib, without a display)."""
-    from matplotlib.figure import Figure
-
-    spec = session.spec
-    sel = _range_mask(spec, x_min, x_max)
-    x = spec.x.value[sel]
-    cont = spec.cont.value[sel] if spec.cont is not None else None
-    norm = cont if (normalized and cont is not None) else 1.0
-    fig = Figure(figsize=(10, 3.6), dpi=100)
-    ax = fig.add_subplot()
-    ax.step(x, spec.y.value[sel] / norm, where="mid", lw=0.7, color="black", label="flux")
-    ax.step(x, spec.dy.value[sel] / norm, where="mid", lw=0.6, color="tab:gray",
-            label="error")
-    if cont is not None:
-        ax.plot(x, cont / norm, lw=1, color="tab:blue", label="continuum")
-    if spec.has_aux_column("model"):
-        ax.plot(x, spec.get_column("model").value[sel] / norm, lw=1, color="tab:red",
-                label="model")
-    top = np.nanpercentile(spec.y.value[sel] / norm, 99) if sel.any() else 1
-    comps = session.systs.components if session.systs else []
-    for c in comps:
-        for w in get_all_w_rest(c.series):
-            xo = (w * (1 + c.z) * au.AA).to_value(spec.x.unit, equivalencies=au.spectral())
-            if x.min() <= xo <= x.max():
-                ax.axvline(xo, ymin=0.9, ymax=0.97, color="tab:green", lw=0.8)
-                ax.text(xo, top * 1.12, c.series, fontsize=6, rotation=90,
-                        ha="center", va="bottom", color="tab:green")
-    ax.set_xlim(x.min(), x.max())
-    ax.set_xlabel(f"x ({spec.x.unit})")
-    ax.set_ylabel("normalized flux" if np.ndim(norm) else f"flux ({spec.y.unit})")
-    ax.legend(fontsize=7, loc="lower left")
-    fig.tight_layout()
-    buf = io.BytesIO()
-    fig.savefig(buf, format="png")
-    return buf.getvalue()

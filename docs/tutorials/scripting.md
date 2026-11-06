@@ -113,7 +113,29 @@ A recipe run first to provide something is in `result.provided`, with the
 session it gave, and the GUI writes it in the session log
 as a step of its own, before the recipe.
 
-## 4. Saving the Result
+## 4. Looking at a Session
+
+A few functions read a session without changing it, as the System
+Inspector and the main plot of the GUI do (the AI agents use them too):
+```python
+from astrocook.plotting import plot_spectrum
+
+# The flux, error, continuum and model in a range (nm), averaged in
+# blocks of pixels if there are more than 200
+data = fitted.spec.columns_in_range(["y", "dy", "cont"], 449, 451, max_points=200)
+data["columns"]["y"], data["binned_by"]
+
+# The groups of components that Refit All fits together
+uuids = [c.uuid for c in fitted.systs.components]
+groups = fitted.systs.fit_groups(uuids, max_depth=2, spec=fitted.spec)
+
+# A plot of a range, normalized to the continuum, with a tick at each line
+# of each component; in a notebook, the figure shows itself
+fig = plot_spectrum(fitted, 445, 452, normalized=True)
+fig.savefig("doublet.png")
+```
+
+## 5. Saving the Result
 
 Save a session as an `.acs2` archive; passing the original session as
 `initial_session` stores the original data in the archive too, as the GUI
@@ -122,7 +144,7 @@ does:
 smoothed.save("my_session_smoothed.acs2", initial_session=session)
 ```
 
-## 5. Seeing Astrocook's Messages
+## 6. Seeing Astrocook's Messages
 
 Astrocook reports its progress with Python's `logging` module and, like
 other libraries, leaves its configuration to your script: by default only

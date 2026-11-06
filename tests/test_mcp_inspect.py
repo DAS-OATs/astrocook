@@ -144,7 +144,7 @@ def test_spectrum_read(mock_archive):
     assert p["binned_by"] == 1 and p["columns"]["y"] == pytest.approx(list(y[sel]))
     assert p["x_unit"] == "nm" and p["units"]["x"] == "nm"
     assert set(ok(cols)["columns"]) == {"x", "y"}
-    assert "No column nope" in error_text(bad_col) and "Its columns: x" in error_text(bad_col)
+    assert "No column nope" in error_text(bad_col) and "The columns: x" in error_text(bad_col)
     assert "Empty range" in error_text(bad_range)
     assert "No pixel between 900" in error_text(empty)
 

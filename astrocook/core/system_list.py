@@ -902,6 +902,66 @@ class SystemListV2:
 
         return group_uuids
 
+    def fit_groups(self, seed_uuids, max_depth: int, spec: Optional['SpectrumV2'] = None,
+                   max_size: Optional[int] = None) -> List[List[str]]:
+        """
+        The groups of components that are fitted together, as *Refit All*
+        fits them (moved here from ``refit_all`` in phase 6-ter, PR 3, so
+        that the MCP server shows the same groups).
+
+        The seeds are taken by increasing redshift (then series): the group
+        of a seed is :meth:`get_connected_group` (it can take in components
+        that are not seeds), and its members are not seeds again. A group
+        larger than ``max_size`` is split in chunks of ``max_size``
+        components, by redshift.
+
+        Parameters
+        ----------
+        seed_uuids : iterable of str
+            The components to group (e.g. those in the region of the fit).
+        max_depth : int
+            Depth of the friends-of-friends expansion
+            (:meth:`get_connected_group`).
+        spec : SpectrumV2, optional
+            The spectrum the components are fitted to (its resolution sets
+            which lines are blended).
+        max_size : int, optional
+            The largest group fitted at once; None: no limit.
+
+        Returns
+        -------
+        list of list of str
+            The groups, each sorted by redshift (then series), in the order
+            of their seeds. A component pulled in by two seeds is in both
+            groups, as in ``refit_all``.
+        """
+        comp_map = {c.uuid: c for c in self.components}
+        todo = {u for u in seed_uuids if u in comp_map}
+        # Seeds in a deterministic order (increasing z): the depth-limited
+        # group depends on the seed, and the iteration order of a set of
+        # random UUIDs changes from run to run
+        seed_order = sorted(todo, key=lambda u: (comp_map[u].z, comp_map[u].series))
+        groups = []
+        for seed in seed_order:
+            if seed not in todo:
+                continue
+            group = self.get_connected_group([seed], max_depth=max_depth, spec=spec)
+            if not group:
+                todo.discard(seed)
+                continue
+            group_list = sorted(group, key=lambda u: (comp_map[u].z, comp_map[u].series))
+            if max_size is None or len(group_list) <= max_size:
+                groups.append(group_list)
+            else:
+                by_z = [c.uuid for c in sorted((comp_map[u] for u in group_list),
+                                               key=lambda c: c.z)]
+                for k in range(0, len(by_z), max_size):
+                    groups.append(by_z[k:k + max_size])
+                logger.debug(f"  -> Split massive group ({len(group_list)} comps) into "
+                             f"{len(by_z)//max_size + 1} chunks.")
+            todo.difference_update(group)
+        return groups
+
     def _sanitize_after_fit(self, systs: 'SystemListV2') -> 'SystemListV2':
         """
         Removes the 'active_components' mask from a system list.
