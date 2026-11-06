@@ -611,6 +611,9 @@ itself. Other tools handle the sessions:</p>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">session_close</span></code></p></td>
 <td><p>Closes a session; refuses if it has changes not saved, unless asked to discard them.</p></td>
 </tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">session_note</span></code></p></td>
+<td><p>Writes a note in the session log, at the current state: what the agent did or decided outside the tools.</p></td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -644,8 +647,19 @@ recipe undone.</p>
 parameters of the recipe, and:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">provide_missing</span></code>: see “What a recipe needs” below;</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">max_listed</span></code>: the maximum number of items in each list of the output.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">max_listed</span></code>: the maximum number of items in each list of the output;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">reason</span></code>: why the agent runs the recipe with these values, stored with
+the step in the session log.</p></li>
 </ul>
+<p><strong>The agent’s decisions in the log.</strong> The log is what you read when you
+review the work of an agent. Besides the recipes and their parameters, it
+holds the <code class="docutils literal notranslate"><span class="pre">reason</span></code> the agent gave for each recipe and the notes it wrote
+with <code class="docutils literal notranslate"><span class="pre">session_note</span></code>: what it did outside the tools (e.g. “z_em = 2.345
+from the peak of Ly-a, measured on the flux with my own code”), or what it
+saw. The instructions of the server ask the agent for both. A note is not
+a step: it makes no new state, the replay of the log skips it, and it is
+undone with the state it was written at. <code class="docutils literal notranslate"><span class="pre">session_history</span></code> shows the
+reason of each recipe and the notes of each state.</p>
 <p>It returns the session after the call (the spectrum in a few numbers, the
 number of log entries), what the recipe did in one line (<code class="docutils literal notranslate"><span class="pre">summary</span></code>) and
 what else is worth knowing (<code class="docutils literal notranslate"><span class="pre">notes</span></code>), the warnings, and what changed,
@@ -719,9 +733,13 @@ had been run on its own.</p>
 <h2>5. Reviewing the Result in the GUI<a class="headerlink" href="#reviewing-the-result-in-the-gui" title="Link to this heading">#</a></h2>
 <p>Open the saved archive in the GUI (<code class="docutils literal notranslate"><span class="pre">astrocook</span> <span class="pre">/data/J0103-1305_agent.acs2</span></code>).
 The session log (<em>View &gt; View Session Log</em>) lists the recipes the agent ran, with
-their parameters, as if you had run them from the menus: you can inspect
-the components in the System Inspector, correct them, refit them, or
-replay the log as a script.</p>
+their parameters, as if you had run them from the menus, with the reasons
+the agent gave (<code class="docutils literal notranslate"><span class="pre">#</span> <span class="pre">reason:</span> <span class="pre">...</span></code>, before each recipe) and its notes
+(<code class="docutils literal notranslate"><span class="pre">#</span> <span class="pre">note:</span> <span class="pre">...</span></code>, where it wrote them): you can inspect the components in
+the System Inspector, correct them, refit them, or replay the log as a
+script (<em>Run All</em> runs the recipes and keeps the reasons and notes in the
+new log). Astrocook 2.5.0 and earlier open such an archive and replay it,
+but do not show the reasons and notes, and lose them if it is saved again.</p>
 </section>
 <section id="limits-of-the-pilot">
 <h2>6. Limits of the Pilot<a class="headerlink" href="#limits-of-the-pilot" title="Link to this heading">#</a></h2>

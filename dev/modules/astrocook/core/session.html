@@ -647,7 +647,7 @@
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">session</span><span class="o">.</span><span class="n">log_manager</span> <span class="o">=</span> <span class="n">HistoryLogV2</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span>
                     <span class="n">v2_metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'log_history_json'</span><span class="p">))</span>
-            <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">,</span> <span class="ne">AttributeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">,</span> <span class="ne">AttributeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not restore the session log (</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">): "</span>
                                <span class="s2">"the session is opened with an empty log."</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">session</span>
