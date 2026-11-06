@@ -915,8 +915,8 @@ record):
     branch); the entries before the first state (an archive opened) are
     described by their parameters only, and the text says so. References
     (Guido): Astrocook as Cupani et al. 2020; its algorithms (continuum,
-    identification, AIC) as Cupani et al. 2026 (Proc. SPIE,
-    doi:10.1117/12.3101756; volume and number to add), or the papers after
+    identification, AIC) as Cupani et al. 2026 (Proc. SPIE 14155, 141551X,
+    doi:10.1117/12.3101756; volume and number added after the merge), or the papers after
     phase 7; SciPy for the fit, emcee and dynesty for the Bayesian fit; no
     Astropy or NumPy. The tool `session_methods(session_id, menus)` (a thin
     wrapper, changes nothing; the instructions of the server mention it) and
@@ -925,6 +925,14 @@ record):
     the menus are not the `brief` of the registry), F108. Numbers unchanged:
     no recipe, fitting or numerical code touched (new keys in the schemas,
     and their text functions), so no slow tests.
+  - After PR 5c (Guido): F108 fixed, with the full reference of Cupani et
+    al. 2026 and F107 deferred to phase 6-quater. *Set properties* with the
+    object left at `'_current_'` no longer writes it again: it wrote
+    `OBJECT = ''` on a spectrum without one (the change "object None → ''"
+    of `session_open` with z_em or R), copied `OBJECT` over the ESO target
+    name, and added "Object='...'" to the history of the spectrum.
+    Characterization tests first. No numbers touched (the header and the
+    history only), so no slow tests.
   Found along the way: the startup hook of the cloud sessions created
   `.venv` without installing the package once (November 2026, at the
   start of this phase); installing again by hand worked. To watch: if
@@ -939,7 +947,8 @@ manual fits); those of the continuum and the identification go with
 phase 7, with the collections of elements to fill some parameters. To be
 decided in its plan: how the session logs and the scripts that use a
 renamed parameter still replay (e.g. the old name kept as an alias in the
-registry). Plan to be agreed with Guido. Proposed (code review of 2.5.0,
+registry). Also F107 (the labels of the menus of the GUI, not the `brief` of
+the registry; Guido, phase 6-ter). Plan to be agreed with Guido. Proposed (code review of 2.5.0,
 to be agreed; see "Code quality" after phase 7): the `V2` suffixes of the
 class names, with the same aliases; the complex functions of the
 recipes reviewed.
@@ -1160,10 +1169,9 @@ Exception: anything that loses user data or crashes is reported at once.
 | F93 | `identify_lines` (identifications) | The identification is by doublets only: two absorbed regions are a candidate when they overlap once one is shifted by the separation of the doublet in velocity (the ratio of the wavelengths), and the pair is accepted when the R^2 of F_1 = F_2^gamma (gamma from f and lambda of the two lines) is above 0.5 (metals only redward of Ly_a). Three things found while rebuilding the Identifications window: (1) the pairs are not stored: each region keeps only its candidates ([transition, score]), and the window finds the pairs again from the overlap of the redshift ranges and the shared score; (2) the multiplets with more than two lines (FeII, SiII, NI, ...) are never searched, only those with exactly two members; (3) the regions of the forest that no doublet identified are labelled Ly_a with score 0, an assignment and not an identification (lya_auto calls the recipe with "Ly_a" alone, not a doublet, so all its regions are so labelled). Found in phase 5-bis | behaviour | `test_identification_viewer.py` (the window) | to be discussed in phase 7 (identification, Guido's algorithmic choices): store the pairs with their redshift and score; the window shows the doublets as the recipe finds them and the assumed Ly_a as such |
 | F101 | script console (`gui/scripting.py`) | `AppController.run_recipe`, the `app.run_recipe(...)` of the scripts of the console, calls `MainWindowV2._on_recipe_requested` with a keyword `session_override` that the method does not take: every call fails with a TypeError. Found in phase 6-bis (PR 3a) while adapting the callers of the recipes | bug | — | open: with the decision on the console (kept in the code, phase 5-bis, Guido) |
 | F102 | `lya_auto`, `forest_auto` (cleanup of the narrow lines) | After removing the lines narrower than `min_b`, `_remove_narrow` calls `refit_all` without `region_limit`: every group of the session is refitted, also the components outside the forest (e.g. a CIV doublet on the red side fitted before), whose values change slightly. Found in phase 6-bis (PR 4b) while recording the reasons of the removals. `forest_auto` is not limited to a region at all: it identifies on the whole spectrum and its first refit, before the cleanup, also refits every component of the session | behaviour, numerical | `test_lya_auto_does_not_refit_the_red_side` | `lya_auto` fixed in phase 6-bis (PR 4c, Guido's decision): the refits of the cleanup limited to `lya_forest`, as the pipeline; documented in the tutorial (*Refit All* fits everything again). The mock benchmark does not run `lya_auto`: a targeted test replaces it. `forest_auto`: open, Guido's decision (limiting it means choosing its region, e.g. `all_ly_forest`, for the identification and both refits) |
-| F107 | GUI menus and the registry | The labels of the menus of the GUI are written in `gui/main_menus.py` and differ from the `brief` of the recipes in the registry, which the dialogs show as their title (*Auto-detect Doublets...* opens *Auto-fit metal doublets (Red Side)*; *Set Properties...*, *Set session properties*). The methods text (PR 5c) names a recipe by its menu and `brief`, so the name it gives may differ from the label of the menu. Found in phase 6-ter (PR 5c) | cosmetic | — | open: Guido's decision (menus from the registry, or a `menu` key in it; phase 6-quater?) |
-| F108 | `session_open` (MCP), `set_properties` | `session_open` with `z_em` or `resol` runs `set_properties`, which also writes the OBJECT of the spectrum as `''` when it had none: the result lists "object None → ''", a change that is none. Found in phase 6-ter (PR 5c) on the J0103-1305 session of the draft | cosmetic | — | open |
+| F107 | GUI menus and the registry | The labels of the menus of the GUI are written in `gui/main_menus.py` and differ from the `brief` of the recipes in the registry, which the dialogs show as their title (*Auto-detect Doublets...* opens *Auto-fit metal doublets (Red Side)*; *Set Properties...*, *Set session properties*). The methods text (PR 5c) names a recipe by its menu and `brief`, so the name it gives may differ from the label of the menu. Found in phase 6-ter (PR 5c) | cosmetic | — | open: deferred to phase 6-quater (Guido, after PR 5c): the menus from the registry, or a `menu` key in it |
 
-Closed findings (fixed or accepted: all the others, F1 to F106) are in `ROADMAP_HISTORY.md`, "3.2 Findings register", one row each, to be found by number (`grep "^| F52 "`).
+Closed findings (fixed or accepted: all the others, F1 to F106, and F108) are in `ROADMAP_HISTORY.md`, "3.2 Findings register", one row each, to be found by number (`grep "^| F52 "`).
 
 ### 3.3 Phase 1-bis: findings and urgent issues
 Review of the findings register with Guido (October 2026): the proposals agreed in general, each item a small PR with its strict xfail turned into a passing test and its numerical effect stated. Done (October 2026, release 2.0.2 with #534): F1, F2, F5, F10 (minimal), F11, F16, F19, F20, F23-F27, F29, F32, F33, #480, #442; F3 accepted; deferred to phase 4 as issues: #526 (F8, F22, rest of F10, F9, F14), #465 (F30, F17), #517 (F21), #518 (F4); F15 waits for data. Full text: `ROADMAP_HISTORY.md`, "3.3 Phase 1-bis: findings and urgent issues".

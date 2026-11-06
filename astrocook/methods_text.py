@@ -46,7 +46,7 @@ REFERENCES: Dict[str, Tuple[str, str]] = {
     'C20': ("Cupani et al. 2020",
             "Cupani G. et al. 2020, Proc. SPIE 11452, 114521U"),
     'C26': ("Cupani et al. 2026",
-            "Cupani G. et al. 2026, Proc. SPIE, doi:10.1117/12.3101756"),
+            "Cupani G. et al. 2026, Proc. SPIE 14155, 141551X, doi:10.1117/12.3101756"),
     'SciPy': ("Virtanen et al. 2020",
               "Virtanen P. et al. 2020, Nature Methods 17, 261"),
     'emcee': ("Foreman-Mackey et al. 2013",
