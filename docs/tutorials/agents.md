@@ -93,6 +93,7 @@ itself. Other tools handle the sessions:
 | `session_undo`, `session_redo` | Go back to the state before the last recipe (or several), and forward again, as *Edit > Undo* and *Redo* in the GUI. |
 | `session_duplicate` | Makes a copy of a session, with its history and log, to try something without touching the original. |
 | `session_close` | Closes a session; refuses if it has changes not saved, unless asked to discard them. |
+| `session_note` | Writes a note in the session log, at the current state: what the agent did or decided outside the tools. |
 
 Three tools let the agent look into a session, without changing it:
 
@@ -112,7 +113,19 @@ recipe undone.
 Every recipe tool takes the `session_id` of the session to run on, the
 parameters of the recipe, and:
 - `provide_missing`: see "What a recipe needs" below;
-- `max_listed`: the maximum number of items in each list of the output.
+- `max_listed`: the maximum number of items in each list of the output;
+- `reason`: why the agent runs the recipe with these values, stored with
+  the step in the session log.
+
+**The agent's decisions in the log.** The log is what you read when you
+review the work of an agent. Besides the recipes and their parameters, it
+holds the `reason` the agent gave for each recipe and the notes it wrote
+with `session_note`: what it did outside the tools (e.g. "z_em = 2.345
+from the peak of Ly-a, measured on the flux with my own code"), or what it
+saw. The instructions of the server ask the agent for both. A note is not
+a step: it makes no new state, the replay of the log skips it, and it is
+undone with the state it was written at. `session_history` shows the
+reason of each recipe and the notes of each state.
 
 It returns the session after the call (the spectrum in a few numbers, the
 number of log entries), what the recipe did in one line (`summary`) and
@@ -194,9 +207,13 @@ had been run on its own.
 
 Open the saved archive in the GUI (`astrocook /data/J0103-1305_agent.acs2`).
 The session log (*View > View Session Log*) lists the recipes the agent ran, with
-their parameters, as if you had run them from the menus: you can inspect
-the components in the System Inspector, correct them, refit them, or
-replay the log as a script.
+their parameters, as if you had run them from the menus, with the reasons
+the agent gave (`# reason: ...`, before each recipe) and its notes
+(`# note: ...`, where it wrote them): you can inspect the components in
+the System Inspector, correct them, refit them, or replay the log as a
+script (*Run All* runs the recipes and keeps the reasons and notes in the
+new log). Astrocook 2.5.0 and earlier open such an archive and replay it,
+but do not show the reasons and notes, and lose them if it is saved again.
 
 ## 6. Limits of the Pilot
 
