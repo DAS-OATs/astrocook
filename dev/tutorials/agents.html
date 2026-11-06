@@ -617,8 +617,9 @@ runs on does not change, and the result lists the new ones, each with its
 <code class="docutils literal notranslate"><span class="pre">session_id</span></code>, named after the original (<code class="docutils literal notranslate"><span class="pre">J0103-1305-1</span></code>, …). A parameter
 that names another open session (e.g. the reference of <em>Flux &gt; Equalize</em>)
 takes its <code class="docutils literal notranslate"><span class="pre">session_id</span></code>.</p>
-<p>Not a tool, for now: <em>File &gt; Export to ASCII</em> (it overwrites files
-without asking).</p>
+<p><em>File &gt; Export to ASCII</em> (<code class="docutils literal notranslate"><span class="pre">file_export_ascii</span></code>) writes the files in the
+folder <code class="docutils literal notranslate"><span class="pre">path</span></code>, named after <code class="docutils literal notranslate"><span class="pre">prefix</span></code>, and does not replace files that exist
+unless asked (<code class="docutils literal notranslate"><span class="pre">overwrite=true</span></code>).</p>
 <p>The sessions live in the server while the client is running: save the
 result with <code class="docutils literal notranslate"><span class="pre">session_save</span></code> before closing the client.</p>
 </section>
@@ -674,7 +675,7 @@ replay the log as a script.</p>
 <h2>6. Limits of the Pilot<a class="headerlink" href="#limits-of-the-pilot" title="Link to this heading">#</a></h2>
 <ul class="simple">
 <li><p>No tools yet to list the components, read the spectrum, undo a step,
-or duplicate and close a session (coming); no export to ASCII.</p></li>
+or duplicate and close a session (coming).</p></li>
 <li><p>Paths are on the computer where the server runs; give them in full.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">absorbers_doublets_auto</span></code> replaces the components already on the red
 side. It finds the absorbed regions on a new mask made with the default
