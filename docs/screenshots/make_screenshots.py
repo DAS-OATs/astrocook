@@ -883,6 +883,30 @@ def absorbers_no_continuum(s: Studio):
     return framed(insp, inspector.windowTitle())
 
 
+@scene
+def agents_followed_session(s: Studio):
+    """A session followed by the GUI (phase 6-ter, PR 5-bis): the archive of
+    an MCP server, with its marker, opened in the main window; the banner
+    over the plot, a range of the forest."""
+    from astrocook import follow
+    folder = Path(tempfile.mkdtemp(prefix="astrocook-shots-follow-"))
+    # A copy of its own: the marker must not reach the other scenes
+    archive = folder / "My QSO.acs2"
+    shutil.copyfile(s.staged("My QSO"), archive)
+    follow.write_marker(archive, "My QSO")
+    try:
+        w = s.new_window()
+        w.open_session_from_path(str(archive))
+        s.pump(1.0)
+        s.limits(x=(409.5, 476.6))
+        image = framed(grab(w), w.windowTitle())
+        w._on_close_session_requested()
+        s.pump(0.3)
+    finally:
+        shutil.rmtree(folder, ignore_errors=True)
+    return image
+
+
 # --- Main -------------------------------------------------------------------
 
 def main(argv=None):

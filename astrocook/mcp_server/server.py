@@ -19,6 +19,7 @@ a subprocess, e.g. ``claude mcp add astrocook -- astrocook-mcp``.
 from mcp.server.mcpserver import MCPServer
 
 from astrocook import __version__
+from astrocook.mcp_server.gui_tools import register_gui_tools
 from astrocook.mcp_server.inspect_tools import register_inspect_tools
 from astrocook.mcp_server.session_tools import register_session_tools
 from astrocook.mcp_server.sessions import SessionStore
@@ -76,6 +77,11 @@ To look into a session: session_describe (its columns), components_list
 spectrum_read (the columns in a range, as numbers) and spectrum_plot (a
 plot of a range, with the continuum, the model and the components). They
 change nothing.
+
+To let the user watch the analysis, gui_open shows a session in the Astrocook
+GUI and keeps it up to date after every change (read only for the user;
+nothing they do there reaches you). It is not available where there is no
+display.
 """
 
 
@@ -94,6 +100,7 @@ def build_server() -> MCPServer:
 
     register_session_tools(server, store)
     register_inspect_tools(server, store)
+    register_gui_tools(server, store)
     register_recipe_tools(server, store)
     return server
 

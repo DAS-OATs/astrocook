@@ -16,8 +16,9 @@ components, no continuum). Five cases:
 - ``refit``: *Refit Selected* on the first CIV component, from the
   request to the end of the result processing (recipe in the worker thread,
   new state in the history, plots and table updated; median of
-  ``--repeat``). The archive has no continuum: a first refit, not timed,
-  estimates it, so that the timed ones do not. Split into ``refit_recipe``
+  ``--repeat``). The archive has no z_em, resolution or continuum: z_em =
+  4.072 and R = 45000 are set first, and a first refit, not timed, estimates the continuum (answering
+  *Estimate* to the question of the GUI), so that the timed ones do not. Split into ``refit_recipe``
   (the recipe in the worker thread) and ``refit_gui`` (the rest: the
   difference of the medians);
 - ``select_row``: selecting another row of the inspector table (the main
@@ -112,8 +113,17 @@ class Bench:
             self.window.close()
             self.window.deleteLater()
             _flush(self.app)
+        from PySide6.QtWidgets import QMessageBox
         win = MainWindowV2(None, None)
-        win._show_custom_message = lambda *a, **k: None
+
+        def answer(*args, header="", **kwargs):
+            # The first refit asks for the continuum (phase 6-bis, PR 5b):
+            # "Estimate", and the refit resumes after it; the other messages
+            # are dismissed, as before
+            if "no continuum" in (header or ""):
+                return QMessageBox.StandardButton.Yes
+            return None
+        win._show_custom_message = answer
         win.show()
         win.open_session_from_path(str(SESSION_FILE))
         _flush(self.app)
@@ -171,15 +181,31 @@ class Bench:
         self._row += 7
         self.window.system_inspector.table_view.selectRow(self._row)
 
-    def refit_selected(self):
+    def set_properties(self):
+        """Set z_em and the resolving power of the archive (4.072 and
+        45000, as the tests do), which the refit and the continuum require
+        since phase 6-bis (PR 1): without them the GUI asks for them."""
+        history = self.window.active_history
+        target = len(history.states) + 1
+        self.window._on_recipe_requested("edit", "set_properties",
+                                         {"z_em": "4.072", "resol": "45000"}, {})
+        while len(history.states) < target:
+            self.app.processEvents()
+            time.sleep(0.005)
+
+    def refit_selected(self, n_states=1):
+        """Refit the selected components and wait for ``n_states`` new
+        states (2 for the first refit: the continuum estimated, then the
+        refit resumed)."""
         inspector = self.window.system_inspector
         comps = inspector._get_selected_components()
         assert comps, "no component selected"
-        before = self.window.active_history.current_state
+        history = self.window.active_history
+        target = len(history.states) + n_states
         inspector._refit_list(comps)
         # The result is processed after the worker ends (with a QTimer):
-        # wait for the new state in the history
-        while self.window.active_history.current_state is before:
+        # wait for the new states in the history
+        while len(history.states) < target:
             self.app.processEvents()
             time.sleep(0.005)
 
@@ -205,9 +231,10 @@ def main():
         "inspector_again", bench.reopen_inspector, args.repeat)
     results["main_plot_s"] = bench.time(
         "main_plot", bench.redraw_main_plot, args.repeat)
+    bench.set_properties()
     bench.select_civ()
     _flush(app)
-    bench.refit_selected()  # estimates the continuum, not timed
+    bench.refit_selected(n_states=2)  # estimates the continuum, not timed
     _flush(app)
     bench.worker_times.clear()
     results["refit_s"] = bench.time("refit", bench.refit_selected,

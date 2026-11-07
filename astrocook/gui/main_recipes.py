@@ -140,6 +140,9 @@ class MainRecipesMixin:
         if self.active_recipe_dialog:
             self.active_recipe_dialog.activateWindow()
             return
+        # Before the dialog is filled: a followed session is read only
+        if self._refuse_recipe_if_followed(category, name):
+            return
         if not self.active_history: # Simple check
             QMessageBox.warning(self, "No Session", "Please load a spectrum.")
             return
@@ -299,6 +302,11 @@ class MainRecipesMixin:
                 QMessageBox.warning(self, "Export Failed",
                                     "There is nothing to export: no column or structure "
                                     "of the session matches the targets.")
+            return
+
+        # A followed session is read only (phase 6-ter, PR 5-bis); the
+        # recipes that open new sessions are allowed
+        if self._refuse_recipe_if_followed(category, recipe_name):
             return
 
         # --- [NEW] GUI-Thread Pre-checks ---
