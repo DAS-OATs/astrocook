@@ -256,7 +256,8 @@ def session_info(store: SessionStore, session_id: str, result=None) -> SessionIn
         spectrum=spectrum_summary(history.current_state),
         log_entries=len(history.log_manager.to_dict()["entries"]),
         saved_with_version=history.states[0].saved_with_version,
-        warnings=list(result.warnings) if result is not None else [],
+        warnings=((list(result.warnings) if result is not None else [])
+                  + store.pop_gui_warnings(session_id)),
         summary=result.summary if result is not None else "",
         notes=list(result.notes) if result is not None else [],
         provided=[p.recipe for p in result.provided] if result is not None else [],

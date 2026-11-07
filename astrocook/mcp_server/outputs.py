@@ -595,6 +595,16 @@ class CloseResult(BaseModel):
     open_sessions: list[str]
 
 
+class GuiResult(BaseModel):
+    """The GUI launched on a session (``gui_open``)."""
+
+    session_id: str
+    path: str = Field(description=(
+        "The archive the GUI follows, saved again after every change of the "
+        "session; not the user's own save (use session_save for that)."))
+    command: list[str] = Field(description="The command that launched the GUI.")
+
+
 class GapGroup(BaseModel):
     kind: str = Field(description=(
         "'declared' (by an agent), 'prerequisite' (needed and no recipe "
