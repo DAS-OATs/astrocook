@@ -17,6 +17,7 @@ from .continuum_controls import ContinuumControlsMixin
 from .debug_utils import GLOBAL_PLOTTER
 from .identification_viewer_dialog import IdentificationViewerDialog
 from .log_scripter_dialog import LogScripterDialog
+from .main_follow import MainFollowMixin
 from .main_menus import MainMenusMixin
 from .main_panels import MainPanelsMixin
 from .main_recipes import MainRecipesMixin
@@ -53,7 +54,7 @@ class MockV1GUIContext:
 
 
 class MainWindowV2(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, MainSessionsMixin,
-                   MainRecipesMixin, MainScriptsMixin, QMainWindow):
+                   MainRecipesMixin, MainScriptsMixin, MainFollowMixin, QMainWindow):
     def __init__(self, initial_sessions: Union[SessionV2, List[SessionV2], None], initial_log_object: Optional[LogManager]):
         super().__init__()
         # Forces the app name to be "Astrocook" instead of "Python"
@@ -144,6 +145,8 @@ class MainWindowV2(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, Main
 
         # --- Menubar, Styles, Initial State ---
         self._create_menubar()
+        # The sessions followed (an archive saved again by the MCP server)
+        self._setup_follow()
         self._apply_styles()
         self._align_combo_labels()  # with the font of the stylesheet
         self._restore_view_settings()
@@ -171,6 +174,7 @@ class MainWindowV2(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, Main
                 session._gui = self
                 
                 self.session_histories.append(new_history)
+                self._follow_if_marked(new_history, session.__dict__.pop('_source_path', None))
 
         # Set active history (default to the last one loaded, or the first?)
         # Usually user wants to see the first one, or the last one. Let's pick the first.
@@ -216,6 +220,7 @@ class MainWindowV2(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, Main
                 self.plot_viewer.toolbar.refresh_icons()
             for section in self.findChildren(CollapsibleSection):
                 section.refresh_icon()
+            self._apply_follow_style()
         return super().event(event)
 
     def _apply_styles(self):

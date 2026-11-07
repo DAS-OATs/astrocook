@@ -249,6 +249,9 @@ class MainSessionsMixin:
         self.active_history = new_history # Newly loaded becomes active
         # Update model
         self.session_model.setStringList([h.display_name for h in self.session_histories])
+        # An archive saved again by the MCP server (a marker next to it) is
+        # followed (phase 6-ter, PR 5-bis); the path is set by _load_session
+        self._follow_if_marked(new_history, new_session.__dict__.pop('_source_path', None))
 
     def add_session(self, new_session: SessionV2, initial_load=False):
         """Adds a new session history and updates view."""
@@ -372,6 +375,8 @@ class MainSessionsMixin:
         self.right_sidebar_widget.raise_()
         self.session_collapse_button.raise_()
         self.plot_controls_collapse_button.raise_()
+        # The banner of a followed session, for the session shown
+        self._update_follow_banner()
 
     def _on_session_switched(self, index):
         """Sets the active SessionHistory manager when the list view is clicked."""
@@ -426,10 +431,15 @@ class MainSessionsMixin:
     # --- Opening files (one, or several in the background) ---
 
     def _load_session(self, file_path: str):
-        """The session of a file (auto-detected format), or 0."""
+        """The session of a file (auto-detected format), or 0. The session
+        remembers the path until it is added (``_source_path``): an archive
+        with a marker is then followed."""
         session_name = os.path.splitext(os.path.basename(file_path))[0]
-        return load_session_from_file(archive_path=file_path, name=session_name,
-                                      format_name='auto', gui_context=self.mock_gui_context)
+        session = load_session_from_file(archive_path=file_path, name=session_name,
+                                         format_name='auto', gui_context=self.mock_gui_context)
+        if session and session != 0:
+            session._source_path = file_path
+        return session
 
     def open_files(self, paths: List[str]):
         """Open files: one as before (open_session_from_path), several in
@@ -986,6 +996,13 @@ class MainSessionsMixin:
         # 2. Check against the INTERNAL session state name
         current_internal_name = history_item.current_state.name
 
+        if new_name and new_name != current_internal_name and self.is_followed(history_item):
+            # Read only (phase 6-ter, PR 5-bis): the name in the list goes back
+            self.session_model.setData(index_top_left, history_item.display_name)
+            if self.active_history is history_item:
+                self._refuse_if_followed("Renaming it")
+            return
+
         if new_name and new_name != current_internal_name:
             logger.info(f"Session '{current_internal_name}' renamed '{new_name}'.")
 
@@ -1120,6 +1137,7 @@ class MainSessionsMixin:
 
         # Remove from list
         self.session_histories.pop(row_to_remove)
+        self._forget_followed(history_to_close)
         
         # Update model
         self.session_model.removeRow(row_to_remove)
@@ -1160,6 +1178,8 @@ class MainSessionsMixin:
         """
         if not os.path.exists(file_path):
             logger.error(f"Cannot open {file_path}: the file does not exist.")
+            return
+        if self._show_if_followed(file_path):
             return
 
         logger.debug(f"Opening {file_path}.")

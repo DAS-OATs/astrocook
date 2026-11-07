@@ -208,6 +208,9 @@ def main():
                 new_sess = load_session_from_file(real_path, name, mock_gui, format_name='auto')
                 
                 if new_sess and new_sess != 0:
+                    # An archive with a marker is followed by the window
+                    # (phase 6-ter, PR 5-bis)
+                    new_sess._source_path = real_path
                     loaded_sessions.append(new_sess)
                     logger.info(f"Opened {real_path}.")
                 else:

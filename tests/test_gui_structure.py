@@ -102,6 +102,14 @@ MAIN_WINDOW |= {'_load_session', 'open_files', '_open_files_in_background', '_re
 MAIN_WINDOW |= {'_set_plot_colours'}
 #: ... and File > Export Log as Text (phase 6-ter, PR 5c)
 MAIN_WINDOW |= {'_on_export_log_text'}
+#: ... and the sessions followed (an archive saved again by the MCP server;
+#: phase 6-ter, PR 5-bis)
+MAIN_WINDOW |= {'_setup_follow', '_apply_follow_style', '_banner_room', '_followed_of',
+                'is_followed', '_follow_if_marked', '_watch', '_unwatch', '_forget_followed',
+                '_on_followed_path_changed', '_check_followed', '_reload_followed',
+                '_on_followed_loaded', '_on_followed_failed', '_replace_followed_state',
+                '_end_follow', '_update_follow_banner', '_refuse_if_followed',
+                '_refuse_recipe_if_followed', '_on_make_editable_copy', '_show_if_followed'}
 #: ... without the lists of the recipes that need z_em or the resolution,
 #: now declared by each recipe in the registry (phase 6-bis, PR 1)
 MAIN_WINDOW -= {'_RECIPES_REQUIRING_RESOL', '_RECIPES_REQUIRING_Z_EM'}

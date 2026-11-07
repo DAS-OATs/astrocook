@@ -79,6 +79,8 @@ class MainScriptsMixin:
         if not self.active_history:
             QMessageBox.warning(self, "No Session", "Cannot run script: No active session.")
             return
+        if self._refuse_if_followed("Running a script"):
+            return
 
         # 1. Ask for confirmation
         ret = self._show_custom_message(
