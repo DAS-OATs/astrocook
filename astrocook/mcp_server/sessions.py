@@ -27,6 +27,7 @@ The folder is removed when the store is collected or the server exits.
 """
 import logging
 import shutil
+import tarfile
 import tempfile
 import threading
 import weakref
@@ -390,10 +391,10 @@ class SessionStore:
             return
         try:
             follow.write_archive(self.get(session_id), meta.gui_path)
-        except Exception as e:
-            # A boundary (B): the GUI is a view of the session; whatever stops
-            # its archive (a disk full, a file held open on Windows, a bug of
-            # the writer) must not lose the result of the recipe
+        except (OSError, ValueError, TypeError, KeyError, tarfile.TarError) as e:
+            # The GUI is a view of the session: what stops its archive (a disk
+            # full, a file held open on Windows, a table that cannot be
+            # written) must not lose the result of the recipe
             message = (f"The archive followed by the GUI was not updated ({e}); "
                        "it is saved again after the next change.")
             logger.warning(message)

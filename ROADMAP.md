@@ -988,8 +988,19 @@ record):
     `benchmarks/bench_gui.py` did not run since phase 6-bis (its first
     refit asked for z_em, R and the continuum, and the benchmark waited
     forever): it now sets z_em = 4.072 and R = 45000 and answers *Estimate*.
-    Numbers unchanged: no recipe, core or fitting code touched, so no slow
-    tests.
+    GUI benchmark, before and after on the same machine (s, medians of 5):
+    inspector_first 0.425 / 0.445, inspector_again 0.276 / 0.267, main_plot
+    0.087 / 0.085, refit_gui 0.584 / 0.518, select_row 0.119 / 0.118: the
+    same within the noise (a session not followed does nothing new). The
+    screenshots: a new scene, `agents_followed_session` (the banner); the
+    private spectra of the scenes were not reachable from the session of the
+    PR, so the scene was checked on the test archive renamed, and two scenes
+    of the main window made with and without the PR on it were identical,
+    pixel by pixel; the image is to be made with the real spectra, and then
+    shown in *Using Astrocook from an AI Agent*. Saving the archive costs
+    about 0.1 s per change on the J0103-1305 archive of the tests (only for
+    a followed session). Numbers unchanged: no recipe, core or fitting code
+    touched, so no slow tests.
   Found along the way: the startup hook of the cloud sessions created
   `.venv` without installing the package once (November 2026, at the
   start of this phase); installing again by hand worked. To watch: if

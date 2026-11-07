@@ -112,7 +112,9 @@ class MainFollowMixin:
         layout = QHBoxLayout(content)
         layout.setContentsMargins(8, 2, 8, 2)
         self.follow_banner_label = QLabel()
-        self.follow_banner_label.setWordWrap(True)
+        # One line: the rest is in the tooltip (a label that wraps made the
+        # toolbar several lines tall)
+        self.follow_banner_label.setWordWrap(False)
         self.follow_banner_label.setTextFormat(Qt.TextFormat.RichText)
         layout.addWidget(self.follow_banner_label, 1)
         self.follow_copy_button = QPushButton("Make Editable Copy")
@@ -324,13 +326,18 @@ class MainFollowMixin:
             banner.hide()
         else:
             if followed.ended:
-                text = ("<b>No longer followed.</b> The agent closed this session, or its "
-                        "server stopped: it is not updated any more. Read only.")
+                text = ("<b>No longer followed.</b> The agent closed this session, "
+                        "or its server stopped. Read only.")
+                tip = ("This session was changed by an AI agent through the MCP server; "
+                       "it is not updated any more.")
             else:
-                text = ("<b>Followed session.</b> An AI agent is changing it through the "
-                        "MCP server; it is updated after every change. Read only: "
-                        "nothing done here reaches the agent.")
+                text = ("<b>Followed session.</b> Updated by an AI agent after every "
+                        "change. Read only.")
+                tip = ("An AI agent changes this session through the MCP server, and the "
+                       "window shows each change. Nothing done here reaches the agent: "
+                       "make an editable copy to work on it.")
             self.follow_banner_label.setText(text)
+            self.follow_banner_label.setToolTip(tip)
             banner.show()
         if was_visible != (not banner.isHidden()):
             QTimer.singleShot(0, self._reposition_floating_widgets)
