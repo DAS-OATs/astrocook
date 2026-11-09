@@ -24,8 +24,6 @@ DOCKERFILE = ROOT / "Dockerfile"
 GUI_ONLY = {
     "pyside6": "the GUI (astrocook/gui); useless without a display, ~0.7 GB with Qt",
     "qtawesome": "the icons of the GUI (astrocook/gui)",
-    "scienceplots": "no code imports it (a commented line of gui/plot_canvas.py "
-                    "only): left out of the image, to review with the dependencies",
 }
 
 
@@ -72,7 +70,7 @@ def test_what_the_image_leaves_out_is_still_a_dependency():
 def test_only_the_gui_imports_what_the_image_leaves_out():
     # Without PySide6 (and qtawesome) everything but astrocook/gui must work
     modules = {"pyside6": "PySide6", "qtawesome": "qtawesome",
-               "scienceplots": "scienceplots", "shiboken6": "shiboken6"}
+               "shiboken6": "shiboken6"}
     #: The GUI: its package and the launcher of the ``astrocook`` command
     gui = ("gui", "_run_astrocook.py")
     offenders = []
@@ -86,6 +84,19 @@ def test_only_the_gui_imports_what_the_image_leaves_out():
             offenders += [f"{path.relative_to(ROOT)}: {n}" for n in names
                           if n.split(".")[0] in modules.values()]
     assert not offenders, offenders
+
+
+def test_nothing_imports_scienceplots():
+    # F110: it was a dependency that no code imported, and was removed from
+    # pyproject.toml (and from the macOS build): an import of it would fail
+    # in a new installation
+    for path in (ROOT / "astrocook").rglob("*.py"):
+        for node in ast.walk(ast.parse(path.read_text())):
+            names = ([a.name for a in node.names] if isinstance(node, ast.Import)
+                     else [node.module or ""] if isinstance(node, ast.ImportFrom)
+                     else [])
+            assert not [n for n in names if n.split(".")[0] == "scienceplots"], path
+    assert "scienceplots" not in (ROOT / "Astrocook.spec").read_text()
 
 
 def test_the_dockerfile_installs_the_package_without_the_gui():

@@ -20,8 +20,8 @@ ENV PYTHONUNBUFFERED=1 \
 # pyproject.toml, so that PySide6 is left out without changing the
 # dependencies of the package. tests/test_docker_image.py checks that this
 # list is that of pyproject.toml (the dependencies and the [mcp] extra), but
-# for what only the GUI needs (PySide6, qtawesome) or nothing does
-# (scienceplots): do not edit one without the other. The block between the
+# for what only the GUI needs (PySide6, qtawesome): do not edit one without
+# the other. The block between the
 # markers is read by that test.
 # deps:begin
 RUN pip install \
