@@ -526,6 +526,8 @@ class MainMenusMixin:
 
     def _undo_last_action(self):
         """Switches the view to the previous state in the active history."""
+        if self.is_followed() and self._refuse_if_followed("Undo"):
+            return
         QApplication.setOverrideCursor(Qt.WaitCursor)
         try:
             if self.active_history:
@@ -549,6 +551,8 @@ class MainMenusMixin:
 
     def _redo_last_action(self):
         """Switches the view to the next state in the active history."""
+        if self.is_followed() and self._refuse_if_followed("Redo"):
+            return
         QApplication.setOverrideCursor(Qt.WaitCursor)
         try:
             if self.active_history:
@@ -574,6 +578,8 @@ class MainMenusMixin:
         """Enables/disables Undo/Redo based on the active history manager."""
         can_undo = self.active_history.can_undo() if self.active_history else False
         can_redo = self.active_history.can_redo() if self.active_history else False
+        if self.is_followed():
+            can_undo = can_redo = False  # read only (phase 6-ter, PR 5-bis)
 
         if hasattr(self, 'undo_action'): self.undo_action.setEnabled(can_undo)
         if hasattr(self, 'redo_action'): self.redo_action.setEnabled(can_redo)

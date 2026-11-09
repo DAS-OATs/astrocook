@@ -43,6 +43,10 @@ LINK_COLOURS = ["#296bff", "#d90077", "#008a00", "#7030a0", "#008080", "#800000"
 FLAG_BOUND_COLOR = "#9467bd"
 FLAG_NAN_COLOR = "#d62728"
 
+#: The background of the banner of a session followed by the GUI (phase
+#: 6-ter, PR 5-bis): a tint of the accent
+FOLLOW_BANNER = "#e8f0ff"
+
 #: Borders and buttons of the recipe dialogs
 INPUT_BORDER = "#ccc"
 BUTTON_BACKGROUND = "#e0e0e0"
@@ -73,6 +77,7 @@ DARK = {
     BUTTON_BACKGROUND: "#4a4a4a",
     BUTTON_BORDER: "#777777",
     BUTTON_PRESSED: "#3a3a3a",
+    FOLLOW_BANNER: "#1c2a46",
 }
 #: The link colours on a dark palette: the same hues, lighter
 LINK_COLOURS_DARK = ["#6e9bff", "#ff5cc0", "#4cd964", "#c08cff", "#40d0d0", "#ff7070"]

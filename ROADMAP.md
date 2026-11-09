@@ -933,6 +933,72 @@ record):
     name, and added "Object='...'" to the history of the spectrum.
     Characterization tests first. No numbers touched (the header and the
     history only), so no slow tests.
+  - PR 5-bis (decision 7, option b: the GUI follows a session of the
+    server), plan agreed with Guido: the marker next to the archive, and the
+    branching recipes allowed on a followed session. `astrocook/follow.py`
+    (package, no Qt or `mcp`, so that any program can be followed):
+    `write_archive` (as `session_save`: the current state, the first state as
+    the original data, the log; atomic, `_write_replacing`, F94), the marker
+    `<archive>.follow.json` (`write_marker`, `read_marker`: the identifier
+    of the session, the pid of the writer, the version; `writer_alive`, a
+    signal 0 on POSIX, true on Windows), `remove`, `gui_unavailable_reason`
+    (no PySide6, as in the Docker image of decision 2; Linux without
+    `DISPLAY` or `WAYLAND_DISPLAY`), `gui_command` (macOS: `open -a
+    Astrocook` if the application is in `/Applications` or
+    `~/Applications`; else `astrocook` on the path, else `python -m
+    astrocook`) and `launch_gui` (detached, `start_new_session`, the three
+    streams on the null device: stdout is the channel of the server).
+    Why a marker and not a flag of the command line: `open -a` passes the
+    file as a FileOpen event, and to an application already open no
+    argument arrives. The server (`mcp_server/gui_tools.py`): `gui_open`
+    saves the session to `<temporary folder>/<session_id>.acs2` with its
+    marker and launches the GUI; the store saves it again after every change
+    of state or log, in one place (`refresh_gui`: after a recipe and its
+    steps provided, undo and redo, a note, a gap seen), and a failed save is
+    a warning of the next output of the session, never a failed recipe;
+    `session_close` and the end of the server (`weakref.finalize` of the
+    folder) remove marker and archive; the sessions opened by a branching
+    recipe are not followed. The archive is not the user's save (the session
+    stays unsaved). The GUI (`gui/main_follow.py`, a mixin of the main
+    window): an archive opened with a marker (from the command line, the
+    FileOpen of macOS, the dialog, drag and drop: `_load_session` and the
+    launcher keep the path until the session is added) is followed: a
+    `QFileSystemWatcher` on the file and on its folder (a replaced file is a
+    new inode on Linux: the file is watched again at each event); the events
+    of the archive only (not the temporary files of the writer), a debounce
+    of 300 ms, a reload only if mtime or size changed, in a worker thread,
+    one more try after a failure (the state shown is kept). The new state
+    replaces the one shown, with the log of the archive, not autoscaled, so
+    that a zoom is kept; the System Inspector keeps its row by the uuid of
+    the component (saved in the archive). A banner (a `QToolBar` at the top,
+    hidden otherwise; the cards float below it) says *Followed session*,
+    read only, with **Make Editable Copy** (a duplicate with a copy of the
+    log: *Duplicate* gives a new empty log). Refused on a followed session,
+    with the offer of the copy: the recipes that are not branching (in
+    `_on_recipe_requested` and before their dialog), the continuum editor,
+    Undo and Redo (disabled), the scripts (*Run All* too), renaming.
+    Allowed: saving, *Export to ASCII*, the branching recipes (their
+    sessions are new and not followed). When the marker disappears (or its
+    writer is dead at the opening) the banner says *No longer followed*,
+    still read only. Opened again (a second `gui_open` with the application
+    open, on macOS), the archive already followed is shown, not opened
+    twice. Found: F109 (the original data of an archive are not read back:
+    an archive opened and saved again has its state as opened as original
+    data, and its log replays twice; data loss, reported to Guido at once).
+    `benchmarks/bench_gui.py` did not run since phase 6-bis (its first
+    refit asked for z_em, R and the continuum, and the benchmark waited
+    forever): it now sets z_em = 4.072 and R = 45000 and answers *Estimate*.
+    GUI benchmark, before and after on the same machine (s, medians of 5):
+    inspector_first 0.425 / 0.445, inspector_again 0.276 / 0.267, main_plot
+    0.087 / 0.085, refit_gui 0.584 / 0.518, select_row 0.119 / 0.118: the
+    same within the noise (a session not followed does nothing new). The
+    screenshots: a new scene, `agents_followed_session` (the banner), shown
+    in *Using Astrocook from an AI Agent*; two scenes of the main window,
+    made with and without the PR, are identical pixel by pixel (the banner
+    is hidden for a session not followed). Saving the archive costs
+    about 0.1 s per change on the J0103-1305 archive of the tests (only for
+    a followed session). Numbers unchanged: no recipe, core or fitting code
+    touched, so no slow tests.
   Found along the way: the startup hook of the cloud sessions created
   `.venv` without installing the package once (November 2026, at the
   start of this phase); installing again by hand worked. To watch: if
@@ -1170,6 +1236,7 @@ Exception: anything that loses user data or crashes is reported at once.
 | F101 | script console (`gui/scripting.py`) | `AppController.run_recipe`, the `app.run_recipe(...)` of the scripts of the console, calls `MainWindowV2._on_recipe_requested` with a keyword `session_override` that the method does not take: every call fails with a TypeError. Found in phase 6-bis (PR 3a) while adapting the callers of the recipes | bug | — | open: with the decision on the console (kept in the code, phase 5-bis, Guido) |
 | F102 | `lya_auto`, `forest_auto` (cleanup of the narrow lines) | After removing the lines narrower than `min_b`, `_remove_narrow` calls `refit_all` without `region_limit`: every group of the session is refitted, also the components outside the forest (e.g. a CIV doublet on the red side fitted before), whose values change slightly. Found in phase 6-bis (PR 4b) while recording the reasons of the removals. `forest_auto` is not limited to a region at all: it identifies on the whole spectrum and its first refit, before the cleanup, also refits every component of the session | behaviour, numerical | `test_lya_auto_does_not_refit_the_red_side` | `lya_auto` fixed in phase 6-bis (PR 4c, Guido's decision): the refits of the cleanup limited to `lya_forest`, as the pipeline; documented in the tutorial (*Refit All* fits everything again). The mock benchmark does not run `lya_auto`: a targeted test replaces it. `forest_auto`: open, Guido's decision (limiting it means choosing its region, e.g. `all_ly_forest`, for the identification and both refits) |
 | F107 | GUI menus and the registry | The labels of the menus of the GUI are written in `gui/main_menus.py` and differ from the `brief` of the recipes in the registry, which the dialogs show as their title (*Auto-detect Doublets...* opens *Auto-fit metal doublets (Red Side)*; *Set Properties...*, *Set session properties*). The methods text (PR 5c) names a recipe by its menu and `brief`, so the name it gives may differ from the label of the menu. Found in phase 6-ter (PR 5c) | cosmetic | — | open: deferred to phase 6-quater (Guido, after PR 5c): the menus from the registry, or a `menu` key in it |
+| F109 | `.acs2` original data (`save_archive_v2`, `load_session_from_file`) | An archive keeps the original data (`*_spec_orig.fits`, `*_systs_orig.fits`, the first state of the history) so that its log can be replayed from them, but they are not read back: an archive opened becomes a history whose first state is its current state, with the log of the archive. Saved again (GUI *Save Session*, the MCP `session_save` of a session opened from an archive, the editable copy of a followed session), the archive gets that state as its original data, and its log still lists the recipes that made it: a replay from the original data runs them a second time, on data already processed (reproduced in phase 6-ter PR 5-bis: `set_properties z_em=4.072` saved, reopened and saved again; the original data of the second archive have z_em = 4.072). *Run All* of the Log Scripter, which replays from the first state of the history, does the same on an archive just opened. Known since phase 1 ("stored but not loaded back", `ROADMAP_HISTORY.md`, step 5 of phase 1), never recorded as a finding with this consequence. Found while writing the follow of the GUI (phase 6-ter PR 5-bis) | data loss (the original data of an archive saved again), reproducibility of the log | — | open: reported to Guido at once (PR 5-bis); not changed in that PR |
 
 Closed findings (fixed or accepted: all the others, F1 to F106, and F108) are in `ROADMAP_HISTORY.md`, "3.2 Findings register", one row each, to be found by number (`grep "^| F52 "`).
 
@@ -1376,6 +1443,6 @@ One line per concluded phase; the long rows are in `ROADMAP_HISTORY.md`, "7. Pro
 | 5-bis – GUI look and ergonomics | done (November 2026), PRs #664-#688; release 2.3.0 with phase 5 |
 | 6 – Error handling | done (November 2026), PRs #691-#701; release 2.4.0 |
 | 6-bis – Recipe API | done (November 2026), PRs #705-#723; release 2.5.0 |
-| 6-ter – Full MCP server | started (November 2026): plan of the phase agreed (PR 0, #726); the tools generated from the registry, F106 found (PR 1, #729); F106 fixed (PR 1-bis, #730); the tools of the sessions, undo and redo (PR 2, #731); the tools of inspection (PR 3, #732); progress notifications (PR 4, #733); the agent's decisions in the log (PR 5a); the gaps of the recipes (PR 5b); the log as the text of a methods section (PR 5c) |
+| 6-ter – Full MCP server | started (November 2026): plan of the phase agreed (PR 0, #726); the tools generated from the registry, F106 found (PR 1, #729); F106 fixed (PR 1-bis, #730); the tools of the sessions, undo and redo (PR 2, #731); the tools of inspection (PR 3, #732); progress notifications (PR 4, #733); the agent's decisions in the log (PR 5a); the gaps of the recipes (PR 5b); the log as the text of a methods section (PR 5c); the GUI following a session of the server, F109 found (PR 5-bis) |
 | 6-quater – Review of the recipe parameters | not started |
 | 7 – Robust components | not started |

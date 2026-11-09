@@ -87,6 +87,8 @@ class ContinuumControlsMixin:
         if not is_editing:
             # --- STARTING ---
             if not self.active_history: return
+            if self._refuse_if_followed("Editing the continuum"):
+                return
 
             # --- NEW: Force cursor off before taking background snapshot ---
             if self.cursor_show_checkbox.isChecked():

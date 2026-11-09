@@ -18,8 +18,19 @@ store keeps where the entries of this server begin (``first_entry``), so
 that the history and the log can be read together (phase 6-ter, PR 2). It
 also keeps the state last saved (or opened), so that a session with
 changes not saved is not closed without being asked.
+
+A session can be followed by the GUI (``gui_open``, phase 6-ter PR 5-bis):
+the store then saves it to an archive of its own folder after every change of
+its state or log (a recipe, the steps provided before it, undo and redo, a
+note), with the marker of :mod:`astrocook.follow`, and the GUI reloads it.
+The folder is removed when the store is collected or the server exits.
 """
+import logging
+import shutil
+import tarfile
+import tempfile
 import threading
+import weakref
 from copy import deepcopy
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -27,11 +38,13 @@ from typing import Any, Optional
 
 from mcp.server.mcpserver.exceptions import ToolError
 
-from astrocook import gaps
+from astrocook import follow, gaps
 from astrocook.core.session import SessionV2
 from astrocook.core.session_manager import SessionHistory
 from astrocook.core.structures import HistoryLogV2
 from astrocook.recipes.params import resolve_params
+
+logger = logging.getLogger(__name__)
 
 
 class _Context:
@@ -72,6 +85,12 @@ class SessionMeta:
     provided: set = field(default_factory=set)
     #: The gaps seen by the server in this session, recorded once each
     seen_gaps: set = field(default_factory=set)
+    #: The archive followed by the GUI (``gui_open``), saved after every
+    #: change; None if the session is not followed
+    gui_path: Optional[Path] = None
+    #: Why the archive followed by the GUI could not be saved, for the next
+    #: output of a tool on the session
+    gui_warnings: list = field(default_factory=list)
 
 
 class SessionStore:
@@ -89,6 +108,9 @@ class SessionStore:
         #: Passed to the sessions as their ``gui``, so that the recipes
         #: find the other open sessions
         self.context = _Context(self._histories)
+        #: The folder of the archives followed by the GUI, made when the
+        #: first one is
+        self._gui_folder: Optional[Path] = None
 
     @property
     def ids(self) -> list[str]:
@@ -188,6 +210,7 @@ class SessionStore:
         note = self.get(session_id).log_manager.add_note(text, kind)
         if kind == "gap":
             gaps.record_gap("declared", note.text, session_id)
+        self.refresh_gui(session_id)
         return note
 
     def record_gap(self, session_id: str, kind: str, text: str,
@@ -207,6 +230,7 @@ class SessionStore:
         if not was_unsaved:
             meta.saved_log = self.get(session_id).log_manager.to_dict()
         gaps.record_gap(kind, text, session_id)
+        self.refresh_gui(session_id)
 
     def was_provided(self, session_id: str, state_index: int) -> bool:
         """Whether the state ``state_index`` is a step provided before a
@@ -249,6 +273,7 @@ class SessionStore:
                                       reason=reason)
         new_state.log_manager = history.log_manager
         history.add_state(new_state)
+        self.refresh_gui(session_id)
         return new_state
 
     def _copy(self, session_id: str, new_id: str) -> SessionHistory:
@@ -298,6 +323,10 @@ class SessionStore:
                 first_entry=self.meta[session_id].first_entry,
                 provided=set(self.meta[session_id].provided))
             ids.append(new_id)
+        if provided:
+            # The steps provided are states of the parent; the new sessions
+            # are not followed
+            self.refresh_gui(session_id)
         return ids
 
     def duplicate(self, session_id: str) -> str:
@@ -312,5 +341,69 @@ class SessionStore:
 
     def close(self, session_id: str) -> None:
         self.get(session_id)
+        self.unfollow(session_id)
         del self._histories[session_id]
         del self.meta[session_id]
+
+    # --- The GUI that follows a session (phase 6-ter, PR 5-bis) ---
+
+    def gui_folder(self) -> Path:
+        """The folder of the archives followed by the GUI (a temporary one,
+        removed when the store is collected or the server exits)."""
+        if self._gui_folder is None:
+            self._gui_folder = Path(tempfile.mkdtemp(prefix="astrocook-gui-"))
+            weakref.finalize(self, shutil.rmtree, self._gui_folder, True)
+        return self._gui_folder
+
+    def follow(self, session_id: str) -> Path:
+        """Save a session to its archive for the GUI, with the marker that
+        says it is followed, and keep it saved after every change; return
+        the path of the archive.
+
+        Raises
+        ------
+        OSError, ValueError
+            If the archive cannot be written (it is then not followed).
+        """
+        history = self.get(session_id)
+        meta = self.meta[session_id]
+        path = meta.gui_path or self.gui_folder() / f"{session_id}.acs2"
+        follow.write_archive(history, path)
+        follow.write_marker(path, session_id)
+        meta.gui_path = path
+        return path
+
+    def unfollow(self, session_id: str) -> None:
+        """Stop following a session: its marker and archive are removed (the
+        GUI says that the session is no longer followed)."""
+        meta = self.meta[session_id]
+        if meta.gui_path is not None:
+            follow.remove(meta.gui_path)
+            meta.gui_path = None
+
+    def refresh_gui(self, session_id: str) -> None:
+        """Save the archive followed by the GUI again, if the session is
+        followed. A failure does not stop the tool that changed the session:
+        it becomes a warning of its output, and the next change saves the
+        archive again."""
+        meta = self.meta.get(session_id)
+        if meta is None or meta.gui_path is None:
+            return
+        try:
+            follow.write_archive(self.get(session_id), meta.gui_path)
+        except (OSError, ValueError, TypeError, KeyError, tarfile.TarError) as e:
+            # The GUI is a view of the session: what stops its archive (a disk
+            # full, a file held open on Windows, a table that cannot be
+            # written) must not lose the result of the recipe
+            message = (f"The archive followed by the GUI was not updated ({e}); "
+                       "it is saved again after the next change.")
+            logger.warning(message)
+            meta.gui_warnings.append(message)
+
+    def pop_gui_warnings(self, session_id: str) -> list:
+        """The warnings of :meth:`refresh_gui` not yet returned by a tool."""
+        meta = self.meta.get(session_id)
+        if meta is None:
+            return []
+        warnings, meta.gui_warnings = meta.gui_warnings, []
+        return warnings

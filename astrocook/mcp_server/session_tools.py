@@ -230,6 +230,7 @@ def register_session_tools(server: MCPServer, store: SessionStore) -> None:
                 history.undo() if back else history.redo()
             for index in undone:
                 undone_gap(session_id, index, why)
+            store.refresh_gui(session_id)
             info = session_info(store, session_id)
             return UndoResult(**info.model_dump(), moved=moved,
                               current_state=history.current_index,

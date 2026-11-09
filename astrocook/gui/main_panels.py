@@ -97,7 +97,8 @@ class MainPanelsMixin:
         window_height = self.height()
         window_width = self.width()
         menubar_height = self.menuBar().height() if self.menuBar() else 0
-        content_y_start = menubar_height
+        # Below the banner of a followed session, when it is shown
+        content_y_start = menubar_height + self._banner_room()
         # Down to the status bar, not to the bottom of the window
         status_bar = self.statusBar() if hasattr(self, 'status_recipe') else None
         content_bottom = window_height - (status_bar.height() if status_bar else 0)
