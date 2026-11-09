@@ -1026,6 +1026,39 @@ record):
     only; an analysis by an agent in one session, or the agent keeps its own
     log). No numbers of the recipes touched; the core and io touched, so the
     slow tests were run.
+  - PR 6 (decision 2, option a: the headless Docker image), plan agreed with
+    Guido: the `Dockerfile` (python:3.13-slim; the package with
+    `pip install --no-deps .` and the other dependencies listed by hand,
+    those of `pyproject.toml` and the `[mcp]` extra without PySide6, qtawesome
+    and scienceplots, F110; `astrocook-mcp` over stdio as the entrypoint, not
+    root, `/data` for the files of the user, the file of the gaps written there
+    so that `--rm` does not lose it) and a `.dockerignore`; the dependencies of
+    `pyproject.toml` are not changed. Tests of the suite, with no Docker:
+    `tests/test_docker_image.py` reads the Dockerfile (the list is that of
+    `pyproject.toml` but for `GUI_ONLY`, each with its reason; a stale entry of
+    `GUI_ONLY` fails; nothing outside `gui/` and the launcher of the GUI imports
+    PySide6, qtawesome or scienceplots; no PySide6 in the Dockerfile's code; not
+    root; stdio entrypoint; the files it copies exist and are not ignored) and
+    `tests/test_mcp_headless.py` (`build_server` in a subprocess: no PySide6,
+    shiboken6, qtawesome, `astrocook.gui` or pyplot in `sys.modules`; and the
+    server over stdio in a process where PySide6 cannot be imported). The
+    stdio check, `tests/mcp_stdio_check.py`, is a script, not a test: a client
+    that starts the server (the command after `--`), opens a mock, runs
+    `continuum_estimate_auto`, saves, plots and asks for `gui_open`, which must
+    answer that the GUI is not available (for the lack of PySide6 here, of a
+    display elsewhere). The CI job `docker` builds the image, checks that
+    PySide6, shiboken6 and qtawesome are not in it, and runs the script inside
+    it (mounted; on a pull request only if what goes into the image changed,
+    by `git diff` against the base: no third-party action). The image is not
+    published (GHCR with the first release after #549). Docs: *Using Astrocook
+    from an AI Agent*, section 2.1 (build, `docker run -i --rm -v <data>:/data`
+    for Claude Code and the Claude desktop app, the paths inside the container,
+    `gui_open` unavailable). Checked here: the contents of the image
+    reproduced in a clean venv (the same list, `--no-deps` for the package, no
+    PySide6): 64 tools and every step of the script pass; the Docker daemon is
+    not available in the cloud session, so `docker build` itself is run only by
+    the CI job. Numbers unchanged: no recipe, core or fitting code touched, so
+    no slow tests and no benchmark.
   Found along the way: the startup hook of the cloud sessions created
   `.venv` without installing the package once (November 2026, at the
   start of this phase); installing again by hand worked. To watch: if
@@ -1264,6 +1297,7 @@ Exception: anything that loses user data or crashes is reported at once.
 | F102 | `lya_auto`, `forest_auto` (cleanup of the narrow lines) | After removing the lines narrower than `min_b`, `_remove_narrow` calls `refit_all` without `region_limit`: every group of the session is refitted, also the components outside the forest (e.g. a CIV doublet on the red side fitted before), whose values change slightly. Found in phase 6-bis (PR 4b) while recording the reasons of the removals. `forest_auto` is not limited to a region at all: it identifies on the whole spectrum and its first refit, before the cleanup, also refits every component of the session | behaviour, numerical | `test_lya_auto_does_not_refit_the_red_side` | `lya_auto` fixed in phase 6-bis (PR 4c, Guido's decision): the refits of the cleanup limited to `lya_forest`, as the pipeline; documented in the tutorial (*Refit All* fits everything again). The mock benchmark does not run `lya_auto`: a targeted test replaces it. `forest_auto`: open, Guido's decision (limiting it means choosing its region, e.g. `all_ly_forest`, for the identification and both refits) |
 | F107 | GUI menus and the registry | The labels of the menus of the GUI are written in `gui/main_menus.py` and differ from the `brief` of the recipes in the registry, which the dialogs show as their title (*Auto-detect Doublets...* opens *Auto-fit metal doublets (Red Side)*; *Set Properties...*, *Set session properties*). The methods text (PR 5c) names a recipe by its menu and `brief`, so the name it gives may differ from the label of the menu. Found in phase 6-ter (PR 5c) | cosmetic | — | open: deferred to phase 6-quater (Guido, after PR 5c): the menus from the registry, or a `menu` key in it |
 | F109 | `.acs2` original data (`save_archive_v2`, `load_session_from_file`) | An archive keeps the original data (`*_spec_orig.fits`, `*_systs_orig.fits`, the first state of the history) so that its log can be replayed from them, but they are not read back: an archive opened becomes a history whose first state is its current state, with the log of the archive. Saved again (GUI *Save Session*, the MCP `session_save` of a session opened from an archive, the editable copy of a followed session), the archive gets that state as its original data, and its log still lists the recipes that made it: a replay from the original data runs them a second time, on data already processed (reproduced in phase 6-ter PR 5-bis: `set_properties z_em=4.072` saved, reopened and saved again; the original data of the second archive have z_em = 4.072). *Run All* of the Log Scripter, which replays from the first state of the history, does the same on an archive just opened. Known since phase 1 ("stored but not loaded back", `ROADMAP_HISTORY.md`, step 5 of phase 1), never recorded as a finding with this consequence. Found while writing the follow of the GUI (phase 6-ter PR 5-bis) | data loss (the original data of an archive saved again), reproducibility of the log | `test_session_nodes.py` | fixed (after PR 5-bis, own PR): reported to Guido at once (PR 5-bis); decided with Guido (November 2026), to fix in its own PR after PR 5-bis: the rule of the sessions is restored, each saved archive is a node: A (the `_orig` copy, completed with the metadata of A: constraints, identifications, in a `_meta_orig.json`), B and the log from A to B. When an archive is opened, B becomes the new A and the log starts empty (GUI, `session_open`, the editable copy); the log of the archive is shown read only while the session is open (Log Scripter, `session_describe`), never replayed nor saved again. The log of the earlier nodes is not kept in the archive (Guido: an analysis by an agent is done in one session, or the agent saves its own log of the operations to resume from; not needed in the archive). Considered and set aside: reading `_orig` back as a fixed origin with the log continued (the log grows without limit, and contradicts the rule); a reference to the previous node with its hash (depends on files being kept) |
+| F110 | dependencies (`pyproject.toml`) | `scienceplots` is a required dependency of the package, but no code imports it: the only mention is a commented line in `gui/plot_canvas.py` (`#plt.style.use(['science', 'fast'])`; the code uses matplotlib's own `fast` style). Found in phase 6-ter PR 6: the headless image leaves it out (`tests/test_docker_image.py`, `GUI_ONLY`) and the server works. | Every installation pulls a package it never uses (and its LaTeX-related style files). Harmless; to remove with the review of the dependencies (F18). | Phase 6-ter PR 6 | Open: to decide with Guido whether to drop it from `pyproject.toml` (changes the dependencies of the package, so not done silently) |
 
 Closed findings (fixed or accepted: all the others, F1 to F106, and F108) are in `ROADMAP_HISTORY.md`, "3.2 Findings register", one row each, to be found by number (`grep "^| F52 "`).
 
@@ -1470,6 +1504,6 @@ One line per concluded phase; the long rows are in `ROADMAP_HISTORY.md`, "7. Pro
 | 5-bis – GUI look and ergonomics | done (November 2026), PRs #664-#688; release 2.3.0 with phase 5 |
 | 6 – Error handling | done (November 2026), PRs #691-#701; release 2.4.0 |
 | 6-bis – Recipe API | done (November 2026), PRs #705-#723; release 2.5.0 |
-| 6-ter – Full MCP server | started (November 2026): plan of the phase agreed (PR 0, #726); the tools generated from the registry, F106 found (PR 1, #729); F106 fixed (PR 1-bis, #730); the tools of the sessions, undo and redo (PR 2, #731); the tools of inspection (PR 3, #732); progress notifications (PR 4, #733); the agent's decisions in the log (PR 5a); the gaps of the recipes (PR 5b); the log as the text of a methods section (PR 5c); the GUI following a session of the server, F109 found (PR 5-bis) |
+| 6-ter – Full MCP server | started (November 2026): plan of the phase agreed (PR 0, #726); the tools generated from the registry, F106 found (PR 1, #729); F106 fixed (PR 1-bis, #730); the tools of the sessions, undo and redo (PR 2, #731); the tools of inspection (PR 3, #732); progress notifications (PR 4, #733); the agent's decisions in the log (PR 5a); the gaps of the recipes (PR 5b); the log as the text of a methods section (PR 5c); the GUI following a session of the server, F109 found (PR 5-bis); the headless Docker image, F110 found (PR 6, not published) |
 | 6-quater – Review of the recipe parameters | not started |
 | 7 – Robust components | not started |

@@ -31,7 +31,8 @@ pip install "astrocook[mcp] @ git+https://github.com/DAS-OATs/astrocook.git"
 ```
 This also installs the `mcp` package (the official Python SDK of the
 protocol) and the `astrocook-mcp` command. The macOS app does not include
-the server.
+the server. To run the server in a Docker
+container instead, without installing it, see section 2.1.
 
 Find the full path of the command, which the client needs (it does not
 see your virtual environment):
@@ -70,6 +71,65 @@ app:
 **Other clients:** any MCP client that can start a local server over
 *stdio* works the same way: the command is `astrocook-mcp`, with no
 arguments.
+
+### 2.1 Running the Server in Docker
+
+If you would rather not install Python and the packages of Astrocook, the
+server can run in a **Docker container**. The image holds the server only,
+without the GUI (no PySide6, no Qt libraries: it is a small image, not the
+~1 GB of the full package), and the client starts it by itself each time.
+You need [Docker](https://docs.docker.com/get-docker/) and the Astrocook
+repository.
+
+The image is **not published** yet (that waits for the license of the
+software): you build it once, from the folder of the repository:
+```
+git clone https://github.com/DAS-OATs/astrocook.git
+cd astrocook
+docker build -t astrocook-mcp .
+```
+The container does not see your disk, only the folders you mount in it
+with `-v`. Choose the folder with your spectra and give it as `<data>`
+(a full path); inside the container it is `/data`, and the agent must use
+`/data/...` for every path (`/data/spectrum.fits`, `/data/out.acs2`).
+What the server saves there stays on your disk.
+
+**Claude Code:**
+```
+claude mcp add astrocook -- docker run -i --rm -v <data>:/data astrocook-mcp
+```
+
+**Claude desktop app** (the configuration file of section 2):
+```json
+{
+  "mcpServers": {
+    "astrocook": {
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "-v", "<data>:/data", "astrocook-mcp"]
+    }
+  }
+}
+```
+On Windows write the folder as `C:\\Users\\me\\spectra` in the JSON file
+(backslashes doubled), or `C:/Users/me/spectra`.
+
+**Other clients:** the command is `docker run -i --rm -v <data>:/data
+astrocook-mcp`. Keep `-i` (the server speaks over standard input and
+output) and do not add `-t`.
+
+What is different from the installation of section 1:
+- the tools are the same, and so are the sessions, the log and the
+  history; the recipes run with the same results;
+- **`gui_open` does not work**: the container has no display and no GUI,
+  and the tool says so. Ask the agent to save the session
+  (`session_save`, into `/data`) and open the archive in Astrocook on
+  your computer, as in section 5, but the GUI will not follow the session
+  as the agent works on it;
+- the file of the gaps (the lacks of the recipes that the server records,
+  see section 3) is `.astrocook-gaps.jsonl` in your data folder; the
+  `astrocook-gaps` command of an installation reads it with `--file`;
+- to update, pull the repository and build the image again; the files the
+  agent can reach are only those of the folder you mounted.
 
 ## 3. The Tools
 

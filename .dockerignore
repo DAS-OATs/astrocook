@@ -1,0 +1,18 @@
+# The build context of the Dockerfile is the package and pyproject.toml only
+.git
+.github
+.claude
+.venv
+**/__pycache__
+**/*.pyc
+*.egg-info
+build
+dist
+docs
+docs_backup
+tests
+benchmarks
+ROADMAP*.md
+CHANGELOG.md
+*.dmg
+*.app
