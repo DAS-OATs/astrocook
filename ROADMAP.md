@@ -992,12 +992,10 @@ record):
     inspector_first 0.425 / 0.445, inspector_again 0.276 / 0.267, main_plot
     0.087 / 0.085, refit_gui 0.584 / 0.518, select_row 0.119 / 0.118: the
     same within the noise (a session not followed does nothing new). The
-    screenshots: a new scene, `agents_followed_session` (the banner); the
-    private spectra of the scenes were not reachable from the session of the
-    PR, so the scene was checked on the test archive renamed, and two scenes
-    of the main window made with and without the PR on it were identical,
-    pixel by pixel; the image is to be made with the real spectra, and then
-    shown in *Using Astrocook from an AI Agent*. Saving the archive costs
+    screenshots: a new scene, `agents_followed_session` (the banner), shown
+    in *Using Astrocook from an AI Agent*; two scenes of the main window,
+    made with and without the PR, are identical pixel by pixel (the banner
+    is hidden for a session not followed). Saving the archive costs
     about 0.1 s per change on the J0103-1305 archive of the tests (only for
     a followed session). Numbers unchanged: no recipe, core or fitting code
     touched, so no slow tests.

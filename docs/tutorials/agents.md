@@ -220,6 +220,11 @@ work as for any session; their new sessions are yours. When the agent
 closes the session, or the client stops the server, the banner says that
 the session is no longer followed.
 
+```{image} ../_static/agents_followed_session.png
+:alt: A session followed by the GUI: the banner over the plot, with Make Editable Copy
+:align: center
+```
+
 The GUI is launched as the application on macOS (`open -a Astrocook`, if
 it is installed in `/Applications` or `~/Applications`), else with the
 `astrocook` command; if it is already open, the session is added to it.
