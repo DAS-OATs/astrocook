@@ -46,7 +46,6 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
     """A custom Matplotlib canvas enabling blitting for cursor dragging."""
     def __init__(self, parent=None, width=5, height=4, dpi=100, plot_widget=None): # Added plot_widget ref
         try:
-            #plt.style.use(['science', 'fast'])
             matplotlib.style.use('fast')
         except OSError as e:
             # (It used 'fast' again, which would fail again)
