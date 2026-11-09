@@ -387,11 +387,39 @@ class HistoryLogV2:
         #: The notes (list of :class:`LogNoteV2`), in the order they were
         #: written; those written after an entry undone are undone with it.
         self.notes: List[LogNoteV2] = []
+        #: The log of the archive the session was opened from (a
+        #: :class:`HistoryLogV2`), or None: read only, shown while the
+        #: session is open, never replayed nor saved again (F109: each saved
+        #: archive is a node, its log goes from its original data to its
+        #: state; see :meth:`opened_from`).
+        self.previous: Optional['HistoryLogV2'] = None
 
     @property
     def is_v2_log(self) -> bool:
         """Return True, indicating this is a V2-native log structure."""
         return True
+
+    @classmethod
+    def opened_from(cls, archive_log: Optional['HistoryLogV2']) -> 'HistoryLogV2':
+        """The log of a session opened from an archive: empty, with the log
+        of the archive as :attr:`previous`.
+
+        The rule of the sessions (F109): each saved archive is a node, with
+        its original data (A, the ``*_orig`` members), its state (B) and the
+        log from A to B. When it is opened, B becomes the new A and the log
+        starts anew; the log of the archive is kept only to be read while
+        the session is open. Its own previous log is not kept: the logs of
+        the earlier nodes are in their archives.
+        """
+        log = cls()
+        if isinstance(archive_log, HistoryLogV2) and (archive_log.entries or archive_log.notes):
+            previous = cls()
+            previous.entries = list(archive_log.entries[:archive_log.current_index + 1])
+            previous.current_index = len(previous.entries) - 1
+            previous.notes = [n for n in archive_log.notes
+                              if n.after <= previous.current_index + 1]
+            log.previous = previous
+        return log
 
     def add_entry(self, recipe_name: str, params: Dict[str, Any],
                   reason: Optional[str] = None):

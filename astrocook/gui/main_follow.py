@@ -287,8 +287,8 @@ class MainFollowMixin:
         """The state read from the archive replaces the one shown (a followed
         session has one state: its history is in its log), with the log of
         the archive; the view is kept."""
-        log = session.log_manager if isinstance(session.log_manager, HistoryLogV2) \
-            else HistoryLogV2()
+        # The log of the agent, read only (F109: the state read is the start)
+        log = HistoryLogV2.opened_from(session.log_manager)
         session.__dict__.pop('_source_path', None)
         session._gui = self
         session.name = history.current_state.name

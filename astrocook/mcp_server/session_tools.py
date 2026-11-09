@@ -157,11 +157,12 @@ def register_session_tools(server: MCPServer, store: SessionStore) -> None:
             columns = [ColumnInfo(name=c, unit=str(spec.t[c].unit or ""))
                        for c in spec.t.colnames]
             comps = state.systs.components if state.systs else []
-            log = history.log_manager
-            before = [LogEntryInfo(notes_before=[note_info(n) for n in log.notes_at(i)],
+            # The log of the archive it was opened from: read only (F109)
+            previous = history.log_manager.previous
+            before = [LogEntryInfo(notes_before=[note_info(n) for n in previous.notes_at(i)],
                                    recipe=e.recipe_name, params=_params(e.params),
                                    reason=e.reason)
-                      for i, e in enumerate(log.entries[:meta.first_entry])]
+                      for i, e in enumerate(previous.entries)] if previous else []
             return SessionDescription(
                 **list_item(store, session_id), columns=columns,
                 components_by_series=dict(Counter(c.series for c in comps)),

@@ -86,8 +86,8 @@ def test_the_log_of_an_archive_comes_before_the_history(mock_archive, tmp_path):
 
 
 def test_the_states_after_an_archive_log(mock_archive, tmp_path):
-    # Each state made in the server is matched with its own entry, after
-    # those the archive brought (SessionStore.entry_of, first_entry)
+    # Each state made in the server is matched with its own entry; the log
+    # of the archive is read only, before them (F109: not continued)
     saved = tmp_path / "with_log.acs2"
     calls(build_server(), open_mock(mock_archive),
           ("continuum_estimate_auto", {"session_id": "mock", "kappa": 3}),
@@ -102,7 +102,7 @@ def test_the_states_after_an_archive_log(mock_archive, tmp_path):
     states = ok(history)["states"]
     assert [s["recipe"] for s in states] == [None, "smooth", "smooth"]
     assert [s["params"].get("sigma_kms") for s in states] == [None, 40.0, 30.0]
-    assert ok(undone)["moved"] == ["smooth"] and ok(undone)["log_entries"] == 3
+    assert ok(undone)["moved"] == ["smooth"] and ok(undone)["log_entries"] == 1
     assert [e["recipe"] for e in ok(described)["log_before"]] == [
         "set_properties", "estimate_auto"]
 

@@ -139,7 +139,9 @@ def test_the_archive_is_reloaded_keeping_the_view(qtbot, followed, archive):
     _rewrite(archive, 4.072)
     qtbot.waitUntil(lambda: _z_em(followed) == 4.072, timeout=10000)
     assert followed.active_history is history and len(history.states) == 1
-    assert [e.recipe_name for e in history.log_manager.entries] == ["set_properties"]
+    # The log of the agent, read only: the state read is the start (F109)
+    assert history.log_manager.entries == []
+    assert [e.recipe_name for e in history.log_manager.previous.entries] == ["set_properties"]
     assert history.current_state.log_manager is history.log_manager
     assert followed.plot_viewer.canvas.axes.get_xlim() == pytest.approx(xlim)
     assert inspector.isVisible()
@@ -223,12 +225,15 @@ def test_the_editable_copy(qtbot, followed, archive, monkeypatch):
     copy = followed.active_history
     assert copy is not source and not followed.is_followed(copy)
     assert copy.current_state.name == "J0103_copy1"
-    # With the log of the session, not shared
-    assert [e.recipe_name for e in copy.log_manager.entries] == ["set_properties"]
+    # With the log of the agent, read only and not shared; its own starts
+    # empty (F109: a new node, from the state of the agent)
+    assert copy.log_manager.entries == []
+    assert [e.recipe_name for e in copy.log_manager.previous.entries] == ["set_properties"]
     assert copy.log_manager is not source.log_manager
     assert followed.follow_banner.isHidden()
     _run_recipe(qtbot, followed, "edit", "set_properties", {"z_em": "4.0"})
     assert len(copy.states) == 2 and len(source.states) == 1
+    assert [e.recipe_name for e in copy.log_manager.entries] == ["set_properties"]
     # The button of the banner makes another one
     followed.active_history = source
     followed.follow_copy_button.click()
