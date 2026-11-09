@@ -672,7 +672,7 @@
 <p>You can access Undo/Redo also from the <strong>Edit</strong> menu (see <a class="reference internal" href="editing_data.html"><span class="std std-doc">Editing Data</span></a>) or using the standard key combinations <code class="docutils literal notranslate"><span class="pre">Ctrl+Z</span></code>/<code class="docutils literal notranslate"><span class="pre">Ctrl+Y</span></code> (<code class="docutils literal notranslate"><span class="pre">Cmd+Z</span></code>/<code class="docutils literal notranslate"><span class="pre">Cmd+Shift+Z</span></code> on Mac).</p>
 </div>
 </li>
-<li><p><strong>Run All:</strong> Re-run the entire analysis pipeline from the original raw data.</p></li>
+<li><p><strong>Run All:</strong> Re-run the analysis of this session from its starting point (the data as opened).</p></li>
 <li><p><strong>Save Script:</strong> Export your workflow as a Python-compatible JSON script for reproducibility.</p></li>
 </ul>
 <p>To describe the analysis in a paper, use <strong>File &gt; Export Log as Text…</strong>
@@ -691,8 +691,13 @@
 <section id="saving-and-closing">
 <h3>Saving and Closing<a class="headerlink" href="#saving-and-closing" title="Link to this heading">#</a></h3>
 <p>When you have finished your analysis (or if you want to save your progress):</p>
-<ol class="arabic simple">
-<li><p><strong>Save</strong>: Go to <strong>File &gt; Save Session…</strong> or right-click the session in the list. This saves your work as an <code class="docutils literal notranslate"><span class="pre">.acs2</span></code> file, preserving all your continuum fits, line lists and the session log (the operations shown in the Log Scripter).</p></li>
+<ol class="arabic">
+<li><p><strong>Save</strong>: Go to <strong>File &gt; Save Session…</strong> or right-click the session in the list. This saves your work as an <code class="docutils literal notranslate"><span class="pre">.acs2</span></code> file, preserving all your continuum fits, line lists and the session log (the operations shown in the Log Scripter).</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>Each saved session is a step of the analysis.</strong> The archive holds the data as the session started (the original spectrum, for a session opened from a FITS file), the data as saved, and the log of the operations from the first to the second. When you open an archive again, its data <em>as saved</em> are the new starting point, and the log starts empty: the log of the archive is shown at the top of the Session Log, as comments starting with <code class="docutils literal notranslate"><span class="pre">##</span></code>, for reading only. <em>Run All</em> does not run it again, and saving the session does not save it again: the new archive holds only the operations done since it was opened. To keep the whole path of an analysis done in several sittings, keep the archives of each sitting (or export the log as text before you save again).</p>
+</div>
+</li>
 <li><p><strong>Close</strong>: You can close a specific session via the right-click menu, or close the active session via <strong>File &gt; Close Session</strong>.</p></li>
 </ol>
 <img alt="The Session List with context menu" class="align-center" src="../images/getting_started_session_list.png" />

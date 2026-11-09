@@ -965,16 +965,16 @@ of components and the maps defining their relationships.</p>
 <span class="sig-name descname"><span class="pre">v1_models_t</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Any</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#astrocook.core.structures.SystemListDataV2.v1_models_t" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="astrocook.core.structures.SystemListDataV2.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">components:</span> <span class="pre">~typing.List[~astrocook.core.structures.ComponentDataV2]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">v1_header_constraints:</span> <span class="pre">~typing.Dict[str,</span> <span class="pre">~typing.Any]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">parsed_constraints:</span> <span class="pre">~typing.Dict[~typing.Tuple[str,</span> <span class="pre">str],</span> <span class="pre">~astrocook.core.structures.ParameterConstraintV2]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">v2_constraints_map:</span> <span class="pre">~typing.Dict[str,</span> <span class="pre">~typing.Dict[str,</span> <span class="pre">~astrocook.core.structures.ParameterConstraintV2]]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">v1_id_to_uuid_map:</span> <span class="pre">~typing.Dict[int,</span> <span class="pre">str]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">v1_models_t:</span> <span class="pre">~typing.Any</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">meta:</span> <span class="pre">~typing.Dict[str,</span> <span class="pre">~typing.Any]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#astrocook.core.structures.SystemListDataV2.__init__" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
 <dl class="py attribute">
 <dt class="sig sig-object py" id="astrocook.core.structures.SystemListDataV2.meta">
 <span class="sig-name descname"><span class="pre">meta</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#astrocook.core.structures.SystemListDataV2.meta" title="Link to this definition">#</a></dt>
 <dd><p>Metadata for the system list.</p>
 </dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.core.structures.SystemListDataV2.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">components:</span> <span class="pre">~typing.List[~astrocook.core.structures.ComponentDataV2]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">v1_header_constraints:</span> <span class="pre">~typing.Dict[str,</span> <span class="pre">~typing.Any]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">parsed_constraints:</span> <span class="pre">~typing.Dict[~typing.Tuple[str,</span> <span class="pre">str],</span> <span class="pre">~astrocook.core.structures.ParameterConstraintV2]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">v2_constraints_map:</span> <span class="pre">~typing.Dict[str,</span> <span class="pre">~typing.Dict[str,</span> <span class="pre">~astrocook.core.structures.ParameterConstraintV2]]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">v1_id_to_uuid_map:</span> <span class="pre">~typing.Dict[int,</span> <span class="pre">str]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">v1_models_t:</span> <span class="pre">~typing.Any</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">meta:</span> <span class="pre">~typing.Dict[str,</span> <span class="pre">~typing.Any]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#astrocook.core.structures.SystemListDataV2.__init__" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
 
 </dd></dl>
 
@@ -1091,10 +1091,33 @@ valid entry.</p>
 written; those written after an entry undone are undone with it.</p>
 </dd></dl>
 
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.core.structures.HistoryLogV2.previous">
+<span class="sig-name descname"><span class="pre">previous</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#astrocook.core.structures.HistoryLogV2" title="astrocook.core.structures.HistoryLogV2"><span class="pre">HistoryLogV2</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#astrocook.core.structures.HistoryLogV2.previous" title="Link to this definition">#</a></dt>
+<dd><p>The log of the archive the session was opened from (a
+<a class="reference internal" href="#astrocook.core.structures.HistoryLogV2" title="astrocook.core.structures.HistoryLogV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">HistoryLogV2</span></code></a>), or None: read only, shown while the
+session is open, never replayed nor saved again (F109: each saved
+archive is a node, its log goes from its original data to its
+state; see <a class="reference internal" href="#astrocook.core.structures.HistoryLogV2.opened_from" title="astrocook.core.structures.HistoryLogV2.opened_from"><code class="xref py py-meth docutils literal notranslate"><span class="pre">opened_from()</span></code></a>).</p>
+</dd></dl>
+
 <dl class="py property">
 <dt class="sig sig-object py" id="astrocook.core.structures.HistoryLogV2.is_v2_log">
 <span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">is_v2_log</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><a class="headerlink" href="#astrocook.core.structures.HistoryLogV2.is_v2_log" title="Link to this definition">#</a></dt>
 <dd><p>Return True, indicating this is a V2-native log structure.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.core.structures.HistoryLogV2.opened_from">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">opened_from</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">archive_log</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#astrocook.core.structures.HistoryLogV2" title="astrocook.core.structures.HistoryLogV2"><span class="pre">HistoryLogV2</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.structures.HistoryLogV2" title="astrocook.core.structures.HistoryLogV2"><span class="pre">HistoryLogV2</span></a></span></span><a class="reference internal" href="../modules/astrocook/core/structures.html#HistoryLogV2.opened_from"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.structures.HistoryLogV2.opened_from" title="Link to this definition">#</a></dt>
+<dd><p>The log of a session opened from an archive: empty, with the log
+of the archive as <a class="reference internal" href="#astrocook.core.structures.HistoryLogV2.previous" title="astrocook.core.structures.HistoryLogV2.previous"><code class="xref py py-attr docutils literal notranslate"><span class="pre">previous</span></code></a>.</p>
+<p>The rule of the sessions (F109): each saved archive is a node, with
+its original data (A, the <code class="docutils literal notranslate"><span class="pre">*_orig</span></code> members), its state (B) and the
+log from A to B. When it is opened, B becomes the new A and the log
+starts anew; the log of the archive is kept only to be read while
+the session is open. Its own previous log is not kept: the logs of
+the earlier nodes are in their archives.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -1347,8 +1370,8 @@ without either is saved as before.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.structures.SystemListDataV2.v2_constraints_map"><code class="docutils literal notranslate"><span class="pre">SystemListDataV2.v2_constraints_map</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.structures.SystemListDataV2.v1_id_to_uuid_map"><code class="docutils literal notranslate"><span class="pre">SystemListDataV2.v1_id_to_uuid_map</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.structures.SystemListDataV2.v1_models_t"><code class="docutils literal notranslate"><span class="pre">SystemListDataV2.v1_models_t</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.structures.SystemListDataV2.__init__"><code class="docutils literal notranslate"><span class="pre">SystemListDataV2.__init__()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.structures.SystemListDataV2.meta"><code class="docutils literal notranslate"><span class="pre">SystemListDataV2.meta</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.structures.SystemListDataV2.__init__"><code class="docutils literal notranslate"><span class="pre">SystemListDataV2.__init__()</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.structures.LogEntryV2"><code class="docutils literal notranslate"><span class="pre">LogEntryV2</span></code></a><ul class="nav section-nav flex-column">
@@ -1371,7 +1394,9 @@ without either is saved as before.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.structures.HistoryLogV2.entries"><code class="docutils literal notranslate"><span class="pre">HistoryLogV2.entries</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.structures.HistoryLogV2.current_index"><code class="docutils literal notranslate"><span class="pre">HistoryLogV2.current_index</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.structures.HistoryLogV2.notes"><code class="docutils literal notranslate"><span class="pre">HistoryLogV2.notes</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.structures.HistoryLogV2.previous"><code class="docutils literal notranslate"><span class="pre">HistoryLogV2.previous</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.structures.HistoryLogV2.is_v2_log"><code class="docutils literal notranslate"><span class="pre">HistoryLogV2.is_v2_log</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.structures.HistoryLogV2.opened_from"><code class="docutils literal notranslate"><span class="pre">HistoryLogV2.opened_from()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.structures.HistoryLogV2.add_entry"><code class="docutils literal notranslate"><span class="pre">HistoryLogV2.add_entry()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.structures.HistoryLogV2.add_note"><code class="docutils literal notranslate"><span class="pre">HistoryLogV2.add_note()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.structures.HistoryLogV2.notes_at"><code class="docutils literal notranslate"><span class="pre">HistoryLogV2.notes_at()</span></code></a></li>
