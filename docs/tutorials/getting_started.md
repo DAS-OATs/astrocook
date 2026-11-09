@@ -180,7 +180,7 @@ This dialog allows you to:
   :::{tip}
   You can access Undo/Redo also from the **Edit** menu (see [Editing Data](editing_data.md)) or using the standard key combinations `Ctrl+Z`/`Ctrl+Y` (`Cmd+Z`/`Cmd+Shift+Z` on Mac).
   :::
-* **Run All:** Re-run the entire analysis pipeline from the original raw data.
+* **Run All:** Re-run the analysis of this session from its starting point (the data as opened).
 * **Save Script:** Export your workflow as a Python-compatible JSON script for reproducibility.
 
 To describe the analysis in a paper, use **File > Export Log as Text...**
@@ -200,6 +200,10 @@ The **View** menu also provides access to specialized analysis windows:
 When you have finished your analysis (or if you want to save your progress):
 
 1. **Save**: Go to **File > Save Session...** or right-click the session in the list. This saves your work as an `.acs2` file, preserving all your continuum fits, line lists and the session log (the operations shown in the Log Scripter).
+
+   :::{note}
+   **Each saved session is a step of the analysis.** The archive holds the data as the session started (the original spectrum, for a session opened from a FITS file), the data as saved, and the log of the operations from the first to the second. When you open an archive again, its data *as saved* are the new starting point, and the log starts empty: the log of the archive is shown at the top of the Session Log, as comments starting with `##`, for reading only. *Run All* does not run it again, and saving the session does not save it again: the new archive holds only the operations done since it was opened. To keep the whole path of an analysis done in several sittings, keep the archives of each sitting (or export the log as text before you save again).
+   :::
 2. **Close**: You can close a specific session via the right-click menu, or close the active session via **File > Close Session**.
 
 ```{image} ../_static/getting_started_session_list.png

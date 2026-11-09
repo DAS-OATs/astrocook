@@ -142,7 +142,8 @@ def test_archive_contents(rich_session, tmp_path):
     _, path = _round_trip(rich_session, tmp_path, initial=initial)
     with tarfile.open(path) as tar:
         names = sorted(tar.getnames())
-    assert names == ["session_meta.json", "session_spec.fits",
+    # The metadata of the original data since F109
+    assert names == ["session_meta.json", "session_meta_orig.json", "session_spec.fits",
                      "session_spec_orig.fits", "session_systs.fits"]
 
 

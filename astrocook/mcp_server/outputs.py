@@ -563,8 +563,10 @@ class SessionDescription(SessionListItem):
     components_by_series: dict[str, int] = Field(description=(
         "Number of absorption components per series (e.g. CIV)."))
     log_before: list[LogEntryInfo] = Field(default_factory=list, description=(
-        "The log that came with the archive (or from the parent), before the "
-        "first state of this history."))
+        "The log of the archive the session was opened from: what was done "
+        "before its first state, for reading only (it is not replayed, and "
+        "session_save does not save it again: an archive holds the log from "
+        "its original data to its state)."))
     saved_path: Optional[str] = Field(None, description=(
         "Where it was last saved or opened from."))
 

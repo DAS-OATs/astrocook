@@ -187,8 +187,11 @@ class ScriptWorker(QRunnable):
         try:
             logger.debug("Script worker started.")
 
-            # 1. Create a new history to build into
+            # 1. Create a new history to build into; the log of the archive
+            # the session was opened from stays read only (F109)
             new_log = HistoryLogV2()
+            new_log.previous = getattr(getattr(self.initial_state, 'log_manager', None),
+                                       'previous', None)
             # We must create a true copy of the initial state
             initial_state_copy = self.initial_state.with_new_spectrum(
                 self.initial_state.spec

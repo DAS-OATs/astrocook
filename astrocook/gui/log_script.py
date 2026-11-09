@@ -31,10 +31,21 @@ def _call(entry: LogEntryV2) -> str:
     return f"{entry.recipe_name}({params})"
 
 
+#: The first line of the log of the archive a session was opened from, in
+#: the Log Scripter: its lines start with ``##``, which Run All skips and
+#: does not read as reasons or notes (F109)
+PREVIOUS_HEADER = ("## The log of the archive this session was opened from: read only, "
+                   "not run by Run All, not saved again.")
+
+
 def log_to_script(log: HistoryLogV2) -> List[str]:
     """The lines of the Log Scripter for ``log``, the entries undone and
-    their notes commented out."""
+    their notes commented out; first, the log of the archive the session
+    was opened from, if any, as ``##`` comments."""
     out = []
+    previous = getattr(log, 'previous', None)
+    if previous is not None:
+        out += [PREVIOUS_HEADER] + [f"## {line}" for line in log_to_script(previous)] + [""]
     for item, active in log.timeline(include_undone=True):
         if isinstance(item, LogEntryV2):
             lines = (_tagged("reason", item.reason) if item.reason else []) + [_call(item)]

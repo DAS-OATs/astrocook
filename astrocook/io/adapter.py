@@ -210,10 +210,13 @@ def load_systs_data_v2_from_archive(systs_fits_path: str, v2_metadata: Dict) -> 
     )
     return SystemListV2(data=data_core)
 
-def _serialize_v2_metadata(session: 'SessionV2') -> str:
+def _serialize_v2_metadata(session: 'SessionV2', with_log: bool = True) -> str:
+    """The metadata of a session as JSON: the constraints, the identifiers of
+    the components, the identifications of the regions, the version and
+    (``with_log``) the session log."""
     from astrocook import __version__  # at call time: astrocook imports this module
     constraint_map_obj = session.systs.constraint_model.v2_constraints_by_uuid
-    log_manager_to_save = getattr(session, 'log_manager', None)
+    log_manager_to_save = getattr(session, 'log_manager', None) if with_log else None
     
     log_history_data = None
     log_type = "unknown"
@@ -412,6 +415,7 @@ def save_archive_v2(session_v2_final: 'SessionV2', session_v2_initial: Optional[
         with open(meta_path_temp, 'w') as f: f.write(meta_json_str)
         
         spec_orig_fname = None
+        meta_orig_fname = None
         systs_orig_fname = None
         if session_v2_initial:
             # A failure here stops the save, before the target is touched
@@ -421,6 +425,13 @@ def save_archive_v2(session_v2_final: 'SessionV2', session_v2_initial: Optional[
             spec_orig_path_temp = os.path.join(temp_dir, spec_orig_fname)
             spec_orig_table = _convert_spec_data_to_table(session_v2_initial.spec._data)
             _write_fits_table(spec_orig_table, spec_orig_path_temp)
+
+            # The metadata of the original data too (constraints,
+            # identifications), without the log: A is the whole state (F109)
+            meta_orig_fname = f"{base_name}_meta_orig.json"
+            meta_orig_path_temp = os.path.join(temp_dir, meta_orig_fname)
+            with open(meta_orig_path_temp, 'w') as f:
+                f.write(_serialize_v2_metadata(session_v2_initial, with_log=False))
 
             if session_v2_initial.systs and session_v2_initial.systs.components:
                 systs_orig_fname = f"{base_name}_systs_orig.fits"
@@ -435,6 +446,7 @@ def save_archive_v2(session_v2_final: 'SessionV2', session_v2_initial: Optional[
             if systs_fname: tar.add(systs_path_temp, arcname=systs_fname)
             tar.add(meta_path_temp, arcname=meta_fname)
             if spec_orig_fname: tar.add(spec_orig_path_temp, arcname=spec_orig_fname)
+            if meta_orig_fname: tar.add(meta_orig_path_temp, arcname=meta_orig_fname)
             if systs_orig_fname: tar.add(systs_orig_path_temp, arcname=systs_orig_fname)
 
         _write_replacing(final_path, add_members)

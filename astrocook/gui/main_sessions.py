@@ -220,17 +220,19 @@ class MainSessionsMixin:
         self._update_undo_redo_actions()
 
     def _log_for_new_session(self, session):
-        """Return the log for a new session history.
+        """Return the log for a new session history: a new, empty one.
 
-        A V2 log restored from an ``.acs2`` archive is kept; any other session
-        (including a duplicate, whose log belongs to another history) starts
-        with a new, empty log.
+        The log of an ``.acs2`` archive becomes its ``previous``, shown read
+        only in the Log Scripter and never replayed nor saved again (F109:
+        the state of the archive is the new start of the analysis). Any
+        other session (including a duplicate, whose log belongs to another
+        history) starts with a new, empty log.
         """
         log = getattr(session, 'log_manager', None)
         histories = getattr(self, 'session_histories', [])
         if isinstance(log, HistoryLogV2) and not any(
                 h.log_manager is log for h in histories):
-            return log
+            return HistoryLogV2.opened_from(log)
         return HistoryLogV2()
 
     def _add_session_internal(self, new_session, is_initial=False):

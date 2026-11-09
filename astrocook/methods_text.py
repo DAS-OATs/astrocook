@@ -631,6 +631,13 @@ def methods_text(source, *, menus: bool = True) -> MethodsText:
     # The state made by the entry i is states[i - offset]; the entries up to
     # offset were made before the first state (e.g. read from an archive)
     offset = (log.current_index - current) if log is not None else 0
+    # The log of the archive the session was opened from (F109): its steps
+    # come first, made before the first state
+    previous = getattr(log, 'previous', None)
+    if previous is not None:
+        earlier = previous.timeline()
+        timeline = earlier + timeline
+        offset += sum(1 for item, _ in earlier if hasattr(item, 'recipe_name'))
     first = states[0] if states else None
     entries = [item for item, _ in timeline if hasattr(item, 'recipe_name')]
     paragraphs: List[MethodsParagraph] = []

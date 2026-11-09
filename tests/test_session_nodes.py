@@ -4,10 +4,10 @@ and the log from A to B. When an archive is opened, B becomes the new A and
 the log starts empty: the log of the archive is shown read only while the
 session is open, never replayed nor saved again.
 
-The tests marked "characterization" record the behaviour before the fix:
-the log of an opened archive was continued, so that an archive opened and
-saved again had B as its original data and the old log with it, and a replay
-ran the old recipes a second time.
+Characterization tests were written first (the previous commit): the log
+of an opened archive was continued, so that an archive opened and saved again
+had B as its original data and the old log with it, and a replay ran the old
+recipes a second time. They are now the tests of the rule.
 """
 import asyncio
 import json
@@ -80,34 +80,56 @@ def test_the_reader_gives_the_log_of_the_archive(node):
     assert [e.recipe_name for e in session.log_manager.entries] == ["apply_expression"]
 
 
-# --- Characterization: the log of an opened archive is continued ------------------------------
+# --- An archive opened: B is the new A, and the log starts empty --------------------------------
+# (characterization tests before the fix: the log was continued, the archive
+# saved again had B as its original data and the old log with it, and Run All
+# doubled the flux twice)
 
-def test_characterization_the_gui_continues_the_log(qtbot, window, node, tmp_path):
+def test_the_gui_starts_a_new_log(qtbot, window, node, tmp_path):
     path, a_flux = node
     window.open_session_from_path(str(path))
     history = window.active_history
-    assert [e.recipe_name for e in history.log_manager.entries] == ["apply_expression"]
+    log = history.log_manager
+    assert log.entries == []
+    assert [e.recipe_name for e in log.previous.entries] == ["apply_expression"]
     _run_recipe(qtbot, window, "edit", "set_properties", {"z_em": "4.072"})
     saved = tmp_path / "again.acs2"
     history.current_state.save(str(saved), initial_session=history.states[0])
-    # The original data of the new archive are B (flux doubled), and its log
-    # still has the recipe that made B: a replay doubles the flux again
+    # A node: the original data are B (the flux doubled), and the log goes
+    # from them to the state: replayed on them, it gives the state
     assert np.allclose(_original_flux(saved, tmp_path), 2 * a_flux, equal_nan=True)
-    assert _saved_log(saved) == ["apply_expression", "set_properties"]
+    assert _saved_log(saved) == ["set_properties"]
 
 
-def test_characterization_run_all_replays_the_archive(qtbot, window, node):
+def test_the_log_scripter_shows_the_previous_log(window, node):
+    path, _ = node
+    window.open_session_from_path(str(path))
+    lines = log_to_script(window.active_history.log_manager)
+    assert lines[0].startswith("## The log of the archive this session was opened from")
+    assert "## # reason: To double it." in lines
+    assert any(line.startswith("## apply_expression(") for line in lines)
+    assert not any(line.startswith("apply_expression(") for line in lines)
+
+
+def test_run_all_does_not_replay_the_archive(qtbot, window, node):
     path, a_flux = node
     window.open_session_from_path(str(path))
-    script = "\n".join(log_to_script(window.active_history.log_manager))
-    assert "apply_expression(" in script
-    window.run_script(script)
-    qtbot.waitUntil(lambda: len(window.active_history.states) == 2, timeout=20000)
-    flux = window.active_history.current_state.spec.y.value
-    assert np.allclose(flux, 4 * a_flux, equal_nan=True)  # doubled twice
+    _run_recipe(qtbot, window, "edit", "set_properties", {"z_em": "4.072"})
+    before = window.active_history
+    window.run_script("\n".join(log_to_script(before.log_manager)))
+    qtbot.waitUntil(lambda: window.active_history is not before, timeout=20000)
+    history = window.active_history
+    assert len(history.states) == 2
+    flux = history.current_state.spec.y.value
+    assert np.allclose(flux, 2 * a_flux, equal_nan=True)  # doubled once
+    assert history.current_state.spec._data.z_em == 4.072
+    # The log of the archive stays, read only
+    assert [e.recipe_name for e in history.log_manager.entries] == ["set_properties"]
+    assert [e.recipe_name for e in history.log_manager.previous.entries] == [
+        "apply_expression"]
 
 
-def test_characterization_the_server_saves_the_archive_log(node, tmp_path):
+def test_the_server_starts_a_new_log(node, tmp_path):
     pytest.importorskip("mcp")
     from mcp import Client
     from astrocook.mcp_server.server import build_server
@@ -116,22 +138,25 @@ def test_characterization_the_server_saves_the_archive_log(node, tmp_path):
 
     async def go():
         async with Client(build_server()) as client:
-            opened = await client.call_tool("session_open", {"path": str(path)})
-            described = await client.call_tool("session_describe", {"session_id": "node"})
+            await client.call_tool("session_open", {"path": str(path)})
             await client.call_tool("edit_set_properties",
                                    {"session_id": "node", "z_em": 4.072})
+            described = await client.call_tool("session_describe", {"session_id": "node"})
+            history = await client.call_tool("session_history", {"session_id": "node"})
             await client.call_tool("session_save", {"session_id": "node",
                                                     "path": str(saved)})
-            return opened, described
-    _, described = asyncio.run(go())
+            return described, history
+    described, history = asyncio.run(go())
     before = described.structured_content["log_before"]
     assert [e["recipe"] for e in before] == ["apply_expression"]
     assert before[0]["reason"] == "To double it."
+    states = history.structured_content["states"]
+    assert [s["recipe"] for s in states] == [None, "set_properties"]
     assert np.allclose(_original_flux(saved, tmp_path), 2 * a_flux, equal_nan=True)
-    assert _saved_log(saved) == ["apply_expression", "set_properties"]
+    assert _saved_log(saved) == ["set_properties"]
 
 
-def test_characterization_methods_text_of_an_opened_archive(window, node):
+def test_methods_text_of_an_opened_archive(window, node):
     path, _ = node
     window.open_session_from_path(str(path))
     text = methods_text(window.active_history).text
@@ -139,9 +164,49 @@ def test_characterization_methods_text_of_an_opened_archive(window, node):
     assert "For the first step, read from the log of the archive" in text
 
 
-def test_characterization_the_original_data_have_no_metadata(node):
+def test_the_original_data_have_their_metadata(node):
     path, _ = node
     with tarfile.open(path) as tar:
-        names = tar.getnames()
-    assert any(n.endswith("_spec_orig.fits") for n in names)
-    assert not any(n.endswith("_meta_orig.json") for n in names)
+        name = next(n for n in tar.getnames() if n.endswith("_meta_orig.json"))
+        meta = json.load(tar.extractfile(name))
+    assert meta["log_history_json"] == {} and meta["log_type"] == "unknown"
+    assert "constraints_by_uuid" in meta and "component_uuids" in meta
+    # The reader takes _meta.json, not the metadata of the original data
+    session = load_session_from_file(str(path), "node", None, "auto")
+    assert [e.recipe_name for e in session.log_manager.entries] == ["apply_expression"]
+
+
+def test_the_previous_log_follows_copies_and_branches(qtbot, window, node, monkeypatch):
+    path, _ = node
+    window.open_session_from_path(str(path))
+    source = window.active_history
+    # Duplicate: a new session, its own empty log, no previous
+    window._on_duplicate_session(source)
+    assert window.active_history.log_manager.previous is None
+    # A branch keeps the previous log (a copy of the log of its parent)
+    window.active_history = source
+    _run_recipe(qtbot, window, "edit", "split", {"expression": "(x > 500) & (x < 520)"})
+    branch = window.active_history
+    assert branch is not source
+    assert [e.recipe_name for e in branch.log_manager.entries] == ["split"]
+    assert [e.recipe_name for e in branch.log_manager.previous.entries] == [
+        "apply_expression"]
+
+
+def test_opened_from_keeps_only_the_entries_done():
+    log = HistoryLogV2()
+    log.add_entry("a", {})
+    log.add_note("after a")
+    log.add_entry("b", {})
+    log.add_note("after b")
+    log.undo()
+    log.previous = HistoryLogV2.opened_from(HistoryLogV2())  # not carried over
+    new = HistoryLogV2.opened_from(log)
+    assert new.entries == [] and new.current_index == -1 and new.notes == []
+    assert [e.recipe_name for e in new.previous.entries] == ["a"]
+    assert [n.text for n in new.previous.notes] == ["after a"]
+    assert new.previous.previous is None
+    assert HistoryLogV2.opened_from(HistoryLogV2()).previous is None
+    assert HistoryLogV2.opened_from(None).previous is None
+    # Never saved
+    assert "previous" not in new.to_dict()

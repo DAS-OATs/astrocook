@@ -298,14 +298,19 @@ had been run on its own.
 Open the saved archive in the GUI (`astrocook /data/J0103-1305_agent.acs2`),
 or ask the agent to show you the session while it works (`gui_open`, see
 "Watching the agent in the GUI" above).
-The session log (*View > View Session Log*) lists the recipes the agent ran, with
-their parameters, as if you had run them from the menus, with the reasons
-the agent gave (`# reason: ...`, before each recipe) and its notes
-(`# note: ...`, where it wrote them): you can inspect the components in
-the System Inspector, correct them, refit them, or replay the log as a
-script (*Run All* runs the recipes and keeps the reasons and notes in the
-new log). Astrocook 2.5.0 and earlier open such an archive and replay it,
-but do not show the reasons and notes, and lose them if it is saved again.
+The session log (*View > View Session Log*) lists, at the top, the recipes
+the agent ran, with their parameters, as if you had run them from the
+menus, with the reasons the agent gave (`# reason: ...`, before each recipe)
+and its notes (`# note: ...`, where it wrote them), all as comments starting
+with `##`: the log of the archive, for reading. The archive is a step of the
+analysis (see *Getting Started*, "Saving and Closing"): opened, the state the
+agent left is the new starting point, and the log of what you do starts
+below, empty. You can inspect the components in the System Inspector,
+correct them and refit them; *Run All* reruns your steps, not the agent's,
+and saving the session saves your steps only. Keep the agent's archive, or
+its text from `session_methods`, if you need its path later. An analysis by
+an agent is best done in one session; if it must be resumed, ask the agent
+to keep its own log (e.g. the text of `session_methods`).
 
 ## 6. Limits of the Pilot
 

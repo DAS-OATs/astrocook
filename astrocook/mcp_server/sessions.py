@@ -70,8 +70,8 @@ class SessionMeta:
     #: 'duplicated'
     origin: str = "opened"
     made_by: Optional[str] = None
-    #: The index of the log entry of the second state (the entries before it
-    #: came with an archive, or from the parent)
+    #: The index of the log entry of the second state; 0 since the log of an
+    #: archive opened is no longer continued (F109)
     first_entry: int = 0
     #: The state last saved or opened; None if never saved
     saved_state: Optional[SessionV2] = None
@@ -137,13 +137,13 @@ class SessionStore:
         """Store a newly opened session and return its identifier.
 
         The identifier is the file name without extension, with a suffix
-        (``-2``, ``-3``, ...) if that is already taken. A V2 log restored
-        from an ``.acs2`` archive is kept, as in the GUI.
+        (``-2``, ``-3``, ...) if that is already taken. The log starts
+        empty, as in the GUI: the log of an ``.acs2`` archive is its
+        ``previous``, read only (``log_before`` of ``session_describe``),
+        never replayed nor saved again (F109).
         """
         session_id = self._new_id(Path(path).stem or "session")
-        log = session.log_manager
-        if not isinstance(log, HistoryLogV2):
-            log = HistoryLogV2()
+        log = HistoryLogV2.opened_from(session.log_manager)
         session._gui = self.context
         history = SessionHistory(session, log)
         history.display_name = session_id
@@ -201,7 +201,11 @@ class SessionStore:
         """The notes written at the state ``state_index`` (``LogNoteV2``);
         those of a state undone are kept, as the state is, for a redo."""
         log = self.get(session_id).log_manager
-        return log.notes_at(self.meta[session_id].first_entry + state_index)
+        notes = log.notes_at(self.meta[session_id].first_entry + state_index)
+        if state_index == 0 and log.previous is not None:
+            # Those written at the end of the log of the archive (F109)
+            notes = log.previous.notes_at(len(log.previous.entries)) + notes
+        return notes
 
     def note(self, session_id: str, text: str, kind: str = "note"):
         """Add a note at the current state of a session (no new state). A

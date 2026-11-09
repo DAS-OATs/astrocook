@@ -51,8 +51,9 @@ def _fail_on_call(monkeypatch, obj, name, n, exc=OSError("simulated failure")):
 def test_save_writes_the_archive(session, tmp_path):
     path = tmp_path / "s.acs2"
     session.save(str(path), initial_session=session)
-    assert _names(path) == ["s_meta.json", "s_spec.fits", "s_spec_orig.fits",
-                            "s_systs.fits", "s_systs_orig.fits"]
+    # The metadata of the original data since F109
+    assert _names(path) == ["s_meta.json", "s_meta_orig.json", "s_spec.fits",
+                            "s_spec_orig.fits", "s_systs.fits", "s_systs_orig.fits"]
     assert os.listdir(tmp_path) == ["s.acs2"]
 
 

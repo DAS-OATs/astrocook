@@ -86,7 +86,9 @@ def test_loaded_log_is_kept_by_the_gui(window_with_v2_session, tmp_path):
 
     window.add_session(loaded)
     log = window.active_history.log_manager
-    assert [e.recipe_name for e in log.entries] == ["smooth"]
+    # F109: the log of the archive is kept read only, and a new one starts
+    assert log.entries == []
+    assert [e.recipe_name for e in log.previous.entries] == ["smooth"]
 
     # A duplicate does not share the log of its source history
     window.add_session(window.active_history.current_state)
