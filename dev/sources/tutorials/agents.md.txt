@@ -105,6 +105,12 @@ Three tools let the agent look into a session, without changing it:
 | `spectrum_read` | The columns of the spectrum in a range, as numbers; a long range is averaged in blocks of pixels (for reading only). |
 | `spectrum_plot` | A plot of a range (PNG): the flux and its error, the continuum, the model, and a tick at each line of each component. |
 
+And one shows a session to you, in the GUI:
+
+| Tool | What it does |
+|---|---|
+| `gui_open` | Opens a session in the Astrocook GUI, on the computer where the server runs, and keeps it up to date after every change (see "Watching the agent in the GUI" below). |
+
 **Nothing is lost.** Every state of a session is kept, as in the GUI: if
 a recipe removes components (e.g. *Auto-detect Doublets* replaces those
 on the red side), its result says so, with the reason for each, and
@@ -196,6 +202,47 @@ in between, sends one notification when it starts and one when it ends,
 with the time it took. A recipe that reports nothing in between is silent
 until it ends.
 
+**Watching the agent in the GUI.** When the agent calls `gui_open` on a
+session, the Astrocook GUI opens on it, and after every change of the
+session (a recipe, an undo or redo, a note) it shows the new state: you
+see the analysis as it goes. The view stays as you left it: the range and
+zoom of the plot, the System Inspector open with its selected row, the
+session shown. A banner over the plot says that the session is
+*followed*: it is **read only** in the GUI, so that you and the agent do
+not change it at the same time; nothing you do in the GUI reaches the
+agent. The recipes that change it, the continuum editor, Undo and Redo,
+the scripts and renaming are refused, with the offer of an editable copy;
+**Make Editable Copy** in the banner makes one: a new session with the
+current state and the log of the agent (its reasons and notes), which you
+can change, and which the agent does not see or change. Saving, exporting
+and the recipes that open a new session (e.g. *Edit > Split Out Region*)
+work as for any session; their new sessions are yours. When the agent
+closes the session, or the client stops the server, the banner says that
+the session is no longer followed.
+
+```{image} ../_static/agents_followed_session.png
+:alt: A session followed by the GUI: the banner over the plot, with Make Editable Copy
+:align: center
+```
+
+The GUI is launched as the application on macOS (`open -a Astrocook`, if
+it is installed in `/Applications` or `~/Applications`), else with the
+`astrocook` command; if it is already open, the session is added to it.
+The sessions that a recipe opens later are not followed: the agent calls
+`gui_open` on them if you should see them. Without a display (e.g. the
+Docker image, or a Linux server reached by SSH) the tool says that the GUI
+is not available. The GUI must be a version that knows followed sessions
+(the one with this server, or later): an older application opens the
+archive as an ordinary session, not updated.
+
+How it works, for the curious: the server saves the session to an archive
+in a temporary folder of its own, with a small file next to it
+(`<archive>.follow.json`) that says it is followed, and saves the archive
+again after every change; the GUI watches the file and reloads it. The
+archive is replaced only when it is complete (written to a temporary file
+next to it, then renamed), so the GUI never reads it half written. This
+archive is not your save: save the session with `session_save` as usual.
+
 *File > Export to ASCII* (`file_export_ascii`) writes the files in the
 folder `path`, named after `prefix`, and does not replace files that exist
 unless asked (`overwrite=true`).
@@ -248,7 +295,9 @@ had been run on its own.
 
 ## 5. Reviewing the Result in the GUI
 
-Open the saved archive in the GUI (`astrocook /data/J0103-1305_agent.acs2`).
+Open the saved archive in the GUI (`astrocook /data/J0103-1305_agent.acs2`),
+or ask the agent to show you the session while it works (`gui_open`, see
+"Watching the agent in the GUI" above).
 The session log (*View > View Session Log*) lists the recipes the agent ran, with
 their parameters, as if you had run them from the menus, with the reasons
 the agent gave (`# reason: ...`, before each recipe) and its notes
