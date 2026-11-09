@@ -78,6 +78,53 @@ jobs:
       - name: Run slow tests
         run: pytest --run-slow -m slow
 
+  # Headless image of the MCP server (Dockerfile, phase 6-ter): built and
+  # run, with the stdio check of tests/mcp_stdio_check.py inside it (open a
+  # mock, a recipe, save, plot, gui_open refused). Only when what goes into
+  # the image changes. The image is not published anywhere (GHCR waits for
+  # the LICENSE, #549).
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Compare a pull request with its base (the full history is fetched
+      # above; no third-party action for this)
+      - name: What changed
+        id: changes
+        run: |
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "image=true" >> "$GITHUB_OUTPUT"
+          elif git diff --name-only "origin/${{ github.base_ref }}...HEAD" \
+              | grep -q -E '^(Dockerfile|\.dockerignore|pyproject\.toml|astrocook/|tests/mcp_stdio_check\.py|\.github/workflows/tests\.yml)'; then
+            echo "image=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "image=false" >> "$GITHUB_OUTPUT"
+            echo "Nothing that goes into the image changed: not built."
+          fi
+
+      - name: Build the image
+        if: steps.changes.outputs.image == 'true'
+        run: docker build -t astrocook-mcp .
+
+      # PySide6 must not be in the image
+      - name: No PySide6 in the image
+        if: steps.changes.outputs.image == 'true'
+        run: |
+          if docker run --rm --entrypoint pip astrocook-mcp list | grep -i -E "^(pyside6|shiboken6|qtawesome) "; then
+            echo "the image holds the GUI dependencies"; exit 1
+          fi
+
+      # The check is a client: it starts astrocook-mcp inside the container
+      - name: Run the server over stdio in the image
+        if: steps.changes.outputs.image == 'true'
+        run: |
+          docker run --rm -v "$PWD/tests/mcp_stdio_check.py:/check.py:ro" \
+            --entrypoint python astrocook-mcp /check.py -- astrocook-mcp
+
   lint:
     runs-on: ubuntu-latest
     steps:
