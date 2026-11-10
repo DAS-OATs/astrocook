@@ -709,9 +709,13 @@ class SystemListV2:
             new_expr = expression if expression is not None else base_constraint.expression
             new_tgt = target_uuid if target_uuid is not None else base_constraint.target_uuid
 
-        if not new_free and expression:
+        if expression and is_free is not True:
             # A new link is checked here, so that a wrong one is refused
-            # with a message instead of freezing the parameter (phase 6)
+            # with a message instead of freezing the parameter (phase 6).
+            # Also with ``is_free`` left out: the fit treats an expression as
+            # a link either way, and the example of the description of the
+            # recipe, ``p["z"]``, was stored unchecked and kept the parameter
+            # frozen (F117, trial 3 of the MCP server)
             self._check_link(uuid, param, expression)
 
         new_constraint = dataclasses.replace(base_constraint, is_free=new_free, expression=new_expr, target_uuid=new_tgt)
@@ -1045,7 +1049,8 @@ class SystemListV2:
                            max_components: int = 5, threshold_sigma: float = 2.5,
                            aic_penalty: float = 0.0, z_window_kms: float = 100.0,
                            min_dv: float = 10.0,  # <--- NEW PARAMETER
-                           group_depth: int = 2, patience: int = 2) -> 'SystemListV2':
+                           group_depth: int = 2, patience: int = 2,
+                           trace: Optional[dict] = None) -> 'SystemListV2':
         """
         Iteratively adds components to a system to minimize residuals using the
         Akaike Information Criterion (AIC).
@@ -1084,6 +1089,11 @@ class SystemListV2:
             Depth for finding connected neighbors during the fit (default: 2).
         patience : int, optional
             Number of consecutive trials allowed without AIC improvement before stopping (default: 2).
+        trace : dict, optional
+            Filled with what the search did (F118, trial 3 of the MCP server):
+            ``start_aic``, ``tried`` (one dict per candidate: ``z``,
+            ``residual_sigma``, ``outcome``, and ``aic_before``/``aic_after``
+            when it was fitted) and ``stopped`` (the reason).
 
         Returns
         -------
@@ -1150,6 +1160,10 @@ class SystemListV2:
         logger.debug(f"Optimizing the components of {series_name}.")
         best_aic, best_systs = fit_and_evaluate(current_systs, [uuid_seed])
         logger.info(f"AIC of the starting model: {best_aic:.1f}.")
+        tried = []
+        stopped = f"the {max_components} components allowed were tried"
+        if trace is not None:
+            trace.update(start_aic=float(best_aic), tried=tried)
         
         current_systs = best_systs
         trials_without_imp = 0
@@ -1174,6 +1188,8 @@ class SystemListV2:
             if min_val > -threshold_sigma:
                 logger.info(f"No residual deeper than {threshold_sigma} sigma "
                             f"(the deepest is {-min_val:.1f} sigma): done.")
+                stopped = (f"no residual deeper than threshold_sigma = "
+                           f"{threshold_sigma} (the deepest is {-min_val:.1f} sigma)")
                 break
                 
             # C. Create Candidate
@@ -1194,6 +1210,9 @@ class SystemListV2:
                 # [FIX] Mask this spot and CONTINUE (Do not Break!)
                 sl = slice(max(0, min_idx-5), min(len(spec.x.value), min_idx+6))
                 rejected_mask[sl] = True
+                tried.append({'z': float(z_new), 'residual_sigma': float(-min_val),
+                              'outcome': f"{dv_sep:.1f} km/s from a component "
+                                         f"(less than min_dv = {min_dv}): not fitted"})
                 continue 
 
             logger.debug(f"Iteration {i+1}: candidate at z = {z_new:.5f} "
@@ -1210,12 +1229,20 @@ class SystemListV2:
             if delta < -aic_penalty:
                 logger.info(f"Component added at z = {z_new:.5f}: AIC {best_aic:.1f} "
                             f"to {trial_aic:.1f}.")
+                tried.append({'z': float(z_new), 'residual_sigma': float(-min_val),
+                              'outcome': 'added', 'aic_before': float(best_aic),
+                              'aic_after': float(trial_aic)})
                 best_aic = trial_aic
                 best_systs = trial_systs
                 trials_without_imp = 0
             else:
                 logger.debug(f"Candidate at z = {z_new:.5f} rejected: AIC changes by "
                              f"{delta:.1f}.")
+                tried.append({'z': float(z_new), 'residual_sigma': float(-min_val),
+                              'outcome': f"rejected: AIC changes by {delta:.1f}, "
+                                         f"less than aic_penalty = {aic_penalty}",
+                              'aic_before': float(best_aic),
+                              'aic_after': float(trial_aic)})
                 trials_without_imp += 1
                 
                 # [FIX] Mask this spot so we don't loop forever
@@ -1224,8 +1251,11 @@ class SystemListV2:
             
             if trials_without_imp >= patience:
                 logger.info(f"{patience} candidates in a row rejected: done.")
+                stopped = f"{patience} candidates in a row rejected (patience)"
                 break
         
+        if trace is not None:
+            trace['stopped'] = stopped
         return best_systs
     
     def remove_in_region(self, obs_min: au.Quantity, obs_max: au.Quantity) -> 'SystemListV2':

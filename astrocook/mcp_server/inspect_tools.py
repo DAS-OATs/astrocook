@@ -175,8 +175,9 @@ def register_inspect_tools(server: MCPServer, store: SessionStore) -> None:
         x_max: Annotated[Optional[float], Field(description=(
             "End of the range; null: the end of the spectrum."))] = None,
         columns: Annotated[Optional[list[str]], Field(description=(
-            "Columns to read (session_describe lists them); null: y, dy, "
-            "cont and model, those present."))] = None,
+            "Columns to read (session_describe lists them); the names of "
+            "the GUI work too (F = y, dF = dy, λ = x); null: y, dy, cont "
+            "and model, those present."))] = None,
         max_points: Annotated[int, Field(ge=10, le=5000, description=(
             "Maximum number of points: a longer range is averaged in blocks "
             "of pixels."))] = 200,

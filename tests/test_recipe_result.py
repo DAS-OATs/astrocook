@@ -67,6 +67,21 @@ def test_changed_components_and_properties(sessions):
     assert "1 component changed" in changes.describe()
 
 
+def test_a_refit_that_changed_nothing_changes_nothing(sessions):
+    # Trial 3 of PR 7: a refit returns the values of the start to ~1e-10,
+    # and every component of the group was listed as changed
+    _, _, fitted = sessions
+    uuid = fitted.systs.components[0].uuid
+    c = fitted.systs.components[0]
+    nudged = fitted.absorbers.update_component(
+        uuid, z=c.z * (1 + 1e-10), logN=c.logN * (1 + 1e-10), b=c.b * (1 + 1e-10))
+    assert not compare_sessions(fitted, nudged).components_changed
+    # a real change, however small, is listed
+    moved = fitted.absorbers.update_component(uuid, b=c.b * (1 + 1e-6))
+    (change,) = compare_sessions(fitted, moved).components_changed
+    assert set(change.changed) == {"b"}
+
+
 def test_another_grid_is_said_by_the_pixels(sessions):
     raw, _, _ = sessions
     part = raw.edit.split("(λ > 445) & (λ < 450)")
@@ -279,3 +294,38 @@ def test_lya_auto_does_not_refit_the_red_side():
     after = [(c.uuid, c.z, c.logN, c.b) for c in result.session.systs.components
              if c.series == "CIV"]
     assert after == before
+
+
+def test_the_candidates_dropped_are_in_the_result():
+    # F119 (trial 3 of PR 7): a doublet scored below the threshold was
+    # dropped without a word; its score and threshold are in the result now
+    truth = MockTruth(components=[MockComponent("CIV", 1.93, 13.8, 10.0),
+                                  MockComponent("SiIV", 1.93, 12.4, 10.0)],
+                      lam_min_nm=440.0, lam_max_nm=460.0, dv_kms=2.5, resol=45000.0,
+                      snr=30.0, z_em=2.7, seed=1)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        raw = SessionV2("mock", None, spec=generate(truth, truth_columns=False))
+        cont = raw.continuum.estimate_auto()
+        result = run(cont, "identify_lines", score_threshold=0.999)
+    dropped = result.extra["dropped_candidates"]
+    assert dropped
+    assert all(d["score"] <= d["threshold"] == 0.999 for d in dropped)
+    assert all(set(d) == {"series", "z", "score", "threshold", "x_nm"} for d in dropped)
+
+
+def test_optimize_system_says_what_it_tried_and_why_it_stopped(sessions):
+    # F118 (trial 3 of PR 7): "1 component changed" and nothing else
+    _, _, fitted = sessions
+    uuid = fitted.systs.components[0].uuid
+    result = run(fitted, "optimize_system", uuid=uuid)
+    opt = result.extra["optimization"]
+    assert isinstance(opt["start_aic"], float) and isinstance(opt["tried"], list)
+    assert "no residual deeper than threshold_sigma = 2.5" in opt["stopped"]
+    # a threshold low enough makes it try, and each trial says how it ended
+    result = run(fitted, "optimize_system", uuid=uuid, threshold_sigma=0.1,
+                 max_components=2)
+    tried = result.extra["optimization"]["tried"]
+    assert tried and all({"z", "residual_sigma", "outcome"} <= set(t) for t in tried)
+    assert all(t["outcome"] == "added" or t["outcome"].startswith("rejected")
+               or t["outcome"].endswith("not fitted") for t in tried)

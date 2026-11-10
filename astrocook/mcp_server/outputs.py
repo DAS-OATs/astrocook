@@ -399,6 +399,10 @@ class RecipeInfo(SessionInfo):
     fit: Optional[FitSummary] = Field(None, description=(
         "The components added by the recipe, with errors, reduced chi2 and "
         "flags, when it added any."))
+    details: dict[str, Any] = Field(default_factory=dict, description=(
+        "What is specific to the recipe, as it reports it: e.g. what "
+        "optimize_system tried and why it stopped (optimization), the "
+        "doublets that identify_lines scored and dropped (dropped_candidates)."))
     undo_hint: Optional[str] = Field(None, description=(
         "How to have back what the recipe removed, when it removed "
         "components or columns."))
@@ -438,6 +442,26 @@ def changes_summary(changes, removed_reasons: dict, max_listed: int) -> ChangesS
         properties_changed={k: [_jsonable(a), _jsonable(b)]
                             for k, (a, b) in changes.properties_changed.items()},
         truncated=len(removed) > max_listed or len(changed) > max_listed)
+
+
+#: Keys of ``RecipeResult.extra`` that the output says in its own fields
+_EXTRA_SAID_ELSEWHERE = frozenset({"removed", "discarded", "not_fitted", "candidates",
+                                   "regions"})
+
+
+def details(extra: dict) -> dict:
+    """The rest of ``RecipeResult.extra``: what a recipe reports of its own,
+    as JSON, for every recipe in the same way."""
+    return {k: _deep_jsonable(v) for k, v in extra.items()
+            if k not in _EXTRA_SAID_ELSEWHERE}
+
+
+def _deep_jsonable(value):
+    if isinstance(value, dict):
+        return {str(k): _deep_jsonable(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_deep_jsonable(v) for v in value]
+    return _jsonable(value)
 
 
 def _value(value):
