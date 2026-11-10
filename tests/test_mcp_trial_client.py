@@ -5,6 +5,7 @@ answers ``tools`` and ``call`` on a Unix socket; the trials depend on it
 showing the agent what a client shows a model, and on its log.
 """
 import json
+import os
 import subprocess
 import sys
 import time
@@ -34,8 +35,10 @@ def test_client_lists_the_tools_and_calls_one(tmp_path):
     env_cmd = [sys.executable, str(CLIENT), "serve", "--socket", str(sock),
                "--log", str(log), "--images", str(tmp_path / "img"), "--",
                str(SERVER)]
+    gaps = tmp_path / "gaps.jsonl"
+    env = {**os.environ, "ASTROCOOK_GAPS_FILE": str(gaps)}
     serve = subprocess.Popen(env_cmd, stdout=subprocess.DEVNULL,
-                             stderr=subprocess.DEVNULL)
+                             stderr=subprocess.DEVNULL, env=env)
     try:
         deadline = time.time() + 60
         while not sock.exists():
@@ -50,6 +53,9 @@ def test_client_lists_the_tools_and_calls_one(tmp_path):
         session_id = json.loads(opened)["session_id"]
         _client("call", "--socket", str(sock), "continuum_estimate_auto",
                 json.dumps({"session_id": session_id}))
+        _client("call", "--socket", str(sock), "session_note",
+                json.dumps({"session_id": session_id, "text": "a gap",
+                            "kind": "gap"}))
         failed = _client("call", "--socket", str(sock), "session_describe",
                          json.dumps({"session_id": "nope"}))
         assert failed.startswith("ERROR")
@@ -61,8 +67,10 @@ def test_client_lists_the_tools_and_calls_one(tmp_path):
     assert events[0]["event"] == "tools" and events[0]["n"] > 50
     calls = [e for e in events if e["event"] == "call"]
     assert [c["tool"] for c in calls] == ["session_open", "continuum_estimate_auto",
-                                         "session_describe"]
-    assert [c["failed"] for c in calls] == [False, False, True]
+                                         "session_note", "session_describe"]
+    assert [c["failed"] for c in calls] == [False, False, False, True]
     # The progress of a recipe reaches the log, not the agent
     assert any(e["event"] == "progress" and e["tool"] == "continuum_estimate_auto"
                for e in events)
+    # The environment reaches the server: the gap is in the file of the trial
+    assert "a gap" in gaps.read_text()

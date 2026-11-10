@@ -25,6 +25,7 @@ import argparse
 import asyncio
 import base64
 import json
+import os
 import socket
 import sys
 import time
@@ -71,7 +72,10 @@ async def serve(args) -> None:
     images.mkdir(parents=True, exist_ok=True)
     counter = [0]
     command = args.command[1:] if args.command[:1] == ["--"] else args.command
-    params = StdioServerParameters(command=command[0], args=command[1:])
+    # The whole environment: the SDK passes only a few variables by default,
+    # and ASTROCOOK_GAPS_FILE must reach the server
+    params = StdioServerParameters(command=command[0], args=command[1:],
+                                   env=dict(os.environ))
     async with Client(params, read_timeout_seconds=args.timeout) as client:
         tools = (await client.list_tools()).tools
         listing = _format_tools(client.instructions, tools)
