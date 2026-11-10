@@ -259,8 +259,13 @@ notifications while the recipe runs: the pipelines and the Bayesian fit
 report a percentage with the last line of their log (what the GUI shows
 under its progress bar), and every recipe, also those that report nothing
 in between, sends one notification when it starts and one when it ends,
-with the time it took. A recipe that reports nothing in between is silent
-until it ends.
+with the time it took. A recipe that reports nothing for 20 seconds sends a
+heartbeat ("Still running ...", with the time elapsed), so that a long
+recipe is not mistaken for a hang. While a recipe runs, the tools that read
+a session (`session_list`, `session_history`, `components_list`,
+`spectrum_plot`, ...), `session_note` and `session_save` still answer, on
+the state before the recipe (`session_list` says what is running); the
+other recipes and the tools that change the states wait for it to end.
 
 **Watching the agent in the GUI.** When the agent calls `gui_open` on a
 session, the Astrocook GUI opens on it, and after every change of the

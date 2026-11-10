@@ -79,7 +79,8 @@ docs = [
 build = ["pyinstaller", "astrocook[bayes]"]
 # MCP server for agents (astrocook/mcp_server, ROADMAP_HISTORY.md section 4.1);
 # the 2.x API differs from 1.x
-mcp = ["mcp>=2.3,<3"]
+# anyio >= 4.11: the heartbeat sends from its own thread (``token``)
+mcp = ["mcp>=2.3,<3", "anyio>=4.11"]
 
 [project.scripts]
 # Launch the GUI: `astrocook [file ...]` (same as `python -m astrocook`)

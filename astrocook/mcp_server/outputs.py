@@ -487,6 +487,9 @@ class SessionListItem(BaseModel):
     unsaved: bool = Field(description=(
         "True if the current state, or the log (a note), is not the one last "
         "saved or opened."))
+    running: Optional[str] = Field(None, description=(
+        "The recipe running on it and for how long, if any: until it ends, "
+        "the tools read and save the state before it."))
 
 
 class SessionList(BaseModel):

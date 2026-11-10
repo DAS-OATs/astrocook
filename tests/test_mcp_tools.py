@@ -7,6 +7,8 @@ it with a recipe that exists only in the test.
 import asyncio
 import logging
 import sys
+import threading
+import time
 from types import MappingProxyType
 
 import numpy as np
@@ -367,3 +369,111 @@ def test_progress_over_stdio(new_recipe, mock_archive):
     assert not result.is_error
     assert [p for p, _ in seen] == [0, 100]
     assert seen[0][1] == "Running flux_smooth"
+
+
+# --- Read-only tools while a recipe runs, and the heartbeat (F113) ---------
+
+RELEASE = threading.Event()
+
+
+@pytest.fixture
+def wait_recipe(new_recipe, monkeypatch):
+    """Flux > Wait (test): waits for RELEASE (``seconds`` = 0) or sleeps
+    ``seconds`` without logging, then logs ``then`` as its progress (if >= 0)."""
+    def wait_test(self, seconds: float = 0.0, then: int = -1):
+        if seconds > 0:
+            time.sleep(seconds)
+        else:
+            assert RELEASE.wait(30), "never released"
+        if then >= 0:
+            logger.info("Halfway")
+            logger.info(">> PROGRESS: %d", then)
+            time.sleep(seconds)
+        return self._session.edit.apply_expression("y_waited", "y * 1")
+
+    monkeypatch.setattr(RecipeFluxV2, "wait_test", typed_recipe(wait_test), raising=False)
+    flux = dict(registry.RECIPES["flux"])
+    flux["wait_test"] = build_spec("flux", "wait_test", {
+        "brief": "Wait (test).", "details": "Waits, silent.",
+        "params": [{"name": "seconds", "type": float, "default": 0.0,
+                    "doc": "Seconds."},
+                   {"name": "then", "type": int, "default": -1, "doc": "Progress after."}]})
+    recipes = dict(registry.RECIPES)
+    recipes["flux"] = MappingProxyType(flux)
+    monkeypatch.setattr(registry, "RECIPES", MappingProxyType(recipes))
+    RELEASE.clear()
+    yield
+    RELEASE.set()
+
+
+def test_the_read_only_tools_answer_while_a_recipe_runs(wait_recipe, mock_archive, tmp_path):
+    saved = tmp_path / "during.acs2"
+
+    async def go():
+        async with Client(build_server()) as client:
+            await client.call_tool("session_open", {"path": str(mock_archive)})
+            waiting = asyncio.create_task(
+                client.call_tool("flux_wait_test", {"session_id": "mock"}))
+            # Another recipe waits for the first one
+            queued = asyncio.create_task(
+                client.call_tool("flux_scale_test", {"session_id": "mock"}))
+            for _ in range(200):
+                listed = (await client.call_tool("session_list", {})).structured_content
+                if listed["sessions"][0]["running"]:
+                    break
+                await asyncio.sleep(0.02)
+            reads = {tool: await asyncio.wait_for(client.call_tool(tool, args), 10)
+                     for tool, args in [
+                         ("session_history", {"session_id": "mock"}),
+                         ("session_describe", {"session_id": "mock"}),
+                         ("components_list", {"session_id": "mock"}),
+                         ("spectrum_plot", {"session_id": "mock"}),
+                         ("session_note", {"session_id": "mock", "text": "Waiting."}),
+                         ("session_save", {"session_id": "mock", "path": str(saved)})]}
+            busy = not waiting.done() and not queued.done()
+            RELEASE.set()
+            done = [await asyncio.wait_for(t, 30) for t in (waiting, queued)]
+            history = await client.call_tool("session_history", {"session_id": "mock"})
+            return listed, reads, busy, done, history
+
+    listed, reads, busy, done, history = asyncio.run(go())
+    assert listed["sessions"][0]["running"].startswith("flux_wait_test, for ")
+    assert busy
+    for tool, result in reads.items():
+        assert not result.is_error, tool
+    # What is read and saved is the state before the recipe
+    assert reads["session_history"].structured_content["states"][-1]["index"] == 0
+    save = reads["session_save"].structured_content
+    assert save["log_entries"] == 0
+    assert any("A recipe is running on 'mock'" in w for w in save["warnings"])
+    assert saved.is_file()
+    assert all(not r.is_error for r in done)
+    states = history.structured_content["states"]
+    assert [s["recipe"] for s in states] == [None, "wait_test", "scale_test"]
+    assert states[0]["notes"][0]["text"] == "Waiting."
+
+
+def test_a_silent_recipe_sends_a_heartbeat(wait_recipe, mock_archive, monkeypatch):
+    from astrocook.mcp_server import progress
+    monkeypatch.setattr(progress, "HEARTBEAT_S", 0.05)
+    _, (result, seen) = calls_with_progress(
+        build_server(),
+        ("session_open", {"path": str(mock_archive)}),
+        ("flux_wait_test", {"session_id": "mock", "seconds": 0.4, "then": 50}))
+    assert not result.is_error
+    values = [p for p, _, _ in seen]
+    # Always increasing: the heartbeats below 1 before the line of 50, below
+    # 51 after it; the end is 100
+    assert values == sorted(set(values))
+    beats = [(p, m) for p, _, m in seen if m.startswith("Still running flux_wait_test: ")]
+    assert any(0 < p < 1 for p, _ in beats)
+    assert any(50 < p < 51 and m.endswith("; last: Halfway") for p, m in beats)
+    assert 50 in values and values[-1] == 100
+
+
+def test_no_heartbeat_when_the_client_does_not_ask(wait_recipe, mock_archive, monkeypatch):
+    from astrocook.mcp_server import progress
+    monkeypatch.setattr(progress, "HEARTBEAT_S", 0.05)
+    _, result = calls(build_server(), ("session_open", {"path": str(mock_archive)}),
+                      ("flux_wait_test", {"session_id": "mock", "seconds": 0.2}))
+    assert not result.is_error

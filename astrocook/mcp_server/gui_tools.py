@@ -36,7 +36,7 @@ def register_gui_tools(server: MCPServer, store: SessionStore) -> None:
             raise ToolError(f"The GUI is not available here: {reason} Save the "
                             "session with session_save and open the archive in "
                             "Astrocook on a machine with a display.")
-        with store.lock:
+        with store.writing():
             store.get(session_id)
             try:
                 path = store.follow(session_id)

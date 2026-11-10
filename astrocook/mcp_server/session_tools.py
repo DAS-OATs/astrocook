@@ -53,7 +53,8 @@ def list_item(store: SessionStore, session_id: str) -> dict:
     return dict(session_id=session_id, origin=meta.origin, parent=meta.parent,
                 path=meta.path, spectrum=spectrum_summary(history.current_state),
                 n_states=len(history.states), current_state=history.current_index,
-                unsaved=store.unsaved(session_id))
+                unsaved=store.unsaved(session_id),
+                running=store.running_text(session_id))
 
 
 def _moved_recipe(store: SessionStore, session_id: str, index: int) -> str:
@@ -85,7 +86,7 @@ def register_session_tools(server: MCPServer, store: SessionStore) -> None:
         file_path = _resolve(path)
         if not file_path.is_file():
             raise ToolError(f"No such file: {file_path}")
-        with store.lock:
+        with store.writing():
             session, warnings = run_recipe(
                 "session_open", SessionV2.open_new, str(file_path),
                 file_path.stem, store.context, "auto")
@@ -96,7 +97,7 @@ def register_session_tools(server: MCPServer, store: SessionStore) -> None:
         if resol is not None:
             params["resol"] = str(resol)
         if params:
-            # Through the tool of the recipe (it takes the lock): logged, as
+            # Through the tool of the recipe (it takes the locks): logged, as
             # in the GUI
             result = run_tool(store, get_recipe("edit", "set_properties"), session_id,
                               params, False, 0)
@@ -124,13 +125,18 @@ def register_session_tools(server: MCPServer, store: SessionStore) -> None:
                             "replace it.")
         if not file_path.parent.is_dir():
             raise ToolError(f"No such folder: {file_path.parent}")
-        with store.lock:
+        with store.state_lock:
             history = store.get(session_id)
             # save() returns 0 on success, unlike the recipes
             _, warnings = run_recipe(
                 "session_save", lambda: history.current_state.save(
                     str(file_path), initial_session=history.states[0]) or True)
             store.mark_saved(session_id, str(file_path))
+            running = store.running_text(session_id)
+            if running is not None:
+                warnings = [*warnings, (
+                    f"A recipe is running on '{session_id}' ({running}): the "
+                    "state saved is the one before it. Save again when it ends.")]
             return SaveResult(
                 session_id=session_id, path=str(file_path),
                 log_entries=len(history.log_manager.to_dict()["entries"]),
@@ -140,7 +146,7 @@ def register_session_tools(server: MCPServer, store: SessionStore) -> None:
     def session_list() -> SessionList:
         """List the open sessions: where each comes from, its spectrum in a
         few numbers, its history, and whether it has changes not saved."""
-        with store.lock:
+        with store.state_lock:
             return SessionList(sessions=[SessionListItem(**list_item(store, i))
                                          for i in store.ids])
 
@@ -149,7 +155,7 @@ def register_session_tools(server: MCPServer, store: SessionStore) -> None:
         """Describe a session: the columns of the spectrum, the components
         per series, where it comes from and the log that came with it. The
         states made in this server are listed by session_history."""
-        with store.lock:
+        with store.state_lock:
             history = store.get(session_id)
             meta = store.meta[session_id]
             state = history.current_state
@@ -177,7 +183,7 @@ def register_session_tools(server: MCPServer, store: SessionStore) -> None:
         """List the states of a session: the session as opened, then one per
         recipe run on it, with the recipe, its parameters and what it
         changed. session_undo and session_redo move between them."""
-        with store.lock:
+        with store.state_lock:
             history = store.get(session_id)
             states = []
             for i, state in enumerate(history.states):
@@ -213,7 +219,7 @@ def register_session_tools(server: MCPServer, store: SessionStore) -> None:
 
     def move(session_id: str, steps: int, back: bool,
              why: Optional[str] = None) -> UndoResult:
-        with store.lock:
+        with store.writing():
             history = store.get(session_id)
             can = history.can_undo if back else history.can_redo
             if not can():
@@ -265,7 +271,7 @@ def register_session_tools(server: MCPServer, store: SessionStore) -> None:
         Gaps are collected, with the failures and the recipes undone, to
         decide which recipes to add; they are kept in a local file of the
         user and never sent anywhere. gaps_summary lists them."""
-        with store.lock:
+        with store.state_lock:
             history = store.get(session_id)
             try:
                 note = store.note(session_id, text, kind)
@@ -288,7 +294,7 @@ def register_session_tools(server: MCPServer, store: SessionStore) -> None:
         the fit and the atomic data, and the references. The recipes undone
         are left out. It changes nothing in the session. Give it to the user
         as it is; do not rewrite the numbers."""
-        with store.lock:
+        with store.state_lock:
             history = store.get(session_id)
             out = methods_text(history, menus=menus)
             return MethodsResult(session_id=session_id, text=out.text,
@@ -318,7 +324,7 @@ def register_session_tools(server: MCPServer, store: SessionStore) -> None:
         """Make a copy of a session, with its history up to the current
         state and its log, under a new identifier: to try something without
         touching the original."""
-        with store.lock:
+        with store.writing():
             new_id = store.duplicate(session_id)
             return SessionListItem(**list_item(store, new_id))
 
@@ -330,7 +336,7 @@ def register_session_tools(server: MCPServer, store: SessionStore) -> None:
     ) -> CloseResult:
         """Close a session. A session with changes not saved is not closed
         unless discard_changes is true: save it first with session_save."""
-        with store.lock:
+        with store.writing():
             if store.unsaved(session_id) and not discard_changes:
                 raise ToolError(
                     f"'{session_id}' has changes not saved: save it with "
