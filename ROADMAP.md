@@ -1065,6 +1065,20 @@ record):
     commented line from `gui/plot_canvas.py`; a test checks that nothing
     imports it. The first change of the dependencies of the package in this
     phase. No numbers touched.
+  - PR 7 (trials with fresh agents, plan agreed with Guido: the client and
+    the scripts committed, J0103-1305 raw): the minimal client
+    (`benchmarks/mcp_trials/client.py`, a server kept alive on a Unix socket,
+    `tools` and `call`; its log with the times of the calls and of the
+    progress notifications; tested in `tests/test_mcp_trial_client.py`), the
+    inputs (`make_data.py`: the full-chain mock without its true continuum and
+    noiseless flux, J0103-1305 raw, the mock of the editing trial) and the
+    prompts (`prompts.md`). Trials 1 (the mock, in the Docker image, built in
+    the cloud session for the first time) and 2 (J0103-1305) run, trial 3 (the
+    editing tools and undo) after the fixes of the server, in the next week of
+    Guido's usage limit; report in section 4.3: F111-F116 found; heartbeat
+    and cancellation needed, the tools not grouped; the real analysis moved to
+    phase 7 (Guido). Numbers unchanged: nothing of the package touched, so no
+    slow tests.
   Found along the way: the startup hook of the cloud sessions created
   `.venv` without installing the package once (November 2026, at the
   start of this phase); installing again by hand worked. To watch: if
@@ -1302,9 +1316,14 @@ Exception: anything that loses user data or crashes is reported at once.
 | F101 | script console (`gui/scripting.py`) | `AppController.run_recipe`, the `app.run_recipe(...)` of the scripts of the console, calls `MainWindowV2._on_recipe_requested` with a keyword `session_override` that the method does not take: every call fails with a TypeError. Found in phase 6-bis (PR 3a) while adapting the callers of the recipes | bug | — | open: with the decision on the console (kept in the code, phase 5-bis, Guido) |
 | F102 | `lya_auto`, `forest_auto` (cleanup of the narrow lines) | After removing the lines narrower than `min_b`, `_remove_narrow` calls `refit_all` without `region_limit`: every group of the session is refitted, also the components outside the forest (e.g. a CIV doublet on the red side fitted before), whose values change slightly. Found in phase 6-bis (PR 4b) while recording the reasons of the removals. `forest_auto` is not limited to a region at all: it identifies on the whole spectrum and its first refit, before the cleanup, also refits every component of the session | behaviour, numerical | `test_lya_auto_does_not_refit_the_red_side` | `lya_auto` fixed in phase 6-bis (PR 4c, Guido's decision): the refits of the cleanup limited to `lya_forest`, as the pipeline; documented in the tutorial (*Refit All* fits everything again). The mock benchmark does not run `lya_auto`: a targeted test replaces it. `forest_auto`: open, Guido's decision (limiting it means choosing its region, e.g. `all_ly_forest`, for the identification and both refits) |
 | F107 | GUI menus and the registry | The labels of the menus of the GUI are written in `gui/main_menus.py` and differ from the `brief` of the recipes in the registry, which the dialogs show as their title (*Auto-detect Doublets...* opens *Auto-fit metal doublets (Red Side)*; *Set Properties...*, *Set session properties*). The methods text (PR 5c) names a recipe by its menu and `brief`, so the name it gives may differ from the label of the menu. Found in phase 6-ter (PR 5c) | cosmetic | — | open: deferred to phase 6-quater (Guido, after PR 5c): the menus from the registry, or a `menu` key in it |
-| F109 | `.acs2` original data (`save_archive_v2`, `load_session_from_file`) | An archive keeps the original data (`*_spec_orig.fits`, `*_systs_orig.fits`, the first state of the history) so that its log can be replayed from them, but they are not read back: an archive opened becomes a history whose first state is its current state, with the log of the archive. Saved again (GUI *Save Session*, the MCP `session_save` of a session opened from an archive, the editable copy of a followed session), the archive gets that state as its original data, and its log still lists the recipes that made it: a replay from the original data runs them a second time, on data already processed (reproduced in phase 6-ter PR 5-bis: `set_properties z_em=4.072` saved, reopened and saved again; the original data of the second archive have z_em = 4.072). *Run All* of the Log Scripter, which replays from the first state of the history, does the same on an archive just opened. Known since phase 1 ("stored but not loaded back", `ROADMAP_HISTORY.md`, step 5 of phase 1), never recorded as a finding with this consequence. Found while writing the follow of the GUI (phase 6-ter PR 5-bis) | data loss (the original data of an archive saved again), reproducibility of the log | `test_session_nodes.py` | fixed (after PR 5-bis, own PR): reported to Guido at once (PR 5-bis); decided with Guido (November 2026), to fix in its own PR after PR 5-bis: the rule of the sessions is restored, each saved archive is a node: A (the `_orig` copy, completed with the metadata of A: constraints, identifications, in a `_meta_orig.json`), B and the log from A to B. When an archive is opened, B becomes the new A and the log starts empty (GUI, `session_open`, the editable copy); the log of the archive is shown read only while the session is open (Log Scripter, `session_describe`), never replayed nor saved again. The log of the earlier nodes is not kept in the archive (Guido: an analysis by an agent is done in one session, or the agent saves its own log of the operations to resume from; not needed in the archive). Considered and set aside: reading `_orig` back as a fixed origin with the log continued (the log grows without limit, and contradicts the rule); a reference to the previous node with its hash (depends on files being kept) |
+| F111 | `metals_auto` (and the fitter's fallback) | `VoigtFitterV2` fits the whole spectrum when no valid pixel is around the components (`voigt_fitter.py`, warning "No valid pixels around the components to fit: the whole spectrum is used"). `metals_auto` met it in both trials of PR 7: on the full-chain mock (31 thousand pixels) it kept no ion, missing the SiIV at z = 1.90 (logN 13.3, b 12, in the forest; the agent found it by eye and it fits with reduced chi2 1.1), and it does not say which ions it tried nor their AIC; on J0103-1305 (215 thousand pixels, 65 components, six ions) it ran more than 2 h 20 min without finishing, with no progress line. The cause of the missed SiIV is to be confirmed (why no valid pixel: the window of the trial ion, its mask, or the names of the transitions) | numerical, performance | — | open: reported to Guido; own PR (with the cancellation of F113), the fix to agree (the fallback is a heuristic: what is it for?) |
+| F112 | MCP output of the pipelines (`IdentificationSummary`) | The result of `absorbers_doublets_auto` says `identification.n_systems: 0` and `systems_by_series: {}` while its notes say "3 candidate systems found" and three components are fitted (65 on J0103-1305): the summary counts the candidate systems of the metadata of the spectrum, which the pipeline does not leave there. Both agents of PR 7 noted the contradiction | output | — | open: server or recipe (what the pipeline leaves in `RecipeResult.extra`) |
+| F113 | MCP server (concurrency, long recipes) | One lock (`SessionStore.lock`) serializes every tool, the read-only ones too (`session_history`, `components_list`, `spectrum_plot`): while a recipe runs no other call is answered. With no heartbeat (PR 4 left it out) and no cancellation, a client that gives up after its timeout leaves the recipe running and the session out of reach: in trial 2 of PR 7 the agent could not save its work, which was lost. | design, data loss (the work of a session) | — | open: decided in section 4.3, a short PR of the server (heartbeat, read-only tools outside the lock of the recipes, or on a copy of the state), then the cancellation with F111 |
+| F114 | Docker image | `absorbers_fit_bayesian` is a tool of the image, but the image does not install the `[bayes]` extra (emcee, dynesty): the tool fails with an ImportError (recorded as a gap `failed`). Found in trial 1 of PR 7 | packaging | `tests/test_docker_image.py` (the list of the image) | open: the extra in the image (size to measure), or the description of the tool saying it |
+| F115 | methods text (`methods_text`) | Seen by the agent of trial 1 of PR 7: the declared gaps (meant for the developers) are in the text for the paper, as written (decision of PR 5c); the first sentence names the spectrum by the name of the session ("The spectrum of spectrum"); the reasons open each paragraph as written, which reads oddly in a paper; `session_methods` gives the text only inside its JSON, so the agent wrote it to a file with its own Python (declared as a gap) | output, cosmetic | — | open: Guido's to judge (the text is his, PR 5c) |
+| F116 | flags of the components | No flag for components unresolved (b well below the instrumental b: 1.4-2.8 km/s at R = 45000 in J0103-1305) or saturated (MgII at logN 15.06 ± 0.24), which both agents of PR 7 judged unreliable by hand; the flags of #517 cover the bounds and the window only | behaviour | — | open: with #517 and F52 |
 
-Closed findings (fixed or accepted: all the others, F1 to F106, F108 and F110) are in `ROADMAP_HISTORY.md`, "3.2 Findings register", one row each, to be found by number (`grep "^| F52 "`).
+Closed findings (fixed or accepted: all the others, F1 to F106 and F108 to F110) are in `ROADMAP_HISTORY.md`, "3.2 Findings register", one row each, to be found by number (`grep "^| F52 "`).
 
 ### 3.3 Phase 1-bis: findings and urgent issues
 Review of the findings register with Guido (October 2026): the proposals agreed in general, each item a small PR with its strict xfail turned into a passing test and its numerical effect stated. Done (October 2026, release 2.0.2 with #534): F1, F2, F5, F10 (minimal), F11, F16, F19, F20, F23-F27, F29, F32, F33, #480, #442; F3 accepted; deferred to phase 4 as issues: #526 (F8, F22, rest of F10, F9, F14), #465 (F30, F17), #517 (F21), #518 (F4); F15 waits for data. Full text: `ROADMAP_HISTORY.md`, "3.3 Phase 1-bis: findings and urgent issues".
@@ -1368,6 +1387,105 @@ Agreed with Guido (October 2026), done in PRs #595-#600. A thin layer over the r
 
 ### 4.2 MCP pilot: report
 Two trials with fresh agents (Claude, no knowledge of the code) and Guido's own trial with Claude Code (October 2026, PR #600). Outcome: an agent can carry out an analysis from a request in plain words; found F46-F55 (phases 4, 6-bis, 7); the lessons for the full server are in "Rules and decisions in force", the answers to the questions of 4.1 and the trials in the archive. Full text: `ROADMAP_HISTORY.md`, "4.2 MCP pilot: report".
+
+### 4.3 Full server: trials with fresh agents (PR 7)
+November 2026, after PRs #726-#742 (64 tools). As in the pilot (section 4.2):
+fresh agents (Claude, no knowledge of the code, the tests or the true
+parameters, told not to read them) used the server through a minimal MCP
+client (`benchmarks/mcp_trials/client.py`: the instructions, the tools with
+their schemas and the content of the results, the images as PNG files; the
+progress notifications only in the log of the trial, with their times), each
+with a request in plain words (`benchmarks/mcp_trials/prompts.md`), then a
+critique. The gaps went to a temporary file (`ASTROCOOK_GAPS_FILE`) and the
+agents declared theirs with `session_note(kind="gap")`. The transcripts were
+checked for reads of the code: none (one disclosed slip, below). Two of the
+three trials were run; the third (the editing tools and undo, on the mock of
+`make_data.py edit`) waits for the next week of Guido's usage limit, after
+the fixes of the server below.
+
+**Trial 1: the full-chain mock, in the Docker image.** The mock of
+`tests/full_chain.py` without the true continuum and the noiseless flux
+(`generate(..., truth_columns=False)`; in the pilot the agent fitted on the
+true continuum). The server ran in the image of PR 6, built in the cloud
+session (the daemon starts there; the base image taken from a mirror and
+given the certificate of the proxy, a local workaround only, the
+`Dockerfile` unchanged). 35 calls in 4.3 minutes, none over 2.1 s, one
+failed (`absorbers_fit_bayesian`: emcee is not in the image, F114); some
+120 thousand tokens of context for the agent. Against the truth: CIV at
+z = 1.76 and 1.90 right (logN within 0.012, b within 0.2 km/s); CIV at
+z = 1.83, two true components 12.7 km/s apart (13.4/8 and 13.9/12), fitted as
+one (14.03, b 13.4; the total column right, 14.02), and `optimize_system`
+added none (F58); SiIV at z = 1.90 in the forest (13.3/12) missed by
+`metals_auto` (F111) and found by the agent by eye on normalized plots,
+added and fitted by hand (13.28/11.3). The two spurious components of the
+pilot (F49) are gone. Saved session, methods text, notes and reasons as
+asked; the only work outside the server, the methods text written to a file
+(declared).
+
+**Trial 2: J0103-1305, local server.** The spectrum of the tests raw
+(380-780 nm, 215 588 pixels; no continuum, model, telluric model or
+components; z_em and R not set). The agent set z_em = 4.07 from the Ly-a peak
+by eye and R = 45000 as an assumption (both declared, as a gap: no header to
+read, no z_em estimator), estimated the continuum (0.7 s) and ran
+`doublets_auto` (25 s, steady progress; 168 s in the pilot): 65 components
+in 21 groups, judged one by one with sound reasons (the CIV at z = 3.886 and
+3.927 rejected as the O2 A band, F54; the components with b below the
+resolution element and a saturated MgII at logN 15 marked unreliable, F116).
+Then `metals_auto` on six ions: one notification at the start and none
+after; the client gave up after one hour, the server went on at 100% CPU and
+had not finished after 2 h 20 min, when it was stopped. Meanwhile the server
+answered no other call, read-only ones included (F113): the agent could not
+save, and the work was lost, against the request ("I don't want to lose any
+work"). Its report lists the steps to redo it. Cause, from the code:
+`metals_auto` fits each trial ion with the fitter, which falls back on the
+whole spectrum when no valid pixel is around the components (F111). The
+agent, waiting, listed the folder of the transcripts of the agents with
+`cat` (outside its folder) and so saw the transcript of trial 1 (prompt and
+use of the server, no code); it disclosed it in its report; the trial stands.
+The client of this trial did not pass `ASTROCOOK_GAPS_FILE` to the server
+(the SDK passes only a few variables of the environment): the one declared
+gap went to the default file of the cloud session; fixed in the client and
+its test.
+
+**The number of tools (64).** The listing a client gives the model is
+121 thousand characters (about 35 thousand tokens, estimated), more than half
+of the context of an agent at its first call. Both agents found the right
+tools at the first try, from the menus of the instructions and the names
+`<menu>_<recipe>`, and both advise against grouping them (explicit tools
+with precise schemas are easier to call right). What they asked instead: the
+parameters repeated on every tool (`session_id`, `reason`,
+`provide_missing`, `max_listed`) described more briefly; the tools of other
+tasks (stitch, co-add, resample, flux calibration) and the unavailable ones
+marked; a paragraph of the usual workflow and the expected time of the slow
+recipes in the instructions.
+
+**Decisions** (the three left open in PR 4 and by the principle of the
+phase):
+- *Heartbeat for the silent long recipes*: yes. An hour of silence cannot be
+  told from a hang, neither by the agent nor by the user.
+- *Stop as a cancellation*: yes, with the read-only tools answering while a
+  recipe runs (F113): a client that gives up does not stop the recipe, and
+  the session is out of reach until it ends. The heartbeat and the read-only
+  tools are a short PR of the server (before trial 3); the cancellation needs
+  the recipes to check a signal (`metals_auto` logs no progress), so it goes
+  with the fix of F111.
+- *Tools grouped by menu*: no. The cost of the 64 tools is the size of the
+  listing, not the choice: to shorten the descriptions of the shared
+  parameters, generated from the registry.
+
+**The real analysis** (PR 7 of the plan, Guido's own): moved to phase 7
+(Guido, November 2026): with the recipes of today it would mostly measure
+limits already known (sections 3.2 and above); it becomes the first test of
+the new components of phase 7, with the same criterion (a result he would
+sign after reviewing it in the GUI, and a log he could replay).
+
+**Outcome.** The server works as planned for the parts it controls (the
+registry, the outputs, history, notes and gaps, the methods, the image), and
+an agent chains it at the first try; what failed is a recipe (F111) and the
+way the server waits for it (F113). The trials confirm the direction of
+phase 7: the agents met the limits of the recipes, not of the interface
+(F54, F58, F111, F116, no upper limits, no z_em estimator, no telluric
+model).
 
 ## 5. v3 vision (horizon, after v2 consolidation)
 
@@ -1509,6 +1627,6 @@ One line per concluded phase; the long rows are in `ROADMAP_HISTORY.md`, "7. Pro
 | 5-bis – GUI look and ergonomics | done (November 2026), PRs #664-#688; release 2.3.0 with phase 5 |
 | 6 – Error handling | done (November 2026), PRs #691-#701; release 2.4.0 |
 | 6-bis – Recipe API | done (November 2026), PRs #705-#723; release 2.5.0 |
-| 6-ter – Full MCP server | started (November 2026): plan of the phase agreed (PR 0, #726); the tools generated from the registry, F106 found (PR 1, #729); F106 fixed (PR 1-bis, #730); the tools of the sessions, undo and redo (PR 2, #731); the tools of inspection (PR 3, #732); progress notifications (PR 4, #733); the agent's decisions in the log (PR 5a); the gaps of the recipes (PR 5b); the log as the text of a methods section (PR 5c); the GUI following a session of the server, F109 found (PR 5-bis); the headless Docker image, F110 found (PR 6, not published) |
+| 6-ter – Full MCP server | started (November 2026): plan of the phase agreed (PR 0, #726); the tools generated from the registry, F106 found (PR 1, #729); F106 fixed (PR 1-bis, #730); the tools of the sessions, undo and redo (PR 2, #731); the tools of inspection (PR 3, #732); progress notifications (PR 4, #733); the agent's decisions in the log (PR 5a); the gaps of the recipes (PR 5b); the log as the text of a methods section (PR 5c); the GUI following a session of the server, F109 found (PR 5-bis); the headless Docker image, F110 found (PR 6, not published); trials with fresh agents, two of three, F111-F116 found (PR 7, report in section 4.3) |
 | 6-quater – Review of the recipe parameters | not started |
 | 7 – Robust components | not started |
