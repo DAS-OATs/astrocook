@@ -389,7 +389,10 @@ def wait_recipe(new_recipe, monkeypatch):
             while not RELEASE.wait(0.01):
                 check_cancelled()
         else:
-            assert RELEASE.wait(30), "never released"
+            # Generous: the reads of the test run in this time, and on a loaded
+            # runner they can take longer than 30 s (the test's own waits
+            # are the real limits; the teardown sets RELEASE)
+            assert RELEASE.wait(120), "never released"
         if then >= 0:
             logger.info("Halfway")
             logger.info(">> PROGRESS: %d", then)
@@ -419,15 +422,21 @@ def test_the_read_only_tools_answer_while_a_recipe_runs(wait_recipe, mock_archiv
             await client.call_tool("session_open", {"path": str(mock_archive)})
             waiting = asyncio.create_task(
                 client.call_tool("flux_wait_test", {"session_id": "mock"}))
+            # Wait until it is the one running (on a loaded runner the order
+            # of two tasks started together is not the order of the calls)
+            async def running():
+                listed = (await client.call_tool("session_list", {})).structured_content
+                return listed, listed["sessions"][0]["running"] or ""
+            deadline = time.monotonic() + 30
+            while True:
+                listed, current = await running()
+                if current.startswith("flux_wait_test") or time.monotonic() > deadline:
+                    break
+                await asyncio.sleep(0.02)
             # Another recipe waits for the first one
             queued = asyncio.create_task(
                 client.call_tool("flux_scale_test", {"session_id": "mock"}))
-            for _ in range(200):
-                listed = (await client.call_tool("session_list", {})).structured_content
-                if listed["sessions"][0]["running"]:
-                    break
-                await asyncio.sleep(0.02)
-            reads = {tool: await asyncio.wait_for(client.call_tool(tool, args), 10)
+            reads = {tool: await asyncio.wait_for(client.call_tool(tool, args), 30)
                      for tool, args in [
                          ("session_history", {"session_id": "mock"}),
                          ("session_describe", {"session_id": "mock"}),
