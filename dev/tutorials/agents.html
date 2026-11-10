@@ -815,6 +815,14 @@ a session (<code class="docutils literal notranslate"><span class="pre">session_
 <code class="docutils literal notranslate"><span class="pre">spectrum_plot</span></code>, …), <code class="docutils literal notranslate"><span class="pre">session_note</span></code> and <code class="docutils literal notranslate"><span class="pre">session_save</span></code> still answer, on
 the state before the recipe (<code class="docutils literal notranslate"><span class="pre">session_list</span></code> says what is running); the
 other recipes and the tools that change the states wait for it to end.</p>
+<p><strong>Cancelling a recipe.</strong> A client that cancels its call (the MCP
+cancellation, which most clients send when the user interrupts the agent or
+a call times out) stops the recipe; for a client that does not, the tool
+<code class="docutils literal notranslate"><span class="pre">session_cancel</span></code> does the same. The recipe stops at its next step (a group
+of a fit, a trial ion of <em>Check Associated Metals</em>, at most one fit) and
+its call ends with an error: nothing of the recipe is kept, and the
+session stays as it was before it. The Stop button of the progress dialog
+of the GUI works in the same way.</p>
 <p><strong>Watching the agent in the GUI.</strong> When the agent calls <code class="docutils literal notranslate"><span class="pre">gui_open</span></code> on a
 session, the Astrocook GUI opens on it, and after every change of the
 session (a recipe, an undo or redo, a note) it shows the new state: you

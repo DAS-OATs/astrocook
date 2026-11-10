@@ -555,6 +555,15 @@ those lines is whoever shows the progress: the GUI (the dialog with its
 bar, <code class="docutils literal notranslate"><span class="pre">gui/recipe_progress.py</span></code>), the MCP server (progress notifications to
 the client, phase 6-ter PR 4) or a script (<a class="reference internal" href="#astrocook.recipes.progress.watch_progress" title="astrocook.recipes.progress.watch_progress"><code class="xref py py-func docutils literal notranslate"><span class="pre">watch_progress()</span></code></a>). The
 format is read here only, so that the readers cannot differ.</p>
+<p>The same places are where a recipe can be cancelled (phase 6-ter, PR
+7-quater): whoever runs a recipe in a thread runs it inside
+<a class="reference internal" href="#astrocook.recipes.progress.cancellable" title="astrocook.recipes.progress.cancellable"><code class="xref py py-func docutils literal notranslate"><span class="pre">cancellable()</span></code></a>, with a <code class="docutils literal notranslate"><span class="pre">threading.Event</span></code> that it sets from another
+thread to cancel it (the Stop of the GUI, the cancellation of a client of
+the MCP server, its <code class="docutils literal notranslate"><span class="pre">session_cancel</span></code> tool); the recipe calls
+<a class="reference internal" href="#astrocook.recipes.progress.check_cancelled" title="astrocook.recipes.progress.check_cancelled"><code class="xref py py-func docutils literal notranslate"><span class="pre">check_cancelled()</span></code></a>, or <a class="reference internal" href="#astrocook.recipes.progress.progress" title="astrocook.recipes.progress.progress"><code class="xref py py-func docutils literal notranslate"><span class="pre">progress()</span></code></a>, which also logs the progress
+line, and stops with <a class="reference internal" href="astrocook.recipes.errors.html#astrocook.recipes.errors.RecipeCancelled" title="astrocook.recipes.errors.RecipeCancelled"><code class="xref py py-class docutils literal notranslate"><span class="pre">RecipeCancelled</span></code></a>.
+The event belongs to the thread, not to the session, so that the sessions
+stay immutable and the steps of a pipeline (each on a new session) see it.</p>
 <dl class="py data">
 <dt class="sig sig-object py" id="astrocook.recipes.progress.PROGRESS_MARKER">
 <span class="sig-prename descclassname"><span class="pre">astrocook.recipes.progress.</span></span><span class="sig-name descname"><span class="pre">PROGRESS_MARKER</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'&gt;&gt;</span> <span class="pre">PROGRESS:'</span></span><a class="headerlink" href="#astrocook.recipes.progress.PROGRESS_MARKER" title="Link to this definition">#</a></dt>
@@ -583,6 +592,38 @@ current thread logs, while the block runs.</p>
 package, by default) is lowered to INFO if it is higher, and restored
 after, so that the lines reach the handler whatever the application
 configured for the root logger.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.recipes.progress.cancellable">
+<span class="sig-prename descclassname"><span class="pre">astrocook.recipes.progress.</span></span><span class="sig-name descname"><span class="pre">cancellable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Event</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterator</span><span class="p"><span class="pre">[</span></span><span class="pre">Event</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../modules/astrocook/recipes/progress.html#cancellable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.progress.cancellable" title="Link to this definition">#</a></dt>
+<dd><p>Run the block (a recipe) so that setting <code class="docutils literal notranslate"><span class="pre">event</span></code> cancels it.</p>
+<p>The event (a new one if None) is the one that <a class="reference internal" href="#astrocook.recipes.progress.check_cancelled" title="astrocook.recipes.progress.check_cancelled"><code class="xref py py-func docutils literal notranslate"><span class="pre">check_cancelled()</span></code></a>
+reads in the current thread while the block runs; it is yielded, to be
+set from another thread.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.recipes.progress.cancel_requested">
+<span class="sig-prename descclassname"><span class="pre">astrocook.recipes.progress.</span></span><span class="sig-name descname"><span class="pre">cancel_requested</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../modules/astrocook/recipes/progress.html#cancel_requested"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.progress.cancel_requested" title="Link to this definition">#</a></dt>
+<dd><p>Whether the recipe running in the current thread was cancelled.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.recipes.progress.check_cancelled">
+<span class="sig-prename descclassname"><span class="pre">astrocook.recipes.progress.</span></span><span class="sig-name descname"><span class="pre">check_cancelled</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../modules/astrocook/recipes/progress.html#check_cancelled"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.progress.check_cancelled" title="Link to this definition">#</a></dt>
+<dd><p>Stop the recipe running in the current thread if it was cancelled.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.recipes.errors.html#astrocook.recipes.errors.RecipeCancelled" title="astrocook.recipes.errors.RecipeCancelled"><strong>RecipeCancelled</strong></a> – If the event of <a class="reference internal" href="#astrocook.recipes.progress.cancellable" title="astrocook.recipes.progress.cancellable"><code class="xref py py-func docutils literal notranslate"><span class="pre">cancellable()</span></code></a> is set.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.recipes.progress.progress">
+<span class="sig-prename descclassname"><span class="pre">astrocook.recipes.progress.</span></span><span class="sig-name descname"><span class="pre">progress</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logger</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Logger</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">percent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../modules/astrocook/recipes/progress.html#progress"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.progress.progress" title="Link to this definition">#</a></dt>
+<dd><p>Log the progress line of a recipe, then stop it if it was cancelled.</p>
 </dd></dl>
 
 </section>
@@ -638,6 +679,10 @@ configured for the root logger.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.progress.is_progress_line"><code class="docutils literal notranslate"><span class="pre">is_progress_line()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.progress.parse_progress"><code class="docutils literal notranslate"><span class="pre">parse_progress()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.progress.watch_progress"><code class="docutils literal notranslate"><span class="pre">watch_progress()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.progress.cancellable"><code class="docutils literal notranslate"><span class="pre">cancellable()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.progress.cancel_requested"><code class="docutils literal notranslate"><span class="pre">cancel_requested()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.progress.check_cancelled"><code class="docutils literal notranslate"><span class="pre">check_cancelled()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.progress.progress"><code class="docutils literal notranslate"><span class="pre">progress()</span></code></a></li>
 </ul>
   </nav></div>
 

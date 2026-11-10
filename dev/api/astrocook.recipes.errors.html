@@ -716,6 +716,58 @@ set self.__traceback__ to tb and return self.</p>
 </dd></dl>
 
 <dl class="py exception">
+<dt class="sig sig-object py" id="astrocook.recipes.errors.RecipeCancelled">
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">astrocook.recipes.errors.</span></span><span class="sig-name descname"><span class="pre">RecipeCancelled</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reason</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/recipes/errors.html#RecipeCancelled"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.errors.RecipeCancelled" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#astrocook.recipes.errors.RecipeError" title="astrocook.recipes.errors.RecipeError"><code class="xref py py-class docutils literal notranslate"><span class="pre">RecipeError</span></code></a></p>
+<p>The recipe was cancelled while it ran (the Stop of the GUI, the
+cancellation of a client of the MCP server, <code class="docutils literal notranslate"><span class="pre">session_cancel</span></code>): it
+leaves no new state (phase 6-ter, PR 7-quater). Raised by
+<a class="reference internal" href="astrocook.recipes.progress.html#astrocook.recipes.progress.check_cancelled" title="astrocook.recipes.progress.check_cancelled"><code class="xref py py-func docutils literal notranslate"><span class="pre">astrocook.recipes.progress.check_cancelled()</span></code></a>.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.recipes.errors.RecipeCancelled.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reason</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#astrocook.recipes.errors.RecipeCancelled.__init__" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.recipes.errors.RecipeCancelled.add_note">
+<span class="sig-name descname"><span class="pre">add_note</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">object</span></span></em>, <em class="sig-param"><span class="positional-only-separator o"><abbr title="Positional-only parameter separator (PEP 570)"><span class="pre">/</span></abbr></span></em><span class="sig-paren">)</span><a class="headerlink" href="#astrocook.recipes.errors.RecipeCancelled.add_note" title="Link to this definition">#</a></dt>
+<dd><p>Exception.add_note(note) –
+add a note to the exception</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.recipes.errors.RecipeCancelled.args">
+<span class="sig-name descname"><span class="pre">args</span></span><a class="headerlink" href="#astrocook.recipes.errors.RecipeCancelled.args" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.recipes.errors.RecipeCancelled.enter">
+<span class="sig-name descname"><span class="pre">enter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">category</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#astrocook.recipes.errors.RecipeCancelled.enter" title="Link to this definition">#</a></dt>
+<dd><p>Record a recipe the error goes through (called from the inside
+out, so each new one is the outermost).</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="astrocook.recipes.errors.RecipeCancelled.recipe">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">recipe</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#astrocook.recipes.errors.RecipeCancelled.recipe" title="Link to this definition">#</a></dt>
+<dd><p>The recipe where the error happened, as <code class="docutils literal notranslate"><span class="pre">category.name</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.recipes.errors.RecipeCancelled.with_traceback">
+<span class="sig-name descname"><span class="pre">with_traceback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">object</span></span></em>, <em class="sig-param"><span class="positional-only-separator o"><abbr title="Positional-only parameter separator (PEP 570)"><span class="pre">/</span></abbr></span></em><span class="sig-paren">)</span><a class="headerlink" href="#astrocook.recipes.errors.RecipeCancelled.with_traceback" title="Link to this definition">#</a></dt>
+<dd><p>Exception.with_traceback(tb) –
+set self.__traceback__ to tb and return self.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.recipes.errors.RecipeCancelled.chain">
+<span class="sig-name descname"><span class="pre">chain</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#astrocook.recipes.errors.RecipeCancelled.chain" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py exception">
 <dt class="sig sig-object py" id="astrocook.recipes.errors.MissingPrerequisite">
 <span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">astrocook.recipes.errors.</span></span><span class="sig-name descname"><span class="pre">MissingPrerequisite</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reason</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/recipes/errors.html#MissingPrerequisite"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.errors.MissingPrerequisite" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#astrocook.recipes.errors.RecipeError" title="astrocook.recipes.errors.RecipeError"><code class="xref py py-class docutils literal notranslate"><span class="pre">RecipeError</span></code></a></p>
@@ -849,6 +901,16 @@ its key quoted, not the repr of its arguments).</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.errors.RecipeFailed.recipe"><code class="docutils literal notranslate"><span class="pre">RecipeFailed.recipe</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.errors.RecipeFailed.with_traceback"><code class="docutils literal notranslate"><span class="pre">RecipeFailed.with_traceback()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.errors.RecipeFailed.chain"><code class="docutils literal notranslate"><span class="pre">RecipeFailed.chain</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.errors.RecipeCancelled"><code class="docutils literal notranslate"><span class="pre">RecipeCancelled</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.errors.RecipeCancelled.__init__"><code class="docutils literal notranslate"><span class="pre">RecipeCancelled.__init__()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.errors.RecipeCancelled.add_note"><code class="docutils literal notranslate"><span class="pre">RecipeCancelled.add_note()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.errors.RecipeCancelled.args"><code class="docutils literal notranslate"><span class="pre">RecipeCancelled.args</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.errors.RecipeCancelled.enter"><code class="docutils literal notranslate"><span class="pre">RecipeCancelled.enter()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.errors.RecipeCancelled.recipe"><code class="docutils literal notranslate"><span class="pre">RecipeCancelled.recipe</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.errors.RecipeCancelled.with_traceback"><code class="docutils literal notranslate"><span class="pre">RecipeCancelled.with_traceback()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.errors.RecipeCancelled.chain"><code class="docutils literal notranslate"><span class="pre">RecipeCancelled.chain</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.errors.MissingPrerequisite"><code class="docutils literal notranslate"><span class="pre">MissingPrerequisite</span></code></a><ul class="nav section-nav flex-column">

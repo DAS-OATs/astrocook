@@ -479,11 +479,23 @@
 <span class="sd">bar, ``gui/recipe_progress.py``), the MCP server (progress notifications to</span>
 <span class="sd">the client, phase 6-ter PR 4) or a script (:func:`watch_progress`). The</span>
 <span class="sd">format is read here only, so that the readers cannot differ.</span>
+
+<span class="sd">The same places are where a recipe can be cancelled (phase 6-ter, PR</span>
+<span class="sd">7-quater): whoever runs a recipe in a thread runs it inside</span>
+<span class="sd">:func:`cancellable`, with a ``threading.Event`` that it sets from another</span>
+<span class="sd">thread to cancel it (the Stop of the GUI, the cancellation of a client of</span>
+<span class="sd">the MCP server, its ``session_cancel`` tool); the recipe calls</span>
+<span class="sd">:func:`check_cancelled`, or :func:`progress`, which also logs the progress</span>
+<span class="sd">line, and stops with :class:`~astrocook.recipes.errors.RecipeCancelled`.</span>
+<span class="sd">The event belongs to the thread, not to the session, so that the sessions</span>
+<span class="sd">stay immutable and the steps of a pipeline (each on a new session) see it.</span>
 <span class="sd">"""</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">threading</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">contextlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">contextmanager</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Iterator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.errors</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeCancelled</span>
 
 <span class="c1">#: What a recipe writes before the percentage</span>
 <span class="n">PROGRESS_MARKER</span> <span class="o">=</span> <span class="s2">"&gt;&gt; PROGRESS:"</span>
@@ -558,6 +570,64 @@
     <span class="k">finally</span><span class="p">:</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">removeHandler</span><span class="p">(</span><span class="n">handler</span><span class="p">)</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">level</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># --- Cancellation (phase 6-ter, PR 7-quater) ------------------------------</span>
+
+<span class="n">_current</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">local</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="cancellable">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.progress.html#astrocook.recipes.progress.cancellable">[docs]</a>
+<span class="nd">@contextmanager</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">cancellable</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">threading</span><span class="o">.</span><span class="n">Event</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">threading</span><span class="o">.</span><span class="n">Event</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Run the block (a recipe) so that setting ``event`` cancels it.</span>
+
+<span class="sd">    The event (a new one if None) is the one that :func:`check_cancelled`</span>
+<span class="sd">    reads in the current thread while the block runs; it is yielded, to be</span>
+<span class="sd">    set from another thread.</span>
+<span class="sd">    """</span>
+    <span class="n">event</span> <span class="o">=</span> <span class="n">event</span> <span class="k">if</span> <span class="n">event</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">threading</span><span class="o">.</span><span class="n">Event</span><span class="p">()</span>
+    <span class="n">previous</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">_current</span><span class="p">,</span> <span class="s2">"event"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">_current</span><span class="o">.</span><span class="n">event</span> <span class="o">=</span> <span class="n">event</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">yield</span> <span class="n">event</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="n">_current</span><span class="o">.</span><span class="n">event</span> <span class="o">=</span> <span class="n">previous</span></div>
+
+
+
+<div class="viewcode-block" id="cancel_requested">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.progress.html#astrocook.recipes.progress.cancel_requested">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">cancel_requested</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Whether the recipe running in the current thread was cancelled."""</span>
+    <span class="n">event</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">_current</span><span class="p">,</span> <span class="s2">"event"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">event</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">event</span><span class="o">.</span><span class="n">is_set</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="check_cancelled">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.progress.html#astrocook.recipes.progress.check_cancelled">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">check_cancelled</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Stop the recipe running in the current thread if it was cancelled.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    RecipeCancelled</span>
+<span class="sd">        If the event of :func:`cancellable` is set.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">cancel_requested</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="n">RecipeCancelled</span><span class="p">(</span><span class="s2">"cancelled while it ran: the session is as before it"</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="progress">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.progress.html#astrocook.recipes.progress.progress">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">progress</span><span class="p">(</span><span class="n">logger</span><span class="p">:</span> <span class="n">logging</span><span class="o">.</span><span class="n">Logger</span><span class="p">,</span> <span class="n">percent</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Log the progress line of a recipe, then stop it if it was cancelled."""</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">PROGRESS_MARKER</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">percent</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">check_cancelled</span><span class="p">()</span></div>
 
 </pre></div>
 

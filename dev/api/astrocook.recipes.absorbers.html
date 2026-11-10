@@ -587,6 +587,12 @@ kept (F90).</p>
 </dd></dl>
 
 <dl class="py data">
+<dt class="sig sig-object py" id="astrocook.recipes.absorbers.AT_BOUND_RTOL">
+<span class="sig-prename descclassname"><span class="pre">astrocook.recipes.absorbers.</span></span><span class="sig-name descname"><span class="pre">AT_BOUND_RTOL</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.001</span></span><a class="headerlink" href="#astrocook.recipes.absorbers.AT_BOUND_RTOL" title="Link to this definition">#</a></dt>
+<dd><p>A fitted value within this fraction of its bound is at the bound</p>
+</dd></dl>
+
+<dl class="py data">
 <dt class="sig sig-object py" id="astrocook.recipes.absorbers.NOT_FITTED">
 <span class="sig-prename descclassname"><span class="pre">astrocook.recipes.absorbers.</span></span><span class="sig-name descname"><span class="pre">NOT_FITTED</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'not_fitted'</span></span><a class="headerlink" href="#astrocook.recipes.absorbers.NOT_FITTED" title="Link to this definition">#</a></dt>
 <dd><p>The flag of the components whose group refit_all could not fit (phase
@@ -767,8 +773,12 @@ Delegates to <a class="reference internal" href="astrocook.core.system_list.html
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>ions</strong> (<em>str</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Comma-separated list of ions to check. Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;CIV,SiIV,NV,OVI,CII,MgII&quot;</span></code>.</p></li>
-<li><p><strong>aic_penalty</strong> (<em>float</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – AIC improvement required to keep a new ion (Not currently used in logic).
-Defaults to <code class="docutils literal notranslate"><span class="pre">5.0</span></code>.</p></li>
+<li><p><strong>aic_penalty</strong> (<em>float</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Decrease of the AIC needed to keep a new ion, against the same
+model without it on the pixels of its fit. An ion is also kept
+only if its fit gives logN &gt;= 12 and 2 &lt;= b &lt;= 50 km/s, with
+neither b nor logN at the bounds of the fit (F121). Each ion
+tried is reported (<code class="docutils literal notranslate"><span class="pre">tried</span></code> in the extra of the result), with
+the reason when it is not kept. Defaults to <code class="docutils literal notranslate"><span class="pre">5.0</span></code>.</p></li>
 <li><p><strong>z_window_kms</strong> (<em>float</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Fit window (km/s) for local island fitting. Defaults to <code class="docutils literal notranslate"><span class="pre">20.0</span></code>.</p></li>
 <li><p><strong>max_b</strong> (<em>float</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Upper bound on b (km/s) in the fits, see <a class="reference internal" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.components_auto" title="astrocook.recipes.absorbers.RecipeAbsorbersV2.components_auto"><code class="xref py py-meth docutils literal notranslate"><span class="pre">components_auto()</span></code></a>.
 Defaults to <code class="docutils literal notranslate"><span class="pre">50.0</span></code>.</p></li>
@@ -1247,6 +1257,7 @@ Defaults to <code class="docutils literal notranslate"><span class="pre">True</s
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.MIN_B_ROUNDS"><code class="docutils literal notranslate"><span class="pre">MIN_B_ROUNDS</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.merge_region_ids"><code class="docutils literal notranslate"><span class="pre">merge_region_ids()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.FIT_ERRORS"><code class="docutils literal notranslate"><span class="pre">FIT_ERRORS</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.AT_BOUND_RTOL"><code class="docutils literal notranslate"><span class="pre">AT_BOUND_RTOL</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.NOT_FITTED"><code class="docutils literal notranslate"><span class="pre">NOT_FITTED</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2"><code class="docutils literal notranslate"><span class="pre">RecipeAbsorbersV2</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.__init__"><code class="docutils literal notranslate"><span class="pre">RecipeAbsorbersV2.__init__()</span></code></a></li>
