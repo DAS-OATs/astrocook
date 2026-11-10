@@ -548,6 +548,13 @@
                   
   <section id="module-astrocook.core.spectrum">
 <span id="astrocook-core-spectrum-module"></span><h1>astrocook.core.spectrum module<a class="headerlink" href="#module-astrocook.core.spectrum" title="Link to this heading">#</a></h1>
+<dl class="py data">
+<dt class="sig sig-object py" id="astrocook.core.spectrum.GUI_COLUMN_NAMES">
+<span class="sig-prename descclassname"><span class="pre">astrocook.core.spectrum.</span></span><span class="sig-name descname"><span class="pre">GUI_COLUMN_NAMES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'F':</span> <span class="pre">'y',</span> <span class="pre">'dF':</span> <span class="pre">'dy',</span> <span class="pre">'λ':</span> <span class="pre">'x',</span> <span class="pre">'λmax':</span> <span class="pre">'xmax',</span> <span class="pre">'λmin':</span> <span class="pre">'xmin'}</span></span><a class="headerlink" href="#astrocook.core.spectrum.GUI_COLUMN_NAMES" title="Link to this definition">#</a></dt>
+<dd><p>The names of the core columns in the GUI and in the expressions of its
+dialogs, and the ones in the table (the MCP reads accept both, F120)</p>
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="astrocook.core.spectrum.TableAdapterV2">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">astrocook.core.spectrum.</span></span><span class="sig-name descname"><span class="pre">TableAdapterV2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/core/spectrum.html#TableAdapterV2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.TableAdapterV2" title="Link to this definition">#</a></dt>
@@ -706,7 +713,10 @@ This is for reading only: the spectrum is not rebinned (that is
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>names</strong> (<em>list</em><em> of </em><em>str</em>) – The columns (<code class="docutils literal notranslate"><span class="pre">x</span></code> is always given).</p></li>
+<li><p><strong>names</strong> (<em>list</em><em> of </em><em>str</em>) – The columns (<code class="docutils literal notranslate"><span class="pre">x</span></code> is always given). The names of the GUI are
+accepted for the core ones (<code class="docutils literal notranslate"><span class="pre">λ</span></code>, <code class="docutils literal notranslate"><span class="pre">λmin</span></code>, <code class="docutils literal notranslate"><span class="pre">λmax</span></code>, <code class="docutils literal notranslate"><span class="pre">F</span></code>,
+<code class="docutils literal notranslate"><span class="pre">dF</span></code>: <code class="docutils literal notranslate"><span class="pre">x</span></code>, <code class="docutils literal notranslate"><span class="pre">xmin</span></code>, <code class="docutils literal notranslate"><span class="pre">xmax</span></code>, <code class="docutils literal notranslate"><span class="pre">y</span></code>, <code class="docutils literal notranslate"><span class="pre">dy</span></code>) and the values
+are given under the name asked (F120).</p></li>
 <li><p><strong>x_min</strong> (<em>float</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – The range, in the unit of x; None: the start (end) of the
 spectrum.</p></li>
 <li><p><strong>x_max</strong> (<em>float</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – The range, in the unit of x; None: the start (end) of the
@@ -1553,6 +1563,7 @@ columns (cont, model, cont_pl) and the transmission (telluric_model).</p>
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.GUI_COLUMN_NAMES"><code class="docutils literal notranslate"><span class="pre">GUI_COLUMN_NAMES</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.TableAdapterV2"><code class="docutils literal notranslate"><span class="pre">TableAdapterV2</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.TableAdapterV2.__init__"><code class="docutils literal notranslate"><span class="pre">TableAdapterV2.__init__()</span></code></a></li>
 </ul>

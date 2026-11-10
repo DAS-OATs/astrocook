@@ -843,6 +843,14 @@ systems found; one line each, e.g. <code class="docutils literal notranslate"><s
 
 </dd></dl>
 
+<dl class="py data">
+<dt class="sig sig-object py" id="astrocook.recipes.result.SAME_PARAMETER_RTOL">
+<span class="sig-prename descclassname"><span class="pre">astrocook.recipes.result.</span></span><span class="sig-name descname"><span class="pre">SAME_PARAMETER_RTOL</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1e-08</span></span><a class="headerlink" href="#astrocook.recipes.result.SAME_PARAMETER_RTOL" title="Link to this definition">#</a></dt>
+<dd><p>Relative size below which a parameter of a component is the same after a
+refit: the optimizer returns the values of the start to ~1e-10 and the
+result listed such components as changed (trial 3 of the MCP server, PR 7)</p>
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="astrocook.recipes.result.compare_sessions">
 <span class="sig-prename descclassname"><span class="pre">astrocook.recipes.result.</span></span><span class="sig-name descname"><span class="pre">compare_sessions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">before</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">after</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.recipes.result.Changes" title="astrocook.recipes.result.Changes"><span class="pre">Changes</span></a></span></span><a class="reference internal" href="../modules/astrocook/recipes/result.html#compare_sessions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.result.compare_sessions" title="Link to this definition">#</a></dt>
@@ -978,6 +986,7 @@ by default, the one in force.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.RecipeResult.__init__"><code class="docutils literal notranslate"><span class="pre">RecipeResult.__init__()</span></code></a></li>
 </ul>
 </li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.SAME_PARAMETER_RTOL"><code class="docutils literal notranslate"><span class="pre">SAME_PARAMETER_RTOL</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.compare_sessions"><code class="docutils literal notranslate"><span class="pre">compare_sessions()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.report"><code class="docutils literal notranslate"><span class="pre">report()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.result.report_removed"><code class="docutils literal notranslate"><span class="pre">report_removed()</span></code></a></li>

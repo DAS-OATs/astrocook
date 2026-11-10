@@ -1216,9 +1216,13 @@
             <span class="n">new_expr</span> <span class="o">=</span> <span class="n">expression</span> <span class="k">if</span> <span class="n">expression</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">base_constraint</span><span class="o">.</span><span class="n">expression</span>
             <span class="n">new_tgt</span> <span class="o">=</span> <span class="n">target_uuid</span> <span class="k">if</span> <span class="n">target_uuid</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">base_constraint</span><span class="o">.</span><span class="n">target_uuid</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">new_free</span> <span class="ow">and</span> <span class="n">expression</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">expression</span> <span class="ow">and</span> <span class="n">is_free</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">True</span><span class="p">:</span>
             <span class="c1"># A new link is checked here, so that a wrong one is refused</span>
-            <span class="c1"># with a message instead of freezing the parameter (phase 6)</span>
+            <span class="c1"># with a message instead of freezing the parameter (phase 6).</span>
+            <span class="c1"># Also with ``is_free`` left out: the fit treats an expression as</span>
+            <span class="c1"># a link either way, and the example of the description of the</span>
+            <span class="c1"># recipe, ``p["z"]``, was stored unchecked and kept the parameter</span>
+            <span class="c1"># frozen (F117, trial 3 of the MCP server)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_check_link</span><span class="p">(</span><span class="n">uuid</span><span class="p">,</span> <span class="n">param</span><span class="p">,</span> <span class="n">expression</span><span class="p">)</span>
 
         <span class="n">new_constraint</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">base_constraint</span><span class="p">,</span> <span class="n">is_free</span><span class="o">=</span><span class="n">new_free</span><span class="p">,</span> <span class="n">expression</span><span class="o">=</span><span class="n">new_expr</span><span class="p">,</span> <span class="n">target_uuid</span><span class="o">=</span><span class="n">new_tgt</span><span class="p">)</span>
@@ -1567,7 +1571,8 @@
                            <span class="n">max_components</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span> <span class="n">threshold_sigma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">2.5</span><span class="p">,</span>
                            <span class="n">aic_penalty</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">100.0</span><span class="p">,</span>
                            <span class="n">min_dv</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">10.0</span><span class="p">,</span>  <span class="c1"># &lt;--- NEW PARAMETER</span>
-                           <span class="n">group_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">patience</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SystemListV2'</span><span class="p">:</span>
+                           <span class="n">group_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">patience</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+                           <span class="n">trace</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SystemListV2'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Iteratively adds components to a system to minimize residuals using the</span>
 <span class="sd">        Akaike Information Criterion (AIC).</span>
@@ -1606,6 +1611,11 @@
 <span class="sd">            Depth for finding connected neighbors during the fit (default: 2).</span>
 <span class="sd">        patience : int, optional</span>
 <span class="sd">            Number of consecutive trials allowed without AIC improvement before stopping (default: 2).</span>
+<span class="sd">        trace : dict, optional</span>
+<span class="sd">            Filled with what the search did (F118, trial 3 of the MCP server):</span>
+<span class="sd">            ``start_aic``, ``tried`` (one dict per candidate: ``z``,</span>
+<span class="sd">            ``residual_sigma``, ``outcome``, and ``aic_before``/``aic_after``</span>
+<span class="sd">            when it was fitted) and ``stopped`` (the reason).</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1672,6 +1682,10 @@
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Optimizing the components of </span><span class="si">{</span><span class="n">series_name</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
         <span class="n">best_aic</span><span class="p">,</span> <span class="n">best_systs</span> <span class="o">=</span> <span class="n">fit_and_evaluate</span><span class="p">(</span><span class="n">current_systs</span><span class="p">,</span> <span class="p">[</span><span class="n">uuid_seed</span><span class="p">])</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"AIC of the starting model: </span><span class="si">{</span><span class="n">best_aic</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+        <span class="n">tried</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">stopped</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"the </span><span class="si">{</span><span class="n">max_components</span><span class="si">}</span><span class="s2"> components allowed were tried"</span>
+        <span class="k">if</span> <span class="n">trace</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">trace</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">start_aic</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">best_aic</span><span class="p">),</span> <span class="n">tried</span><span class="o">=</span><span class="n">tried</span><span class="p">)</span>
         
         <span class="n">current_systs</span> <span class="o">=</span> <span class="n">best_systs</span>
         <span class="n">trials_without_imp</span> <span class="o">=</span> <span class="mi">0</span>
@@ -1696,6 +1710,8 @@
             <span class="k">if</span> <span class="n">min_val</span> <span class="o">&gt;</span> <span class="o">-</span><span class="n">threshold_sigma</span><span class="p">:</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"No residual deeper than </span><span class="si">{</span><span class="n">threshold_sigma</span><span class="si">}</span><span class="s2"> sigma "</span>
                             <span class="sa">f</span><span class="s2">"(the deepest is </span><span class="si">{</span><span class="o">-</span><span class="n">min_val</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> sigma): done."</span><span class="p">)</span>
+                <span class="n">stopped</span> <span class="o">=</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"no residual deeper than threshold_sigma = "</span>
+                           <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">threshold_sigma</span><span class="si">}</span><span class="s2"> (the deepest is </span><span class="si">{</span><span class="o">-</span><span class="n">min_val</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> sigma)"</span><span class="p">)</span>
                 <span class="k">break</span>
                 
             <span class="c1"># C. Create Candidate</span>
@@ -1716,6 +1732,9 @@
                 <span class="c1"># [FIX] Mask this spot and CONTINUE (Do not Break!)</span>
                 <span class="n">sl</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">min_idx</span><span class="o">-</span><span class="mi">5</span><span class="p">),</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span><span class="p">),</span> <span class="n">min_idx</span><span class="o">+</span><span class="mi">6</span><span class="p">))</span>
                 <span class="n">rejected_mask</span><span class="p">[</span><span class="n">sl</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">tried</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s1">'z'</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">z_new</span><span class="p">),</span> <span class="s1">'residual_sigma'</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="o">-</span><span class="n">min_val</span><span class="p">),</span>
+                              <span class="s1">'outcome'</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">dv_sep</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> km/s from a component "</span>
+                                         <span class="sa">f</span><span class="s2">"(less than min_dv = </span><span class="si">{</span><span class="n">min_dv</span><span class="si">}</span><span class="s2">): not fitted"</span><span class="p">})</span>
                 <span class="k">continue</span> 
 
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Iteration </span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">: candidate at z = </span><span class="si">{</span><span class="n">z_new</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2"> "</span>
@@ -1732,12 +1751,20 @@
             <span class="k">if</span> <span class="n">delta</span> <span class="o">&lt;</span> <span class="o">-</span><span class="n">aic_penalty</span><span class="p">:</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Component added at z = </span><span class="si">{</span><span class="n">z_new</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">: AIC </span><span class="si">{</span><span class="n">best_aic</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> "</span>
                             <span class="sa">f</span><span class="s2">"to </span><span class="si">{</span><span class="n">trial_aic</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+                <span class="n">tried</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s1">'z'</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">z_new</span><span class="p">),</span> <span class="s1">'residual_sigma'</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="o">-</span><span class="n">min_val</span><span class="p">),</span>
+                              <span class="s1">'outcome'</span><span class="p">:</span> <span class="s1">'added'</span><span class="p">,</span> <span class="s1">'aic_before'</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">best_aic</span><span class="p">),</span>
+                              <span class="s1">'aic_after'</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">trial_aic</span><span class="p">)})</span>
                 <span class="n">best_aic</span> <span class="o">=</span> <span class="n">trial_aic</span>
                 <span class="n">best_systs</span> <span class="o">=</span> <span class="n">trial_systs</span>
                 <span class="n">trials_without_imp</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Candidate at z = </span><span class="si">{</span><span class="n">z_new</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2"> rejected: AIC changes by "</span>
                              <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">delta</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+                <span class="n">tried</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s1">'z'</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">z_new</span><span class="p">),</span> <span class="s1">'residual_sigma'</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="o">-</span><span class="n">min_val</span><span class="p">),</span>
+                              <span class="s1">'outcome'</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"rejected: AIC changes by </span><span class="si">{</span><span class="n">delta</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">, "</span>
+                                         <span class="sa">f</span><span class="s2">"less than aic_penalty = </span><span class="si">{</span><span class="n">aic_penalty</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+                              <span class="s1">'aic_before'</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">best_aic</span><span class="p">),</span>
+                              <span class="s1">'aic_after'</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">trial_aic</span><span class="p">)})</span>
                 <span class="n">trials_without_imp</span> <span class="o">+=</span> <span class="mi">1</span>
                 
                 <span class="c1"># [FIX] Mask this spot so we don't loop forever</span>
@@ -1746,8 +1773,11 @@
             
             <span class="k">if</span> <span class="n">trials_without_imp</span> <span class="o">&gt;=</span> <span class="n">patience</span><span class="p">:</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">patience</span><span class="si">}</span><span class="s2"> candidates in a row rejected: done."</span><span class="p">)</span>
+                <span class="n">stopped</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">patience</span><span class="si">}</span><span class="s2"> candidates in a row rejected (patience)"</span>
                 <span class="k">break</span>
         
+        <span class="k">if</span> <span class="n">trace</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">trace</span><span class="p">[</span><span class="s1">'stopped'</span><span class="p">]</span> <span class="o">=</span> <span class="n">stopped</span>
         <span class="k">return</span> <span class="n">best_systs</span></div>
 
     
