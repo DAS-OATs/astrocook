@@ -1,9 +1,10 @@
 # Using Astrocook from an AI Agent
 
-:::{warning}
-The server is **being completed**: since the pilot every recipe is a
-tool, and tools to inspect and edit the sessions are coming. Tools,
-parameters and outputs may change in later versions.
+:::{note}
+The server is complete in its design (every recipe is a tool, with tools
+to handle, inspect and follow the sessions), but young: tools, parameters
+and outputs may still change in later versions, and the automatic recipes
+have the limits listed in section 6.
 :::
 
 An AI agent, such as [Claude Code](https://claude.com/claude-code) or the
@@ -16,8 +17,9 @@ The agent talks to Astrocook through the **Model Context Protocol (MCP)**,
 an open standard for connecting AI applications to other programs.
 Astrocook provides an MCP *server*: a small program, `astrocook-mcp`,
 that the agent (the *client*) starts on your computer and that offers it
-a list of *tools*, each a recipe with a description and typed
-parameters. Everything runs locally: your data are read from your disk
+a list of *tools* (65 in this version): one for each recipe, with a
+description and typed parameters, and the tools that handle, inspect and
+show the sessions. Everything runs locally: your data are read from your disk
 and stay there, though what the tools return (summaries, not the
 spectra) is sent to the AI model, as anything else in the conversation.
 
@@ -153,6 +155,7 @@ itself. Other tools handle the sessions:
 | `session_undo`, `session_redo` | Go back to the state before the last recipe (or several), and forward again, as *Edit > Undo* and *Redo* in the GUI. |
 | `session_duplicate` | Makes a copy of a session, with its history and log, to try something without touching the original. |
 | `session_close` | Closes a session; refuses if it has changes not saved, unless asked to discard them. |
+| `session_cancel` | Stops the recipe that is running (see "Cancelling a recipe" below); for the clients that do not send the cancellation by themselves. |
 | `session_note` | Writes a note in the session log, at the current state: what the agent did or decided outside the tools; with `kind="gap"`, a gap of the collection of recipes (see "Gaps" below). |
 | `session_methods` | Writes the session log as the text of a methods section, in English (see "The log as text" below). |
 | `gaps_summary` | Summarizes, grouped, the gaps recorded in your local file (see "Gaps" below). |
@@ -367,6 +370,53 @@ the tool again with `provide_missing=true`, with the default parameters of
 `provided` and recorded in the session log, before the recipe, as if it
 had been run on its own.
 
+### 4.1 A longer analysis
+
+The tools are made to be chained, and to be undone. This is the course of
+a trial on a synthetic spectrum with a blend of two CIV components, 9.4 km/s
+apart, that an agent was asked to fit, "keeping the model that the data
+support" (the true values were not given to it):
+
+1. `session_open`, with z_em and R given by the user; `gui_open`, to follow
+   it.
+2. `continuum_estimate_auto`, then `absorbers_doublets_auto` (a few
+   seconds on this spectrum): one CIV component and a SiIV missing.
+3. `absorbers_add_component` for the SiIV, `absorbers_fit_component`.
+4. `components_list` and `spectrum_plot` on the region: a flat core and
+   narrow wings, so one component is not enough. `absorbers_optimize_system`
+   adds nothing; a second CIV is added by hand and kept (the chi2 of its
+   group on the same pixels, computed by the agent, from 55.4 to 37.1).
+5. Ties between the ions (`absorbers_update_constraint`: the redshift and the
+   Doppler parameter of the SiIV linked to those of the CIV), each tried and
+   kept or undone with `session_undo`, each with its `reason` in the log.
+   A SiIV added to the second component, with its b at the bound, was undone.
+6. `session_note` for what it did with its own code (the residuals), and
+   `session_save`; `session_methods` for the text.
+
+The model it chose is the one the spectrum was made from, within the errors,
+and the log holds each step with the reason for it, also those undone (in the
+history of the session). It could be reviewed in the GUI as it went on.
+
+### 4.2 A request that works well
+
+An agent does best with a request that says what you want and what you
+know, not how:
+- the spectrum, its z_em and its resolution (the server does not estimate
+  them), and where to save;
+- what to do and what to leave alone ("do not touch the components I have
+  already fitted"), and whether it may remove components;
+- to give a `reason` for what it does and to declare what it does outside
+  the tools, which it does anyway (the instructions of the server ask it);
+- to save often.
+
+Slow recipes are the pipelines (`absorbers_doublets_auto`, `absorbers_lya_auto`,
+`absorbers_forest_auto`, `absorbers_metals_auto`, `absorbers_refit_all`,
+`absorbers_fit_bayesian`): the agent knows
+that they report their progress and can be cancelled. A recipe changes the
+session it runs on, except those that open new sessions; in doubt, ask the
+agent to `session_duplicate` first: nothing is lost either way, because
+every state is kept.
+
 ## 5. Reviewing the Result in the GUI
 
 Open the saved archive in the GUI (`astrocook /data/J0103-1305_agent.acs2`),
@@ -386,7 +436,7 @@ its text from `session_methods`, if you need its path later. An analysis by
 an agent is best done in one session; if it must be resumed, ask the agent
 to keep its own log (e.g. the text of `session_methods`).
 
-## 6. Limits of the Pilot
+## 6. Limits
 
 - Paths are on the computer where the server runs; give them in full.
 - `absorbers_doublets_auto` replaces the components already on the red
@@ -395,4 +445,36 @@ to keep its own log (e.g. the text of `session_methods`).
   session (`mask="session"`, e.g. that of `continuum_estimate_auto` with
   other parameters). A call can take minutes on a large spectrum.
 - The recipes are the same as in the GUI, with the same strengths and
-  weaknesses: check the results.
+  weaknesses: check the results. The automatic ones (the identification of
+  the lines, the doublets, the metals) are the part that fails most often:
+  they can miss a line in the forest or fit a blend of close components as
+  one, and an agent that checks its own work (the plots, the residuals, the
+  components that `components_list` flags) usually sees it, but not always.
+  Their limits are the object of the next phases of the development.
+- **No tool measures the fit.** Nothing gives the residuals, or the chi2,
+  AIC and BIC of a model on a fixed set of pixels: an agent that must choose
+  between two models reads the data with `spectrum_read` and computes them
+  with its own code (it should declare it as a gap). The result of a fit
+  gives the reduced chi2 of the group only when components are added.
+- **z_em and the resolution are not estimated.** No recipe measures them from
+  the data: the agent reads them from the header, or from you, or measures
+  them with its own code. Say them in the request.
+- **Cost of the tools.** Every client shows all the tools to the model: the
+  65 tools take some 35 thousand tokens of its context before the first
+  call. A long analysis in one conversation can reach the limit of the
+  client; save the session (`session_save`) and the text of the log
+  (`session_methods`) as you go, and start a new conversation from the
+  archive if needed.
+- **One agent per session.** The server works for one client. The sessions
+  live in it while it runs: save before closing the client. The GUI that
+  follows a session cannot change it, and what you do in the GUI does not
+  reach the agent (a copy you make is yours).
+- **The Docker image** has no GUI (`gui_open` says so) and no emcee and
+  dynesty, so `absorbers_fit_bayesian` fails with the message that names
+  the extra to install; it is not published, you build it (section 2.1).
+- Some recipes name the same thing differently in the GUI and in the tools
+  (the label of a menu is not always the title of the recipe): the tools
+  are named after the recipe, see the list of the instructions of the
+  server.
+- A recipe can take minutes (the pipelines on a large spectrum): see
+  "Progress" and "Cancelling a recipe".
