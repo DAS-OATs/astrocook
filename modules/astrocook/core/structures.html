@@ -6,7 +6,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>astrocook.core.structures &#8212; Astrocook 2.5.0 documentation</title>
+    <title>astrocook.core.structures &#8212; Astrocook 2.6.0 documentation</title>
   
   
   
@@ -29,7 +29,7 @@
 <link href="../../../static/styles/pydata-sphinx-theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../static/pygments.css?v=8f2a1f02" />
-    <link rel="stylesheet" type="text/css" href="../../../static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../static/sphinx-design.min.css?v=6a604523" />
     <link rel="stylesheet" type="text/css" href="../../../static/css/custom.css?v=e8a3a7b7" />
   
   <!-- So that users can add custom icons -->
@@ -38,15 +38,15 @@
   <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
 <link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="../../../static/documentation_options.js?v=3c4615cf"></script>
+    <script src="../../../static/documentation_options.js?v=ae39cb24"></script>
     <script src="../../../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../static/sphinx_highlight.js?v=6ffebe34"></script>
-    <script src="../../../static/design-tabs.js?v=f930bc37"></script>
+    <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../../../static/design-tabs.js?v=fcb327ea"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'modules/astrocook/core/structures';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.5.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.6.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -56,7 +56,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.5.0" />
+  <meta name="docsearch:version" content="2.6.0" />
   
     
     <script src="../../../static/searchtools.js"></script>
@@ -831,9 +831,41 @@
 <span class="sd">    Corresponds 1-to-1 with a state change in the Session history.</span>
 <span class="sd">    """</span>
     <span class="n">recipe_name</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span></div>
+    <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="c1">#: Why the recipe was run, as given by who ran it (e.g. an agent through</span>
+    <span class="c1">#: the MCP server); None if not given (phase 6-ter, PR 5a)</span>
+    <span class="n">reason</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
 
-    <span class="c1"># We can add more data later, like execution time, success, etc.</span>
+
+
+<span class="c1">#: The kinds of the notes of a log that :meth:`HistoryLogV2.add_note` takes:</span>
+<span class="c1">#: ``note`` (what was done or decided outside the recipes), ``gap`` (what the</span>
+<span class="c1">#: analysis needed and no recipe provided, declared by the agent) and</span>
+<span class="c1">#: ``gap_seen`` (a gap seen by the MCP server); phase 6-ter, PR 5b</span>
+<span class="n">NOTE_KINDS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"note"</span><span class="p">,</span> <span class="s2">"gap"</span><span class="p">,</span> <span class="s2">"gap_seen"</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="LogNoteV2">
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.LogNoteV2">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">LogNoteV2</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    A note in the V2 analysis log: text that is not a state change (e.g. what</span>
+<span class="sd">    an agent did outside the recipes), skipped by the replay.</span>
+
+<span class="sd">    The notes are kept apart from the entries, so that the entries stay</span>
+<span class="sd">    1-to-1 with the states of the history, and the logs saved with notes</span>
+<span class="sd">    replay in the versions before them, which ignore the notes (phase 6-ter,</span>
+<span class="sd">    PR 5a).</span>
+<span class="sd">    """</span>
+    <span class="n">text</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="c1">#: The number of entries before the note: it was written at the state</span>
+    <span class="c1">#: made by the entry ``after - 1`` (0: before any entry)</span>
+    <span class="n">after</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="c1">#: One of :data:`NOTE_KINDS`; a log written by a later version may hold</span>
+    <span class="c1">#: others, kept as read</span>
+    <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"note"</span></div>
+
 
 <div class="viewcode-block" id="HistoryLogV2">
 <a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.HistoryLogV2">[docs]</a>
@@ -855,7 +887,16 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">entries</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">LogEntryV2</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="c1">#: Pointer to the currently active log entry (state), i.e. the last</span>
         <span class="c1">#: valid entry.</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="c1">#: The notes (list of :class:`LogNoteV2`), in the order they were</span>
+        <span class="c1">#: written; those written after an entry undone are undone with it.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">notes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">LogNoteV2</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1">#: The log of the archive the session was opened from (a</span>
+        <span class="c1">#: :class:`HistoryLogV2`), or None: read only, shown while the</span>
+        <span class="c1">#: session is open, never replayed nor saved again (F109: each saved</span>
+        <span class="c1">#: archive is a node, its log goes from its original data to its</span>
+        <span class="c1">#: state; see :meth:`opened_from`).</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">previous</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">'HistoryLogV2'</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
     <span class="nd">@property</span>
@@ -863,9 +904,35 @@
 <span class="w">        </span><span class="sd">"""Return True, indicating this is a V2-native log structure."""</span>
         <span class="k">return</span> <span class="kc">True</span>
 
+<div class="viewcode-block" id="HistoryLogV2.opened_from">
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.HistoryLogV2.opened_from">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">opened_from</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">archive_log</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">'HistoryLogV2'</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s1">'HistoryLogV2'</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The log of a session opened from an archive: empty, with the log</span>
+<span class="sd">        of the archive as :attr:`previous`.</span>
+
+<span class="sd">        The rule of the sessions (F109): each saved archive is a node, with</span>
+<span class="sd">        its original data (A, the ``*_orig`` members), its state (B) and the</span>
+<span class="sd">        log from A to B. When it is opened, B becomes the new A and the log</span>
+<span class="sd">        starts anew; the log of the archive is kept only to be read while</span>
+<span class="sd">        the session is open. Its own previous log is not kept: the logs of</span>
+<span class="sd">        the earlier nodes are in their archives.</span>
+<span class="sd">        """</span>
+        <span class="n">log</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">archive_log</span><span class="p">,</span> <span class="n">HistoryLogV2</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">archive_log</span><span class="o">.</span><span class="n">entries</span> <span class="ow">or</span> <span class="n">archive_log</span><span class="o">.</span><span class="n">notes</span><span class="p">):</span>
+            <span class="n">previous</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">()</span>
+            <span class="n">previous</span><span class="o">.</span><span class="n">entries</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">archive_log</span><span class="o">.</span><span class="n">entries</span><span class="p">[:</span><span class="n">archive_log</span><span class="o">.</span><span class="n">current_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="n">previous</span><span class="o">.</span><span class="n">current_index</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">previous</span><span class="o">.</span><span class="n">entries</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="n">previous</span><span class="o">.</span><span class="n">notes</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">archive_log</span><span class="o">.</span><span class="n">notes</span>
+                              <span class="k">if</span> <span class="n">n</span><span class="o">.</span><span class="n">after</span> <span class="o">&lt;=</span> <span class="n">previous</span><span class="o">.</span><span class="n">current_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">previous</span> <span class="o">=</span> <span class="n">previous</span>
+        <span class="k">return</span> <span class="n">log</span></div>
+
+
 <div class="viewcode-block" id="HistoryLogV2.add_entry">
 <a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.HistoryLogV2.add_entry">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">add_entry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recipe_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_entry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recipe_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+                  <span class="n">reason</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Add a new log entry, truncating any 'future' history (from Undo actions).</span>
 
@@ -875,14 +942,20 @@
 <span class="sd">            The name of the recipe executed.</span>
 <span class="sd">        params : dict</span>
 <span class="sd">            The parameters used for the recipe.</span>
+<span class="sd">        reason : str, optional</span>
+<span class="sd">            Why the recipe was run; empty text is no reason.</span>
 <span class="sd">        """</span>
-        <span class="c1"># 1. Truncate stale future history</span>
+        <span class="c1"># 1. Truncate stale future history, with the notes written in it</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entries</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Truncating V2 log from index </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">current_index</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">entries</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">notes</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">notes</span> <span class="k">if</span> <span class="n">n</span><span class="o">.</span><span class="n">after</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
         
         <span class="c1"># 2. Add the new entry</span>
-        <span class="n">entry</span> <span class="o">=</span> <span class="n">LogEntryV2</span><span class="p">(</span><span class="n">recipe_name</span><span class="o">=</span><span class="n">recipe_name</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">reason</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">reason</span><span class="o">.</span><span class="n">strip</span><span class="p">()):</span>
+            <span class="n">reason</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">entry</span> <span class="o">=</span> <span class="n">LogEntryV2</span><span class="p">(</span><span class="n">recipe_name</span><span class="o">=</span><span class="n">recipe_name</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span>
+                           <span class="n">reason</span><span class="o">=</span><span class="n">reason</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">if</span> <span class="n">reason</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">entries</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
         
         <span class="c1"># 3. Update the index to point to the new entry</span>
@@ -890,18 +963,91 @@
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Added log entry: </span><span class="si">{</span><span class="n">recipe_name</span><span class="si">}</span><span class="s2">. Index is now </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">current_index</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span></div>
 
 
+<div class="viewcode-block" id="HistoryLogV2.add_note">
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.HistoryLogV2.add_note">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_note</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"note"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LogNoteV2</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Add a note at the current entry, without a state.</span>
+
+<span class="sd">        The entries undone are kept (a note is not a state, so the redo is</span>
+<span class="sd">        still possible): the note is undone with the current entry, and</span>
+<span class="sd">        dropped with it if a new entry replaces it.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        text : str</span>
+<span class="sd">            The text of the note.</span>
+<span class="sd">        kind : str</span>
+<span class="sd">            One of :data:`NOTE_KINDS`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        LogNoteV2</span>
+<span class="sd">            The note added.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If the text is empty or the kind is not known.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"A note needs a text."</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">kind</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">NOTE_KINDS</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unknown kind of note '</span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2">': one of "</span>
+                             <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">NOTE_KINDS</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+        <span class="n">note</span> <span class="o">=</span> <span class="n">LogNoteV2</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span> <span class="n">after</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="n">kind</span><span class="p">)</span>
+        <span class="c1"># After the notes of the same entry or earlier ones, before those of</span>
+        <span class="c1"># the entries undone</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">notes</span> <span class="k">if</span> <span class="n">n</span><span class="o">.</span><span class="n">after</span> <span class="o">&lt;=</span> <span class="n">note</span><span class="o">.</span><span class="n">after</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">notes</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">note</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">note</span></div>
+
+
+<div class="viewcode-block" id="HistoryLogV2.notes_at">
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.HistoryLogV2.notes_at">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">notes_at</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">after</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">LogNoteV2</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""The notes written after ``after`` entries (at the state made by</span>
+<span class="sd">        the entry ``after - 1``), in the order they were written."""</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">notes</span> <span class="k">if</span> <span class="n">n</span><span class="o">.</span><span class="n">after</span> <span class="o">==</span> <span class="n">after</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="HistoryLogV2.timeline">
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.HistoryLogV2.timeline">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">timeline</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">include_undone</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        The entries and the notes in the order they were written.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        include_undone : bool</span>
+<span class="sd">            Also the entries undone and not redone, and their notes.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list of tuple</span>
+<span class="sd">            ``(item, active)``: a :class:`LogEntryV2` or a</span>
+<span class="sd">            :class:`LogNoteV2`, and False if it is undone.</span>
+<span class="sd">        """</span>
+        <span class="n">last</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entries</span><span class="p">)</span> <span class="k">if</span> <span class="n">include_undone</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">items</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">last</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">items</span> <span class="o">+=</span> <span class="p">[(</span><span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="o">.</span><span class="n">after</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">notes_at</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">last</span><span class="p">:</span>
+                <span class="n">items</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">entries</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">items</span></div>
+
+
 <div class="viewcode-block" id="HistoryLogV2.undo">
 <a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.HistoryLogV2.undo">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">undo</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Add a new log entry, truncating any 'future' history (from Undo actions).</span>
+<span class="sd">        Move the history pointer back one step.</span>
 
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        recipe_name : str</span>
-<span class="sd">            The name of the recipe executed.</span>
-<span class="sd">        params : dict</span>
-<span class="sd">            The parameters used for the recipe.</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool</span>
+<span class="sd">            True if undo was successful, False if already before the first</span>
+<span class="sd">            entry.</span>
 <span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">-=</span> <span class="mi">1</span>
@@ -941,14 +1087,24 @@
 <span class="sd">        -------</span>
 <span class="sd">        dict</span>
 <span class="sd">            ``{'entries': [{'recipe_name': ..., 'params': ...}, ...],</span>
-<span class="sd">            'current_index': ...}``.</span>
+<span class="sd">            'current_index': ...}``; an entry has ``'reason'`` if it was</span>
+<span class="sd">            given, and the log ``'notes'`` (``[{'text': ..., 'kind': ...,</span>
+<span class="sd">            'after': ...}, ...]``) if it has any (phase 6-ter, PR 5a): a log</span>
+<span class="sd">            without either is saved as before.</span>
 <span class="sd">        """</span>
         <span class="n">active</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entries</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
-        <span class="k">return</span> <span class="p">{</span>
-            <span class="s1">'entries'</span><span class="p">:</span> <span class="p">[{</span><span class="s1">'recipe_name'</span><span class="p">:</span> <span class="n">e</span><span class="o">.</span><span class="n">recipe_name</span><span class="p">,</span> <span class="s1">'params'</span><span class="p">:</span> <span class="n">e</span><span class="o">.</span><span class="n">params</span><span class="p">}</span>
-                        <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">active</span><span class="p">],</span>
-            <span class="s1">'current_index'</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">active</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
-        <span class="p">}</span></div>
+        <span class="n">entries</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">active</span><span class="p">:</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'recipe_name'</span><span class="p">:</span> <span class="n">e</span><span class="o">.</span><span class="n">recipe_name</span><span class="p">,</span> <span class="s1">'params'</span><span class="p">:</span> <span class="n">e</span><span class="o">.</span><span class="n">params</span><span class="p">}</span>
+            <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">reason</span><span class="p">:</span>
+                <span class="n">d</span><span class="p">[</span><span class="s1">'reason'</span><span class="p">]</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">reason</span>
+            <span class="n">entries</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'entries'</span><span class="p">:</span> <span class="n">entries</span><span class="p">,</span> <span class="s1">'current_index'</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">active</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">}</span>
+        <span class="n">notes</span> <span class="o">=</span> <span class="p">[{</span><span class="s1">'text'</span><span class="p">:</span> <span class="n">n</span><span class="o">.</span><span class="n">text</span><span class="p">,</span> <span class="s1">'kind'</span><span class="p">:</span> <span class="n">n</span><span class="o">.</span><span class="n">kind</span><span class="p">,</span> <span class="s1">'after'</span><span class="p">:</span> <span class="n">n</span><span class="o">.</span><span class="n">after</span><span class="p">}</span>
+                 <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">notes</span> <span class="k">if</span> <span class="n">n</span><span class="o">.</span><span class="n">after</span> <span class="o">&lt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">active</span><span class="p">)]</span>
+        <span class="k">if</span> <span class="n">notes</span><span class="p">:</span>
+            <span class="n">out</span><span class="p">[</span><span class="s1">'notes'</span><span class="p">]</span> <span class="o">=</span> <span class="n">notes</span>
+        <span class="k">return</span> <span class="n">out</span></div>
 
 
 <div class="viewcode-block" id="HistoryLogV2.from_dict">
@@ -971,8 +1127,14 @@
         <span class="n">log</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="p">(</span><span class="n">data</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'entries'</span><span class="p">,</span> <span class="p">[])</span> <span class="ow">or</span> <span class="p">[]:</span>
             <span class="n">log</span><span class="o">.</span><span class="n">entries</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">LogEntryV2</span><span class="p">(</span><span class="n">recipe_name</span><span class="o">=</span><span class="n">e</span><span class="p">[</span><span class="s1">'recipe_name'</span><span class="p">],</span>
-                                          <span class="n">params</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'params'</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{})))</span>
+                                          <span class="n">params</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'params'</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}),</span>
+                                          <span class="n">reason</span><span class="o">=</span><span class="n">e</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'reason'</span><span class="p">)</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">))</span>
         <span class="n">log</span><span class="o">.</span><span class="n">current_index</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">log</span><span class="o">.</span><span class="n">entries</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="p">(</span><span class="n">data</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'notes'</span><span class="p">,</span> <span class="p">[])</span> <span class="ow">or</span> <span class="p">[]:</span>
+            <span class="n">after</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'after'</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">log</span><span class="o">.</span><span class="n">entries</span><span class="p">))),</span> <span class="mi">0</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">log</span><span class="o">.</span><span class="n">entries</span><span class="p">))</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">notes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">LogNoteV2</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">n</span><span class="p">[</span><span class="s1">'text'</span><span class="p">]),</span> <span class="n">after</span><span class="o">=</span><span class="n">after</span><span class="p">,</span>
+                                       <span class="n">kind</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'kind'</span><span class="p">)</span> <span class="ow">or</span> <span class="s1">'note'</span><span class="p">)))</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">notes</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="n">n</span><span class="o">.</span><span class="n">after</span><span class="p">)</span>  <span class="c1"># stable: the order of writing</span>
         <span class="k">return</span> <span class="n">log</span></div>
 </div>
 

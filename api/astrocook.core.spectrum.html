@@ -7,7 +7,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>astrocook.core.spectrum module &#8212; Astrocook 2.5.0 documentation</title>
+    <title>astrocook.core.spectrum module &#8212; Astrocook 2.6.0 documentation</title>
   
   
   
@@ -30,7 +30,7 @@
 <link href="../static/styles/pydata-sphinx-theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../static/pygments.css?v=8f2a1f02" />
-    <link rel="stylesheet" type="text/css" href="../static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../static/sphinx-design.min.css?v=6a604523" />
     <link rel="stylesheet" type="text/css" href="../static/css/custom.css?v=e8a3a7b7" />
   
   <!-- So that users can add custom icons -->
@@ -39,15 +39,15 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="../static/documentation_options.js?v=3c4615cf"></script>
+    <script src="../static/documentation_options.js?v=ae39cb24"></script>
     <script src="../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../static/sphinx_highlight.js?v=6ffebe34"></script>
-    <script src="../static/design-tabs.js?v=f930bc37"></script>
+    <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../static/design-tabs.js?v=fcb327ea"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'api/astrocook.core.spectrum';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.5.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.6.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -59,7 +59,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.5.0" />
+  <meta name="docsearch:version" content="2.6.0" />
   
     
     <script src="../static/searchtools.js"></script>
@@ -458,6 +458,7 @@
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.messages.html">astrocook.recipes.messages module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.params.html">astrocook.recipes.params module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.prerequisites.html">astrocook.recipes.prerequisites module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.progress.html">astrocook.recipes.progress module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.registry.html">astrocook.recipes.registry module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.result.html">astrocook.recipes.result module</a></li>
 </ul>
@@ -547,6 +548,13 @@
                   
   <section id="module-astrocook.core.spectrum">
 <span id="astrocook-core-spectrum-module"></span><h1>astrocook.core.spectrum module<a class="headerlink" href="#module-astrocook.core.spectrum" title="Link to this heading">#</a></h1>
+<dl class="py data">
+<dt class="sig sig-object py" id="astrocook.core.spectrum.GUI_COLUMN_NAMES">
+<span class="sig-prename descclassname"><span class="pre">astrocook.core.spectrum.</span></span><span class="sig-name descname"><span class="pre">GUI_COLUMN_NAMES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'F':</span> <span class="pre">'y',</span> <span class="pre">'dF':</span> <span class="pre">'dy',</span> <span class="pre">'λ':</span> <span class="pre">'x',</span> <span class="pre">'λmax':</span> <span class="pre">'xmax',</span> <span class="pre">'λmin':</span> <span class="pre">'xmin'}</span></span><a class="headerlink" href="#astrocook.core.spectrum.GUI_COLUMN_NAMES" title="Link to this definition">#</a></dt>
+<dd><p>The names of the core columns in the GUI and in the expressions of its
+dialogs, and the ones in the table (the MCP reads accept both, F120)</p>
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="astrocook.core.spectrum.TableAdapterV2">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">astrocook.core.spectrum.</span></span><span class="sig-name descname"><span class="pre">TableAdapterV2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/core/spectrum.html#TableAdapterV2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.TableAdapterV2" title="Link to this definition">#</a></dt>
@@ -688,6 +696,46 @@ for compatibility with GUI/V1 logic (like gui_table.py).</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.core.spectrum.SpectrumV2.columns_in_range">
+<span class="sig-name descname"><span class="pre">columns_in_range</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_points</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../modules/astrocook/core/spectrum.html#SpectrumV2.columns_in_range"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.SpectrumV2.columns_in_range" title="Link to this definition">#</a></dt>
+<dd><p>The values of some columns in a range of x, to read them (phase
+6-ter, PR 3: the MCP server, or a script).</p>
+<p>A range of more than <code class="docutils literal notranslate"><span class="pre">max_points</span></code> pixels is averaged in blocks of
+<code class="docutils literal notranslate"><span class="pre">ceil(n</span> <span class="pre">/</span> <span class="pre">max_points)</span></code> pixels: the columns whose name starts with
+<code class="docutils literal notranslate"><span class="pre">d</span></code> (errors) as the error of the mean, the others as the mean.
+This is for reading only: the spectrum is not rebinned (that is
+<em>Rebin</em>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>names</strong> (<em>list</em><em> of </em><em>str</em>) – The columns (<code class="docutils literal notranslate"><span class="pre">x</span></code> is always given). The names of the GUI are
+accepted for the core ones (<code class="docutils literal notranslate"><span class="pre">λ</span></code>, <code class="docutils literal notranslate"><span class="pre">λmin</span></code>, <code class="docutils literal notranslate"><span class="pre">λmax</span></code>, <code class="docutils literal notranslate"><span class="pre">F</span></code>,
+<code class="docutils literal notranslate"><span class="pre">dF</span></code>: <code class="docutils literal notranslate"><span class="pre">x</span></code>, <code class="docutils literal notranslate"><span class="pre">xmin</span></code>, <code class="docutils literal notranslate"><span class="pre">xmax</span></code>, <code class="docutils literal notranslate"><span class="pre">y</span></code>, <code class="docutils literal notranslate"><span class="pre">dy</span></code>) and the values
+are given under the name asked (F120).</p></li>
+<li><p><strong>x_min</strong> (<em>float</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – The range, in the unit of x; None: the start (end) of the
+spectrum.</p></li>
+<li><p><strong>x_max</strong> (<em>float</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – The range, in the unit of x; None: the start (end) of the
+spectrum.</p></li>
+<li><p><strong>max_points</strong> (<em>int</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – The largest number of points; None: every pixel.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">columns</span></code> (name -&gt; ndarray), <code class="docutils literal notranslate"><span class="pre">units</span></code> (name -&gt; str),
+<code class="docutils literal notranslate"><span class="pre">n_pixels</span></code> (pixels in the range), <code class="docutils literal notranslate"><span class="pre">binned_by</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>KeyError</strong> – If a column does not exist (the message lists those that do).</p></li>
+<li><p><strong>ValueError</strong> – If the range is empty or outside the spectrum.</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -1515,6 +1563,7 @@ columns (cont, model, cont_pl) and the transmission (telluric_model).</p>
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.GUI_COLUMN_NAMES"><code class="docutils literal notranslate"><span class="pre">GUI_COLUMN_NAMES</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.TableAdapterV2"><code class="docutils literal notranslate"><span class="pre">TableAdapterV2</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.TableAdapterV2.__init__"><code class="docutils literal notranslate"><span class="pre">TableAdapterV2.__init__()</span></code></a></li>
 </ul>
@@ -1533,6 +1582,7 @@ columns (cont, model, cont_pl) and the transmission (telluric_model).</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.meta"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.meta</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.t"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.t</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.has_aux_column"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.has_aux_column()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.columns_in_range"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.columns_in_range()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.get_column"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.get_column()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.with_properties"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.with_properties()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.SpectrumV2.sanitize_legacy_tellurics"><code class="docutils literal notranslate"><span class="pre">SpectrumV2.sanitize_legacy_tellurics()</span></code></a></li>

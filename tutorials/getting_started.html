@@ -7,7 +7,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Getting Started &#8212; Astrocook 2.5.0 documentation</title>
+    <title>Getting Started &#8212; Astrocook 2.6.0 documentation</title>
   
   
   
@@ -30,7 +30,7 @@
 <link href="../static/styles/pydata-sphinx-theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../static/pygments.css?v=8f2a1f02" />
-    <link rel="stylesheet" type="text/css" href="../static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../static/sphinx-design.min.css?v=6a604523" />
     <link rel="stylesheet" type="text/css" href="../static/css/custom.css?v=e8a3a7b7" />
   
   <!-- So that users can add custom icons -->
@@ -39,17 +39,17 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="../static/documentation_options.js?v=3c4615cf"></script>
+    <script src="../static/documentation_options.js?v=ae39cb24"></script>
     <script src="../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../static/sphinx_highlight.js?v=6ffebe34"></script>
-    <script src="../static/design-tabs.js?v=f930bc37"></script>
+    <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../static/design-tabs.js?v=fcb327ea"></script>
     <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/getting_started';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.5.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.6.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -61,7 +61,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.5.0" />
+  <meta name="docsearch:version" content="2.6.0" />
   
     
     <script src="../static/searchtools.js"></script>
@@ -672,9 +672,11 @@
 <p>You can access Undo/Redo also from the <strong>Edit</strong> menu (see <a class="reference internal" href="editing_data.html"><span class="std std-doc">Editing Data</span></a>) or using the standard key combinations <code class="docutils literal notranslate"><span class="pre">Ctrl+Z</span></code>/<code class="docutils literal notranslate"><span class="pre">Ctrl+Y</span></code> (<code class="docutils literal notranslate"><span class="pre">Cmd+Z</span></code>/<code class="docutils literal notranslate"><span class="pre">Cmd+Shift+Z</span></code> on Mac).</p>
 </div>
 </li>
-<li><p><strong>Run All:</strong> Re-run the entire analysis pipeline from the original raw data.</p></li>
+<li><p><strong>Run All:</strong> Re-run the analysis of this session from its starting point (the data as opened).</p></li>
 <li><p><strong>Save Script:</strong> Export your workflow as a Python-compatible JSON script for reproducibility.</p></li>
 </ul>
+<p>To describe the analysis in a paper, use <strong>File &gt; Export Log as Text…</strong>
+(see “Export Log as Text” below).</p>
 </section>
 <section id="view-menu-tools">
 <h3>View Menu Tools<a class="headerlink" href="#view-menu-tools" title="Link to this heading">#</a></h3>
@@ -689,8 +691,13 @@
 <section id="saving-and-closing">
 <h3>Saving and Closing<a class="headerlink" href="#saving-and-closing" title="Link to this heading">#</a></h3>
 <p>When you have finished your analysis (or if you want to save your progress):</p>
-<ol class="arabic simple">
-<li><p><strong>Save</strong>: Go to <strong>File &gt; Save Session…</strong> or right-click the session in the list. This saves your work as an <code class="docutils literal notranslate"><span class="pre">.acs2</span></code> file, preserving all your continuum fits, line lists and the session log (the operations shown in the Log Scripter).</p></li>
+<ol class="arabic">
+<li><p><strong>Save</strong>: Go to <strong>File &gt; Save Session…</strong> or right-click the session in the list. This saves your work as an <code class="docutils literal notranslate"><span class="pre">.acs2</span></code> file, preserving all your continuum fits, line lists and the session log (the operations shown in the Log Scripter).</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>Each saved session is a step of the analysis.</strong> The archive holds the data as the session started (the original spectrum, for a session opened from a FITS file), the data as saved, and the log of the operations from the first to the second. When you open an archive again, its data <em>as saved</em> are the new starting point, and the log starts empty: the log of the archive is shown at the top of the Session Log, as comments starting with <code class="docutils literal notranslate"><span class="pre">##</span></code>, for reading only. <em>Run All</em> does not run it again, and saving the session does not save it again: the new archive holds only the operations done since it was opened. To keep the whole path of an analysis done in several sittings, keep the archives of each sitting (or export the log as text before you save again).</p>
+</div>
+</li>
 <li><p><strong>Close</strong>: You can close a specific session via the right-click menu, or close the active session via <strong>File &gt; Close Session</strong>.</p></li>
 </ol>
 <img alt="The Session List with context menu" class="align-center" src="../images/getting_started_session_list.png" />
@@ -708,6 +715,25 @@ A dialog will appear allowing you to select exactly what to export:</p>
 <li><p><strong>System List (systems)</strong>: Saves your identified absorption lines (including Redshift, Column Density, Doppler Parameter, etc.) into a <code class="docutils literal notranslate"><span class="pre">_systems.csv</span></code> file.</p></li>
 </ul>
 <p>You can choose to export entire structures or pick individual columns. The suggested filename will automatically adjust based on your selection, and Astrocook will warn you if you are about to overwrite existing files.</p>
+</section>
+<section id="export-log-as-text">
+<h3>Export Log as Text<a class="headerlink" href="#export-log-as-text" title="Link to this heading">#</a></h3>
+<p><strong>File &gt; Export Log as Text…</strong> writes the session log as the text of a
+methods section, in English, ready to paste in a paper: a first paragraph on
+the spectrum and the version of Astrocook, then one paragraph per recipe
+(the reason given for it, if any, e.g. by an AI agent; what it did, with its
+parameters and the works it relies on; what it changed, e.g. the components
+added and the largest changes of a refit; the notes written at that point),
+then the Voigt fit and the sources of the atomic data of the transitions
+fitted (see <a class="reference internal" href="../atomic_data.html"><span class="std std-doc">Atomic Data</span></a>), and the references. The
+recipes undone are left out. Each recipe is followed by its menu in
+parentheses, to rerun it in the GUI; uncheck <strong>Name the menus of the
+recipes</strong> for a paper. <strong>Copy</strong> puts the text in the clipboard, <strong>Save…</strong>
+writes it to a text file. The text is a draft to edit: it says what was
+done, not why it is right.</p>
+<p>For a session just opened from an archive, the log says which recipes were
+run and with which parameters, but not what each one changed: the text says
+so for those steps.</p>
 </section>
 <section id="import-from-ascii">
 <h3>Import from ASCII<a class="headerlink" href="#import-from-ascii" title="Link to this heading">#</a></h3>
@@ -801,6 +827,7 @@ A dialog will appear allowing you to select exactly what to export:</p>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#exporting-and-importing-data">5. Exporting and Importing Data</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#export-to-ascii">Export to ASCII</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#export-log-as-text">Export Log as Text</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#import-from-ascii">Import from ASCII</a></li>
 </ul>
 </li>

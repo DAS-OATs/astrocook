@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>astrocook.methods_text &#8212; Astrocook 2.6.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../static/styles/theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+<link href="../../static/styles/pydata-sphinx-theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../static/sphinx-design.min.css?v=6a604523" />
+    <link rel="stylesheet" type="text/css" href="../../static/css/custom.css?v=e8a3a7b7" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../static/scripts/fontawesome.js?digest=75c7c72ae941e8b558d8"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
+<link rel="preload" as="script" href="../../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
+
+    <script src="../../static/documentation_options.js?v=ae39cb24"></script>
+    <script src="../../static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../../static/design-tabs.js?v=fcb327ea"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'modules/astrocook/methods_text';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.6.0';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="color-scheme" content="light dark"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="2.6.0" />
+  
+    
+    <script src="../../static/searchtools.js"></script>
+    <script src="../../static/language_data.js"></script>
+    <script src="../../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation" aria-expanded="false" aria-controls="pst-primary-sidebar-modal">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../static/icon_3d_HR.png" class="logo__image only-light" alt=""/>
+    <img src="../../static/icon_3d_HR.png" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">Astrocook</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../science.html">
+    Science
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference.html">
+    API Reference
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../credits.html">
+    Credits
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../changelog.html">
+    Changelog
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal" tabindex="-1"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../science.html">
+    Science
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../reference.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../credits.html">
+    Credits
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../changelog.html">
+    Changelog
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-house"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">astrocook.methods_text</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for astrocook.methods_text</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""The log of a session as the text of a methods section (phase 6-ter, PR 5c).</span>
+
+<span class="sd">:func:`methods_text` writes what was done to a session as English text, to</span>
+<span class="sd">paste in the methods section of a paper (decision 5 of phase 6-ter): an</span>
+<span class="sd">opening paragraph, one paragraph per recipe of the log, a closing paragraph</span>
+<span class="sd">on the fit and the atomic data, and the references.</span>
+
+<span class="sd">A paragraph of a recipe is made of:</span>
+
+<span class="sd">- the reason given for the recipe (``LogEntryV2.reason``, e.g. by an agent</span>
+<span class="sd">  through the MCP server), as written;</span>
+<span class="sd">- what the recipe did, from the key ``methods`` of the registry (a template</span>
+<span class="sd">  of its parameters, or a function of them), with the menu of the recipe in</span>
+<span class="sd">  parentheses (``menus=False`` leaves it out), and the parameters the text</span>
+<span class="sd">  does not quote that differ from their defaults;</span>
+<span class="sd">- what the recipe changed, from the comparison of the state before and</span>
+<span class="sd">  after it (:func:`~astrocook.recipes.result.compare_sessions`, as</span>
+<span class="sd">  ``RecipeResult`` does): the components added, removed and changed, the</span>
+<span class="sd">  columns, the pixels; and the warnings the fit left on the components;</span>
+<span class="sd">- the notes written at its state (``LogNoteV2``: notes and gaps declared,</span>
+<span class="sd">  as written; the gaps seen by the MCP server are for the development and</span>
+<span class="sd">  are left out).</span>
+
+<span class="sd">The recipes undone are left out. The text is made from the log each time it</span>
+<span class="sd">is asked for, never stored: a better wording reaches the sessions saved</span>
+<span class="sd">before it. Nothing here names a recipe: a recipe added to the registry with</span>
+<span class="sd">its ``methods`` is described with no code here, one without it with a</span>
+<span class="sd">generic sentence.</span>
+<span class="sd">"""</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">string</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">Counter</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Tuple</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="c1">#: The works the texts cite: key -&gt; (the citation in the text, the entry of</span>
+<span class="c1">#: the list of references). The keys of the atomic data are those of the</span>
+<span class="c1">#: table (``astrocook/data/atomic_data.ecsv``, docs page *Atomic Data*); a</span>
+<span class="c1">#: test checks that every key of the table is here.</span>
+<span class="n">REFERENCES</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">'C20'</span><span class="p">:</span> <span class="p">(</span><span class="s2">"Cupani et al. 2020"</span><span class="p">,</span>
+            <span class="s2">"Cupani G. et al. 2020, Proc. SPIE 11452, 114521U"</span><span class="p">),</span>
+    <span class="s1">'C26'</span><span class="p">:</span> <span class="p">(</span><span class="s2">"Cupani et al. 2026"</span><span class="p">,</span>
+            <span class="s2">"Cupani G. et al. 2026, Proc. SPIE 14155, 141551X, doi:10.1117/12.3101756"</span><span class="p">),</span>
+    <span class="s1">'SciPy'</span><span class="p">:</span> <span class="p">(</span><span class="s2">"Virtanen et al. 2020"</span><span class="p">,</span>
+              <span class="s2">"Virtanen P. et al. 2020, Nature Methods 17, 261"</span><span class="p">),</span>
+    <span class="s1">'emcee'</span><span class="p">:</span> <span class="p">(</span><span class="s2">"Foreman-Mackey et al. 2013"</span><span class="p">,</span>
+              <span class="s2">"Foreman-Mackey D. et al. 2013, PASP 125, 306"</span><span class="p">),</span>
+    <span class="s1">'dynesty'</span><span class="p">:</span> <span class="p">(</span><span class="s2">"Speagle 2020"</span><span class="p">,</span> <span class="s2">"Speagle J. S. 2020, MNRAS 493, 3132"</span><span class="p">),</span>
+    <span class="c1"># The sources of the atomic data</span>
+    <span class="s1">'M03'</span><span class="p">:</span> <span class="p">(</span><span class="s2">"Morton 2003"</span><span class="p">,</span> <span class="s2">"Morton D. C. 2003, ApJS 149, 205"</span><span class="p">),</span>
+    <span class="s1">'K14'</span><span class="p">:</span> <span class="p">(</span><span class="s2">"Kisielius et al. 2014"</span><span class="p">,</span> <span class="s2">"Kisielius R. et al. 2014, ApJ 780, 76"</span><span class="p">),</span>
+    <span class="s1">'K15'</span><span class="p">:</span> <span class="p">(</span><span class="s2">"Kisielius et al. 2015"</span><span class="p">,</span> <span class="s2">"Kisielius R. et al. 2015, ApJ 804, 76"</span><span class="p">),</span>
+    <span class="s1">'BB19'</span><span class="p">:</span> <span class="p">(</span><span class="s2">"Boisse &amp; Bergeron 2019"</span><span class="p">,</span> <span class="s2">"Boisse P., Bergeron J. 2019, A&amp;A 622, A140"</span><span class="p">),</span>
+    <span class="s1">'PA04'</span><span class="p">:</span> <span class="p">(</span><span class="s2">"Petitjean &amp; Aracil 2004"</span><span class="p">,</span> <span class="s2">"Petitjean P., Aracil B. 2004, A&amp;A 422, 523"</span><span class="p">),</span>
+    <span class="s1">'VPFIT'</span><span class="p">:</span> <span class="p">(</span><span class="s2">"the atom.dat file of VPFIT; Carswell &amp; Webb 2014"</span><span class="p">,</span>
+              <span class="s2">"Carswell R. F., Webb J. K. 2014, Astrophysics Source Code "</span>
+              <span class="s2">"Library, ascl:1408.015"</span><span class="p">),</span>
+    <span class="s1">'V1'</span><span class="p">:</span> <span class="p">(</span><span class="s2">"the table of Astrocook 1, original source not recorded"</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+    <span class="s1">'V2'</span><span class="p">:</span> <span class="p">(</span><span class="s2">"the table of Astrocook 2.0-2.1, original source not recorded"</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+<span class="p">}</span>
+
+<span class="c1">#: The key of the work that describes Astrocook, cited by every text</span>
+<span class="n">SOFTWARE_REFERENCE</span> <span class="o">=</span> <span class="s1">'C20'</span>
+<span class="c1">#: The key whose presence among the references of the recipes run says that</span>
+<span class="c1">#: Voigt profiles were fitted (the closing paragraph says how)</span>
+<span class="n">FIT_REFERENCE</span> <span class="o">=</span> <span class="s1">'SciPy'</span>
+
+<span class="c1">#: How the text names the columns of the spectrum; None: not named (they</span>
+<span class="c1">#: follow from what the text says, e.g. the resolution of Set properties)</span>
+<span class="n">COLUMN_NAMES</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">'x'</span><span class="p">:</span> <span class="s2">"the wavelengths"</span><span class="p">,</span> <span class="s1">'y'</span><span class="p">:</span> <span class="s2">"the flux"</span><span class="p">,</span> <span class="s1">'dy'</span><span class="p">:</span> <span class="s2">"the error of the flux"</span><span class="p">,</span>
+    <span class="s1">'cont'</span><span class="p">:</span> <span class="s2">"the continuum"</span><span class="p">,</span> <span class="s1">'abs_mask'</span><span class="p">:</span> <span class="s2">"the mask of the absorbed pixels"</span><span class="p">,</span>
+    <span class="s1">'model'</span><span class="p">:</span> <span class="s2">"the model"</span><span class="p">,</span> <span class="s1">'cont_pl'</span><span class="p">:</span> <span class="s2">"the power-law continuum (cont_pl)"</span><span class="p">,</span>
+    <span class="s1">'resol'</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">'abs_ids'</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">'fit_mask'</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="c1">#: How the text names the flags the fit leaves on the components</span>
+<span class="c1">#: (``voigt_fitter.COMPONENT_FLAGS``, and ``not_fitted`` of Refit all)</span>
+<span class="n">FLAG_NAMES</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">'z_at_window'</span><span class="p">:</span> <span class="s2">"z at the edge of the window of the fit"</span><span class="p">,</span>
+    <span class="s1">'logN_at_lower_bound'</span><span class="p">:</span> <span class="s2">"log N at the lower bound of the fit"</span><span class="p">,</span>
+    <span class="s1">'logN_at_upper_bound'</span><span class="p">:</span> <span class="s2">"log N at the upper bound of the fit"</span><span class="p">,</span>
+    <span class="s1">'b_at_lower_bound'</span><span class="p">:</span> <span class="s2">"b at the lower bound of the fit"</span><span class="p">,</span>
+    <span class="s1">'b_at_upper_bound'</span><span class="p">:</span> <span class="s2">"b at the upper bound of the fit"</span><span class="p">,</span>
+    <span class="s1">'nan_errors'</span><span class="p">:</span> <span class="s2">"no uncertainties (they could not be computed)"</span><span class="p">,</span>
+    <span class="s1">'not_fitted'</span><span class="p">:</span> <span class="s2">"the values from before the fit (the fit of the group failed)"</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="c1">#: The kinds of notes left out of the text</span>
+<span class="n">NOTES_LEFT_OUT</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'gap_seen'</span><span class="p">,)</span>
+
+<span class="n">_C_KMS</span> <span class="o">=</span> <span class="mf">299792.458</span>
+<span class="n">_QUANTITIES</span> <span class="o">=</span> <span class="p">((</span><span class="s1">'wave'</span><span class="p">,</span> <span class="s2">"rest wavelengths"</span><span class="p">),</span> <span class="p">(</span><span class="s1">'f'</span><span class="p">,</span> <span class="s2">"oscillator strengths"</span><span class="p">),</span>
+               <span class="p">(</span><span class="s1">'gamma'</span><span class="p">,</span> <span class="s2">"damping constants"</span><span class="p">))</span>
+
+
+<span class="c1"># --- The values of the parameters, as the templates read them ---------------</span>
+
+<div class="viewcode-block" id="fmt">
+<a class="viewcode-back" href="../../api/astrocook.methods_text.html#astrocook.methods_text.fmt">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">fmt</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""A value of a parameter as the text writes it: ``5000.0`` as</span>
+<span class="sd">    ``5000``, a list as its items separated by commas."""</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">"yes"</span> <span class="k">if</span> <span class="n">value</span> <span class="k">else</span> <span class="s2">"no"</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">floating</span><span class="p">)):</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">is_integer</span><span class="p">()</span> <span class="ow">and</span> <span class="nb">abs</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e15</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">value</span><span class="si">:</span><span class="s2">g</span><span class="si">}</span><span class="s2">"</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">fmt</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">value</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">"none"</span>
+    <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="given">
+<a class="viewcode-back" href="../../api/astrocook.methods_text.html#astrocook.methods_text.given">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">given</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The value says something: not None, empty, 'None' or '_current_'."""</span>
+    <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">value</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">""</span><span class="p">,</span> <span class="s2">"None"</span><span class="p">,</span> <span class="s2">"none"</span><span class="p">,</span> <span class="s2">"_current_"</span><span class="p">,</span> <span class="s2">"auto"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+    <span class="k">return</span> <span class="kc">True</span></div>
+
+
+
+<div class="viewcode-block" id="MethodsValues">
+<a class="viewcode-back" href="../../api/astrocook.methods_text.html#astrocook.methods_text.MethodsValues">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">MethodsValues</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The parameters of a log entry, as the ``methods`` of the registry read</span>
+<span class="sd">    them: ``p['kappa']`` is the value as text (:func:`fmt`), ``p.raw('kappa')``</span>
+<span class="sd">    the value as logged, ``p.menu`` the menu of the recipe in parentheses</span>
+<span class="sd">    (with a space before it) or "". The parameters read are remembered: the</span>
+<span class="sd">    others that differ from their defaults are listed after the text."""</span>
+
+<div class="viewcode-block" id="MethodsValues.__init__">
+<a class="viewcode-back" href="../../api/astrocook.methods_text.html#astrocook.methods_text.MethodsValues.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">menu</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">menu</span> <span class="o">=</span> <span class="n">menu</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">used</span><span class="p">:</span> <span class="nb">set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="MethodsValues.raw">
+<a class="viewcode-back" href="../../api/astrocook.methods_text.html#astrocook.methods_text.MethodsValues.raw">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">raw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">used</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MethodsValues.given">
+<a class="viewcode-back" href="../../api/astrocook.methods_text.html#astrocook.methods_text.MethodsValues.given">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">given</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The parameter has a value that says something (:func:`given`)."""</span>
+        <span class="k">return</span> <span class="n">given</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="n">name</span><span class="p">))</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">'menu'</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">menu</span>
+        <span class="k">return</span> <span class="n">fmt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_params</span></div>
+
+
+
+<span class="c1"># --- Words shared by the texts of the recipes -------------------------------</span>
+
+<span class="c1">#: The regions of the spectrum, as the parameters name them</span>
+<span class="n">REGION_WORDS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">'red_side'</span><span class="p">:</span> <span class="s2">"redward of the Lyman-alpha emission"</span><span class="p">,</span>
+    <span class="s1">'lya_forest'</span><span class="p">:</span> <span class="s2">"in the Lyman-alpha forest"</span><span class="p">,</span>
+    <span class="s1">'all_ly_forest'</span><span class="p">:</span> <span class="s2">"in the Lyman forest (from the Lyman limit to Lyman-alpha)"</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="region_words">
+<a class="viewcode-back" href="../../api/astrocook.methods_text.html#astrocook.methods_text.region_words">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">region_words</span><span class="p">(</span><span class="n">region</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">before</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">" "</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""`` redward of the Lyman-alpha emission`` for ``'red_side'``; "" for</span>
+<span class="sd">    no region."""</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">given</span><span class="p">(</span><span class="n">region</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">""</span>
+    <span class="n">words</span> <span class="o">=</span> <span class="p">[</span><span class="n">REGION_WORDS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span> <span class="sa">f</span><span class="s2">"in the region </span><span class="si">{</span><span class="n">r</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+             <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">region</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">','</span><span class="p">)</span> <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span>
+    <span class="k">return</span> <span class="n">before</span> <span class="o">+</span> <span class="n">_join</span><span class="p">(</span><span class="n">words</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="fit_bounds">
+<a class="viewcode-back" href="../../api/astrocook.methods_text.html#astrocook.methods_text.fit_bounds">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">fit_bounds</span><span class="p">(</span><span class="n">p</span><span class="p">:</span> <span class="n">MethodsValues</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""``b &lt;= 50 km/s, log N &lt;= 19 and the redshift free within +-20 km/s``,</span>
+<span class="sd">    from the parameters ``max_b``, ``max_logN`` and ``z_window_kms`` that the</span>
+<span class="sd">    recipe has."""</span>
+    <span class="n">parts</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="s1">'max_b'</span> <span class="ow">in</span> <span class="n">p</span><span class="p">:</span>
+        <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"b &lt;= </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'max_b'</span><span class="p">]</span><span class="si">}</span><span class="s2"> km/s"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s1">'max_logN'</span> <span class="ow">in</span> <span class="n">p</span><span class="p">:</span>
+        <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"log N &lt;= </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'max_logN'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s1">'z_window_kms'</span> <span class="ow">in</span> <span class="n">p</span><span class="p">:</span>
+        <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"the redshift free within +-</span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'z_window_kms'</span><span class="p">]</span><span class="si">}</span><span class="s2"> km/s"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_join</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="mask_words">
+<a class="viewcode-back" href="../../api/astrocook.methods_text.html#astrocook.methods_text.mask_words">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">mask_words</span><span class="p">(</span><span class="n">p</span><span class="p">:</span> <span class="n">MethodsValues</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The mask of the absorbed pixels that a recipe used (its parameter</span>
+<span class="sd">    ``mask``, and ``mask_col`` if it has one)."""</span>
+    <span class="k">if</span> <span class="s1">'mask'</span> <span class="ow">in</span> <span class="n">p</span> <span class="ow">and</span> <span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'mask'</span><span class="p">)</span> <span class="o">==</span> <span class="s1">'new'</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="s2">"a new mask of the absorbed pixels (made with the defaults "</span>
+                <span class="s2">"of Find absorbed regions)"</span><span class="p">)</span>
+    <span class="n">column</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s1">'mask_col'</span><span class="p">]</span> <span class="k">if</span> <span class="s1">'mask_col'</span> <span class="ow">in</span> <span class="n">p</span> <span class="k">else</span> <span class="s2">"abs_mask"</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"the mask of the absorbed pixels of the session (</span><span class="si">{</span><span class="n">column</span><span class="si">}</span><span class="s2">)"</span></div>
+
+
+
+<div class="viewcode-block" id="file_name">
+<a class="viewcode-back" href="../../api/astrocook.methods_text.html#astrocook.methods_text.file_name">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">file_name</span><span class="p">(</span><span class="n">p</span><span class="p">:</span> <span class="n">MethodsValues</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The name of a file, without its folder (which may say who the user</span>
+<span class="sd">    is, and means nothing to the reader)."""</span>
+    <span class="n">value</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">))</span> <span class="k">if</span> <span class="n">given</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="k">else</span> <span class="s2">"a file"</span></div>
+
+
+
+<span class="c1"># --- The text ------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="MethodsParagraph">
+<a class="viewcode-back" href="../../api/astrocook.methods_text.html#astrocook.methods_text.MethodsParagraph">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MethodsParagraph</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""A paragraph of the text."""</span>
+    <span class="n">text</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="c1">#: ``opening``, ``step`` (a recipe of the log), ``note`` (notes written</span>
+    <span class="c1">#: before the first recipe) or ``closing``</span>
+    <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="c1">#: The recipe of a step, as ``category.name``</span>
+    <span class="n">recipe</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1">#: The index of the log entry of a step</span>
+    <span class="n">entry</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="MethodsText">
+<a class="viewcode-back" href="../../api/astrocook.methods_text.html#astrocook.methods_text.MethodsText">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MethodsText</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The text of the methods of a session (:func:`methods_text`)."""</span>
+    <span class="n">paragraphs</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">MethodsParagraph</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+    <span class="c1">#: The list of references, one entry each, sorted</span>
+    <span class="n">references</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">text</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The paragraphs separated by blank lines, then the references."""</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="s2">"</span><span class="se">\n\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">text</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">paragraphs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">references</span><span class="p">:</span>
+            <span class="n">out</span> <span class="o">+=</span> <span class="s2">"</span><span class="se">\n\n</span><span class="s2">References</span><span class="se">\n</span><span class="s2">"</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">references</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">out</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">text</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_join</span><span class="p">(</span><span class="n">items</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">items</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
+    <span class="k">return</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">items</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="s2">" and "</span> <span class="o">+</span> <span class="n">items</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_sentence</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The text with a capital letter and a full stop."""</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">_as_written</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">text</span><span class="p">[:</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">+</span> <span class="n">text</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_as_written</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""A text written by who ran the analysis (a reason, a note), with a</span>
+<span class="sd">    full stop if it has none, and otherwise as written."""</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">text</span> <span class="ow">and</span> <span class="n">text</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="s2">".!?"</span><span class="p">:</span>
+        <span class="n">text</span> <span class="o">+=</span> <span class="s2">"."</span>
+    <span class="k">return</span> <span class="n">text</span>
+
+
+<span class="n">_NUMBERS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"no"</span><span class="p">,</span> <span class="s2">"one"</span><span class="p">,</span> <span class="s2">"two"</span><span class="p">,</span> <span class="s2">"three"</span><span class="p">,</span> <span class="s2">"four"</span><span class="p">,</span> <span class="s2">"five"</span><span class="p">,</span> <span class="s2">"six"</span><span class="p">,</span> <span class="s2">"seven"</span><span class="p">,</span> <span class="s2">"eight"</span><span class="p">,</span>
+            <span class="s2">"nine"</span><span class="p">,</span> <span class="s2">"ten"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_number</span><span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">_NUMBERS</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">_NUMBERS</span><span class="p">)</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+
+
+<span class="n">_ION</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"^([A-Z][a-z]?)([IVX]+)(\*{0,2})$"</span><span class="p">)</span>
+<span class="n">_LYMAN</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'Ly_a'</span><span class="p">:</span> <span class="s2">"Ly-alpha"</span><span class="p">,</span> <span class="s1">'Ly_b'</span><span class="p">:</span> <span class="s2">"Ly-beta"</span><span class="p">,</span> <span class="s1">'Ly_ab'</span><span class="p">:</span> <span class="s2">"Ly-alpha and Ly-beta"</span><span class="p">,</span>
+          <span class="s1">'Ly'</span><span class="p">:</span> <span class="s2">"H I (Lyman series)"</span><span class="p">}</span>
+
+
+<div class="viewcode-block" id="series_list">
+<a class="viewcode-back" href="../../api/astrocook.methods_text.html#astrocook.methods_text.series_list">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">series_list</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""A list of series separated by commas (a parameter, e.g.</span>
+<span class="sd">    ``'CIV,SiIV,MgII'``) as ``C IV, Si IV and Mg II``."""</span>
+    <span class="k">return</span> <span class="n">_join</span><span class="p">([</span><span class="n">series_name</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">text</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">','</span><span class="p">)</span> <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">strip</span><span class="p">()])</span></div>
+
+
+
+<div class="viewcode-block" id="series_name">
+<a class="viewcode-back" href="../../api/astrocook.methods_text.html#astrocook.methods_text.series_name">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">series_name</span><span class="p">(</span><span class="n">series</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""A series as a paper writes it: ``CIV`` as ``C IV``, ``CIV_1548`` as</span>
+<span class="sd">    ``C IV 1548``, ``Ly_a`` as ``Ly-alpha``."""</span>
+    <span class="k">if</span> <span class="s1">','</span> <span class="ow">in</span> <span class="n">series</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">series_name</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">series</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">','</span><span class="p">)</span> <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+    <span class="k">if</span> <span class="n">series</span> <span class="ow">in</span> <span class="n">_LYMAN</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_LYMAN</span><span class="p">[</span><span class="n">series</span><span class="p">]</span>
+    <span class="n">ion</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">line</span> <span class="o">=</span> <span class="n">series</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s1">'_'</span><span class="p">)</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="n">_ION</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">ion</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">m</span><span class="p">:</span>
+        <span class="n">ion</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="si">}{</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+    <span class="k">if</span> <span class="n">ion</span> <span class="o">==</span> <span class="s1">'Ly'</span> <span class="ow">and</span> <span class="n">line</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"Ly-</span><span class="si">{</span><span class="n">line</span><span class="si">}</span><span class="s2">"</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">ion</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">line</span><span class="si">}</span><span class="s2">"</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_menu</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""`` (Continuum &gt; Auto-estimate continuum)``, or "" for a recipe not in</span>
+<span class="sd">    the menus."""</span>
+    <span class="k">if</span> <span class="n">spec</span><span class="o">.</span><span class="n">gui_hidden</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">""</span>
+    <span class="n">brief</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\s*\([^)]*\)\s*$"</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">brief</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">'.'</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">" (</span><span class="si">{</span><span class="n">spec</span><span class="o">.</span><span class="n">category</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span><span class="si">}</span><span class="s2"> &gt; </span><span class="si">{</span><span class="n">brief</span><span class="si">}</span><span class="s2">)"</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_recipe_sentence</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">menus</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">"""What the recipe did, and the keys of the works it cites."""</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">MethodsValues</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">_menu</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span> <span class="k">if</span> <span class="n">menus</span> <span class="k">else</span> <span class="s2">""</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">spec</span><span class="o">.</span><span class="n">methods</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">spec</span><span class="o">.</span><span class="n">brief</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">'.'</span><span class="p">)</span><span class="si">}</span><span class="s2"> was run</span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">"</span>
+    <span class="k">elif</span> <span class="nb">callable</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">methods</span><span class="p">):</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">methods</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">Formatter</span><span class="p">()</span><span class="o">.</span><span class="n">vformat</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">methods</span><span class="p">,</span> <span class="p">(),</span> <span class="n">p</span><span class="p">)</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">_sentence</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+    <span class="n">others</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">ps</span> <span class="ow">in</span> <span class="n">spec</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">ps</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">p</span><span class="o">.</span><span class="n">used</span> <span class="ow">or</span> <span class="n">ps</span><span class="o">.</span><span class="n">gui_hidden</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">ps</span><span class="o">.</span><span class="n">agents</span> <span class="ow">or</span> <span class="n">ps</span><span class="o">.</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="n">ps</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">fmt</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">!=</span> <span class="n">fmt</span><span class="p">(</span><span class="n">ps</span><span class="o">.</span><span class="n">default</span><span class="p">):</span>
+            <span class="n">others</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">ps</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">fmt</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">others</span><span class="p">:</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="s2">"Other parameters"</span> <span class="k">if</span> <span class="n">spec</span><span class="o">.</span><span class="n">methods</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">"Parameters"</span>
+        <span class="n">text</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">" </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">others</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span>
+    <span class="k">return</span> <span class="n">text</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">references</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_unknown_sentence</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">values</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">fmt</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">_sentence</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The recipe </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> was run"</span> <span class="o">+</span> <span class="p">(</span><span class="sa">f</span><span class="s2">" (</span><span class="si">{</span><span class="n">values</span><span class="si">}</span><span class="s2">)"</span> <span class="k">if</span> <span class="n">values</span> <span class="k">else</span> <span class="s2">""</span><span class="p">))</span>
+
+
+<span class="c1"># --- What a recipe changed ----------------------------------------------------</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_z_range</span><span class="p">(</span><span class="n">zs</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">zs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"z = </span><span class="si">{</span><span class="n">zs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span>
+    <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">zs</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">zs</span><span class="p">)</span>
+    <span class="k">if</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">lo</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span> <span class="o">==</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">hi</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"z = </span><span class="si">{</span><span class="n">lo</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">lo</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> &lt; z &lt; </span><span class="si">{</span><span class="n">hi</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_components_by_series</span><span class="p">(</span><span class="n">refs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">by_series</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">refs</span><span class="p">:</span>
+        <span class="n">by_series</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">series</span><span class="p">,</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_join</span><span class="p">([</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">zs</span><span class="p">)</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">series_name</span><span class="p">(</span><span class="n">s</span><span class="p">)</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">_z_range</span><span class="p">(</span><span class="n">zs</span><span class="p">)</span><span class="si">}</span><span class="s2">)"</span>
+                  <span class="k">for</span> <span class="n">s</span><span class="p">,</span> <span class="n">zs</span> <span class="ow">in</span> <span class="n">by_series</span><span class="o">.</span><span class="n">items</span><span class="p">()])</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_one_component</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"a </span><span class="si">{</span><span class="n">series_name</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">series</span><span class="p">)</span><span class="si">}</span><span class="s2"> component at z = </span><span class="si">{</span><span class="n">r</span><span class="o">.</span><span class="n">z</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2"> "</span>
+            <span class="sa">f</span><span class="s2">"(log N = </span><span class="si">{</span><span class="n">r</span><span class="o">.</span><span class="n">logN</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, b = </span><span class="si">{</span><span class="n">r</span><span class="o">.</span><span class="n">b</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> km/s)"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_small</span><span class="p">(</span><span class="n">v</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">v</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">"0"</span>
+    <span class="k">if</span> <span class="n">v</span> <span class="o">&lt;</span> <span class="mf">0.001</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">"&lt; 0.001"</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">v</span><span class="si">:</span><span class="s2">.2g</span><span class="si">}</span><span class="s2">"</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_changed_sentences</span><span class="p">(</span><span class="n">changed</span><span class="p">,</span> <span class="n">n_after</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">changed</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">changed</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">changed</span><span class="p">:</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">ch</span><span class="o">.</span><span class="n">component</span>
+            <span class="n">parts</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">field</span><span class="p">,</span> <span class="p">(</span><span class="n">old</span><span class="p">,</span> <span class="n">new</span><span class="p">)</span> <span class="ow">in</span> <span class="n">ch</span><span class="o">.</span><span class="n">changed</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">field</span> <span class="o">==</span> <span class="s1">'flags'</span> <span class="ow">or</span> <span class="n">old</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">new</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="n">field</span> <span class="o">==</span> <span class="s1">'z'</span><span class="p">:</span>
+                    <span class="n">dv</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">new</span> <span class="o">-</span> <span class="n">old</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">old</span><span class="p">)</span> <span class="o">*</span> <span class="n">_C_KMS</span>
+                    <span class="k">if</span> <span class="n">dv</span> <span class="o">&gt;=</span> <span class="mf">0.05</span><span class="p">:</span>
+                        <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"z by </span><span class="si">{</span><span class="n">dv</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> km/s"</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">field</span> <span class="o">==</span> <span class="s1">'logN'</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">old</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">"</span> <span class="o">!=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">new</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">"</span><span class="p">:</span>
+                        <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"log N from </span><span class="si">{</span><span class="n">old</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">new</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">field</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">'b'</span><span class="p">,</span> <span class="s1">'btur'</span><span class="p">):</span>
+                    <span class="n">label</span> <span class="o">=</span> <span class="s1">'b'</span> <span class="k">if</span> <span class="n">field</span> <span class="o">==</span> <span class="s1">'b'</span> <span class="k">else</span> <span class="s1">'b_tur'</span>
+                    <span class="k">if</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">old</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">"</span> <span class="o">!=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">new</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">"</span><span class="p">:</span>
+                        <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> from </span><span class="si">{</span><span class="n">old</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">new</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> km/s"</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">field</span> <span class="o">==</span> <span class="s1">'series'</span><span class="p">:</span>
+                    <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"the series from </span><span class="si">{</span><span class="n">series_name</span><span class="p">(</span><span class="n">old</span><span class="p">)</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">series_name</span><span class="p">(</span><span class="n">new</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">field</span> <span class="o">==</span> <span class="s1">'resol'</span><span class="p">:</span>
+                    <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"the resolving power from </span><span class="si">{</span><span class="n">fmt</span><span class="p">(</span><span class="n">old</span><span class="p">)</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">fmt</span><span class="p">(</span><span class="n">new</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="n">where</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"the </span><span class="si">{</span><span class="n">series_name</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">series</span><span class="p">)</span><span class="si">}</span><span class="s2"> component at z = </span><span class="si">{</span><span class="n">r</span><span class="o">.</span><span class="n">z</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">"</span>
+            <span class="k">if</span> <span class="n">parts</span><span class="p">:</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"This changed </span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">_join</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">any</span><span class="p">(</span><span class="n">f</span> <span class="o">!=</span> <span class="s1">'flags'</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">ch</span><span class="o">.</span><span class="n">changed</span><span class="p">):</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"This changed </span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2"> by less than the digits quoted."</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">out</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'logN'</span><span class="p">:</span> <span class="p">[],</span> <span class="s1">'b'</span><span class="p">:</span> <span class="p">[],</span> <span class="s1">'v'</span><span class="p">:</span> <span class="p">[]}</span>
+    <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">changed</span><span class="p">:</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">ch</span><span class="o">.</span><span class="n">changed</span>
+        <span class="n">d</span><span class="p">[</span><span class="s1">'logN'</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s1">'logN'</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">c</span><span class="p">[</span><span class="s1">'logN'</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="k">if</span> <span class="s1">'logN'</span> <span class="ow">in</span> <span class="n">c</span> <span class="k">else</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">d</span><span class="p">[</span><span class="s1">'b'</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s1">'b'</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">c</span><span class="p">[</span><span class="s1">'b'</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="k">if</span> <span class="s1">'b'</span> <span class="ow">in</span> <span class="n">c</span> <span class="k">else</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">d</span><span class="p">[</span><span class="s1">'v'</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s1">'z'</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">c</span><span class="p">[</span><span class="s1">'z'</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">c</span><span class="p">[</span><span class="s1">'z'</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span> <span class="n">_C_KMS</span>
+                      <span class="k">if</span> <span class="s1">'z'</span> <span class="ow">in</span> <span class="n">c</span> <span class="k">else</span> <span class="mf">0.0</span><span class="p">)</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">changed</span><span class="p">)</span>
+    <span class="n">which</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"all </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="n">n_after</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"The parameters of </span><span class="si">{</span><span class="n">which</span><span class="si">}</span><span class="s2"> components changed."</span><span class="p">]</span>
+    <span class="n">units</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'logN'</span><span class="p">:</span> <span class="p">(</span><span class="s2">" dex in log N"</span><span class="p">,</span> <span class="s2">" dex"</span><span class="p">),</span> <span class="s1">'b'</span><span class="p">:</span> <span class="p">(</span><span class="s2">" km/s in b"</span><span class="p">,</span> <span class="s2">" km/s"</span><span class="p">),</span>
+             <span class="s1">'v'</span><span class="p">:</span> <span class="p">(</span><span class="s2">" km/s in velocity"</span><span class="p">,</span> <span class="s2">" km/s"</span><span class="p">)}</span>
+    <span class="n">keys</span> <span class="o">=</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">'logN'</span><span class="p">,</span> <span class="s1">'b'</span><span class="p">,</span> <span class="s1">'v'</span><span class="p">)</span> <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">k</span><span class="p">])]</span>
+    <span class="k">if</span> <span class="n">keys</span><span class="p">:</span>
+        <span class="n">med</span> <span class="o">=</span> <span class="n">_join</span><span class="p">([</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">_small</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">k</span><span class="p">])))</span><span class="si">}{</span><span class="n">units</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">])</span>
+        <span class="n">top</span> <span class="o">=</span> <span class="n">_join</span><span class="p">([</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">_small</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="n">k</span><span class="p">])))</span><span class="si">}{</span><span class="n">units</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">])</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The median changes were </span><span class="si">{</span><span class="n">med</span><span class="si">}</span><span class="s2">; the largest were </span><span class="si">{</span><span class="n">top</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">out</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_flags_sentence</span><span class="p">(</span><span class="n">after</span><span class="p">,</span> <span class="n">uuids</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+    <span class="n">uuids</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">uuids</span><span class="p">)</span>
+    <span class="n">systs</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">after</span><span class="p">,</span> <span class="s1">'systs'</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">uuids</span> <span class="ow">or</span> <span class="n">systs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">counts</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">f</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">systs</span><span class="o">.</span><span class="n">components</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">uuid</span> <span class="ow">in</span> <span class="n">uuids</span>
+                     <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">flags</span> <span class="ow">or</span> <span class="p">()))</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">counts</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">parts</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">flag</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">counts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">what</span> <span class="o">=</span> <span class="n">FLAG_NAMES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="n">flag</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">'_'</span><span class="p">,</span> <span class="s1">' '</span><span class="p">))</span>
+        <span class="n">noun</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">" component</span><span class="si">{</span><span class="s1">'s'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">''</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">parts</span> <span class="k">else</span> <span class="s2">""</span>
+        <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">n</span><span class="si">}{</span><span class="n">noun</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="s1">'have'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'has'</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">what</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">tail</span> <span class="o">=</span> <span class="p">(</span><span class="s2">": a parameter at a bound has an unreliable value and error"</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="s1">'bound'</span> <span class="ow">in</span> <span class="n">f</span> <span class="ow">or</span> <span class="s1">'window'</span> <span class="ow">in</span> <span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">counts</span><span class="p">)</span> <span class="k">else</span> <span class="s2">""</span><span class="p">)</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"At the end, </span><span class="si">{</span><span class="n">_join</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span><span class="si">}{</span><span class="n">tail</span><span class="si">}</span><span class="s2">."</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_columns_sentence</span><span class="p">(</span><span class="n">names</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">verb</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">components_changed</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+    <span class="n">words</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="s1">'model'</span> <span class="ow">and</span> <span class="n">components_changed</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">word</span> <span class="o">=</span> <span class="n">COLUMN_NAMES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"the column '</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">'"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">word</span><span class="p">:</span>
+            <span class="n">words</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">word</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">words</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">where</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"added"</span><span class="p">:</span> <span class="s2">" to the spectrum"</span><span class="p">,</span> <span class="s2">"removed"</span><span class="p">:</span> <span class="s2">" from the spectrum"</span><span class="p">,</span> <span class="s2">"changed"</span><span class="p">:</span> <span class="s2">""</span><span class="p">}[</span><span class="n">verb</span><span class="p">]</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"This </span><span class="si">{</span><span class="n">verb</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">_join</span><span class="p">(</span><span class="n">words</span><span class="p">)</span><span class="si">}{</span><span class="n">where</span><span class="si">}</span><span class="s2">."</span>
+
+
+<div class="viewcode-block" id="changes_text">
+<a class="viewcode-back" href="../../api/astrocook.methods_text.html#astrocook.methods_text.changes_text">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">changes_text</span><span class="p">(</span><span class="n">before</span><span class="p">,</span> <span class="n">after</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""What changed from the state ``before`` to ``after``, in sentences."""</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.result</span><span class="w"> </span><span class="kn">import</span> <span class="n">compare_sessions</span>
+    <span class="n">ch</span> <span class="o">=</span> <span class="n">compare_sessions</span><span class="p">(</span><span class="n">before</span><span class="p">,</span> <span class="n">after</span><span class="p">)</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">comps</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">ch</span><span class="o">.</span><span class="n">components_added</span> <span class="ow">or</span> <span class="n">ch</span><span class="o">.</span><span class="n">components_removed</span> <span class="ow">or</span> <span class="n">ch</span><span class="o">.</span><span class="n">components_changed</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">refs</span><span class="p">,</span> <span class="n">verb</span> <span class="ow">in</span> <span class="p">((</span><span class="n">ch</span><span class="o">.</span><span class="n">components_added</span><span class="p">,</span> <span class="s2">"added"</span><span class="p">),</span> <span class="p">(</span><span class="n">ch</span><span class="o">.</span><span class="n">components_removed</span><span class="p">,</span> <span class="s2">"removed"</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">refs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"This </span><span class="si">{</span><span class="n">verb</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">_one_component</span><span class="p">(</span><span class="n">refs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">refs</span><span class="p">:</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"This </span><span class="si">{</span><span class="n">verb</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">refs</span><span class="p">)</span><span class="si">}</span><span class="s2"> components: </span><span class="si">{</span><span class="n">_components_by_series</span><span class="p">(</span><span class="n">refs</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+    <span class="n">n_after</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">after</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">components</span><span class="p">)</span> <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">after</span><span class="p">,</span> <span class="s1">'systs'</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">else</span> <span class="mi">0</span>
+    <span class="n">out</span> <span class="o">+=</span> <span class="n">_changed_sentences</span><span class="p">(</span><span class="n">ch</span><span class="o">.</span><span class="n">components_changed</span><span class="p">,</span> <span class="n">n_after</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">names</span><span class="p">,</span> <span class="n">verb</span> <span class="ow">in</span> <span class="p">((</span><span class="n">ch</span><span class="o">.</span><span class="n">columns_added</span><span class="p">,</span> <span class="s2">"added"</span><span class="p">),</span> <span class="p">(</span><span class="n">ch</span><span class="o">.</span><span class="n">columns_removed</span><span class="p">,</span> <span class="s2">"removed"</span><span class="p">),</span>
+                        <span class="p">(</span><span class="n">ch</span><span class="o">.</span><span class="n">columns_changed</span><span class="p">,</span> <span class="s2">"changed"</span><span class="p">)):</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">_columns_sentence</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">verb</span><span class="p">,</span> <span class="n">comps</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">s</span><span class="p">:</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s1">'pixels'</span> <span class="ow">in</span> <span class="n">ch</span><span class="o">.</span><span class="n">properties_changed</span><span class="p">:</span>
+        <span class="n">old</span><span class="p">,</span> <span class="n">new</span> <span class="o">=</span> <span class="n">ch</span><span class="o">.</span><span class="n">properties_changed</span><span class="p">[</span><span class="s1">'pixels'</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">old</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">new</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The spectrum has now </span><span class="si">{</span><span class="n">new</span><span class="si">}</span><span class="s2"> pixels (</span><span class="si">{</span><span class="n">old</span><span class="si">}</span><span class="s2"> before)."</span><span class="p">)</span>
+    <span class="n">flags</span> <span class="o">=</span> <span class="n">_flags_sentence</span><span class="p">(</span><span class="n">after</span><span class="p">,</span> <span class="p">[</span><span class="n">r</span><span class="o">.</span><span class="n">uuid</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">ch</span><span class="o">.</span><span class="n">components_added</span><span class="p">]</span>
+                            <span class="o">+</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">component</span><span class="o">.</span><span class="n">uuid</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">ch</span><span class="o">.</span><span class="n">components_changed</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">flags</span><span class="p">:</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">flags</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">out</span></div>
+
+
+
+<span class="c1"># --- The atomic data ------------------------------------------------------------</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_observed_range_angstrom</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]:</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">astropy.units</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">au</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">au</span><span class="o">.</span><span class="n">Angstrom</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+    <span class="k">except</span> <span class="n">au</span><span class="o">.</span><span class="n">UnitConversionError</span><span class="p">:</span>  <span class="c1"># an x axis in velocity</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">x</span><span class="p">)]</span>
+    <span class="k">return</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">min</span><span class="p">()),</span> <span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">max</span><span class="p">()))</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+
+
+<div class="viewcode-block" id="atomic_data_sentence">
+<a class="viewcode-back" href="../../api/astrocook.methods_text.html#astrocook.methods_text.atomic_data_sentence">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">atomic_data_sentence</span><span class="p">(</span><span class="n">state</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">"""Where the atomic data of the transitions of the components of</span>
+<span class="sd">    ``state`` come from, and the keys of the works it cites. Only the</span>
+<span class="sd">    transitions that fall in the spectrum are counted (all, if the x axis</span>
+<span class="sd">    is not a wavelength)."""</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">astropy.table</span><span class="w"> </span><span class="kn">import</span> <span class="n">Table</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.atomic_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">ATOMIC_DATA_PATH</span><span class="p">,</span> <span class="n">series_lines</span>
+    <span class="n">systs</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="s1">'systs'</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">systs</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">systs</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="p">[]</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">Table</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">ATOMIC_DATA_PATH</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">'ascii.ecsv'</span><span class="p">)</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="p">{</span><span class="nb">str</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s1">'name'</span><span class="p">]):</span> <span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">table</span><span class="p">}</span>
+    <span class="n">xr</span> <span class="o">=</span> <span class="n">_observed_range_angstrom</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">spec</span><span class="p">)</span> <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="s1">'spec'</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">used</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">systs</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">series_lines</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">series</span><span class="p">):</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">rows</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">r</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">used</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">xr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">obs</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s1">'wave'</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">c</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">xr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">obs</span> <span class="o">&lt;=</span> <span class="n">xr</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+                    <span class="k">continue</span>
+            <span class="n">used</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">used</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="p">[]</span>
+    <span class="n">sources</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">rows</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">q</span><span class="si">}</span><span class="s2">_ref"</span><span class="p">])</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">used</span> <span class="k">for</span> <span class="n">q</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">_QUANTITIES</span>
+                      <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">rows</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">q</span><span class="si">}</span><span class="s2">_ref"</span><span class="p">])</span> <span class="o">!=</span> <span class="s1">'-'</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">sources</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="p">[]</span>
+    <span class="n">main</span> <span class="o">=</span> <span class="n">sources</span><span class="o">.</span><span class="n">most_common</span><span class="p">(</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">exceptions</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">keys</span> <span class="o">=</span> <span class="p">[</span><span class="n">main</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">q</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">_QUANTITIES</span><span class="p">:</span>
+        <span class="n">by_key</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">used</span><span class="p">:</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">rows</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">q</span><span class="si">}</span><span class="s2">_ref"</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">'-'</span><span class="p">,</span> <span class="n">main</span><span class="p">):</span>
+                <span class="n">by_key</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">ts</span> <span class="ow">in</span> <span class="n">by_key</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">exceptions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"the </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> of </span><span class="si">{</span><span class="n">_transitions</span><span class="p">(</span><span class="n">ts</span><span class="p">)</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">_cite</span><span class="p">(</span><span class="n">k</span><span class="p">)</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
+            <span class="n">keys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"The atomic data are those of the Astrocook table: from </span><span class="si">{</span><span class="n">_cite</span><span class="p">(</span><span class="n">main</span><span class="p">,</span><span class="w"> </span><span class="kc">True</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+    <span class="k">if</span> <span class="n">exceptions</span><span class="p">:</span>
+        <span class="n">text</span> <span class="o">+=</span> <span class="s2">", except "</span> <span class="o">+</span> <span class="n">_join</span><span class="p">(</span><span class="n">exceptions</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">text</span> <span class="o">+</span> <span class="s2">"."</span><span class="p">,</span> <span class="n">keys</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_transitions</span><span class="p">(</span><span class="n">names</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""``CIV_1548, CIV_1550`` as ``C IV 1548, 1550``."""</span>
+    <span class="n">groups</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
+        <span class="n">ion</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">line</span> <span class="o">=</span> <span class="n">n</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s1">'_'</span><span class="p">)</span>
+        <span class="n">groups</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">ion</span><span class="p">,</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">ion</span><span class="p">,</span> <span class="n">lines</span> <span class="ow">in</span> <span class="n">groups</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">series_name</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">ion</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">lines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">name</span><span class="p">]</span> <span class="o">+</span> <span class="n">lines</span><span class="p">[</span><span class="mi">1</span><span class="p">:]))</span>
+    <span class="k">return</span> <span class="n">_join</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_cite</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">narrative</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">short</span> <span class="o">=</span> <span class="n">REFERENCES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="kc">None</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s2">"^(.*) (\d</span><span class="si">{4}</span><span class="s2">)$"</span><span class="p">,</span> <span class="n">short</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">narrative</span> <span class="ow">and</span> <span class="n">m</span> <span class="ow">and</span> <span class="s1">';'</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">short</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s2">)"</span>
+    <span class="k">return</span> <span class="n">short</span>
+
+
+<span class="c1"># --- The log and the states -------------------------------------------------------</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_source</span><span class="p">(</span><span class="n">source</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""The states, the index of the current one and the log of ``source``:</span>
+<span class="sd">    a ``SessionHistory`` or a session (its log only, no states)."""</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">HistoryLogV2</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s1">'states'</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s1">'log_manager'</span><span class="p">):</span>
+        <span class="n">states</span><span class="p">,</span> <span class="n">current</span><span class="p">,</span> <span class="n">log</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">states</span><span class="p">),</span> <span class="n">source</span><span class="o">.</span><span class="n">current_index</span><span class="p">,</span> <span class="n">source</span><span class="o">.</span><span class="n">log_manager</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">states</span><span class="p">,</span> <span class="n">current</span><span class="p">,</span> <span class="n">log</span> <span class="o">=</span> <span class="p">[</span><span class="n">source</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s1">'log_manager'</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">log</span><span class="p">,</span> <span class="n">HistoryLogV2</span><span class="p">):</span>
+        <span class="n">log</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">states</span><span class="p">,</span> <span class="n">current</span><span class="p">,</span> <span class="n">log</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_spectrum_sentence</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook</span><span class="w"> </span><span class="kn">import</span> <span class="n">__version__</span>
+    <span class="n">spec</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="s1">'spec'</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">what</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"The spectrum of </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span>
+    <span class="k">if</span> <span class="n">spec</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">x</span><span class="p">)]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+            <span class="n">what</span> <span class="o">+=</span> <span class="p">(</span><span class="sa">f</span><span class="s2">" (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="p">)</span><span class="si">}</span><span class="s2"> pixels, </span><span class="si">{</span><span class="n">x</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">x</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> "</span>
+                     <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">to_string</span><span class="p">()</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
+    <span class="n">software</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"Astrocook </span><span class="si">{</span><span class="n">__version__</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">_cite</span><span class="p">(</span><span class="n">SOFTWARE_REFERENCE</span><span class="p">)</span><span class="si">}</span><span class="s2">)"</span>
+    <span class="k">if</span> <span class="n">n_steps</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">what</span><span class="si">}</span><span class="s2"> was opened with </span><span class="si">{</span><span class="n">software</span><span class="si">}</span><span class="s2">; its log has no recipes."</span>
+    <span class="n">steps</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"in the </span><span class="si">{</span><span class="n">_number</span><span class="p">(</span><span class="n">n_steps</span><span class="p">)</span><span class="si">}</span><span class="s2"> steps described below"</span> <span class="k">if</span> <span class="n">n_steps</span> <span class="o">!=</span> <span class="mi">1</span> <span class="k">else</span> \
+        <span class="s2">"in the step described below"</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">what</span><span class="si">}</span><span class="s2"> was analysed with </span><span class="si">{</span><span class="n">software</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">steps</span><span class="si">}</span><span class="s2">."</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_name</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">spec</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="s1">'spec'</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">obj</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'OBJECT'</span><span class="p">)</span> <span class="k">if</span> <span class="n">spec</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">obj</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">obj</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">isdigit</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s1">'display_name'</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="s1">'name'</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">"the object"</span>
+
+
+<div class="viewcode-block" id="methods_text">
+<a class="viewcode-back" href="../../api/astrocook.methods_text.html#astrocook.methods_text.methods_text">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">methods_text</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">menus</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MethodsText</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The log of a session as the text of a methods section.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    source : SessionHistory or SessionV2</span>
+<span class="sd">        A history (the states and the log, as the GUI and the MCP server</span>
+<span class="sd">        keep them), or a session alone: then only the log is known, not what</span>
+<span class="sd">        each recipe changed.</span>
+<span class="sd">    menus : bool</span>
+<span class="sd">        Name the menu of each recipe, in parentheses (for who reruns the</span>
+<span class="sd">        analysis in the GUI; not for a paper).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    MethodsText</span>
+<span class="sd">        The paragraphs and the references; ``.text`` (or ``str()``) is the</span>
+<span class="sd">        text.</span>
+<span class="sd">    """</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_recipe</span>
+    <span class="n">states</span><span class="p">,</span> <span class="n">current</span><span class="p">,</span> <span class="n">log</span> <span class="o">=</span> <span class="n">_source</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+    <span class="n">timeline</span> <span class="o">=</span> <span class="n">log</span><span class="o">.</span><span class="n">timeline</span><span class="p">()</span> <span class="k">if</span> <span class="n">log</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[]</span>
+    <span class="c1"># The state made by the entry i is states[i - offset]; the entries up to</span>
+    <span class="c1"># offset were made before the first state (e.g. read from an archive)</span>
+    <span class="n">offset</span> <span class="o">=</span> <span class="p">(</span><span class="n">log</span><span class="o">.</span><span class="n">current_index</span> <span class="o">-</span> <span class="n">current</span><span class="p">)</span> <span class="k">if</span> <span class="n">log</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mi">0</span>
+    <span class="c1"># The log of the archive the session was opened from (F109): its steps</span>
+    <span class="c1"># come first, made before the first state</span>
+    <span class="n">previous</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">log</span><span class="p">,</span> <span class="s1">'previous'</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">previous</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">earlier</span> <span class="o">=</span> <span class="n">previous</span><span class="o">.</span><span class="n">timeline</span><span class="p">()</span>
+        <span class="n">timeline</span> <span class="o">=</span> <span class="n">earlier</span> <span class="o">+</span> <span class="n">timeline</span>
+        <span class="n">offset</span> <span class="o">+=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">item</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">earlier</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s1">'recipe_name'</span><span class="p">))</span>
+    <span class="n">first</span> <span class="o">=</span> <span class="n">states</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">states</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">entries</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span> <span class="k">for</span> <span class="n">item</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">timeline</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s1">'recipe_name'</span><span class="p">)]</span>
+    <span class="n">paragraphs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">MethodsParagraph</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">keys</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">SOFTWARE_REFERENCE</span><span class="p">]</span>
+
+    <span class="n">opening</span> <span class="o">=</span> <span class="p">[</span><span class="n">_spectrum_sentence</span><span class="p">(</span><span class="n">_name</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">first</span><span class="p">),</span> <span class="n">first</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">entries</span><span class="p">))]</span>
+    <span class="k">if</span> <span class="n">entries</span><span class="p">:</span>
+        <span class="n">opening</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"Parameters not quoted were left at their default values. The "</span>
+                       <span class="s2">"session log, saved with the session, replays the analysis "</span>
+                       <span class="s2">"exactly."</span><span class="p">)</span>
+    <span class="n">before_states</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">entries</span><span class="p">))</span> <span class="k">if</span> <span class="n">i</span> <span class="o">-</span> <span class="n">offset</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">before_states</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">opening</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"For the first step, read from the log of the archive, only "</span>
+                       <span class="s2">"the parameters are known, not what it changed."</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">before_states</span><span class="p">:</span>
+        <span class="n">opening</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"For the first </span><span class="si">{</span><span class="n">_number</span><span class="p">(</span><span class="n">before_states</span><span class="p">)</span><span class="si">}</span><span class="s2"> steps, read from the "</span>
+                       <span class="sa">f</span><span class="s2">"log of the archive, only the parameters are known, not what "</span>
+                       <span class="sa">f</span><span class="s2">"they changed."</span><span class="p">)</span>
+    <span class="n">paragraphs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">MethodsParagraph</span><span class="p">(</span><span class="s2">" "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">opening</span><span class="p">),</span> <span class="s2">"opening"</span><span class="p">))</span>
+
+    <span class="n">index</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="k">for</span> <span class="n">item</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">timeline</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="s1">'recipe_name'</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">kind</span> <span class="ow">in</span> <span class="n">NOTES_LEFT_OUT</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">note</span> <span class="o">=</span> <span class="n">_as_written</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">paragraphs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">kind</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"step"</span><span class="p">,</span> <span class="s2">"note"</span><span class="p">):</span>
+                <span class="n">last</span> <span class="o">=</span> <span class="n">paragraphs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">paragraphs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">MethodsParagraph</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">last</span><span class="o">.</span><span class="n">text</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">note</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">last</span><span class="o">.</span><span class="n">kind</span><span class="p">,</span>
+                                                  <span class="n">last</span><span class="o">.</span><span class="n">recipe</span><span class="p">,</span> <span class="n">last</span><span class="o">.</span><span class="n">entry</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">paragraphs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">MethodsParagraph</span><span class="p">(</span><span class="n">note</span><span class="p">,</span> <span class="s2">"note"</span><span class="p">))</span>
+            <span class="k">continue</span>
+        <span class="n">index</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">spec</span> <span class="o">=</span> <span class="n">find_recipe</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">recipe_name</span><span class="p">)</span>
+        <span class="n">parts</span> <span class="o">=</span> <span class="p">[</span><span class="n">_as_written</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">reason</span><span class="p">)]</span> <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">reason</span> <span class="k">else</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">spec</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_unknown_sentence</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">recipe_name</span><span class="p">,</span> <span class="n">item</span><span class="o">.</span><span class="n">params</span><span class="p">))</span>
+            <span class="n">recipe</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">recipe_name</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">text</span><span class="p">,</span> <span class="n">refs</span> <span class="o">=</span> <span class="n">_recipe_sentence</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">item</span><span class="o">.</span><span class="n">params</span><span class="p">,</span> <span class="n">menus</span><span class="p">)</span>
+            <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+            <span class="n">keys</span> <span class="o">+=</span> <span class="n">refs</span>
+            <span class="n">recipe</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">spec</span><span class="o">.</span><span class="n">category</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">spec</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">index</span> <span class="o">-</span> <span class="n">offset</span>
+        <span class="k">if</span> <span class="mi">1</span> <span class="o">&lt;=</span> <span class="n">s</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">states</span><span class="p">):</span>
+            <span class="n">parts</span> <span class="o">+=</span> <span class="n">changes_text</span><span class="p">(</span><span class="n">states</span><span class="p">[</span><span class="n">s</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">states</span><span class="p">[</span><span class="n">s</span><span class="p">])</span>
+        <span class="n">paragraphs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">MethodsParagraph</span><span class="p">(</span><span class="s2">" "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">),</span> <span class="s2">"step"</span><span class="p">,</span> <span class="n">recipe</span><span class="p">,</span> <span class="n">index</span><span class="p">))</span>
+
+    <span class="n">final</span> <span class="o">=</span> <span class="n">states</span><span class="p">[</span><span class="n">current</span><span class="p">]</span> <span class="k">if</span> <span class="n">states</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">closing</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">has_components</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">final</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">final</span><span class="p">,</span> <span class="s1">'systs'</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                          <span class="ow">and</span> <span class="n">final</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">components</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">has_components</span> <span class="ow">and</span> <span class="n">FIT_REFERENCE</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
+        <span class="n">closing</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"The Voigt profiles were computed with the Faddeeva function "</span>
+                       <span class="s2">"and fitted by least squares, both from SciPy "</span>
+                       <span class="sa">f</span><span class="s2">"(</span><span class="si">{</span><span class="n">_cite</span><span class="p">(</span><span class="n">FIT_REFERENCE</span><span class="p">)</span><span class="si">}</span><span class="s2">)."</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">has_components</span><span class="p">:</span>
+        <span class="n">atomic</span><span class="p">,</span> <span class="n">atomic_keys</span> <span class="o">=</span> <span class="n">atomic_data_sentence</span><span class="p">(</span><span class="n">final</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">atomic</span><span class="p">:</span>
+            <span class="n">closing</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">atomic</span><span class="p">)</span>
+            <span class="n">keys</span> <span class="o">+=</span> <span class="n">atomic_keys</span>
+    <span class="k">if</span> <span class="n">closing</span><span class="p">:</span>
+        <span class="n">paragraphs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">MethodsParagraph</span><span class="p">(</span><span class="s2">" "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">closing</span><span class="p">),</span> <span class="s2">"closing"</span><span class="p">))</span>
+
+    <span class="n">references</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">({</span><span class="n">REFERENCES</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys</span>
+                         <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">REFERENCES</span> <span class="ow">and</span> <span class="n">REFERENCES</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">1</span><span class="p">]})</span>
+    <span class="k">return</span> <span class="n">MethodsText</span><span class="p">(</span><span class="n">paragraphs</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">paragraphs</span><span class="p">),</span> <span class="n">references</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">references</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="methods_file_name">
+<a class="viewcode-back" href="../../api/astrocook.methods_text.html#astrocook.methods_text.methods_file_name">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">methods_file_name</span><span class="p">(</span><span class="n">session_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""A file name for the text of a session: ``&lt;name&gt;_methods.txt``."""</span>
+    <span class="n">stem</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">"[^\w.-]+"</span><span class="p">,</span> <span class="s2">"_"</span><span class="p">,</span> <span class="n">session_name</span> <span class="ow">or</span> <span class="s2">"session"</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">"_"</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">"session"</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">stem</span><span class="si">}</span><span class="s2">_methods.txt"</span></div>
+
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'MethodsParagraph'</span><span class="p">,</span> <span class="s1">'MethodsText'</span><span class="p">,</span> <span class="s1">'MethodsValues'</span><span class="p">,</span> <span class="s1">'REFERENCES'</span><span class="p">,</span>
+           <span class="s1">'atomic_data_sentence'</span><span class="p">,</span> <span class="s1">'changes_text'</span><span class="p">,</span> <span class="s1">'file_name'</span><span class="p">,</span> <span class="s1">'fit_bounds'</span><span class="p">,</span> <span class="s1">'fmt'</span><span class="p">,</span>
+           <span class="s1">'given'</span><span class="p">,</span> <span class="s1">'mask_words'</span><span class="p">,</span> <span class="s1">'series_list'</span><span class="p">,</span> <span class="s1">'methods_file_name'</span><span class="p">,</span> <span class="s1">'methods_text'</span><span class="p">,</span>
+           <span class="s1">'region_words'</span><span class="p">,</span> <span class="s1">'series_name'</span><span class="p">]</span>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8"></script>
+<script defer src="../../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Guido Cupani.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.2.0.
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.24.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

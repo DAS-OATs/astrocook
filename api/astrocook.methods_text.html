@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>astrocook.methods_text module &#8212; Astrocook 2.6.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../static/styles/theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+<link href="../static/styles/pydata-sphinx-theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../static/sphinx-design.min.css?v=6a604523" />
+    <link rel="stylesheet" type="text/css" href="../static/css/custom.css?v=e8a3a7b7" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../static/scripts/fontawesome.js?digest=75c7c72ae941e8b558d8"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
+<link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
+
+    <script src="../static/documentation_options.js?v=ae39cb24"></script>
+    <script src="../static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../static/design-tabs.js?v=fcb327ea"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'api/astrocook.methods_text';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.6.0';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="color-scheme" content="light dark"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="2.6.0" />
+  
+    
+    <script src="../static/searchtools.js"></script>
+    <script src="../static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation" aria-expanded="false" aria-controls="pst-primary-sidebar-modal">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../static/icon_3d_HR.png" class="logo__image only-light" alt=""/>
+    <img src="../static/icon_3d_HR.png" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">Astrocook</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../science.html">
+    Science
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference.html">
+    API Reference
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../credits.html">
+    Credits
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../changelog.html">
+    Changelog
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button type="button" class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page" aria-expanded="false" aria-controls="pst-secondary-sidebar-modal">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal" tabindex="-1"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../science.html">
+    Science
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../credits.html">
+    Credits
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../changelog.html">
+    Changelog
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-house"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">astrocook.methods_text module</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="module-astrocook.methods_text">
+<span id="astrocook-methods-text-module"></span><h1>astrocook.methods_text module<a class="headerlink" href="#module-astrocook.methods_text" title="Link to this heading">#</a></h1>
+<p>The log of a session as the text of a methods section (phase 6-ter, PR 5c).</p>
+<p><a class="reference internal" href="#astrocook.methods_text.methods_text" title="astrocook.methods_text.methods_text"><code class="xref py py-func docutils literal notranslate"><span class="pre">methods_text()</span></code></a> writes what was done to a session as English text, to
+paste in the methods section of a paper (decision 5 of phase 6-ter): an
+opening paragraph, one paragraph per recipe of the log, a closing paragraph
+on the fit and the atomic data, and the references.</p>
+<p>A paragraph of a recipe is made of:</p>
+<ul class="simple">
+<li><p>the reason given for the recipe (<code class="docutils literal notranslate"><span class="pre">LogEntryV2.reason</span></code>, e.g. by an agent
+through the MCP server), as written;</p></li>
+<li><p>what the recipe did, from the key <code class="docutils literal notranslate"><span class="pre">methods</span></code> of the registry (a template
+of its parameters, or a function of them), with the menu of the recipe in
+parentheses (<code class="docutils literal notranslate"><span class="pre">menus=False</span></code> leaves it out), and the parameters the text
+does not quote that differ from their defaults;</p></li>
+<li><p>what the recipe changed, from the comparison of the state before and
+after it (<a class="reference internal" href="astrocook.recipes.result.html#astrocook.recipes.result.compare_sessions" title="astrocook.recipes.result.compare_sessions"><code class="xref py py-func docutils literal notranslate"><span class="pre">compare_sessions()</span></code></a>, as
+<code class="docutils literal notranslate"><span class="pre">RecipeResult</span></code> does): the components added, removed and changed, the
+columns, the pixels; and the warnings the fit left on the components;</p></li>
+<li><p>the notes written at its state (<code class="docutils literal notranslate"><span class="pre">LogNoteV2</span></code>: notes and gaps declared,
+as written; the gaps seen by the MCP server are for the development and
+are left out).</p></li>
+</ul>
+<p>The recipes undone are left out. The text is made from the log each time it
+is asked for, never stored: a better wording reaches the sessions saved
+before it. Nothing here names a recipe: a recipe added to the registry with
+its <code class="docutils literal notranslate"><span class="pre">methods</span></code> is described with no code here, one without it with a
+generic sentence.</p>
+<dl class="py data">
+<dt class="sig sig-object py" id="astrocook.methods_text.REFERENCES">
+<span class="sig-prename descclassname"><span class="pre">astrocook.methods_text.</span></span><span class="sig-name descname"><span class="pre">REFERENCES</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'BB19':</span> <span class="pre">('Boisse</span> <span class="pre">&amp;</span> <span class="pre">Bergeron</span> <span class="pre">2019',</span> <span class="pre">'Boisse</span> <span class="pre">P.,</span> <span class="pre">Bergeron</span> <span class="pre">J.</span> <span class="pre">2019,</span> <span class="pre">A&amp;A</span> <span class="pre">622,</span> <span class="pre">A140'),</span> <span class="pre">'C20':</span> <span class="pre">('Cupani</span> <span class="pre">et</span> <span class="pre">al.</span> <span class="pre">2020',</span> <span class="pre">'Cupani</span> <span class="pre">G.</span> <span class="pre">et</span> <span class="pre">al.</span> <span class="pre">2020,</span> <span class="pre">Proc.</span> <span class="pre">SPIE</span> <span class="pre">11452,</span> <span class="pre">114521U'),</span> <span class="pre">'C26':</span> <span class="pre">('Cupani</span> <span class="pre">et</span> <span class="pre">al.</span> <span class="pre">2026',</span> <span class="pre">'Cupani</span> <span class="pre">G.</span> <span class="pre">et</span> <span class="pre">al.</span> <span class="pre">2026,</span> <span class="pre">Proc.</span> <span class="pre">SPIE</span> <span class="pre">14155,</span> <span class="pre">141551X,</span> <span class="pre">doi:10.1117/12.3101756'),</span> <span class="pre">'K14':</span> <span class="pre">('Kisielius</span> <span class="pre">et</span> <span class="pre">al.</span> <span class="pre">2014',</span> <span class="pre">'Kisielius</span> <span class="pre">R.</span> <span class="pre">et</span> <span class="pre">al.</span> <span class="pre">2014,</span> <span class="pre">ApJ</span> <span class="pre">780,</span> <span class="pre">76'),</span> <span class="pre">'K15':</span> <span class="pre">('Kisielius</span> <span class="pre">et</span> <span class="pre">al.</span> <span class="pre">2015',</span> <span class="pre">'Kisielius</span> <span class="pre">R.</span> <span class="pre">et</span> <span class="pre">al.</span> <span class="pre">2015,</span> <span class="pre">ApJ</span> <span class="pre">804,</span> <span class="pre">76'),</span> <span class="pre">'M03':</span> <span class="pre">('Morton</span> <span class="pre">2003',</span> <span class="pre">'Morton</span> <span class="pre">D.</span> <span class="pre">C.</span> <span class="pre">2003,</span> <span class="pre">ApJS</span> <span class="pre">149,</span> <span class="pre">205'),</span> <span class="pre">'PA04':</span> <span class="pre">('Petitjean</span> <span class="pre">&amp;</span> <span class="pre">Aracil</span> <span class="pre">2004',</span> <span class="pre">'Petitjean</span> <span class="pre">P.,</span> <span class="pre">Aracil</span> <span class="pre">B.</span> <span class="pre">2004,</span> <span class="pre">A&amp;A</span> <span class="pre">422,</span> <span class="pre">523'),</span> <span class="pre">'SciPy':</span> <span class="pre">('Virtanen</span> <span class="pre">et</span> <span class="pre">al.</span> <span class="pre">2020',</span> <span class="pre">'Virtanen</span> <span class="pre">P.</span> <span class="pre">et</span> <span class="pre">al.</span> <span class="pre">2020,</span> <span class="pre">Nature</span> <span class="pre">Methods</span> <span class="pre">17,</span> <span class="pre">261'),</span> <span class="pre">'V1':</span> <span class="pre">('the</span> <span class="pre">table</span> <span class="pre">of</span> <span class="pre">Astrocook</span> <span class="pre">1,</span> <span class="pre">original</span> <span class="pre">source</span> <span class="pre">not</span> <span class="pre">recorded',</span> <span class="pre">None),</span> <span class="pre">'V2':</span> <span class="pre">('the</span> <span class="pre">table</span> <span class="pre">of</span> <span class="pre">Astrocook</span> <span class="pre">2.0-2.1,</span> <span class="pre">original</span> <span class="pre">source</span> <span class="pre">not</span> <span class="pre">recorded',</span> <span class="pre">None),</span> <span class="pre">'VPFIT':</span> <span class="pre">('the</span> <span class="pre">atom.dat</span> <span class="pre">file</span> <span class="pre">of</span> <span class="pre">VPFIT;</span> <span class="pre">Carswell</span> <span class="pre">&amp;</span> <span class="pre">Webb</span> <span class="pre">2014',</span> <span class="pre">'Carswell</span> <span class="pre">R.</span> <span class="pre">F.,</span> <span class="pre">Webb</span> <span class="pre">J.</span> <span class="pre">K.</span> <span class="pre">2014,</span> <span class="pre">Astrophysics</span> <span class="pre">Source</span> <span class="pre">Code</span> <span class="pre">Library,</span> <span class="pre">ascl:1408.015'),</span> <span class="pre">'dynesty':</span> <span class="pre">('Speagle</span> <span class="pre">2020',</span> <span class="pre">'Speagle</span> <span class="pre">J.</span> <span class="pre">S.</span> <span class="pre">2020,</span> <span class="pre">MNRAS</span> <span class="pre">493,</span> <span class="pre">3132'),</span> <span class="pre">'emcee':</span> <span class="pre">('Foreman-Mackey</span> <span class="pre">et</span> <span class="pre">al.</span> <span class="pre">2013',</span> <span class="pre">'Foreman-Mackey</span> <span class="pre">D.</span> <span class="pre">et</span> <span class="pre">al.</span> <span class="pre">2013,</span> <span class="pre">PASP</span> <span class="pre">125,</span> <span class="pre">306')}</span></span><a class="headerlink" href="#astrocook.methods_text.REFERENCES" title="Link to this definition">#</a></dt>
+<dd><p>key -&gt; (the citation in the text, the entry of
+the list of references). The keys of the atomic data are those of the
+table (<code class="docutils literal notranslate"><span class="pre">astrocook/data/atomic_data.ecsv</span></code>, docs page <em>Atomic Data</em>); a
+test checks that every key of the table is here.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The works the texts cite</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="astrocook.methods_text.SOFTWARE_REFERENCE">
+<span class="sig-prename descclassname"><span class="pre">astrocook.methods_text.</span></span><span class="sig-name descname"><span class="pre">SOFTWARE_REFERENCE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'C20'</span></span><a class="headerlink" href="#astrocook.methods_text.SOFTWARE_REFERENCE" title="Link to this definition">#</a></dt>
+<dd><p>The key of the work that describes Astrocook, cited by every text</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="astrocook.methods_text.FIT_REFERENCE">
+<span class="sig-prename descclassname"><span class="pre">astrocook.methods_text.</span></span><span class="sig-name descname"><span class="pre">FIT_REFERENCE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'SciPy'</span></span><a class="headerlink" href="#astrocook.methods_text.FIT_REFERENCE" title="Link to this definition">#</a></dt>
+<dd><p>The key whose presence among the references of the recipes run says that
+Voigt profiles were fitted (the closing paragraph says how)</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="astrocook.methods_text.COLUMN_NAMES">
+<span class="sig-prename descclassname"><span class="pre">astrocook.methods_text.</span></span><span class="sig-name descname"><span class="pre">COLUMN_NAMES</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'abs_ids':</span> <span class="pre">None,</span> <span class="pre">'abs_mask':</span> <span class="pre">'the</span> <span class="pre">mask</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">absorbed</span> <span class="pre">pixels',</span> <span class="pre">'cont':</span> <span class="pre">'the</span> <span class="pre">continuum',</span> <span class="pre">'cont_pl':</span> <span class="pre">'the</span> <span class="pre">power-law</span> <span class="pre">continuum</span> <span class="pre">(cont_pl)',</span> <span class="pre">'dy':</span> <span class="pre">'the</span> <span class="pre">error</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">flux',</span> <span class="pre">'fit_mask':</span> <span class="pre">None,</span> <span class="pre">'model':</span> <span class="pre">'the</span> <span class="pre">model',</span> <span class="pre">'resol':</span> <span class="pre">None,</span> <span class="pre">'x':</span> <span class="pre">'the</span> <span class="pre">wavelengths',</span> <span class="pre">'y':</span> <span class="pre">'the</span> <span class="pre">flux'}</span></span><a class="headerlink" href="#astrocook.methods_text.COLUMN_NAMES" title="Link to this definition">#</a></dt>
+<dd><p>not named (they
+follow from what the text says, e.g. the resolution of Set properties)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>How the text names the columns of the spectrum; None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="astrocook.methods_text.FLAG_NAMES">
+<span class="sig-prename descclassname"><span class="pre">astrocook.methods_text.</span></span><span class="sig-name descname"><span class="pre">FLAG_NAMES</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'b_at_lower_bound':</span> <span class="pre">'b</span> <span class="pre">at</span> <span class="pre">the</span> <span class="pre">lower</span> <span class="pre">bound</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">fit',</span> <span class="pre">'b_at_upper_bound':</span> <span class="pre">'b</span> <span class="pre">at</span> <span class="pre">the</span> <span class="pre">upper</span> <span class="pre">bound</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">fit',</span> <span class="pre">'logN_at_lower_bound':</span> <span class="pre">'log</span> <span class="pre">N</span> <span class="pre">at</span> <span class="pre">the</span> <span class="pre">lower</span> <span class="pre">bound</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">fit',</span> <span class="pre">'logN_at_upper_bound':</span> <span class="pre">'log</span> <span class="pre">N</span> <span class="pre">at</span> <span class="pre">the</span> <span class="pre">upper</span> <span class="pre">bound</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">fit',</span> <span class="pre">'nan_errors':</span> <span class="pre">'no</span> <span class="pre">uncertainties</span> <span class="pre">(they</span> <span class="pre">could</span> <span class="pre">not</span> <span class="pre">be</span> <span class="pre">computed)',</span> <span class="pre">'not_fitted':</span> <span class="pre">'the</span> <span class="pre">values</span> <span class="pre">from</span> <span class="pre">before</span> <span class="pre">the</span> <span class="pre">fit</span> <span class="pre">(the</span> <span class="pre">fit</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">group</span> <span class="pre">failed)',</span> <span class="pre">'z_at_window':</span> <span class="pre">'z</span> <span class="pre">at</span> <span class="pre">the</span> <span class="pre">edge</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">window</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">fit'}</span></span><a class="headerlink" href="#astrocook.methods_text.FLAG_NAMES" title="Link to this definition">#</a></dt>
+<dd><p>How the text names the flags the fit leaves on the components
+(<code class="docutils literal notranslate"><span class="pre">voigt_fitter.COMPONENT_FLAGS</span></code>, and <code class="docutils literal notranslate"><span class="pre">not_fitted</span></code> of Refit all)</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="astrocook.methods_text.NOTES_LEFT_OUT">
+<span class="sig-prename descclassname"><span class="pre">astrocook.methods_text.</span></span><span class="sig-name descname"><span class="pre">NOTES_LEFT_OUT</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('gap_seen',)</span></span><a class="headerlink" href="#astrocook.methods_text.NOTES_LEFT_OUT" title="Link to this definition">#</a></dt>
+<dd><p>The kinds of notes left out of the text</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.methods_text.fmt">
+<span class="sig-prename descclassname"><span class="pre">astrocook.methods_text.</span></span><span class="sig-name descname"><span class="pre">fmt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../modules/astrocook/methods_text.html#fmt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.methods_text.fmt" title="Link to this definition">#</a></dt>
+<dd><p>A value of a parameter as the text writes it: <code class="docutils literal notranslate"><span class="pre">5000.0</span></code> as
+<code class="docutils literal notranslate"><span class="pre">5000</span></code>, a list as its items separated by commas.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.methods_text.given">
+<span class="sig-prename descclassname"><span class="pre">astrocook.methods_text.</span></span><span class="sig-name descname"><span class="pre">given</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../modules/astrocook/methods_text.html#given"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.methods_text.given" title="Link to this definition">#</a></dt>
+<dd><p>The value says something: not None, empty, ‘None’ or ‘_current_’.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="astrocook.methods_text.MethodsValues">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">astrocook.methods_text.</span></span><span class="sig-name descname"><span class="pre">MethodsValues</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">menu</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/methods_text.html#MethodsValues"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.methods_text.MethodsValues" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>The parameters of a log entry, as the <code class="docutils literal notranslate"><span class="pre">methods</span></code> of the registry read
+them: <code class="docutils literal notranslate"><span class="pre">p['kappa']</span></code> is the value as text (<a class="reference internal" href="#astrocook.methods_text.fmt" title="astrocook.methods_text.fmt"><code class="xref py py-func docutils literal notranslate"><span class="pre">fmt()</span></code></a>), <code class="docutils literal notranslate"><span class="pre">p.raw('kappa')</span></code>
+the value as logged, <code class="docutils literal notranslate"><span class="pre">p.menu</span></code> the menu of the recipe in parentheses
+(with a space before it) or “”. The parameters read are remembered: the
+others that differ from their defaults are listed after the text.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.methods_text.MethodsValues.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">menu</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/methods_text.html#MethodsValues.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.methods_text.MethodsValues.__init__" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.methods_text.MethodsValues.used">
+<span class="sig-name descname"><span class="pre">used</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">set</span></span><a class="headerlink" href="#astrocook.methods_text.MethodsValues.used" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.methods_text.MethodsValues.raw">
+<span class="sig-name descname"><span class="pre">raw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="reference internal" href="../modules/astrocook/methods_text.html#MethodsValues.raw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.methods_text.MethodsValues.raw" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.methods_text.MethodsValues.given">
+<span class="sig-name descname"><span class="pre">given</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../modules/astrocook/methods_text.html#MethodsValues.given"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.methods_text.MethodsValues.given" title="Link to this definition">#</a></dt>
+<dd><p>The parameter has a value that says something (<a class="reference internal" href="#astrocook.methods_text.given" title="astrocook.methods_text.given"><code class="xref py py-func docutils literal notranslate"><span class="pre">given()</span></code></a>).</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="astrocook.methods_text.REGION_WORDS">
+<span class="sig-prename descclassname"><span class="pre">astrocook.methods_text.</span></span><span class="sig-name descname"><span class="pre">REGION_WORDS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'all_ly_forest':</span> <span class="pre">'in</span> <span class="pre">the</span> <span class="pre">Lyman</span> <span class="pre">forest</span> <span class="pre">(from</span> <span class="pre">the</span> <span class="pre">Lyman</span> <span class="pre">limit</span> <span class="pre">to</span> <span class="pre">Lyman-alpha)',</span> <span class="pre">'lya_forest':</span> <span class="pre">'in</span> <span class="pre">the</span> <span class="pre">Lyman-alpha</span> <span class="pre">forest',</span> <span class="pre">'red_side':</span> <span class="pre">'redward</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">Lyman-alpha</span> <span class="pre">emission'}</span></span><a class="headerlink" href="#astrocook.methods_text.REGION_WORDS" title="Link to this definition">#</a></dt>
+<dd><p>The regions of the spectrum, as the parameters name them</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.methods_text.region_words">
+<span class="sig-prename descclassname"><span class="pre">astrocook.methods_text.</span></span><span class="sig-name descname"><span class="pre">region_words</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">region</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">before</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'</span> <span class="pre">'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../modules/astrocook/methods_text.html#region_words"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.methods_text.region_words" title="Link to this definition">#</a></dt>
+<dd><p>`` redward of the Lyman-alpha emission`` for <code class="docutils literal notranslate"><span class="pre">'red_side'</span></code>; “” for
+no region.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.methods_text.fit_bounds">
+<span class="sig-prename descclassname"><span class="pre">astrocook.methods_text.</span></span><span class="sig-name descname"><span class="pre">fit_bounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#astrocook.methods_text.MethodsValues" title="astrocook.methods_text.MethodsValues"><span class="pre">MethodsValues</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../modules/astrocook/methods_text.html#fit_bounds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.methods_text.fit_bounds" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">b</span> <span class="pre">&lt;=</span> <span class="pre">50</span> <span class="pre">km/s,</span> <span class="pre">log</span> <span class="pre">N</span> <span class="pre">&lt;=</span> <span class="pre">19</span> <span class="pre">and</span> <span class="pre">the</span> <span class="pre">redshift</span> <span class="pre">free</span> <span class="pre">within</span> <span class="pre">+-20</span> <span class="pre">km/s</span></code>,
+from the parameters <code class="docutils literal notranslate"><span class="pre">max_b</span></code>, <code class="docutils literal notranslate"><span class="pre">max_logN</span></code> and <code class="docutils literal notranslate"><span class="pre">z_window_kms</span></code> that the
+recipe has.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.methods_text.mask_words">
+<span class="sig-prename descclassname"><span class="pre">astrocook.methods_text.</span></span><span class="sig-name descname"><span class="pre">mask_words</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#astrocook.methods_text.MethodsValues" title="astrocook.methods_text.MethodsValues"><span class="pre">MethodsValues</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../modules/astrocook/methods_text.html#mask_words"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.methods_text.mask_words" title="Link to this definition">#</a></dt>
+<dd><p>The mask of the absorbed pixels that a recipe used (its parameter
+<code class="docutils literal notranslate"><span class="pre">mask</span></code>, and <code class="docutils literal notranslate"><span class="pre">mask_col</span></code> if it has one).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.methods_text.file_name">
+<span class="sig-prename descclassname"><span class="pre">astrocook.methods_text.</span></span><span class="sig-name descname"><span class="pre">file_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#astrocook.methods_text.MethodsValues" title="astrocook.methods_text.MethodsValues"><span class="pre">MethodsValues</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../modules/astrocook/methods_text.html#file_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.methods_text.file_name" title="Link to this definition">#</a></dt>
+<dd><p>The name of a file, without its folder (which may say who the user
+is, and means nothing to the reader).</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="astrocook.methods_text.MethodsParagraph">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">astrocook.methods_text.</span></span><span class="sig-name descname"><span class="pre">MethodsParagraph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kind</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recipe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">entry</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/methods_text.html#MethodsParagraph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.methods_text.MethodsParagraph" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A paragraph of the text.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.methods_text.MethodsParagraph.text">
+<span class="sig-name descname"><span class="pre">text</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#astrocook.methods_text.MethodsParagraph.text" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.methods_text.MethodsParagraph.kind">
+<span class="sig-name descname"><span class="pre">kind</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#astrocook.methods_text.MethodsParagraph.kind" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">opening</span></code>, <code class="docutils literal notranslate"><span class="pre">step</span></code> (a recipe of the log), <code class="docutils literal notranslate"><span class="pre">note</span></code> (notes written
+before the first recipe) or <code class="docutils literal notranslate"><span class="pre">closing</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.methods_text.MethodsParagraph.recipe">
+<span class="sig-name descname"><span class="pre">recipe</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#astrocook.methods_text.MethodsParagraph.recipe" title="Link to this definition">#</a></dt>
+<dd><p>The recipe of a step, as <code class="docutils literal notranslate"><span class="pre">category.name</span></code></p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.methods_text.MethodsParagraph.entry">
+<span class="sig-name descname"><span class="pre">entry</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#astrocook.methods_text.MethodsParagraph.entry" title="Link to this definition">#</a></dt>
+<dd><p>The index of the log entry of a step</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.methods_text.MethodsParagraph.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kind</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recipe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">entry</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#astrocook.methods_text.MethodsParagraph.__init__" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="astrocook.methods_text.MethodsText">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">astrocook.methods_text.</span></span><span class="sig-name descname"><span class="pre">MethodsText</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">paragraphs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#astrocook.methods_text.MethodsParagraph" title="astrocook.methods_text.MethodsParagraph"><span class="pre">MethodsParagraph</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">references</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/methods_text.html#MethodsText"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.methods_text.MethodsText" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>The text of the methods of a session (<a class="reference internal" href="#astrocook.methods_text.methods_text" title="astrocook.methods_text.methods_text"><code class="xref py py-func docutils literal notranslate"><span class="pre">methods_text()</span></code></a>).</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.methods_text.MethodsText.paragraphs">
+<span class="sig-name descname"><span class="pre">paragraphs</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#astrocook.methods_text.MethodsParagraph" title="astrocook.methods_text.MethodsParagraph"><span class="pre">MethodsParagraph</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#astrocook.methods_text.MethodsText.paragraphs" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.methods_text.MethodsText.references">
+<span class="sig-name descname"><span class="pre">references</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#astrocook.methods_text.MethodsText.references" title="Link to this definition">#</a></dt>
+<dd><p>The list of references, one entry each, sorted</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="astrocook.methods_text.MethodsText.text">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">text</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#astrocook.methods_text.MethodsText.text" title="Link to this definition">#</a></dt>
+<dd><p>The paragraphs separated by blank lines, then the references.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.methods_text.MethodsText.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">paragraphs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#astrocook.methods_text.MethodsParagraph" title="astrocook.methods_text.MethodsParagraph"><span class="pre">MethodsParagraph</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">references</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#astrocook.methods_text.MethodsText.__init__" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.methods_text.series_list">
+<span class="sig-prename descclassname"><span class="pre">astrocook.methods_text.</span></span><span class="sig-name descname"><span class="pre">series_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../modules/astrocook/methods_text.html#series_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.methods_text.series_list" title="Link to this definition">#</a></dt>
+<dd><p>A list of series separated by commas (a parameter, e.g.
+<code class="docutils literal notranslate"><span class="pre">'CIV,SiIV,MgII'</span></code>) as <code class="docutils literal notranslate"><span class="pre">C</span> <span class="pre">IV,</span> <span class="pre">Si</span> <span class="pre">IV</span> <span class="pre">and</span> <span class="pre">Mg</span> <span class="pre">II</span></code>.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.methods_text.series_name">
+<span class="sig-prename descclassname"><span class="pre">astrocook.methods_text.</span></span><span class="sig-name descname"><span class="pre">series_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">series</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../modules/astrocook/methods_text.html#series_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.methods_text.series_name" title="Link to this definition">#</a></dt>
+<dd><p>A series as a paper writes it: <code class="docutils literal notranslate"><span class="pre">CIV</span></code> as <code class="docutils literal notranslate"><span class="pre">C</span> <span class="pre">IV</span></code>, <code class="docutils literal notranslate"><span class="pre">CIV_1548</span></code> as
+<code class="docutils literal notranslate"><span class="pre">C</span> <span class="pre">IV</span> <span class="pre">1548</span></code>, <code class="docutils literal notranslate"><span class="pre">Ly_a</span></code> as <code class="docutils literal notranslate"><span class="pre">Ly-alpha</span></code>.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.methods_text.changes_text">
+<span class="sig-prename descclassname"><span class="pre">astrocook.methods_text.</span></span><span class="sig-name descname"><span class="pre">changes_text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">before</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">after</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../modules/astrocook/methods_text.html#changes_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.methods_text.changes_text" title="Link to this definition">#</a></dt>
+<dd><p>What changed from the state <code class="docutils literal notranslate"><span class="pre">before</span></code> to <code class="docutils literal notranslate"><span class="pre">after</span></code>, in sentences.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.methods_text.atomic_data_sentence">
+<span class="sig-prename descclassname"><span class="pre">astrocook.methods_text.</span></span><span class="sig-name descname"><span class="pre">atomic_data_sentence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../modules/astrocook/methods_text.html#atomic_data_sentence"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.methods_text.atomic_data_sentence" title="Link to this definition">#</a></dt>
+<dd><p>Where the atomic data of the transitions of the components of
+<code class="docutils literal notranslate"><span class="pre">state</span></code> come from, and the keys of the works it cites. Only the
+transitions that fall in the spectrum are counted (all, if the x axis
+is not a wavelength).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.methods_text.methods_text">
+<span class="sig-prename descclassname"><span class="pre">astrocook.methods_text.</span></span><span class="sig-name descname"><span class="pre">methods_text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">menus</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.methods_text.MethodsText" title="astrocook.methods_text.MethodsText"><span class="pre">MethodsText</span></a></span></span><a class="reference internal" href="../modules/astrocook/methods_text.html#methods_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.methods_text.methods_text" title="Link to this definition">#</a></dt>
+<dd><p>The log of a session as the text of a methods section.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>source</strong> (<em>SessionHistory</em><em> or </em><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><em>SessionV2</em></a>) – A history (the states and the log, as the GUI and the MCP server
+keep them), or a session alone: then only the log is known, not what
+each recipe changed.</p></li>
+<li><p><strong>menus</strong> (<em>bool</em>) – Name the menu of each recipe, in parentheses (for who reruns the
+analysis in the GUI; not for a paper).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The paragraphs and the references; <code class="docutils literal notranslate"><span class="pre">.text</span></code> (or <code class="docutils literal notranslate"><span class="pre">str()</span></code>) is the
+text.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#astrocook.methods_text.MethodsText" title="astrocook.methods_text.MethodsText">MethodsText</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.methods_text.methods_file_name">
+<span class="sig-prename descclassname"><span class="pre">astrocook.methods_text.</span></span><span class="sig-name descname"><span class="pre">methods_file_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../modules/astrocook/methods_text.html#methods_file_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.methods_text.methods_file_name" title="Link to this definition">#</a></dt>
+<dd><p>A file name for the text of a session: <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;_methods.txt</span></code>.</p>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal" tabindex="-1"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.REFERENCES"><code class="docutils literal notranslate"><span class="pre">REFERENCES</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.SOFTWARE_REFERENCE"><code class="docutils literal notranslate"><span class="pre">SOFTWARE_REFERENCE</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.FIT_REFERENCE"><code class="docutils literal notranslate"><span class="pre">FIT_REFERENCE</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.COLUMN_NAMES"><code class="docutils literal notranslate"><span class="pre">COLUMN_NAMES</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.FLAG_NAMES"><code class="docutils literal notranslate"><span class="pre">FLAG_NAMES</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.NOTES_LEFT_OUT"><code class="docutils literal notranslate"><span class="pre">NOTES_LEFT_OUT</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.fmt"><code class="docutils literal notranslate"><span class="pre">fmt()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.given"><code class="docutils literal notranslate"><span class="pre">given()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.MethodsValues"><code class="docutils literal notranslate"><span class="pre">MethodsValues</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.MethodsValues.__init__"><code class="docutils literal notranslate"><span class="pre">MethodsValues.__init__()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.MethodsValues.used"><code class="docutils literal notranslate"><span class="pre">MethodsValues.used</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.MethodsValues.raw"><code class="docutils literal notranslate"><span class="pre">MethodsValues.raw()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.MethodsValues.given"><code class="docutils literal notranslate"><span class="pre">MethodsValues.given()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.REGION_WORDS"><code class="docutils literal notranslate"><span class="pre">REGION_WORDS</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.region_words"><code class="docutils literal notranslate"><span class="pre">region_words()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.fit_bounds"><code class="docutils literal notranslate"><span class="pre">fit_bounds()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.mask_words"><code class="docutils literal notranslate"><span class="pre">mask_words()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.file_name"><code class="docutils literal notranslate"><span class="pre">file_name()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.MethodsParagraph"><code class="docutils literal notranslate"><span class="pre">MethodsParagraph</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.MethodsParagraph.text"><code class="docutils literal notranslate"><span class="pre">MethodsParagraph.text</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.MethodsParagraph.kind"><code class="docutils literal notranslate"><span class="pre">MethodsParagraph.kind</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.MethodsParagraph.recipe"><code class="docutils literal notranslate"><span class="pre">MethodsParagraph.recipe</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.MethodsParagraph.entry"><code class="docutils literal notranslate"><span class="pre">MethodsParagraph.entry</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.MethodsParagraph.__init__"><code class="docutils literal notranslate"><span class="pre">MethodsParagraph.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.MethodsText"><code class="docutils literal notranslate"><span class="pre">MethodsText</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.MethodsText.paragraphs"><code class="docutils literal notranslate"><span class="pre">MethodsText.paragraphs</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.MethodsText.references"><code class="docutils literal notranslate"><span class="pre">MethodsText.references</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.MethodsText.text"><code class="docutils literal notranslate"><span class="pre">MethodsText.text</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.MethodsText.__init__"><code class="docutils literal notranslate"><span class="pre">MethodsText.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.series_list"><code class="docutils literal notranslate"><span class="pre">series_list()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.series_name"><code class="docutils literal notranslate"><span class="pre">series_name()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.changes_text"><code class="docutils literal notranslate"><span class="pre">changes_text()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.atomic_data_sentence"><code class="docutils literal notranslate"><span class="pre">atomic_data_sentence()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.methods_text"><code class="docutils literal notranslate"><span class="pre">methods_text()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.methods_file_name"><code class="docutils literal notranslate"><span class="pre">methods_file_name()</span></code></a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../sources/api/astrocook.methods_text.rst.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8"></script>
+<script defer src="../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Guido Cupani.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.2.0.
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.24.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

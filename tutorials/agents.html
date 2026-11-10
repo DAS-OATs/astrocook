@@ -7,7 +7,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Using Astrocook from an AI Agent &#8212; Astrocook 2.5.0 documentation</title>
+    <title>Using Astrocook from an AI Agent &#8212; Astrocook 2.6.0 documentation</title>
   
   
   
@@ -30,7 +30,7 @@
 <link href="../static/styles/pydata-sphinx-theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../static/pygments.css?v=8f2a1f02" />
-    <link rel="stylesheet" type="text/css" href="../static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../static/sphinx-design.min.css?v=6a604523" />
     <link rel="stylesheet" type="text/css" href="../static/css/custom.css?v=e8a3a7b7" />
   
   <!-- So that users can add custom icons -->
@@ -39,15 +39,15 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="../static/documentation_options.js?v=3c4615cf"></script>
+    <script src="../static/documentation_options.js?v=ae39cb24"></script>
     <script src="../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../static/sphinx_highlight.js?v=6ffebe34"></script>
-    <script src="../static/design-tabs.js?v=f930bc37"></script>
+    <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../static/design-tabs.js?v=fcb327ea"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/agents';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.5.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.6.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -59,7 +59,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.5.0" />
+  <meta name="docsearch:version" content="2.6.0" />
   
     
     <script src="../static/searchtools.js"></script>
@@ -503,11 +503,12 @@
                   
   <section class="tex2jax_ignore mathjax_ignore" id="using-astrocook-from-an-ai-agent">
 <h1>Using Astrocook from an AI Agent<a class="headerlink" href="#using-astrocook-from-an-ai-agent" title="Link to this heading">#</a></h1>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>This is a <strong>pilot</strong>: a few recipes only, to learn what an agent needs
-from Astrocook. Tools, parameters and outputs may change in later
-versions.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The server is complete in its design (every recipe is a tool, with tools
+to handle, inspect and follow the sessions), but young: tools, parameters
+and outputs may still change in later versions, and the automatic recipes
+have the limits listed in section 6.</p>
 </div>
 <p>An AI agent, such as <a class="reference external" href="https://claude.com/claude-code">Claude Code</a> or the
 Claude desktop app, can drive Astrocook for you: you ask in plain words
@@ -518,8 +519,9 @@ then review its work in the GUI.</p>
 an open standard for connecting AI applications to other programs.
 Astrocook provides an MCP <em>server</em>: a small program, <code class="docutils literal notranslate"><span class="pre">astrocook-mcp</span></code>,
 that the agent (the <em>client</em>) starts on your computer and that offers it
-a list of <em>tools</em>, each a recipe with a description and typed
-parameters. Everything runs locally: your data are read from your disk
+a list of <em>tools</em> (65 in this version): one for each recipe, with a
+description and typed parameters, and the tools that handle, inspect and
+show the sessions. Everything runs locally: your data are read from your disk
 and stay there, though what the tools return (summaries, not the
 spectra) is sent to the AI model, as anything else in the conversation.</p>
 <section id="installation">
@@ -532,7 +534,8 @@ extra (Python 3.12 or later, preferably in a virtual environment, see
 </div>
 <p>This also installs the <code class="docutils literal notranslate"><span class="pre">mcp</span></code> package (the official Python SDK of the
 protocol) and the <code class="docutils literal notranslate"><span class="pre">astrocook-mcp</span></code> command. The macOS app does not include
-the server.</p>
+the server. To run the server in a Docker
+container instead, without installing it, see section 2.1.</p>
 <p>Find the full path of the command, which the client needs (it does not
 see your virtual environment):</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">which</span> <span class="n">astrocook</span><span class="o">-</span><span class="n">mcp</span>     <span class="c1"># On Windows: where astrocook-mcp</span>
@@ -568,11 +571,73 @@ app:</p>
 <p><strong>Other clients:</strong> any MCP client that can start a local server over
 <em>stdio</em> works the same way: the command is <code class="docutils literal notranslate"><span class="pre">astrocook-mcp</span></code>, with no
 arguments.</p>
+<section id="running-the-server-in-docker">
+<h3>2.1 Running the Server in Docker<a class="headerlink" href="#running-the-server-in-docker" title="Link to this heading">#</a></h3>
+<p>If you would rather not install Python and the packages of Astrocook, the
+server can run in a <strong>Docker container</strong>. The image holds the server only,
+without the GUI (no PySide6, no Qt libraries: it is a small image, not the
+~1 GB of the full package), and the client starts it by itself each time.
+You need <a class="reference external" href="https://docs.docker.com/get-docker/">Docker</a> and the Astrocook
+repository.</p>
+<p>The image is <strong>not published</strong> yet (that waits for the license of the
+software): you build it once, from the folder of the repository:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">DAS</span><span class="o">-</span><span class="n">OATs</span><span class="o">/</span><span class="n">astrocook</span><span class="o">.</span><span class="n">git</span>
+<span class="n">cd</span> <span class="n">astrocook</span>
+<span class="n">docker</span> <span class="n">build</span> <span class="o">-</span><span class="n">t</span> <span class="n">astrocook</span><span class="o">-</span><span class="n">mcp</span> <span class="o">.</span>
+</pre></div>
+</div>
+<p>The container does not see your disk, only the folders you mount in it
+with <code class="docutils literal notranslate"><span class="pre">-v</span></code>. Choose the folder with your spectra and give it as <code class="docutils literal notranslate"><span class="pre">&lt;data&gt;</span></code>
+(a full path); inside the container it is <code class="docutils literal notranslate"><span class="pre">/data</span></code>, and the agent must use
+<code class="docutils literal notranslate"><span class="pre">/data/...</span></code> for every path (<code class="docutils literal notranslate"><span class="pre">/data/spectrum.fits</span></code>, <code class="docutils literal notranslate"><span class="pre">/data/out.acs2</span></code>).
+What the server saves there stays on your disk.</p>
+<p><strong>Claude Code:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">claude</span> <span class="n">mcp</span> <span class="n">add</span> <span class="n">astrocook</span> <span class="o">--</span> <span class="n">docker</span> <span class="n">run</span> <span class="o">-</span><span class="n">i</span> <span class="o">--</span><span class="n">rm</span> <span class="o">-</span><span class="n">v</span> <span class="o">&lt;</span><span class="n">data</span><span class="o">&gt;</span><span class="p">:</span><span class="o">/</span><span class="n">data</span> <span class="n">astrocook</span><span class="o">-</span><span class="n">mcp</span>
+</pre></div>
+</div>
+<p><strong>Claude desktop app</strong> (the configuration file of section 2):</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">"mcpServers"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"astrocook"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">"command"</span><span class="p">:</span><span class="w"> </span><span class="s2">"docker"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"args"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"run"</span><span class="p">,</span><span class="w"> </span><span class="s2">"-i"</span><span class="p">,</span><span class="w"> </span><span class="s2">"--rm"</span><span class="p">,</span><span class="w"> </span><span class="s2">"-v"</span><span class="p">,</span><span class="w"> </span><span class="s2">"&lt;data&gt;:/data"</span><span class="p">,</span><span class="w"> </span><span class="s2">"astrocook-mcp"</span><span class="p">]</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>On Windows write the folder as <code class="docutils literal notranslate"><span class="pre">C:\\Users\\me\\spectra</span></code> in the JSON file
+(backslashes doubled), or <code class="docutils literal notranslate"><span class="pre">C:/Users/me/spectra</span></code>.</p>
+<p><strong>Other clients:</strong> the command is <code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">run</span> <span class="pre">-i</span> <span class="pre">--rm</span> <span class="pre">-v</span> <span class="pre">&lt;data&gt;:/data</span> <span class="pre">astrocook-mcp</span></code>. Keep <code class="docutils literal notranslate"><span class="pre">-i</span></code> (the server speaks over standard input and
+output) and do not add <code class="docutils literal notranslate"><span class="pre">-t</span></code>.</p>
+<p>What is different from the installation of section 1:</p>
+<ul class="simple">
+<li><p>the tools are the same, and so are the sessions, the log and the
+history; the recipes run with the same results;</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">gui_open</span></code> does not work</strong>: the container has no display and no GUI,
+and the tool says so. Ask the agent to save the session
+(<code class="docutils literal notranslate"><span class="pre">session_save</span></code>, into <code class="docutils literal notranslate"><span class="pre">/data</span></code>) and open the archive in Astrocook on
+your computer, as in section 5, but the GUI will not follow the session
+as the agent works on it;</p></li>
+<li><p>the file of the gaps (the lacks of the recipes that the server records,
+see section 3) is <code class="docutils literal notranslate"><span class="pre">.astrocook-gaps.jsonl</span></code> in your data folder; the
+<code class="docutils literal notranslate"><span class="pre">astrocook-gaps</span></code> command of an installation reads it with <code class="docutils literal notranslate"><span class="pre">--file</span></code>;</p></li>
+<li><p>to update, pull the repository and build the image again; the files the
+agent can reach are only those of the folder you mounted.</p></li>
+</ul>
+</section>
 </section>
 <section id="the-tools">
 <h2>3. The Tools<a class="headerlink" href="#the-tools" title="Link to this heading">#</a></h2>
-<p>Each tool is named after the recipe it runs, prefixed with its menu, and
-uses the same defaults as the recipe dialog of the GUI.</p>
+<p><strong>Every recipe is a tool</strong>, named after the recipe, prefixed with its
+menu: <em>Continuum &gt; Auto-estimate Continuum</em> is <code class="docutils literal notranslate"><span class="pre">continuum_estimate_auto</span></code>,
+<em>Absorbers &gt; Auto-detect Doublets</em> is <code class="docutils literal notranslate"><span class="pre">absorbers_doublets_auto</span></code>, and so on
+for the menus <em>File</em>, <em>Edit</em>, <em>Flux</em>, <em>Continuum</em> and <em>Absorbers</em>, also the
+recipes that the GUI runs from the System Inspector (e.g.
+<code class="docutils literal notranslate"><span class="pre">absorbers_fit_component</span></code>). The tools are made from the same description
+of the recipes as the dialogs of the GUI: the same parameters, defaults,
+bounds and texts, and a recipe added to Astrocook becomes a tool by
+itself. Other tools handle the sessions:</p>
 <div class="pst-scrollable-table-container"><table class="table">
 <thead>
 <tr class="row-odd"><th class="head"><p>Tool</p></th>
@@ -583,21 +648,223 @@ uses the same defaults as the recipe dialog of the GUI.</p>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">session_open</span></code></p></td>
 <td><p>Opens a spectrum or a session file (<code class="docutils literal notranslate"><span class="pre">.acs2</span></code>, V1 <code class="docutils literal notranslate"><span class="pre">.acs</span></code>) as a new session; optionally sets z_em and the resolving power (<em>Edit &gt; Set Properties</em>).</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">continuum_estimate_auto</span></code></p></td>
-<td><p><em>Continuum &gt; Auto-estimate Continuum</em>. Returns the fraction of absorbed pixels (in the Lyman-alpha forest and on the red side) and the S/N.</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">absorbers_identify_lines</span></code></p></td>
-<td><p><em>Absorbers &gt; Identify Absorption Lines</em>, without creating components. Returns the identified regions with their candidate transitions and scores, and the candidate systems.</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">absorbers_doublets_auto</span></code></p></td>
-<td><p><em>Absorbers &gt; Auto-detect Doublets</em>: identifies and fits the CIV, SiIV and MgII doublets on the red side. Returns the new components, with errors, reduced chi2 and flags for the ones stuck at a bound of the fit.</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">session_save</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">session_save</span></code></p></td>
 <td><p>Saves the session as <code class="docutils literal notranslate"><span class="pre">.acs2</span></code>, with the original data and the session log.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">session_list</span></code></p></td>
+<td><p>Lists the open sessions: where each comes from, its spectrum in a few numbers, its history, whether it has changes not saved.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">session_describe</span></code></p></td>
+<td><p>Describes a session: the columns of the spectrum, the components per series, the log that came with the file.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">session_history</span></code></p></td>
+<td><p>Lists the states of a session: as opened, then one per recipe, with its parameters and what it changed.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">session_undo</span></code>, <code class="docutils literal notranslate"><span class="pre">session_redo</span></code></p></td>
+<td><p>Go back to the state before the last recipe (or several), and forward again, as <em>Edit &gt; Undo</em> and <em>Redo</em> in the GUI.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">session_duplicate</span></code></p></td>
+<td><p>Makes a copy of a session, with its history and log, to try something without touching the original.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">session_close</span></code></p></td>
+<td><p>Closes a session; refuses if it has changes not saved, unless asked to discard them.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">session_cancel</span></code></p></td>
+<td><p>Stops the recipe that is running (see “Cancelling a recipe” below); for the clients that do not send the cancellation by themselves.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">session_note</span></code></p></td>
+<td><p>Writes a note in the session log, at the current state: what the agent did or decided outside the tools; with <code class="docutils literal notranslate"><span class="pre">kind=&quot;gap&quot;</span></code>, a gap of the collection of recipes (see “Gaps” below).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">session_methods</span></code></p></td>
+<td><p>Writes the session log as the text of a methods section, in English (see “The log as text” below).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">gaps_summary</span></code></p></td>
+<td><p>Summarizes, grouped, the gaps recorded in your local file (see “Gaps” below).</p></td>
 </tr>
 </tbody>
 </table>
 </div>
+<p>Three tools let the agent look into a session, without changing it:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Tool</p></th>
+<th class="head"><p>What it does</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">components_list</span></code></p></td>
+<td><p>The absorption components, by redshift, with their errors, the reduced chi2 and flags of their last fit, their fit group (the components fitted together, as <em>Refit All</em> groups them), their velocity from the first of the group and their constraints (fixed or linked parameters); filters by series, redshift and flags, in pages.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">spectrum_read</span></code></p></td>
+<td><p>The columns of the spectrum in a range, as numbers; a long range is averaged in blocks of pixels (for reading only).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">spectrum_plot</span></code></p></td>
+<td><p>A plot of a range (PNG): the flux and its error, the continuum, the model, and a tick at each line of each component.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>And one shows a session to you, in the GUI:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Tool</p></th>
+<th class="head"><p>What it does</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">gui_open</span></code></p></td>
+<td><p>Opens a session in the Astrocook GUI, on the computer where the server runs, and keeps it up to date after every change (see “Watching the agent in the GUI” below).</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Nothing is lost.</strong> Every state of a session is kept, as in the GUI: if
+a recipe removes components (e.g. <em>Auto-detect Doublets</em> replaces those
+on the red side), its result says so, with the reason for each, and
+<code class="docutils literal notranslate"><span class="pre">session_undo</span></code> brings them back without running anything again. The log
+follows the state: a session saved after an undo replays without the
+recipe undone.</p>
+<p>Every recipe tool takes the <code class="docutils literal notranslate"><span class="pre">session_id</span></code> of the session to run on, the
+parameters of the recipe, and:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">provide_missing</span></code>: see “What a recipe needs” below;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">max_listed</span></code>: the maximum number of items in each list of the output;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">reason</span></code>: why the agent runs the recipe with these values, stored with
+the step in the session log.</p></li>
+</ul>
+<p><strong>The agent’s decisions in the log.</strong> The log is what you read when you
+review the work of an agent. Besides the recipes and their parameters, it
+holds the <code class="docutils literal notranslate"><span class="pre">reason</span></code> the agent gave for each recipe and the notes it wrote
+with <code class="docutils literal notranslate"><span class="pre">session_note</span></code>: what it did outside the tools (e.g. “z_em = 2.345
+from the peak of Ly-a, measured on the flux with my own code”), or what it
+saw. The instructions of the server ask the agent for both. A note is not
+a step: it makes no new state, the replay of the log skips it, and it is
+undone with the state it was written at. <code class="docutils literal notranslate"><span class="pre">session_history</span></code> shows the
+reason of each recipe and the notes of each state.</p>
+<p><strong>The log as text.</strong> <code class="docutils literal notranslate"><span class="pre">session_methods</span></code> writes the log of a session as the
+text of a methods section, ready to paste in a paper, as <em>File &gt; Export Log
+as Text</em> does in the GUI: one paragraph per recipe, with the reason the
+agent gave, what the recipe did (its parameters, the works it relies on),
+what it changed and the notes written there; then the fit, the sources of
+the atomic data of the transitions fitted, and the references. The recipes
+undone are left out; <code class="docutils literal notranslate"><span class="pre">menus=false</span></code> leaves out the menus of the GUI that
+follow each recipe. The text is made by Astrocook from the log, not by the
+agent: the same log gives the same text. So the reasons and notes are the
+only words of the agent in it: the instructions of the server tell the
+agent so.</p>
+<p><strong>Gaps.</strong> A gap is something the analysis needed and no recipe provided:
+the list of the gaps is where to direct the work on the recipes. Two
+sources. The agent declares one (<code class="docutils literal notranslate"><span class="pre">session_note</span></code> with <code class="docutils literal notranslate"><span class="pre">kind=&quot;gap&quot;</span></code>: what
+was needed and what it did instead, e.g. “Needed z_em: no recipe
+estimates it; measured the peak of Ly-a on the flux with my own code”)
+every time it works outside the tools; the instructions of the server ask
+for it. The server sees three kinds by itself: a prerequisite that no
+recipe estimates from the data (z_em and the resolution: they must be
+given), a tool that failed with an unexpected error on a valid request
+(not a wrong parameter, not a failure with a reason that the agent can act
+on), and a recipe whose result the agent undid with <code class="docutils literal notranslate"><span class="pre">session_undo</span></code> (which
+takes an optional <code class="docutils literal notranslate"><span class="pre">reason</span></code>: why). The gaps are kept with the session, in
+its log (the notes of kind <code class="docutils literal notranslate"><span class="pre">gap</span></code> and <code class="docutils literal notranslate"><span class="pre">gap_seen</span></code>, shown as <code class="docutils literal notranslate"><span class="pre">#</span> <span class="pre">gap:</span></code> in the
+Log Scripter), and appended to a file on your computer, one JSON line
+each: date, version, kind (<code class="docutils literal notranslate"><span class="pre">declared</span></code>, <code class="docutils literal notranslate"><span class="pre">prerequisite</span></code>, <code class="docutils literal notranslate"><span class="pre">failed</span></code>,
+<code class="docutils literal notranslate"><span class="pre">undone</span></code>), text and the name of the session; nothing else of yours, and
+the file is never sent anywhere. It is here:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>System</p></th>
+<th class="head"><p>File</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>macOS</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">~/Library/Application</span> <span class="pre">Support/Astrocook/gaps.jsonl</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Linux</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">$XDG_DATA_HOME/astrocook/gaps.jsonl</span></code>, or <code class="docutils literal notranslate"><span class="pre">~/.local/share/astrocook/gaps.jsonl</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Windows</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">%APPDATA%\Astrocook\gaps.jsonl</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Set the environment variable <code class="docutils literal notranslate"><span class="pre">ASTROCOOK_GAPS_FILE</span></code> to another path to move
+it, or to <code class="docutils literal notranslate"><span class="pre">off</span></code> to record nothing. The command <code class="docutils literal notranslate"><span class="pre">astrocook-gaps</span></code> (options
+<code class="docutils literal notranslate"><span class="pre">--since</span> <span class="pre">YYYY-MM-DD</span></code>, <code class="docutils literal notranslate"><span class="pre">--kind</span></code>, <code class="docutils literal notranslate"><span class="pre">--json</span></code>, <code class="docutils literal notranslate"><span class="pre">--path</span></code>) and the tool
+<code class="docutils literal notranslate"><span class="pre">gaps_summary</span></code> summarize the file, grouped by kind and text.</p>
+<p>It returns the session after the call (the spectrum in a few numbers, the
+number of log entries), what the recipe did in one line (<code class="docutils literal notranslate"><span class="pre">summary</span></code>) and
+what else is worth knowing (<code class="docutils literal notranslate"><span class="pre">notes</span></code>), the warnings, and what changed,
+listed: the components removed (with the reason, when the recipe gives
+one) and changed, the columns and properties of the session. Some results
+add a summary of their own: the continuum and the absorbed pixels after a
+recipe that makes a continuum, the regions and candidate systems after an
+identification, the new components (with errors, reduced chi2 and flags)
+after a fit.</p>
+<p>A recipe that opens new sessions in the GUI (e.g. <em>Edit &gt; Split</em>, or
+<em>Absorbers &gt; Identify Absorption Lines</em>) does so here too: the session it
+runs on does not change, and the result lists the new ones, each with its
+<code class="docutils literal notranslate"><span class="pre">session_id</span></code>, named after the original (<code class="docutils literal notranslate"><span class="pre">J0103-1305-1</span></code>, …). A parameter
+that names another open session (e.g. the reference of <em>Flux &gt; Equalize</em>)
+takes its <code class="docutils literal notranslate"><span class="pre">session_id</span></code>.</p>
+<p><strong>Progress.</strong> A recipe can take minutes. A client that asks for progress
+(the MCP progress token; most clients do for long calls) receives
+notifications while the recipe runs: the pipelines and the Bayesian fit
+report a percentage with the last line of their log (what the GUI shows
+under its progress bar), and every recipe, also those that report nothing
+in between, sends one notification when it starts and one when it ends,
+with the time it took. A recipe that reports nothing for 20 seconds sends a
+heartbeat (“Still running …”, with the time elapsed), so that a long
+recipe is not mistaken for a hang. While a recipe runs, the tools that read
+a session (<code class="docutils literal notranslate"><span class="pre">session_list</span></code>, <code class="docutils literal notranslate"><span class="pre">session_history</span></code>, <code class="docutils literal notranslate"><span class="pre">components_list</span></code>,
+<code class="docutils literal notranslate"><span class="pre">spectrum_plot</span></code>, …), <code class="docutils literal notranslate"><span class="pre">session_note</span></code> and <code class="docutils literal notranslate"><span class="pre">session_save</span></code> still answer, on
+the state before the recipe (<code class="docutils literal notranslate"><span class="pre">session_list</span></code> says what is running); the
+other recipes and the tools that change the states wait for it to end.</p>
+<p><strong>Cancelling a recipe.</strong> A client that cancels its call (the MCP
+cancellation, which most clients send when the user interrupts the agent or
+a call times out) stops the recipe; for a client that does not, the tool
+<code class="docutils literal notranslate"><span class="pre">session_cancel</span></code> does the same. The recipe stops at its next step (a group
+of a fit, a trial ion of <em>Check Associated Metals</em>, at most one fit) and
+its call ends with an error: nothing of the recipe is kept, and the
+session stays as it was before it. The Stop button of the progress dialog
+of the GUI works in the same way.</p>
+<p><strong>Watching the agent in the GUI.</strong> When the agent calls <code class="docutils literal notranslate"><span class="pre">gui_open</span></code> on a
+session, the Astrocook GUI opens on it, and after every change of the
+session (a recipe, an undo or redo, a note) it shows the new state: you
+see the analysis as it goes. The view stays as you left it: the range and
+zoom of the plot, the System Inspector open with its selected row, the
+session shown. A banner over the plot says that the session is
+<em>followed</em>: it is <strong>read only</strong> in the GUI, so that you and the agent do
+not change it at the same time; nothing you do in the GUI reaches the
+agent. The recipes that change it, the continuum editor, Undo and Redo,
+the scripts and renaming are refused, with the offer of an editable copy;
+<strong>Make Editable Copy</strong> in the banner makes one: a new session with the
+current state and the log of the agent (its reasons and notes), which you
+can change, and which the agent does not see or change. Saving, exporting
+and the recipes that open a new session (e.g. <em>Edit &gt; Split Out Region</em>)
+work as for any session; their new sessions are yours. When the agent
+closes the session, or the client stops the server, the banner says that
+the session is no longer followed.</p>
+<img alt="A session followed by the GUI: the banner over the plot, with Make Editable Copy" class="align-center" src="../images/agents_followed_session.png" />
+<p>The GUI is launched as the application on macOS (<code class="docutils literal notranslate"><span class="pre">open</span> <span class="pre">-a</span> <span class="pre">Astrocook</span></code>, if
+it is installed in <code class="docutils literal notranslate"><span class="pre">/Applications</span></code> or <code class="docutils literal notranslate"><span class="pre">~/Applications</span></code>), else with the
+<code class="docutils literal notranslate"><span class="pre">astrocook</span></code> command; if it is already open, the session is added to it.
+The sessions that a recipe opens later are not followed: the agent calls
+<code class="docutils literal notranslate"><span class="pre">gui_open</span></code> on them if you should see them. Without a display (e.g. the
+Docker image, or a Linux server reached by SSH) the tool says that the GUI
+is not available. The GUI must be a version that knows followed sessions
+(the one with this server, or later): an older application opens the
+archive as an ordinary session, not updated.</p>
+<p>How it works, for the curious: the server saves the session to an archive
+in a temporary folder of its own, with a small file next to it
+(<code class="docutils literal notranslate"><span class="pre">&lt;archive&gt;.follow.json</span></code>) that says it is followed, and saves the archive
+again after every change; the GUI watches the file and reloads it. The
+archive is replaced only when it is complete (written to a temporary file
+next to it, then renamed), so the GUI never reads it half written. This
+archive is not your save: save the session with <code class="docutils literal notranslate"><span class="pre">session_save</span></code> as usual.</p>
+<p><em>File &gt; Export to ASCII</em> (<code class="docutils literal notranslate"><span class="pre">file_export_ascii</span></code>) writes the files in the
+folder <code class="docutils literal notranslate"><span class="pre">path</span></code>, named after <code class="docutils literal notranslate"><span class="pre">prefix</span></code>, and does not replace files that exist
+unless asked (<code class="docutils literal notranslate"><span class="pre">overwrite=true</span></code>).</p>
 <p>The sessions live in the server while the client is running: save the
 result with <code class="docutils literal notranslate"><span class="pre">session_save</span></code> before closing the client.</p>
 </section>
@@ -633,26 +900,84 @@ reason, and the agent can usually correct its request by itself.</p>
 <p><strong>What a recipe needs.</strong> A recipe that needs something the session does
 not have (the emission redshift, the resolution, a continuum) does not
 run: the tool says what is missing and which recipe provides it, and the
-agent decides. z_em and the resolution are given to <code class="docutils literal notranslate"><span class="pre">session_open</span></code>. A
+agent decides. z_em and the resolution are given to <code class="docutils literal notranslate"><span class="pre">session_open</span></code> or
+<code class="docutils literal notranslate"><span class="pre">edit_set_properties</span></code>. A
 continuum is made with <code class="docutils literal notranslate"><span class="pre">continuum_estimate_auto</span></code>, or, if the agent calls
 the tool again with <code class="docutils literal notranslate"><span class="pre">provide_missing=true</span></code>, with the default parameters of
 <em>Auto-estimate Continuum</em> before the recipe: the step is listed in
 <code class="docutils literal notranslate"><span class="pre">provided</span></code> and recorded in the session log, before the recipe, as if it
 had been run on its own.</p>
+<section id="a-longer-analysis">
+<h3>4.1 A longer analysis<a class="headerlink" href="#a-longer-analysis" title="Link to this heading">#</a></h3>
+<p>The tools are made to be chained, and to be undone. This is the course of
+a trial on a synthetic spectrum with a blend of two CIV components, 9.4 km/s
+apart, that an agent was asked to fit, “keeping the model that the data
+support” (the true values were not given to it):</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">session_open</span></code>, with z_em and R given by the user; <code class="docutils literal notranslate"><span class="pre">gui_open</span></code>, to follow
+it.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">continuum_estimate_auto</span></code>, then <code class="docutils literal notranslate"><span class="pre">absorbers_doublets_auto</span></code> (a few
+seconds on this spectrum): one CIV component and a SiIV missing.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">absorbers_add_component</span></code> for the SiIV, <code class="docutils literal notranslate"><span class="pre">absorbers_fit_component</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">components_list</span></code> and <code class="docutils literal notranslate"><span class="pre">spectrum_plot</span></code> on the region: a flat core and
+narrow wings, so one component is not enough. <code class="docutils literal notranslate"><span class="pre">absorbers_optimize_system</span></code>
+adds nothing; a second CIV is added by hand and kept (the chi2 of its
+group on the same pixels, computed by the agent, from 55.4 to 37.1).</p></li>
+<li><p>Ties between the ions (<code class="docutils literal notranslate"><span class="pre">absorbers_update_constraint</span></code>: the redshift and the
+Doppler parameter of the SiIV linked to those of the CIV), each tried and
+kept or undone with <code class="docutils literal notranslate"><span class="pre">session_undo</span></code>, each with its <code class="docutils literal notranslate"><span class="pre">reason</span></code> in the log.
+A SiIV added to the second component, with its b at the bound, was undone.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">session_note</span></code> for what it did with its own code (the residuals), and
+<code class="docutils literal notranslate"><span class="pre">session_save</span></code>; <code class="docutils literal notranslate"><span class="pre">session_methods</span></code> for the text.</p></li>
+</ol>
+<p>The model it chose is the one the spectrum was made from, within the errors,
+and the log holds each step with the reason for it, also those undone (in the
+history of the session). It could be reviewed in the GUI as it went on.</p>
+</section>
+<section id="a-request-that-works-well">
+<h3>4.2 A request that works well<a class="headerlink" href="#a-request-that-works-well" title="Link to this heading">#</a></h3>
+<p>An agent does best with a request that says what you want and what you
+know, not how:</p>
+<ul class="simple">
+<li><p>the spectrum, its z_em and its resolution (the server does not estimate
+them), and where to save;</p></li>
+<li><p>what to do and what to leave alone (“do not touch the components I have
+already fitted”), and whether it may remove components;</p></li>
+<li><p>to give a <code class="docutils literal notranslate"><span class="pre">reason</span></code> for what it does and to declare what it does outside
+the tools, which it does anyway (the instructions of the server ask it);</p></li>
+<li><p>to save often.</p></li>
+</ul>
+<p>Slow recipes are the pipelines (<code class="docutils literal notranslate"><span class="pre">absorbers_doublets_auto</span></code>, <code class="docutils literal notranslate"><span class="pre">absorbers_lya_auto</span></code>,
+<code class="docutils literal notranslate"><span class="pre">absorbers_forest_auto</span></code>, <code class="docutils literal notranslate"><span class="pre">absorbers_metals_auto</span></code>, <code class="docutils literal notranslate"><span class="pre">absorbers_refit_all</span></code>,
+<code class="docutils literal notranslate"><span class="pre">absorbers_fit_bayesian</span></code>): the agent knows
+that they report their progress and can be cancelled. A recipe changes the
+session it runs on, except those that open new sessions; in doubt, ask the
+agent to <code class="docutils literal notranslate"><span class="pre">session_duplicate</span></code> first: nothing is lost either way, because
+every state is kept.</p>
+</section>
 </section>
 <section id="reviewing-the-result-in-the-gui">
 <h2>5. Reviewing the Result in the GUI<a class="headerlink" href="#reviewing-the-result-in-the-gui" title="Link to this heading">#</a></h2>
-<p>Open the saved archive in the GUI (<code class="docutils literal notranslate"><span class="pre">astrocook</span> <span class="pre">/data/J0103-1305_agent.acs2</span></code>).
-The session log (<em>View &gt; View Session Log</em>) lists the recipes the agent ran, with
-their parameters, as if you had run them from the menus: you can inspect
-the components in the System Inspector, correct them, refit them, or
-replay the log as a script.</p>
+<p>Open the saved archive in the GUI (<code class="docutils literal notranslate"><span class="pre">astrocook</span> <span class="pre">/data/J0103-1305_agent.acs2</span></code>),
+or ask the agent to show you the session while it works (<code class="docutils literal notranslate"><span class="pre">gui_open</span></code>, see
+“Watching the agent in the GUI” above).
+The session log (<em>View &gt; View Session Log</em>) lists, at the top, the recipes
+the agent ran, with their parameters, as if you had run them from the
+menus, with the reasons the agent gave (<code class="docutils literal notranslate"><span class="pre">#</span> <span class="pre">reason:</span> <span class="pre">...</span></code>, before each recipe)
+and its notes (<code class="docutils literal notranslate"><span class="pre">#</span> <span class="pre">note:</span> <span class="pre">...</span></code>, where it wrote them), all as comments starting
+with <code class="docutils literal notranslate"><span class="pre">##</span></code>: the log of the archive, for reading. The archive is a step of the
+analysis (see <em>Getting Started</em>, “Saving and Closing”): opened, the state the
+agent left is the new starting point, and the log of what you do starts
+below, empty. You can inspect the components in the System Inspector,
+correct them and refit them; <em>Run All</em> reruns your steps, not the agent’s,
+and saving the session saves your steps only. Keep the agent’s archive, or
+its text from <code class="docutils literal notranslate"><span class="pre">session_methods</span></code>, if you need its path later. An analysis by
+an agent is best done in one session; if it must be resumed, ask the agent
+to keep its own log (e.g. the text of <code class="docutils literal notranslate"><span class="pre">session_methods</span></code>).</p>
 </section>
-<section id="limits-of-the-pilot">
-<h2>6. Limits of the Pilot<a class="headerlink" href="#limits-of-the-pilot" title="Link to this heading">#</a></h2>
+<section id="limits">
+<h2>6. Limits<a class="headerlink" href="#limits" title="Link to this heading">#</a></h2>
 <ul class="simple">
-<li><p>Only the five tools above: no manual editing of components, no Lyman
-forest fit, no export.</p></li>
 <li><p>Paths are on the computer where the server runs; give them in full.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">absorbers_doublets_auto</span></code> replaces the components already on the red
 side. It finds the absorbed regions on a new mask made with the default
@@ -660,7 +985,39 @@ parameters (<code class="docutils literal notranslate"><span class="pre">mask=&q
 session (<code class="docutils literal notranslate"><span class="pre">mask=&quot;session&quot;</span></code>, e.g. that of <code class="docutils literal notranslate"><span class="pre">continuum_estimate_auto</span></code> with
 other parameters). A call can take minutes on a large spectrum.</p></li>
 <li><p>The recipes are the same as in the GUI, with the same strengths and
-weaknesses: check the results.</p></li>
+weaknesses: check the results. The automatic ones (the identification of
+the lines, the doublets, the metals) are the part that fails most often:
+they can miss a line in the forest or fit a blend of close components as
+one, and an agent that checks its own work (the plots, the residuals, the
+components that <code class="docutils literal notranslate"><span class="pre">components_list</span></code> flags) usually sees it, but not always.
+Their limits are the object of the next phases of the development.</p></li>
+<li><p><strong>No tool measures the fit.</strong> Nothing gives the residuals, or the chi2,
+AIC and BIC of a model on a fixed set of pixels: an agent that must choose
+between two models reads the data with <code class="docutils literal notranslate"><span class="pre">spectrum_read</span></code> and computes them
+with its own code (it should declare it as a gap). The result of a fit
+gives the reduced chi2 of the group only when components are added.</p></li>
+<li><p><strong>z_em and the resolution are not estimated.</strong> No recipe measures them from
+the data: the agent reads them from the header, or from you, or measures
+them with its own code. Say them in the request.</p></li>
+<li><p><strong>Cost of the tools.</strong> Every client shows all the tools to the model: the
+65 tools take some 35 thousand tokens of its context before the first
+call. A long analysis in one conversation can reach the limit of the
+client; save the session (<code class="docutils literal notranslate"><span class="pre">session_save</span></code>) and the text of the log
+(<code class="docutils literal notranslate"><span class="pre">session_methods</span></code>) as you go, and start a new conversation from the
+archive if needed.</p></li>
+<li><p><strong>One agent per session.</strong> The server works for one client. The sessions
+live in it while it runs: save before closing the client. The GUI that
+follows a session cannot change it, and what you do in the GUI does not
+reach the agent (a copy you make is yours).</p></li>
+<li><p><strong>The Docker image</strong> has no GUI (<code class="docutils literal notranslate"><span class="pre">gui_open</span></code> says so) and no emcee and
+dynesty, so <code class="docutils literal notranslate"><span class="pre">absorbers_fit_bayesian</span></code> fails with the message that names
+the extra to install; it is not published, you build it (section 2.1).</p></li>
+<li><p>Some recipes name the same thing differently in the GUI and in the tools
+(the label of a menu is not always the title of the recipe): the tools
+are named after the recipe, see the list of the instructions of the
+server.</p></li>
+<li><p>A recipe can take minutes (the pipelines on a large spectrum): see
+“Progress” and “Cancelling a recipe”.</p></li>
 </ul>
 </section>
 </section>
@@ -713,11 +1070,18 @@ weaknesses: check the results.</p></li>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#installation">1. Installation</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#registering-the-server">2. Registering the Server</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#registering-the-server">2. Registering the Server</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#running-the-server-in-docker">2.1 Running the Server in Docker</a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-tools">3. The Tools</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#an-example">4. An Example</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#an-example">4. An Example</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#a-longer-analysis">4.1 A longer analysis</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#a-request-that-works-well">4.2 A request that works well</a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#reviewing-the-result-in-the-gui">5. Reviewing the Result in the GUI</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#limits-of-the-pilot">6. Limits of the Pilot</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#limits">6. Limits</a></li>
 </ul>
   </nav></div>
 

@@ -6,7 +6,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>astrocook.fitting.voigt_fitter &#8212; Astrocook 2.5.0 documentation</title>
+    <title>astrocook.fitting.voigt_fitter &#8212; Astrocook 2.6.0 documentation</title>
   
   
   
@@ -29,7 +29,7 @@
 <link href="../../../static/styles/pydata-sphinx-theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../static/pygments.css?v=8f2a1f02" />
-    <link rel="stylesheet" type="text/css" href="../../../static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../static/sphinx-design.min.css?v=6a604523" />
     <link rel="stylesheet" type="text/css" href="../../../static/css/custom.css?v=e8a3a7b7" />
   
   <!-- So that users can add custom icons -->
@@ -38,15 +38,15 @@
   <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
 <link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="../../../static/documentation_options.js?v=3c4615cf"></script>
+    <script src="../../../static/documentation_options.js?v=ae39cb24"></script>
     <script src="../../../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../static/sphinx_highlight.js?v=6ffebe34"></script>
-    <script src="../../../static/design-tabs.js?v=f930bc37"></script>
+    <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../../../static/design-tabs.js?v=fcb327ea"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'modules/astrocook/fitting/voigt_fitter';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.5.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.6.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -56,7 +56,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.5.0" />
+  <meta name="docsearch:version" content="2.6.0" />
   
     
     <script src="../../../static/searchtools.js"></script>
@@ -564,6 +564,16 @@
     <span class="n">x</span> <span class="o">=</span> <span class="p">(</span><span class="n">wave_grid_ang</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">-</span> <span class="n">lambda_c</span><span class="p">[</span><span class="n">line</span><span class="p">])</span> <span class="o">/</span> <span class="n">dop_width_ang</span><span class="p">[</span><span class="n">line</span><span class="p">]</span>
     <span class="n">H_ax</span> <span class="o">=</span> <span class="n">wofz</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">a</span><span class="p">[</span><span class="n">line</span><span class="p">])</span><span class="o">.</span><span class="n">real</span>
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">tau0</span><span class="p">[</span><span class="n">line</span><span class="p">]</span> <span class="o">*</span> <span class="n">H_ax</span><span class="p">,</span> <span class="n">minlength</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">wave_grid_ang</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="NoPixelsToFit">
+<a class="viewcode-back" href="../../../api/astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.NoPixelsToFit">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">NoPixelsToFit</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""No valid pixel is around the components to fit: their lines fall</span>
+<span class="sd">    outside the spectrum, or on pixels that cannot be used (F111, phase</span>
+<span class="sd">    6-ter, PR 7-quater). A ``ValueError``: the recipes report it as a fit</span>
+<span class="sd">    that could not be done."""</span></div>
 
 
 
@@ -1178,6 +1188,11 @@
                         <span class="n">logN</span><span class="o">=</span><span class="n">comp</span><span class="o">.</span><span class="n">logN</span>
                     <span class="p">)</span>
                     
+                    <span class="c1"># A window narrower than 30 km/s (a very narrow line, or</span>
+                    <span class="c1"># limits not found) is replaced by a fixed one of at</span>
+                    <span class="c1"># least 150 km/s, so that the fit of a very narrow</span>
+                    <span class="c1"># component still has pixels (its purpose as Guido</span>
+                    <span class="c1"># recalls it, November 2026, F111)</span>
                     <span class="n">use_fallback</span> <span class="o">=</span> <span class="kc">True</span>
                     <span class="k">if</span> <span class="n">lam_min</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">lam_max</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                         <span class="n">width_v</span> <span class="o">=</span> <span class="n">c_kms</span> <span class="o">*</span> <span class="p">(</span><span class="n">lam_max</span> <span class="o">-</span> <span class="n">lam_min</span><span class="p">)</span> <span class="o">/</span> <span class="n">lam_max</span>
@@ -1199,23 +1214,24 @@
             <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fit_mask</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_sl</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span> <span class="o">-</span> <span class="mi">50</span><span class="p">),</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span> <span class="o">+</span> <span class="mi">51</span><span class="p">))</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"No valid pixels around the components to fit: the whole "</span>
-                           <span class="s2">"spectrum is used."</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_sl</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_fit_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_valid_mask</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="c1"># It fitted the whole spectrum, with a WARNING: the components</span>
+            <span class="c1"># (usually lines out of the spectrum) stayed at their first</span>
+            <span class="c1"># values, and the fit took hours on a long spectrum (F111;</span>
+            <span class="c1"># Guido's choice, phase 6-ter, PR 7-quater)</span>
+            <span class="n">listed</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">series</span><span class="si">}</span><span class="s2"> at z = </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">z</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">active_components</span><span class="p">[:</span><span class="mi">5</span><span class="p">])</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">active_components</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">5</span><span class="p">:</span>
+                <span class="n">listed</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">" and </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">active_components</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">5</span><span class="si">}</span><span class="s2"> more"</span>
+            <span class="k">raise</span> <span class="n">NoPixelsToFit</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"No valid pixels around the components to fit (</span><span class="si">{</span><span class="n">listed</span><span class="si">}</span><span class="s2">): their lines "</span>
+                <span class="sa">f</span><span class="s2">"fall outside the spectrum (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">10</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">-"</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">10</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> nm) or on pixels that cannot be used."</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_x_calc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_sl</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_y_norm_calc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_y_norm</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_sl</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_dy_norm_calc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dy_norm</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_sl</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_fit_mask_calc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fit_mask</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_sl</span><span class="p">]</span>
         
-        <span class="c1">#logging.info(f"Fitting context: {len(self._x_calc)} pixels in slice, {np.sum(self._fit_mask_calc)} pixels in fit mask.")</span>
-        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fit_mask_calc</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"FIT MASK IS EMPTY!"</span><span class="p">)</span>
-            <span class="c1"># Debug: what are we searching for?</span>
-            <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">comp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">active_components</span><span class="p">):</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Comp </span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">: z=</span><span class="si">{</span><span class="n">comp</span><span class="o">.</span><span class="n">z</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">, series=</span><span class="si">{</span><span class="n">comp</span><span class="o">.</span><span class="n">series</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-        
+
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_variable_resolution</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resol_column</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_resol_calc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resol_column</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_sl</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
@@ -1561,6 +1577,18 @@
 
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Fit complete. Reduced chi2 (constraining pixels): </span><span class="si">{</span><span class="n">red_chi2</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">new_system_list</span><span class="p">,</span> <span class="n">final_model_flux</span><span class="p">,</span> <span class="n">res</span></div>
+
+
+<div class="viewcode-block" id="VoigtFitterV2.chi2_on_fit_pixels">
+<a class="viewcode-back" href="../../../api/astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitterV2.chi2_on_fit_pixels">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">chi2_on_fit_pixels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_flux</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""The chi2 of a model flux (in the units of :meth:`fit` and</span>
+<span class="sd">        :meth:`compute_model_flux`, on the whole spectrum) on the pixels of</span>
+<span class="sd">        the last fit, and their number: two models compared on the same</span>
+<span class="sd">        pixels (``metals_auto``, F111)."""</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fit_mask</span>
+        <span class="n">resid</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_y_norm</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">-</span> <span class="n">model_flux</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_norm</span><span class="p">[</span><span class="n">mask</span><span class="p">])</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dy_norm</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">resid</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">resid</span><span class="p">)]</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)),</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">mask</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="VoigtFitterV2.compute_model_flux">

@@ -7,7 +7,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>astrocook.fitting package &#8212; Astrocook 2.5.0 documentation</title>
+    <title>astrocook.fitting package &#8212; Astrocook 2.6.0 documentation</title>
   
   
   
@@ -30,7 +30,7 @@
 <link href="../static/styles/pydata-sphinx-theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../static/pygments.css?v=8f2a1f02" />
-    <link rel="stylesheet" type="text/css" href="../static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../static/sphinx-design.min.css?v=6a604523" />
     <link rel="stylesheet" type="text/css" href="../static/css/custom.css?v=e8a3a7b7" />
   
   <!-- So that users can add custom icons -->
@@ -39,15 +39,15 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="../static/documentation_options.js?v=3c4615cf"></script>
+    <script src="../static/documentation_options.js?v=ae39cb24"></script>
     <script src="../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../static/sphinx_highlight.js?v=6ffebe34"></script>
-    <script src="../static/design-tabs.js?v=f930bc37"></script>
+    <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../static/design-tabs.js?v=fcb327ea"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'api/astrocook.fitting';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.5.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.6.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -59,7 +59,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.5.0" />
+  <meta name="docsearch:version" content="2.6.0" />
   
     
     <script src="../static/searchtools.js"></script>
@@ -458,6 +458,7 @@
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.messages.html">astrocook.recipes.messages module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.params.html">astrocook.recipes.params module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.prerequisites.html">astrocook.recipes.prerequisites module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.progress.html">astrocook.recipes.progress module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.registry.html">astrocook.recipes.registry module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.result.html">astrocook.recipes.result module</a></li>
 </ul>
@@ -578,12 +579,20 @@
 <li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.TAU_CUT"><code class="docutils literal notranslate"><span class="pre">TAU_CUT</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.COMPONENT_FLAGS"><code class="docutils literal notranslate"><span class="pre">COMPONENT_FLAGS</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.voigt_optical_depth"><code class="docutils literal notranslate"><span class="pre">voigt_optical_depth()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.NoPixelsToFit"><code class="docutils literal notranslate"><span class="pre">NoPixelsToFit</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.NoPixelsToFit.__init__"><code class="docutils literal notranslate"><span class="pre">NoPixelsToFit.__init__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.NoPixelsToFit.add_note"><code class="docutils literal notranslate"><span class="pre">NoPixelsToFit.add_note()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.NoPixelsToFit.args"><code class="docutils literal notranslate"><span class="pre">NoPixelsToFit.args</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.NoPixelsToFit.with_traceback"><code class="docutils literal notranslate"><span class="pre">NoPixelsToFit.with_traceback()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitterV2"><code class="docutils literal notranslate"><span class="pre">VoigtFitterV2</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitterV2.__init__"><code class="docutils literal notranslate"><span class="pre">VoigtFitterV2.__init__()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitterV2.evaluate_uncertainties"><code class="docutils literal notranslate"><span class="pre">VoigtFitterV2.evaluate_uncertainties()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitterV2.prepare_fit_context"><code class="docutils literal notranslate"><span class="pre">VoigtFitterV2.prepare_fit_context()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitterV2.get_fit_context_data"><code class="docutils literal notranslate"><span class="pre">VoigtFitterV2.get_fit_context_data()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitterV2.fit"><code class="docutils literal notranslate"><span class="pre">VoigtFitterV2.fit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitterV2.chi2_on_fit_pixels"><code class="docutils literal notranslate"><span class="pre">VoigtFitterV2.chi2_on_fit_pixels()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitterV2.compute_model_flux"><code class="docutils literal notranslate"><span class="pre">VoigtFitterV2.compute_model_flux()</span></code></a></li>
 </ul>
 </li>

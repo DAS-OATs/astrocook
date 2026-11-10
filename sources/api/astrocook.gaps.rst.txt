@@ -1,0 +1,7 @@
+astrocook.gaps module
+=====================
+
+.. automodule:: astrocook.gaps
+   :members:
+   :show-inheritance:
+   :undoc-members:

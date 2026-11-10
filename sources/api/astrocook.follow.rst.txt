@@ -1,0 +1,7 @@
+astrocook.follow module
+=======================
+
+.. automodule:: astrocook.follow
+   :members:
+   :show-inheritance:
+   :undoc-members:

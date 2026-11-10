@@ -7,7 +7,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>astrocook.recipes.absorbers module &#8212; Astrocook 2.5.0 documentation</title>
+    <title>astrocook.recipes.absorbers module &#8212; Astrocook 2.6.0 documentation</title>
   
   
   
@@ -30,7 +30,7 @@
 <link href="../static/styles/pydata-sphinx-theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../static/pygments.css?v=8f2a1f02" />
-    <link rel="stylesheet" type="text/css" href="../static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../static/sphinx-design.min.css?v=6a604523" />
     <link rel="stylesheet" type="text/css" href="../static/css/custom.css?v=e8a3a7b7" />
   
   <!-- So that users can add custom icons -->
@@ -39,15 +39,15 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="../static/documentation_options.js?v=3c4615cf"></script>
+    <script src="../static/documentation_options.js?v=ae39cb24"></script>
     <script src="../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../static/sphinx_highlight.js?v=6ffebe34"></script>
-    <script src="../static/design-tabs.js?v=f930bc37"></script>
+    <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../static/design-tabs.js?v=fcb327ea"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'api/astrocook.recipes.absorbers';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.5.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.6.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -59,7 +59,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.5.0" />
+  <meta name="docsearch:version" content="2.6.0" />
   
     
     <script src="../static/searchtools.js"></script>
@@ -458,6 +458,7 @@
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.messages.html">astrocook.recipes.messages module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.params.html">astrocook.recipes.params module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.prerequisites.html">astrocook.recipes.prerequisites module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.progress.html">astrocook.recipes.progress module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.registry.html">astrocook.recipes.registry module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.result.html">astrocook.recipes.result module</a></li>
 </ul>
@@ -583,6 +584,12 @@ kept (F90).</p>
 <span class="sig-prename descclassname"><span class="pre">astrocook.recipes.absorbers.</span></span><span class="sig-name descname"><span class="pre">FIT_ERRORS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(&lt;class</span> <span class="pre">'ValueError'&gt;,</span> <span class="pre">&lt;class</span> <span class="pre">'ArithmeticError'&gt;)</span></span><a class="headerlink" href="#astrocook.recipes.absorbers.FIT_ERRORS" title="Link to this definition">#</a></dt>
 <dd><p>The errors of a fit that does not converge or cannot be evaluated
 (ValueError covers np.linalg.LinAlgError and a start outside the bounds)</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="astrocook.recipes.absorbers.AT_BOUND_RTOL">
+<span class="sig-prename descclassname"><span class="pre">astrocook.recipes.absorbers.</span></span><span class="sig-name descname"><span class="pre">AT_BOUND_RTOL</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.001</span></span><a class="headerlink" href="#astrocook.recipes.absorbers.AT_BOUND_RTOL" title="Link to this definition">#</a></dt>
+<dd><p>A fitted value within this fraction of its bound is at the bound</p>
 </dd></dl>
 
 <dl class="py data">
@@ -766,8 +773,12 @@ Delegates to <a class="reference internal" href="astrocook.core.system_list.html
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>ions</strong> (<em>str</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Comma-separated list of ions to check. Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;CIV,SiIV,NV,OVI,CII,MgII&quot;</span></code>.</p></li>
-<li><p><strong>aic_penalty</strong> (<em>float</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – AIC improvement required to keep a new ion (Not currently used in logic).
-Defaults to <code class="docutils literal notranslate"><span class="pre">5.0</span></code>.</p></li>
+<li><p><strong>aic_penalty</strong> (<em>float</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Decrease of the AIC needed to keep a new ion, against the same
+model without it on the pixels of its fit. An ion is also kept
+only if its fit gives logN &gt;= 12 and 2 &lt;= b &lt;= 50 km/s, with
+neither b nor logN at the bounds of the fit (F121). Each ion
+tried is reported (<code class="docutils literal notranslate"><span class="pre">tried</span></code> in the extra of the result), with
+the reason when it is not kept. Defaults to <code class="docutils literal notranslate"><span class="pre">5.0</span></code>.</p></li>
 <li><p><strong>z_window_kms</strong> (<em>float</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Fit window (km/s) for local island fitting. Defaults to <code class="docutils literal notranslate"><span class="pre">20.0</span></code>.</p></li>
 <li><p><strong>max_b</strong> (<em>float</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Upper bound on b (km/s) in the fits, see <a class="reference internal" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.components_auto" title="astrocook.recipes.absorbers.RecipeAbsorbersV2.components_auto"><code class="xref py py-meth docutils literal notranslate"><span class="pre">components_auto()</span></code></a>.
 Defaults to <code class="docutils literal notranslate"><span class="pre">50.0</span></code>.</p></li>
@@ -1246,6 +1257,7 @@ Defaults to <code class="docutils literal notranslate"><span class="pre">True</s
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.MIN_B_ROUNDS"><code class="docutils literal notranslate"><span class="pre">MIN_B_ROUNDS</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.merge_region_ids"><code class="docutils literal notranslate"><span class="pre">merge_region_ids()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.FIT_ERRORS"><code class="docutils literal notranslate"><span class="pre">FIT_ERRORS</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.AT_BOUND_RTOL"><code class="docutils literal notranslate"><span class="pre">AT_BOUND_RTOL</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.NOT_FITTED"><code class="docutils literal notranslate"><span class="pre">NOT_FITTED</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2"><code class="docutils literal notranslate"><span class="pre">RecipeAbsorbersV2</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.RecipeAbsorbersV2.__init__"><code class="docutils literal notranslate"><span class="pre">RecipeAbsorbersV2.__init__()</span></code></a></li>

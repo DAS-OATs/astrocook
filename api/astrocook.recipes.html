@@ -7,7 +7,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>astrocook.recipes package &#8212; Astrocook 2.5.0 documentation</title>
+    <title>astrocook.recipes package &#8212; Astrocook 2.6.0 documentation</title>
   
   
   
@@ -30,7 +30,7 @@
 <link href="../static/styles/pydata-sphinx-theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../static/pygments.css?v=8f2a1f02" />
-    <link rel="stylesheet" type="text/css" href="../static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../static/sphinx-design.min.css?v=6a604523" />
     <link rel="stylesheet" type="text/css" href="../static/css/custom.css?v=e8a3a7b7" />
   
   <!-- So that users can add custom icons -->
@@ -39,15 +39,15 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="../static/documentation_options.js?v=3c4615cf"></script>
+    <script src="../static/documentation_options.js?v=ae39cb24"></script>
     <script src="../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../static/sphinx_highlight.js?v=6ffebe34"></script>
-    <script src="../static/design-tabs.js?v=f930bc37"></script>
+    <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../static/design-tabs.js?v=fcb327ea"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'api/astrocook.recipes';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.5.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.6.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -59,7 +59,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.5.0" />
+  <meta name="docsearch:version" content="2.6.0" />
   
     
     <script src="../static/searchtools.js"></script>
@@ -458,6 +458,7 @@
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.messages.html">astrocook.recipes.messages module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.params.html">astrocook.recipes.params module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.prerequisites.html">astrocook.recipes.prerequisites module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.progress.html">astrocook.recipes.progress module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.registry.html">astrocook.recipes.registry module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.result.html">astrocook.recipes.result module</a></li>
 </ul>
@@ -552,6 +553,7 @@
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.MIN_B_ROUNDS"><code class="docutils literal notranslate"><span class="pre">MIN_B_ROUNDS</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.merge_region_ids"><code class="docutils literal notranslate"><span class="pre">merge_region_ids()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.FIT_ERRORS"><code class="docutils literal notranslate"><span class="pre">FIT_ERRORS</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.AT_BOUND_RTOL"><code class="docutils literal notranslate"><span class="pre">AT_BOUND_RTOL</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.NOT_FITTED"><code class="docutils literal notranslate"><span class="pre">NOT_FITTED</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbersV2"><code class="docutils literal notranslate"><span class="pre">RecipeAbsorbersV2</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbersV2.__init__"><code class="docutils literal notranslate"><span class="pre">RecipeAbsorbersV2.__init__()</span></code></a></li>
@@ -643,6 +645,16 @@
 <li class="toctree-l3"><a class="reference internal" href="astrocook.recipes.errors.html#astrocook.recipes.errors.RecipeFailed.chain"><code class="docutils literal notranslate"><span class="pre">RecipeFailed.chain</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.errors.html#astrocook.recipes.errors.RecipeCancelled"><code class="docutils literal notranslate"><span class="pre">RecipeCancelled</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.recipes.errors.html#astrocook.recipes.errors.RecipeCancelled.__init__"><code class="docutils literal notranslate"><span class="pre">RecipeCancelled.__init__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.recipes.errors.html#astrocook.recipes.errors.RecipeCancelled.add_note"><code class="docutils literal notranslate"><span class="pre">RecipeCancelled.add_note()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.recipes.errors.html#astrocook.recipes.errors.RecipeCancelled.args"><code class="docutils literal notranslate"><span class="pre">RecipeCancelled.args</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.recipes.errors.html#astrocook.recipes.errors.RecipeCancelled.enter"><code class="docutils literal notranslate"><span class="pre">RecipeCancelled.enter()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.recipes.errors.html#astrocook.recipes.errors.RecipeCancelled.recipe"><code class="docutils literal notranslate"><span class="pre">RecipeCancelled.recipe</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.recipes.errors.html#astrocook.recipes.errors.RecipeCancelled.with_traceback"><code class="docutils literal notranslate"><span class="pre">RecipeCancelled.with_traceback()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.recipes.errors.html#astrocook.recipes.errors.RecipeCancelled.chain"><code class="docutils literal notranslate"><span class="pre">RecipeCancelled.chain</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.errors.html#astrocook.recipes.errors.MissingPrerequisite"><code class="docutils literal notranslate"><span class="pre">MissingPrerequisite</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.recipes.errors.html#astrocook.recipes.errors.MissingPrerequisite.__init__"><code class="docutils literal notranslate"><span class="pre">MissingPrerequisite.__init__()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.recipes.errors.html#astrocook.recipes.errors.MissingPrerequisite.add_note"><code class="docutils literal notranslate"><span class="pre">MissingPrerequisite.add_note()</span></code></a></li>
@@ -731,6 +743,17 @@
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.prerequisites.html#astrocook.recipes.prerequisites.fill"><code class="docutils literal notranslate"><span class="pre">fill()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="astrocook.recipes.progress.html">astrocook.recipes.progress module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.progress.html#astrocook.recipes.progress.PROGRESS_MARKER"><code class="docutils literal notranslate"><span class="pre">PROGRESS_MARKER</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.progress.html#astrocook.recipes.progress.is_progress_line"><code class="docutils literal notranslate"><span class="pre">is_progress_line()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.progress.html#astrocook.recipes.progress.parse_progress"><code class="docutils literal notranslate"><span class="pre">parse_progress()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.progress.html#astrocook.recipes.progress.watch_progress"><code class="docutils literal notranslate"><span class="pre">watch_progress()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.progress.html#astrocook.recipes.progress.cancellable"><code class="docutils literal notranslate"><span class="pre">cancellable()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.progress.html#astrocook.recipes.progress.cancel_requested"><code class="docutils literal notranslate"><span class="pre">cancel_requested()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.progress.html#astrocook.recipes.progress.check_cancelled"><code class="docutils literal notranslate"><span class="pre">check_cancelled()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.progress.html#astrocook.recipes.progress.progress"><code class="docutils literal notranslate"><span class="pre">progress()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="astrocook.recipes.registry.html">astrocook.recipes.registry module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.CATEGORIES"><code class="docutils literal notranslate"><span class="pre">CATEGORIES</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.REQUIREMENTS"><code class="docutils literal notranslate"><span class="pre">REQUIREMENTS</span></code></a></li>
@@ -764,6 +787,8 @@
 <li class="toctree-l3"><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.RecipeSpec.branching"><code class="docutils literal notranslate"><span class="pre">RecipeSpec.branching</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.RecipeSpec.requires"><code class="docutils literal notranslate"><span class="pre">RecipeSpec.requires</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.RecipeSpec.provides"><code class="docutils literal notranslate"><span class="pre">RecipeSpec.provides</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.RecipeSpec.methods"><code class="docutils literal notranslate"><span class="pre">RecipeSpec.methods</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.RecipeSpec.references"><code class="docutils literal notranslate"><span class="pre">RecipeSpec.references</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.RecipeSpec.param"><code class="docutils literal notranslate"><span class="pre">RecipeSpec.param()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.RecipeSpec.defaults"><code class="docutils literal notranslate"><span class="pre">RecipeSpec.defaults()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.RecipeSpec.__init__"><code class="docutils literal notranslate"><span class="pre">RecipeSpec.__init__()</span></code></a></li>
@@ -828,6 +853,7 @@
 <li class="toctree-l3"><a class="reference internal" href="astrocook.recipes.result.html#astrocook.recipes.result.RecipeResult.__init__"><code class="docutils literal notranslate"><span class="pre">RecipeResult.__init__()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.result.html#astrocook.recipes.result.SAME_PARAMETER_RTOL"><code class="docutils literal notranslate"><span class="pre">SAME_PARAMETER_RTOL</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.result.html#astrocook.recipes.result.compare_sessions"><code class="docutils literal notranslate"><span class="pre">compare_sessions()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.result.html#astrocook.recipes.result.report"><code class="docutils literal notranslate"><span class="pre">report()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.result.html#astrocook.recipes.result.report_removed"><code class="docutils literal notranslate"><span class="pre">report_removed()</span></code></a></li>

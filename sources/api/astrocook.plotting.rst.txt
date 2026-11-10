@@ -1,0 +1,7 @@
+astrocook.plotting module
+=========================
+
+.. automodule:: astrocook.plotting
+   :members:
+   :show-inheritance:
+   :undoc-members:

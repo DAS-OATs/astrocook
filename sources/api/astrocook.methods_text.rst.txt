@@ -1,0 +1,7 @@
+astrocook.methods\_text module
+==============================
+
+.. automodule:: astrocook.methods_text
+   :members:
+   :show-inheritance:
+   :undoc-members:
