@@ -44,8 +44,8 @@ To update to the latest version, run the same `pip install` command with
 `--upgrade`.
 
 AI agents (Claude Code, the Claude desktop app, other MCP clients) can
-drive Astrocook through its MCP server, a pilot installed with the `[mcp]`
-extra: see the tutorial
+drive Astrocook through its MCP server, installed with the `[mcp]`
+extra (or run in a Docker image): see the tutorial
 [Using Astrocook from an AI Agent](tutorials/agents).
 
 ## Running the App
