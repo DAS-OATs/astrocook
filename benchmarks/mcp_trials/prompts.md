@@ -63,7 +63,7 @@ Phase 6-ter, PR 7 (`ROADMAP.md`, section 4.3).
 > saved session, a log I could replay, and a description of the methods for a
 > paper."
 
-## Trial 3: editing the components (`make_data.py edit`; not run yet)
+## Trial 3: editing the components (`make_data.py edit`, local)
 
 > "In this simulated spectrum, /data/spectrum.acs2, the CIV system near
 > z = 2.20 is the one I care about. Fit it, then check whether the model is
@@ -72,3 +72,7 @@ Phase 6-ter, PR 7 (`ROADMAP.md`, section 4.3).
 > can defend and explain why. If a change makes things worse, go back to the
 > model before. At the end tell me the final components, what you tried and
 > rejected, and leave me a saved session and a description of the methods."
+
+Run locally (PR 7, after PR 7-bis), with the path of the file in the rules
+and one line after the request: the server runs locally, so
+`/data/spectrum.acs2` is the file in the folder's `data/`.

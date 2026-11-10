@@ -1079,6 +1079,13 @@ record):
     and cancellation needed, the tools not grouped; the real analysis moved to
     phase 7 (Guido). Numbers unchanged: nothing of the package touched, so no
     slow tests.
+  - PR 7, trial 3 (the editing tools and undo, after PR 7-bis; local server,
+    the mock of `make_data.py edit`): the agent reached the true model of the
+    blend (two CIV and a SiIV with b tied) through undo, redo and the
+    constraints, each step logged with its reason; report in section 4.3:
+    F117-F120 found, F112 and F115 seen again; the GUI's Stop and
+    `_is_stop_requested` found, to reuse for the cancellation. Numbers
+    unchanged: nothing of the package touched, so no slow tests.
   - PR 7-bis (the short PR of the server decided in section 4.3, F113): a
     heartbeat (`progress.py`: after 20 s of silence of a recipe a progress
     notification "Still running <tool>: N s; last: <line>", its value a part
@@ -1336,6 +1343,10 @@ Exception: anything that loses user data or crashes is reported at once.
 | F114 | Docker image | `absorbers_fit_bayesian` is a tool of the image, but the image does not install the `[bayes]` extra (emcee, dynesty): the tool fails with an ImportError (recorded as a gap `failed`). Found in trial 1 of PR 7 | packaging | `tests/test_docker_image.py` (the list of the image) | open: the extra in the image (size to measure), or the description of the tool saying it |
 | F115 | methods text (`methods_text`) | Seen by the agent of trial 1 of PR 7: the declared gaps (meant for the developers) are in the text for the paper, as written (decision of PR 5c); the first sentence names the spectrum by the name of the session ("The spectrum of spectrum"); the reasons open each paragraph as written, which reads oddly in a paper; `session_methods` gives the text only inside its JSON, so the agent wrote it to a file with its own Python (declared as a gap) | output, cosmetic | — | open: Guido's to judge (the text is his, PR 5c) |
 | F116 | flags of the components | No flag for components unresolved (b well below the instrumental b: 1.4-2.8 km/s at R = 45000 in J0103-1305) or saturated (MgII at logN 15.06 ± 0.24), which both agents of PR 7 judged unreliable by hand; the flags of #517 cover the bounds and the window only | behaviour | — | open: with #517 and F52 |
+| F117 | `update_constraint` (description and checks) | The description of `expression` gives `'p["z"]'` as its example; the expressions that work name the target, `p['<uuid>'].z` (the docstrings of the method and of `SystemListV2` say so). With the example, the constraint is stored with a warning ("the linked z could not be computed") and the next fit ignores it: in trial 3 of PR 7 the SiIV kept its own z after a refit, and `components_list` showed `linked: p["z"]`. `target_uuid` is stored next to the expression but not used to evaluate it. An expression that cannot be evaluated is kept, not refused | doc, behaviour | — | open: the example (a doc fix), and whether an expression that cannot be evaluated is refused (Guido) |
+| F118 | `optimize_system` (stop criterion, output) | On the mock of trial 3 (PR 7) the optimizer added nothing to a single CIV that hides two components 9.4 km/s apart, where a second component added by hand lowers the chi2 on fixed pixels from 55.4 to 37.1 (dAIC -12): it tries a component only where a residual pixel exceeds `threshold_sigma` (2.5), and the deepest was 2.1 sigma (the reason is an INFO line of the log, not in the result: the agent saw "1 component changed" and nothing else). A systematic misfit spread over many pixels is not seen. Related to F58 (the pipelines never add components from the residuals) | behaviour, output | — | open: phase 7 (the criterion is a heuristic, Guido's); the reason of the stop in the result, with the AIC of the components tried, a smaller change of the server |
+| F119 | `doublets_auto` (scoring of the candidates) | The SiIV doublet of the z = 2.2 system of the mock of trial 3 (logN 12.9, b 9, S/N 50; depths 0.55 and 0.33) is found as a kinematic candidate but scored R^2 = 0.483, below the threshold of 0.5, and dropped; 0.485 with the true continuum, so the continuum (on the wing of the NV emission) is not the cause. The candidates dropped are not in the result: the agent found the SiIV by eye | behaviour, output | — | open: phase 7 (identification); the candidates dropped, with their score, in `RecipeResult.extra` |
+| F120 | names of the columns (expression recipes, MCP reads) | `edit_apply_expression` and `edit_mask_expression` document the columns by the names of the GUI (`λ`, `F`, `dF`, `cont`), `file_export_ascii` too (`F, dF, cont`); `spectrum_read` and `spectrum_plot` want `x`, `y`, `dy`. In trial 3 of PR 7 a read with `F`, `dF` failed (the error listed the valid names) | cosmetic, output | — | open: one set of names for the agents, or both accepted (phase 6-quater) |
 
 Closed findings (fixed or accepted: all the others, F1 to F106 and F108 to F110) are in `ROADMAP_HISTORY.md`, "3.2 Findings register", one row each, to be found by number (`grep "^| F52 "`).
 
@@ -1412,10 +1423,10 @@ progress notifications only in the log of the trial, with their times), each
 with a request in plain words (`benchmarks/mcp_trials/prompts.md`), then a
 critique. The gaps went to a temporary file (`ASTROCOOK_GAPS_FILE`) and the
 agents declared theirs with `session_note(kind="gap")`. The transcripts were
-checked for reads of the code: none (one disclosed slip, below). Two of the
-three trials were run; the third (the editing tools and undo, on the mock of
-`make_data.py edit`) waits for the next week of Guido's usage limit, after
-the fixes of the server below.
+checked for reads of the code: none (one disclosed slip, below). Trials 1
+and 2 were run first; trial 3 (the editing tools and undo, on the mock of
+`make_data.py edit`) after the heartbeat and the reads during a recipe
+(PR 7-bis), before the cancellation.
 
 **Trial 1: the full-chain mock, in the Docker image.** The mock of
 `tests/full_chain.py` without the true continuum and the noiseless flux
@@ -1461,6 +1472,51 @@ The client of this trial did not pass `ASTROCOOK_GAPS_FILE` to the server
 gap went to the default file of the cloud session; fixed in the client and
 its test.
 
+**Trial 3: the editing tools, local server** (after PR 7-bis). The mock of
+`make_data.py edit`: CIV at z = 2.2 in two components 9.4 km/s apart (13.6/9
+and 13.3/7), its SiIV (12.9/9), a single CIV at z = 2.25; z_em = 2.6, the
+red side only, S/N 50, R = 45000. 55 calls in 3.9 minutes, none over 1.6 s
+(8 s in all), one failed (`spectrum_read` with the columns `F`, `dF`: the
+names of the GUI, which the expression recipes document, while the reads
+want `x`, `y`, `dy`; the error listed the valid names); 129 thousand
+characters of results. The agent estimated the continuum, ran
+`doublets_auto` (one CIV, 13.79/10.7, and the CIV at 2.25; the SiIV missed,
+F119), added the SiIV by hand, judged the single CIV inadequate from its own
+residuals (a flat core, narrow wings), tried `optimize_system`, which added
+nothing (F118), added a second CIV by hand and kept it (its chi2 on 58 fixed
+pixels from 55.4 to 37.1: dAIC -12, dBIC -6), then: a third component (the
+optimizer, threshold 2 sigma: none), z(SiIV) tied to the main CIV (kept,
+dAIC -2), a SiIV in the second component (logN 10.9 ± 0.5, b at its bound:
+undone, dAIC +5), b(SiIV) tied to b(CIV) (the free values 8.67 and 8.98:
+kept, dAIC -0.6, dBIC -3.3, and it reasoned on the thermal ratio). Final,
+against the truth: CIV 13.622 ± 0.013 / 8.82 ± 0.13 at z = 2.1999996 (true
+13.6/9 at 2.2), CIV 13.260 ± 0.032 / 6.88 ± 0.39 at +10.0 km/s (13.3/7 at
++9.4), SiIV 12.890 ± 0.007 (12.9), b tied: every value within 1.5 sigma or
+0.04 dex. The model chosen is the true one, and every step of the choice is
+in the log with its reason (four undos, three with a reason). The first tie,
+made with `update_constraint` and the expression of its description
+(`p["z"]`), was stored with a warning, "the linked z could not be computed",
+and ignored by the refit (F117); the agent saw it, undid it, and found the
+working syntax (`p['<uuid>'].z`) in the constraint that `add_linked_system`
+writes. Undo and redo carried the work: the agent went back to compare
+models and to drop the alternatives that made things worse, as asked. What it
+did outside the server, declared as gaps: the residuals and the chi2, AIC and
+BIC of a model on a fixed set of pixels (no tool gives them; the results give
+the chi2 of a group only when components are added, on a window that changes
+with the model), read with `spectrum_read` and computed with its own Python;
+to read the residuals of the model before it undid and redid, which the
+server recorded as a recipe undone (a gap `undone` that is not one). It also
+asked for a plot of the residuals and of several regions in velocity around
+a redshift. Seen again: F112 (`identification.n_systems: 0` with two
+candidates found) and F115 (the methods text names the spectrum by the
+session, `spectrum`, and carries the gaps and reasons as written; it leaves
+out the alternatives undone, which are part of what the astronomer asked).
+Also: `components_changed` lists every component a refit touches, also the
+ones that moved by 1e-10 (three "changed" after a refit that changed
+nothing), and the result of `fit_component` and `optimize_system` gives no
+chi2 (the fit summary only when components are added). No slow call: nothing
+to say on the heartbeat or the cancellation.
+
 **The number of tools (64).** The listing a client gives the model is
 121 thousand characters (about 35 thousand tokens, estimated), more than half
 of the context of an agent at its first call. Both agents found the right
@@ -1471,7 +1527,14 @@ parameters repeated on every tool (`session_id`, `reason`,
 `provide_missing`, `max_listed`) described more briefly; the tools of other
 tasks (stitch, co-add, resample, flux calibration) and the unavailable ones
 marked; a paragraph of the usual workflow and the expected time of the slow
-recipes in the instructions.
+recipes in the instructions. The agent of trial 3 the same: the menus made 64
+tools workable, some 25 irrelevant to its task cost reading but no wrong
+choice; the hard part was the overlap of the absorbers' tools
+(`add_component` or `add_linked_system`, `update_constraint` or a linked
+system, `fit_component`, `refit_all` or `optimize_system`): the descriptions
+should say what happens next (whether a recipe refits) and give examples
+that work; a paragraph of typical workflows (fit a system, test a component,
+tie ions) would help more than fewer tools.
 
 **Decisions** (the three left open in PR 4 and by the principle of the
 phase):
@@ -1491,6 +1554,13 @@ phase):
   button); `metals_auto` checks it at each trial ion, and also reports its
   progress and the AIC of the ions tried; a recipe cancelled leaves no new
   state, as an error.
+  Found after the design, in the code (trial 3): the GUI already has a Stop
+  (`gui/recipe_progress.py`, `_on_stop_recipe`), and the pipelines of the
+  absorbers already check it, `RecipeAbsorbersV2._is_stop_requested` (a
+  `_stop_flag` of the session, or the worker of the GUI), at their steps and
+  in their loops; when stopped, they return the session they started from.
+  The signal of the design is to replace or generalize this one, not to add
+  a second; to settle in the PR of F111.
 - *Tools grouped by menu*: no. The cost of the 64 tools is the size of the
   listing, not the choice: to shorten the descriptions of the shared
   parameters, generated from the registry.
@@ -1504,7 +1574,11 @@ sign after reviewing it in the GUI, and a log he could replay).
 **Outcome.** The server works as planned for the parts it controls (the
 registry, the outputs, history, notes and gaps, the methods, the image), and
 an agent chains it at the first try; what failed is a recipe (F111) and the
-way the server waits for it (F113). The trials confirm the direction of
+way the server waits for it (F113). Trial 3 adds the editing tools: with
+undo, redo and the constraints an agent reached the true model of a blend
+and defended it step by step, and what it missed was a measure (residuals,
+fit statistics on fixed pixels) and two descriptions that work (F117,
+F120); the automatic steps fell short again (F118, F119). The trials confirm the direction of
 phase 7: the agents met the limits of the recipes, not of the interface
 (F54, F58, F111, F116, no upper limits, no z_em estimator, no telluric
 model).
@@ -1649,6 +1723,6 @@ One line per concluded phase; the long rows are in `ROADMAP_HISTORY.md`, "7. Pro
 | 5-bis – GUI look and ergonomics | done (November 2026), PRs #664-#688; release 2.3.0 with phase 5 |
 | 6 – Error handling | done (November 2026), PRs #691-#701; release 2.4.0 |
 | 6-bis – Recipe API | done (November 2026), PRs #705-#723; release 2.5.0 |
-| 6-ter – Full MCP server | started (November 2026): plan of the phase agreed (PR 0, #726); the tools generated from the registry, F106 found (PR 1, #729); F106 fixed (PR 1-bis, #730); the tools of the sessions, undo and redo (PR 2, #731); the tools of inspection (PR 3, #732); progress notifications (PR 4, #733); the agent's decisions in the log (PR 5a); the gaps of the recipes (PR 5b); the log as the text of a methods section (PR 5c); the GUI following a session of the server, F109 found (PR 5-bis); the headless Docker image, F110 found (PR 6, not published); trials with fresh agents, two of three, F111-F116 found (PR 7, report in section 4.3); heartbeat and reads during a recipe, F113 in part (PR 7-bis) |
+| 6-ter – Full MCP server | started (November 2026): plan of the phase agreed (PR 0, #726); the tools generated from the registry, F106 found (PR 1, #729); F106 fixed (PR 1-bis, #730); the tools of the sessions, undo and redo (PR 2, #731); the tools of inspection (PR 3, #732); progress notifications (PR 4, #733); the agent's decisions in the log (PR 5a); the gaps of the recipes (PR 5b); the log as the text of a methods section (PR 5c); the GUI following a session of the server, F109 found (PR 5-bis); the headless Docker image, F110 found (PR 6, not published); trials with fresh agents, F111-F116 found (PR 7, report in section 4.3); heartbeat and reads during a recipe, F113 in part (PR 7-bis); trial 3, the editing tools, F117-F120 found (PR 7) |
 | 6-quater – Review of the recipe parameters | not started |
 | 7 – Robust components | not started |
