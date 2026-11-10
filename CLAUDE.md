@@ -2,7 +2,7 @@
 
 Context for Claude Code sessions on Astrocook. The plan is in `ROADMAP.md`
 (about 1300 lines): do not read it whole. Read the section of the phase in
-progress (phase 6-ter), "Rules and decisions in force", and the open rows of
+progress (phase 6-quater once 2.6.0 is out), "Rules and decisions in force", and the open rows of
 the findings register (section 3.2) and of the issues (section 3.1).
 `ROADMAP_HISTORY.md` is the archive of the concluded phases: search it with
 `grep` for a detail (a finding, an issue, a PR), never read it whole.
@@ -26,7 +26,7 @@ Italian.
 Astrocook: a Python package for the analysis of quasar spectra (continuum,
 identification of absorption systems, Voigt fitting). PySide6 GUI +
 scriptable API. Author and maintainer: Guido Cupani (INAF–OATs).
-Current version: 2.5.0. Python ≥3.12.
+Current version: 2.5.0 (2.6.0 in preparation). Python ≥3.12.
 
 ## Architecture (v2)
 - `astrocook/core/` – immutable dataclasses (`structures.py`), `SpectrumV2`,
@@ -139,18 +139,26 @@ Current version: 2.5.0. Python ≥3.12.
   mocks and on its synthetic twin.
 
 ## Current status
-Phases 0, 1, 1-bis, 2, 2-bis, 3, 3-bis, 4, 5, 5-bis, 6 and 6-bis are done
-(October-November 2026; detail in `ROADMAP.md`, short summaries, and in
+Phases 0, 1, 1-bis, 2, 2-bis, 3, 3-bis, 4, 5, 5-bis, 6, 6-bis and 6-ter are
+done (October-November 2026; detail in `ROADMAP.md`, short summaries, and in
 `ROADMAP_HISTORY.md`). Release 2.5.0 (November 2026) is on GitHub with the
-macOS app, not on PyPI. The results on the mock benchmark are those of 2.2.0
-(`benchmarks/results/validate_mocks_baseline.json`): phases that must not
-change them are checked with `validate_mocks.py --compare`.
+macOS app, not on PyPI; release 2.6.0 (phase 6-ter) is next. The results on
+the mock benchmark are those of 2.2.0
+(`benchmarks/results/validate_mocks_baseline.json`) except `metals_auto`,
+which the benchmark does not run (phase 6-ter, PR 7-quater): phases that
+must not change them are checked with `validate_mocks.py --compare`.
 
-Phase in progress: 6-ter, the full MCP server, its tools generated from the
-recipe registry and open to the recipes that later phases add (`ROADMAP.md`,
-phase 6-ter: plan, "Done" list, next PRs). Then 6-quater (review of the recipe
-parameters, recipe by recipe) and phase 7 (robust components, measured on the
-benchmark of phase 4).
+Phase 6-ter (the full MCP server: 65 tools, 48 of them generated from the
+recipe registry, sessions with undo and redo, inspection, notes, gaps, the
+log as text, cancellation, the GUI following a session, a headless Docker
+image) is closed: see "Result of the phase" in `ROADMAP.md`. Next: the
+release 2.6.0 (PR 9: version, CHANGELOG, numerical changes in the notes,
+slow tests and benchmark on the final master, `switcher.json`, macOS app
+build). Then 6-quater (review of the recipe parameters, recipe by recipe;
+it starts with ruff `B`, then the type checker and `SessionV2` out of
+`core/` with the renaming of the `V2` suffixes) and phase 7 (robust
+components, measured on the benchmark of phase 4; the real analysis of the
+MCP server goes there).
 
 Open constraints:
 - #549 (LICENSE and first PyPI publication) waits for INAF; while it is open

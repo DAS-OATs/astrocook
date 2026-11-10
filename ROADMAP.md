@@ -714,10 +714,14 @@ record):
      and the gaps recorded (decision 6) the first list of recipes to
      add;
   8. closing: the docs page *Using Astrocook from an AI Agent*
-     rewritten for the full server, the result of the phase.
-  Proposed (code review of 2.5.0, to be agreed; see "Code quality" after
-  phase 7): a type checker in CI on `recipes/` and `mcp_server/`, ruff
-  with `B`, `SessionV2` out of `core/`.
+     rewritten for the full server, the result of the phase (docs only);
+     then the release 2.6.0 (PR 9).
+  Proposed (code review of 2.5.0; see "Code quality" after phase 7): a type
+  checker in CI on `recipes/` and `mcp_server/`, ruff with `B`, `SessionV2`
+  out of `core/`. Decided at the closing (PR 8, Guido, November 2026): none
+  of the three is done in this phase; all go to the start of 6-quater,
+  `B` as its first PR (small and mechanical), the type checker and
+  `SessionV2` with the renaming of the `V2` suffixes (the same aliases).
 - *Done.*
   - PR 1 (generated tools): `mcp_server/tools.py` makes a tool of each
     recipe of the registry (47 of 48), with the schema of
@@ -1138,6 +1142,69 @@ record):
   start of this phase); installing again by hand worked. To watch: if
   it happens again, the hook needs a check that the import works.
 
+**Result of the phase** (November 2026, PRs #726-#747 and the closing PR 8;
+the release 2.6.0 follows). The full MCP server, with the principle of
+the plan kept: a thin layer over the package, no tool names a recipe.
+- Tools: 65, generated from the registry (the 48 recipes, none excluded:
+  F106 made `export_ascii` one) and 17 of the server: the sessions
+  (`session_open`, `save`, `list`, `describe`, `history`, `undo`, `redo`,
+  `duplicate`, `close`, `note`, `methods`, `cancel`), the inspection
+  (`components_list`, `spectrum_read`, `spectrum_plot`), `gui_open` and
+  `gaps_summary`. A recipe added to the registry is a tool with no code of
+  the server (a test adds fake ones). The pilot's five tools keep their names.
+- Outputs from `RecipeResult` only (what changed, the components removed
+  with their reason, `details` from `extra`, new sessions), the same for
+  every recipe. What the tools compute is in the package, for the GUI and
+  the scripts too: `SystemListV2.fit_groups`, `SpectrumV2.columns_in_range`,
+  `plotting.py`, `recipes/progress.py`, `gaps.py`, `methods_text.py`,
+  `follow.py`.
+- Nothing is lost: every state kept (`session_undo`, `redo`, `duplicate`),
+  `session_close` refuses to lose changes. The agent's decisions in the log
+  (`reason`, notes, gaps, recorded also in a local file never sent anywhere),
+  the log as the text of a methods section (also *File > Export Log as Text*).
+- Long recipes: progress notifications, a heartbeat after 20 s of silence,
+  read-only tools that answer during a recipe, and a cancellation shared
+  by the GUI's Stop (`RecipeCancelled`).
+- The GUI follows a session of the server, read only, with the editable copy
+  (PR 5-bis); the headless Docker image, with its CI job (PR 6).
+- Trials with fresh agents (section 4.3): the chain works at the first
+  try; with undo, redo and the constraints an agent reached the true model
+  of a blend, step by step in the log. 65 tools cost about 35 thousand tokens
+  of context; not grouped (both agents advised against).
+- Found: F106-F121. Fixed: F106, F108-F111, F113, F117-F120, F121 in part.
+  Open: F107 (6-quater), F112, F114, F115, F116, and what goes to phase 7:
+  the criteria of F118 and F119, the rest of F121.
+- Also decided or fixed along the way: F109 (an archive saved again repeated
+  its log: data loss, reported at once), `Set properties` no longer writes
+  the object, `scienceplots` removed from the dependencies (F110),
+  `compare_sessions` with a tolerance, `benchmarks/bench_gui.py` repaired.
+- Numbers: the recipes unchanged but for two changes, both of PR 7-quater
+  (`metals_auto`: keeps the ions found, skips the ions outside the spectrum
+  and those at the bounds of the fit or with a weak AIC change; fits of
+  components with no pixel: not fitted instead of fitted on the whole
+  spectrum); the benchmark of phase 4 does not run `metals_auto`, a
+  targeted test measures it.
+- Tests and coverage (master after #747, `pytest -n auto --cov=astrocook`,
+  slow tests skipped): 3601 tests collected, none failing, 5 skipped (slow),
+  2 expected failures (F17, F28); coverage 87% (core 93%, recipes 94%,
+  fitting 88%, GUI 86%, `mcp_server` 98%, `io` 51%: the loaders wait for
+  sample files). `ruff check .` clean.
+- Left: the real analysis of Guido (moved to phase 7: the first test of its
+  components); the descriptions of the parameters shared by every tool shorter
+  and a paragraph of typical workflows in the instructions of the server (the
+  advice of the trials, not done: for the recipes' review in 6-quater); a
+  measure of the fit for the agents (residuals, chi2, AIC and BIC on a fixed
+  set of pixels, the gaps of trial 3); the chi2 of the groups in the result
+  of every fit; a redo that cancels the gap `undone` of the state undone;
+  the publication of the image on GHCR (after #549); the check that the
+  macOS app builds without `scienceplots` (F110, the build of the release).
+- Code quality (decided at the closing): ruff `B` (a PR of its own), the type
+  checker and `SessionV2` out of `core/` moved to the start of 6-quater.
+- Before release 2.6.0: the version and the CHANGELOG; the numerical changes
+  above in its notes; the slow tests and the mock benchmark on the final
+  master; `switcher.json` ("preferred") on master before publishing; the macOS
+  app build (F110); the Docker image not published.
+
 ### Phase 6-quater – Review of the recipe parameters
 Named after 2.5.0 (November 2026, Guido): the parameters and interfaces
 of the recipes reviewed recipe by recipe, adapted to each procedure (as
@@ -1181,8 +1248,9 @@ complexity of the code it rewrites (see "Code quality" below).
 ### Code quality (review of 2.5.0)
 A review of the code of 2.5.0 (November 2026, after the question of how
 the package compares with similar codes), with measurements, and where
-each proposal could go. **Proposals, to be agreed with Guido**; none is
-in a plan of a phase yet.
+each proposal could go. **Proposals**; the three assigned to 6-ter
+were moved to the start of 6-quater at its closing (Guido); the others are
+not in a plan yet.
 
 *Measurements* (2.5.0; the package has not changed since on master):
 - Coverage 86% (`pytest -n 4 --cov=astrocook`, slow tests skipped).
@@ -1217,9 +1285,9 @@ in a plan of a phase yet.
 
 | Proposal | Phase | Why there |
 |---|---|---|
-| A type checker (mypy or pyright) in CI, gradually: `recipes/` and `mcp_server/` first, then `core/` and `fitting/`; the GUI last, if ever | 6-ter | the server builds the tools from the typed parameters: checked types serve the agents first |
-| `SessionV2` (and `SessionHistory`) out of `core/`, e.g. into `astrocook/session/`, the old import kept as an alias | 6-ter | the headless server works on the sessions; the core becomes the bottom layer |
-| Ruff with `B` (flake8-bugbear), a PR of its own; the style rules (`E`, `W`) left out | start of 6-ter | small and mechanical; finds bugs, not style |
+| A type checker (mypy or pyright) in CI, gradually: `recipes/` and `mcp_server/` first, then `core/` and `fitting/`; the GUI last, if ever | 6-quater (moved from 6-ter, PR 8) | the server builds the tools from the typed parameters: checked types serve the agents first |
+| `SessionV2` (and `SessionHistory`) out of `core/`, e.g. into `astrocook/session/`, the old import kept as an alias | 6-quater, with the `V2` renaming (moved from 6-ter, PR 8) | the headless server works on the sessions; the core becomes the bottom layer |
+| Ruff with `B` (flake8-bugbear), a PR of its own; the style rules (`E`, `W`) left out | first PR of 6-quater (moved from 6-ter, PR 8) | small and mechanical; finds bugs, not style |
 | The `V2` suffixes of the class names (`SpectrumV2`, `RecipeAbsorbersV2`, ...) dropped, the old names kept as aliases | 6-quater | changes the interface of the scripts, as a renamed parameter: the same mechanism of aliases |
 | The complex functions of the recipes that phase 7 does not rewrite (e.g. `RecipeEditV2.equalize_and_stitch`, 31) | 6-quater | the recipes are reviewed one by one there |
 | `identify_lines`, `refit_all` and the rest of the continuum and identification: a ceiling on the complexity of the new code (e.g. no function above 20) among the criteria of the new algorithms | 7 | phase 7 rewrites them: cleaning them before would be work thrown away |
@@ -1781,6 +1849,6 @@ One line per concluded phase; the long rows are in `ROADMAP_HISTORY.md`, "7. Pro
 | 5-bis – GUI look and ergonomics | done (November 2026), PRs #664-#688; release 2.3.0 with phase 5 |
 | 6 – Error handling | done (November 2026), PRs #691-#701; release 2.4.0 |
 | 6-bis – Recipe API | done (November 2026), PRs #705-#723; release 2.5.0 |
-| 6-ter – Full MCP server | started (November 2026): plan of the phase agreed (PR 0, #726); the tools generated from the registry, F106 found (PR 1, #729); F106 fixed (PR 1-bis, #730); the tools of the sessions, undo and redo (PR 2, #731); the tools of inspection (PR 3, #732); progress notifications (PR 4, #733); the agent's decisions in the log (PR 5a); the gaps of the recipes (PR 5b); the log as the text of a methods section (PR 5c); the GUI following a session of the server, F109 found (PR 5-bis); the headless Docker image, F110 found (PR 6, not published); trials with fresh agents, F111-F116 found (PR 7, report in section 4.3); heartbeat and reads during a recipe, F113 in part (PR 7-bis); trial 3, the editing tools, F117-F120 found (PR 7); the outputs of trial 3 (PR 7-ter); F111 and the cancellation, F113 closed, F121 found (PR 7-quater) |
+| 6-ter – Full MCP server | done (November 2026), PRs #726-#747 and the closing PR 8; release 2.6.0 next (PR 9); plan of the phase agreed (PR 0, #726); the tools generated from the registry, F106 found (PR 1, #729); F106 fixed (PR 1-bis, #730); the tools of the sessions, undo and redo (PR 2, #731); the tools of inspection (PR 3, #732); progress notifications (PR 4, #733); the agent's decisions in the log (PR 5a); the gaps of the recipes (PR 5b); the log as the text of a methods section (PR 5c); the GUI following a session of the server, F109 found (PR 5-bis); the headless Docker image, F110 found (PR 6, not published); trials with fresh agents, F111-F116 found (PR 7, report in section 4.3); heartbeat and reads during a recipe, F113 in part (PR 7-bis); trial 3, the editing tools, F117-F120 found (PR 7); the outputs of trial 3 (PR 7-ter); F111 and the cancellation, F113 closed, F121 found (PR 7-quater) |
 | 6-quater – Review of the recipe parameters | not started |
 | 7 – Robust components | not started |
