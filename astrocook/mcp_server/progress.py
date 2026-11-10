@@ -20,15 +20,17 @@ below it.
 Nothing is written to stdout: the notifications go through the transport of
 the SDK, and the log to stderr.
 """
+import functools
 import logging
 import threading
 import time
 from contextlib import contextmanager
-from typing import Iterator
+from typing import Any, Callable, Iterator
 
 import anyio
 import anyio.from_thread
 import anyio.lowlevel
+import anyio.to_thread
 from mcp.server.mcpserver import Context
 
 from astrocook.recipes.progress import watch_progress
@@ -44,6 +46,27 @@ HEARTBEAT_S = 20.0
 #: What a notification raises when the client or the loop is gone
 _GONE = tuple(e for e in (getattr(anyio, n, None) for n in (
     "BrokenResourceError", "ClosedResourceError", "RunFinishedError")) if e)
+
+
+async def run_cancellable(fn: Callable[[threading.Event], Any]) -> Any:
+    """Run ``fn(event)`` in a worker thread, and set ``event`` if the call
+    of the tool is cancelled meanwhile (phase 6-ter, PR 7-quater).
+
+    The SDK cancels the scope of a call when its client sends
+    ``notifications/cancelled`` (or gives up), but a synchronous tool runs
+    in a thread that cannot be interrupted: the cancellation arrived when
+    the recipe ended, hours later on a long spectrum (F113). Here the call
+    stops waiting for the thread when it is cancelled, and sets the event
+    that the recipe checks (:func:`astrocook.recipes.progress.cancellable`):
+    the recipe stops at its next check, and its result, if any, is dropped.
+    """
+    event = threading.Event()
+    try:
+        return await anyio.to_thread.run_sync(functools.partial(fn, event),
+                                              abandon_on_cancel=True)
+    except anyio.get_cancelled_exc_class():
+        event.set()
+        raise
 
 
 @contextmanager

@@ -69,6 +69,13 @@ class RecipeFailed(RecipeError):
     read, an expression that cannot be evaluated, ...)."""
 
 
+class RecipeCancelled(RecipeError):
+    """The recipe was cancelled while it ran (the Stop of the GUI, the
+    cancellation of a client of the MCP server, ``session_cancel``): it
+    leaves no new state (phase 6-ter, PR 7-quater). Raised by
+    :func:`astrocook.recipes.progress.check_cancelled`."""
+
+
 class MissingPrerequisite(RecipeError):
     """The session lacks what the recipe needs (z_em, the resolution, the
     continuum, ...); phase 6-bis, PR 5, fills these in ("Prerequisites of

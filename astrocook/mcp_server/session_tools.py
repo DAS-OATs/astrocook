@@ -24,7 +24,7 @@ from astrocook.methods_text import methods_text
 from astrocook.core.session import SessionV2
 from astrocook.mcp_server.errors import run_recipe
 from astrocook.mcp_server.outputs import (
-    CloseResult, ColumnInfo, GapGroup, GapsSummary, HistoryInfo, LogEntryInfo, MethodsResult,
+    CancelResult, CloseResult, ColumnInfo, GapGroup, GapsSummary, HistoryInfo, LogEntryInfo, MethodsResult,
     NoteResult, SaveResult,
     SessionDescription, SessionInfo, SessionList, SessionListItem, StateInfo,
     UndoResult, _jsonable, note_info, spectrum_summary)
@@ -279,6 +279,22 @@ def register_session_tools(server: MCPServer, store: SessionStore) -> None:
                 raise ToolError(str(e)) from e
             return NoteResult(session_id=session_id, state=history.current_index,
                               note=note_info(note), unsaved=store.unsaved(session_id))
+
+    @server.tool()
+    def session_cancel(session_id: SESSION_ID) -> CancelResult:
+        """Cancel the recipe running on a session, for a client that cannot
+        cancel its own call. The recipe stops at its next step (seconds, or
+        one fit), its call ends with an error, and the session stays as it
+        was before it: nothing of the recipe is kept. Use it when a recipe
+        takes much longer than expected; the read-only tools answer
+        meanwhile."""
+        cancelled = store.cancel(session_id)
+        if cancelled is None:
+            return CancelResult(session_id=session_id, cancelled=None,
+                                message=f"No recipe is running on '{session_id}'.")
+        return CancelResult(session_id=session_id, cancelled=cancelled,
+                            message=f"Cancelled {cancelled}: it stops at its next step, "
+                                    "and the session stays as it was before it.")
 
     @server.tool()
     def session_methods(

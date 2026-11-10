@@ -41,7 +41,7 @@ PILOT_TOOLS = {"session_open", "session_save", "continuum_estimate_auto",
 #: undo, redo, duplicate, close)
 SESSION_TOOLS = {"session_open", "session_save", "session_list", "session_describe",
                  "session_history", "session_undo", "session_redo",
-                 "session_duplicate", "session_close", "session_note",
+                 "session_duplicate", "session_close", "session_note", "session_cancel",
                  "gaps_summary", "session_methods"}
 #: The tools that read a session (phase 6-ter, PR 3)
 INSPECT_TOOLS = {"components_list", "spectrum_read", "spectrum_plot"}

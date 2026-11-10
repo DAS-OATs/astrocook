@@ -18,6 +18,7 @@ the phase, ``ROADMAP.md``, phase 6-ter). The values of the parameters are
 checked and converted by the registry, as for the GUI and the scripts
 (``typed_recipe``): a wrong value is refused with the message of the recipe.
 """
+import threading
 import time
 from typing import Annotated, Any, Callable
 
@@ -30,11 +31,12 @@ from astrocook.mcp_server.errors import run_recipe
 from astrocook.mcp_server.outputs import (
     NewSession, RecipeInfo, SessionInfo, _value, changes_summary, details,
     spectrum_summary, summaries)
-from astrocook.mcp_server.progress import report_progress
+from astrocook.mcp_server.progress import report_progress, run_cancellable
 from astrocook.mcp_server.schemas import parameters_schema
 from astrocook.mcp_server.sessions import SessionStore
 from astrocook.recipes.errors import MissingPrerequisite, RecipeError
 from astrocook.recipes.prerequisites import missing as missing_prerequisites
+from astrocook.recipes.progress import cancellable
 from astrocook.recipes.registry import RecipeSpec, all_recipes
 from astrocook.recipes.result import run as run_registry
 
@@ -187,10 +189,13 @@ def _record_gap(store: SessionStore, spec: RecipeSpec, session_id: str,
 
 def run_tool(store: SessionStore, spec: RecipeSpec, session_id: str,
              params: dict, provide_missing: bool, max_listed: int,
-             ctx: Context | None = None, reason: str | None = None) -> RecipeInfo:
+             ctx: Context | None = None, reason: str | None = None,
+             cancel: threading.Event | None = None) -> RecipeInfo:
     """Run the recipe of a tool and build its output; ``ctx``, the context
     of the call, receives the progress of the recipe (``progress.py``);
-    ``reason`` goes to the log entry of the recipe (phase 6-ter, PR 5a)."""
+    ``reason`` goes to the log entry of the recipe (phase 6-ter, PR 5a);
+    setting ``cancel`` (or calling session_cancel) cancels it: it stops at
+    its next check, with an error, and makes no new state (PR 7-quater)."""
     offered = {p.name for p in spec.params if p.agents}
     unknown = sorted(set(params) - offered)
     if unknown:
@@ -200,16 +205,23 @@ def run_tool(store: SessionStore, spec: RecipeSpec, session_id: str,
     recipe = f"{spec.category}.{spec.name}"
     # The recipe runs under the lock of the recipes only: the tools that read
     # the session answer meanwhile, and see the state before it (F113)
+    cancel = cancel if cancel is not None else threading.Event()
     with store.recipe_lock:
+        if cancel.is_set():
+            # Cancelled while it waited for the recipe before it
+            raise ToolError(f"{tool_name(spec)} was cancelled before it started: "
+                            "the session is unchanged.")
         with store.state_lock:
             before = store.get(session_id).current_state
             store.running[session_id] = (tool_name(spec), time.monotonic())
+            store.cancels[session_id] = cancel
 
         def call():
             try:
-                return run_registry(before, recipe,
-                                    on_missing="provide" if provide_missing else "raise",
-                                    **params)
+                with cancellable(cancel):
+                    return run_registry(before, recipe,
+                                        on_missing="provide" if provide_missing else "raise",
+                                        **params)
             except MissingPrerequisite as e:
                 hint = PROVIDE_HINT if "provides it with its defaults" in str(e) else ""
                 raise ToolError(as_tools(str(e)) + hint) from e
@@ -224,6 +236,11 @@ def run_tool(store: SessionStore, spec: RecipeSpec, session_id: str,
         finally:
             with store.state_lock:
                 store.running.pop(session_id, None)
+                store.cancels.pop(session_id, None)
+        if cancel.is_set():
+            # Cancelled after the last check of the recipe: its result is
+            # not kept
+            raise ToolError(f"{tool_name(spec)} was cancelled: the session is unchanged.")
         with store.state_lock:
             return _store_result(store, spec, session_id, before, result,
                                  recipe, max_listed, reason)
@@ -283,14 +300,17 @@ def session_info(store: SessionStore, session_id: str, result=None) -> SessionIn
 
 
 def _make_tool(store: SessionStore, spec: RecipeSpec) -> Callable:
-    def tool(session_id: Annotated[str, Field()],
-             provide_missing: bool = False,
-             max_listed: int = 50,
-             reason: str | None = None,
-             recipe_params: dict | None = None,
-             ctx: Context | None = None) -> RecipeInfo:
-        return run_tool(store, spec, session_id, recipe_params or {},
-                        provide_missing, max_listed, ctx, reason)
+    # Asynchronous, so that the cancellation of the client reaches the
+    # recipe while it runs in its thread (run_cancellable, PR 7-quater)
+    async def tool(session_id: Annotated[str, Field()],
+                   provide_missing: bool = False,
+                   max_listed: int = 50,
+                   reason: str | None = None,
+                   recipe_params: dict | None = None,
+                   ctx: Context | None = None) -> RecipeInfo:
+        return await run_cancellable(lambda cancel: run_tool(
+            store, spec, session_id, recipe_params or {}, provide_missing, max_listed,
+            ctx, reason, cancel))
     tool.__name__ = tool_name(spec)
     return tool
 

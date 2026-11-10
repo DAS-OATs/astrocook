@@ -467,6 +467,7 @@ class MainRecipesMixin:
         self._current_worker = worker
         worker.signals.finished.connect(self._on_recipe_finished)
         worker.signals.error.connect(self._on_recipe_error)
+        worker.signals.stopped.connect(self._on_recipe_stopped)
         self.thread_pool.start(worker)
 
     def _report_recipe_outcome(self, recipe_name: str, new_state):
@@ -532,13 +533,6 @@ class MainRecipesMixin:
             # Loop through all returned sessions
             for i, new_session_state in enumerate(new_sessions):
                 
-                # [SAFETY CHECK] If operation was cancelled
-                if getattr(new_session_state, '_stop_flag', False):
-                    logger.info("The recipe was stopped: the session is as before it.")
-                    if i == len(new_sessions) - 1: # Only update view on last one
-                        self._update_view_for_session(self.active_history.current_state)
-                    continue
-
                 # --- 2. LOGGING ---
                 # A linear recipe is logged once on the parent. A branching
                 # recipe is logged in each new session it opens, after the
@@ -790,17 +784,19 @@ class MainRecipesMixin:
         self.last_recipe_result = getattr(getattr(self, '_current_worker', None),
                                           'result', None)
 
-        # [NEW] Check if operation was cancelled (returned same object or flagged)
-        if getattr(new_session_state, '_stop_flag', False):
-            logger.info("The recipe was stopped: the session is as before it.")
-            # Do NOT update history.
-            # Just ensure GUI reflects the ACTIVE history state (which hasn't changed)
-            self._update_view_for_session(self.active_history.current_state)
-            return
-
         # 3. Schedule the data processing
         # We pass the data to the processor
         QTimer.singleShot(10, lambda: self._process_recipe_result(result_data))
+
+    def _on_recipe_stopped(self, recipe_name: str):
+        """Slot called when the RecipeWorker was stopped by the user: the
+        history is not changed (phase 6-ter, PR 7-quater)."""
+        self._pending_recipe = None
+        self._recipe_started = None
+        self._cleanup_progress_ui()
+        QApplication.restoreOverrideCursor()
+        logger.info("The recipe was stopped: the session is as before it.")
+        self._update_view_for_session(self.active_history.current_state)
 
     def _on_recipe_error(self, error_data: tuple):
         """Slot called when the RecipeWorker fails."""

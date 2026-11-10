@@ -177,6 +177,35 @@ def test_the_gui_worker_keeps_the_result(qtbot, sessions, caplog):
     assert np.all(np.isfinite(state.spec.y.value))
 
 
+@pytest.mark.parametrize("when", ["before", "after"])
+def test_the_gui_worker_stopped(qtbot, sessions, monkeypatch, when):
+    # The Stop sets the event of the worker (phase 6-ter, PR 7-quater): a
+    # recipe stopped at a check, or after its last one, leaves no result
+    import astrocook.gui.qt_workers as workers
+    raw, _, _ = sessions
+    worker = workers.RecipeWorker(raw, "flux", "smooth", {"sigma_kms": "10"}, {})
+    done, stopped, errors = [], [], []
+    worker.signals.finished.connect(done.append)
+    worker.signals.stopped.connect(stopped.append)
+    worker.signals.error.connect(errors.append)
+    if when == "before":
+        def cancelled_run(*args, **kwargs):
+            from astrocook.recipes.progress import check_cancelled
+            check_cancelled()
+        worker.stop()
+        monkeypatch.setattr(workers, "run", cancelled_run)
+    else:
+        real_run = workers.run
+
+        def stopped_at_the_end(*args, **kwargs):
+            result = real_run(*args, **kwargs)
+            worker.stop()
+            return result
+        monkeypatch.setattr(workers, "run", stopped_at_the_end)
+    worker.run()
+    assert stopped == ["smooth"] and not done and not errors
+
+
 # --- What a recipe knows (PR 4b) ----------------------------------------------
 
 def test_the_identification_keeps_region_and_score(sessions):

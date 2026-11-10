@@ -86,13 +86,15 @@ def test_components_list(mock_archive):
 
 
 def test_components_list_filters_by_series_and_flags(mock_archive):
-    # doublets_auto replaces the components of the red side: SiIV after it
+    # doublets_auto replaces the components of the red side: MgII after it
+    # (a SiIV at z = 1.9, outside the spectrum, was fitted on the whole
+    # spectrum; it is refused since F111, phase 6-ter PR 7-quater)
     *_, fitted, _, by_series, flagged = calls(
         build_server(), open_mock(mock_archive),
-        ("absorbers_doublets_auto", {"session_id": "mock"}), add("SiIV", 1.9),
+        ("absorbers_doublets_auto", {"session_id": "mock"}), add("MgII", 0.6),
         ("components_list", {"session_id": "mock", "series": "SiIV, MgII"}),
         ("components_list", {"session_id": "mock", "flagged_only": True}))
-    assert [c["series"] for c in ok(by_series)["components"]] == ["SiIV"]
+    assert [c["series"] for c in ok(by_series)["components"]] == ["MgII"]
     assert all(c["flags"] for c in ok(flagged)["components"])
     n_flagged = sum(bool(c["flags"]) for c in ok(fitted)["fit"]["components"])
     assert ok(flagged)["n_matched"] >= n_flagged

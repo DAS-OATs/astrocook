@@ -27,6 +27,7 @@ from astrocook.mocks import MockComponent, MockTruth, generate  # noqa: E402
 from astrocook.recipes import registry  # noqa: E402
 from astrocook.recipes.flux import RecipeFluxV2  # noqa: E402
 from astrocook.recipes.params import typed_recipe  # noqa: E402
+from astrocook.recipes.progress import check_cancelled  # noqa: E402
 from astrocook.recipes.registry import all_recipes, build_spec, get_recipe  # noqa: E402
 
 
@@ -379,10 +380,14 @@ RELEASE = threading.Event()
 @pytest.fixture
 def wait_recipe(new_recipe, monkeypatch):
     """Flux > Wait (test): waits for RELEASE (``seconds`` = 0) or sleeps
-    ``seconds`` without logging, then logs ``then`` as its progress (if >= 0)."""
+    ``seconds`` without logging, then logs ``then`` as its progress (if >= 0);
+    with ``seconds`` < 0 it waits for RELEASE checking the cancellation."""
     def wait_test(self, seconds: float = 0.0, then: int = -1):
         if seconds > 0:
             time.sleep(seconds)
+        elif seconds < 0:
+            while not RELEASE.wait(0.01):
+                check_cancelled()
         else:
             assert RELEASE.wait(30), "never released"
         if then >= 0:
@@ -477,3 +482,90 @@ def test_no_heartbeat_when_the_client_does_not_ask(wait_recipe, mock_archive, mo
     _, result = calls(build_server(), ("session_open", {"path": str(mock_archive)}),
                       ("flux_wait_test", {"session_id": "mock", "seconds": 0.2}))
     assert not result.is_error
+
+
+# --- Cancellation (phase 6-ter, PR 7-quater; F113) --------------------------
+
+async def _wait_until_running(client):
+    for _ in range(500):
+        listed = (await client.call_tool("session_list", {})).structured_content
+        if listed["sessions"][0]["running"]:
+            return
+        await asyncio.sleep(0.01)
+    raise AssertionError("the recipe never started")
+
+
+def test_a_client_that_cancels_its_call_stops_the_recipe(wait_recipe, mock_archive):
+    # It went on (in trial 2 for hours, with the session out of reach)
+    async def go():
+        async with Client(build_server()) as client:
+            await client.call_tool("session_open", {"path": str(mock_archive)})
+            waiting = asyncio.create_task(
+                client.call_tool("flux_wait_test", {"session_id": "mock", "seconds": -1}))
+            await _wait_until_running(client)
+            waiting.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await waiting
+            for _ in range(500):
+                listed = (await client.call_tool("session_list", {})).structured_content
+                if not listed["sessions"][0]["running"]:
+                    break
+                await asyncio.sleep(0.01)
+            history = await client.call_tool("session_history", {"session_id": "mock"})
+            return listed, history
+
+    listed, history = asyncio.run(go())
+    assert listed["sessions"][0]["running"] is None, "still running"
+    assert not RELEASE.is_set()
+    assert [s["recipe"] for s in history.structured_content["states"]] == [None]
+
+
+def test_session_cancel_stops_the_recipe(wait_recipe, mock_archive):
+    async def go():
+        async with Client(build_server()) as client:
+            await client.call_tool("session_open", {"path": str(mock_archive)})
+            idle = await client.call_tool("session_cancel", {"session_id": "mock"})
+            waiting = asyncio.create_task(
+                client.call_tool("flux_wait_test", {"session_id": "mock", "seconds": -1}))
+            await _wait_until_running(client)
+            cancelled = await client.call_tool("session_cancel", {"session_id": "mock"})
+            result = await asyncio.wait_for(waiting, 10)
+            history = await client.call_tool("session_history", {"session_id": "mock"})
+            again = await client.call_tool("flux_scale_test", {"session_id": "mock"})
+            return idle, cancelled, result, history, again
+
+    idle, cancelled, result, history, again = asyncio.run(go())
+    assert idle.structured_content["cancelled"] is None
+    assert idle.structured_content["message"] == "No recipe is running on 'mock'."
+    assert cancelled.structured_content["cancelled"].startswith("flux_wait_test, for ")
+    assert result.is_error
+    assert "cancelled while it ran: the session is as before it" in error_text(result)
+    assert [s["recipe"] for s in history.structured_content["states"]] == [None]
+    # The next recipe is not cancelled
+    assert not again.is_error
+
+
+def test_a_recipe_cancelled_after_its_last_check_is_not_kept(wait_recipe, mock_archive,
+                                                             monkeypatch):
+    from astrocook.mcp_server import tools
+    real = tools.run_registry
+
+    def then_cancelled(*args, **kwargs):
+        result = real(*args, **kwargs)
+        (event,) = store_cancels.values()
+        event.set()
+        return result
+
+    store_cancels = {}
+    real_init = tools.SessionStore.__init__
+
+    def init(self):
+        real_init(self)
+        self.cancels = store_cancels
+
+    monkeypatch.setattr(tools.SessionStore, "__init__", init)
+    monkeypatch.setattr(tools, "run_registry", then_cancelled)
+    _, result = calls(build_server(), ("session_open", {"path": str(mock_archive)}),
+                      ("flux_scale_test", {"session_id": "mock"}))
+    assert result.is_error
+    assert "flux_scale_test was cancelled: the session is unchanged." in error_text(result)
