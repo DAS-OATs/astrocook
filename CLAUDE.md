@@ -26,7 +26,7 @@ Italian.
 Astrocook: a Python package for the analysis of quasar spectra (continuum,
 identification of absorption systems, Voigt fitting). PySide6 GUI +
 scriptable API. Author and maintainer: Guido Cupani (INAF–OATs).
-Current version: 2.5.0 (2.6.0 in preparation). Python ≥3.12.
+Current version: 2.6.0. Python ≥3.12.
 
 ## Architecture (v2)
 - `astrocook/core/` – immutable dataclasses (`structures.py`), `SpectrumV2`,
@@ -141,8 +141,8 @@ Current version: 2.5.0 (2.6.0 in preparation). Python ≥3.12.
 ## Current status
 Phases 0, 1, 1-bis, 2, 2-bis, 3, 3-bis, 4, 5, 5-bis, 6, 6-bis and 6-ter are
 done (October-November 2026; detail in `ROADMAP.md`, short summaries, and in
-`ROADMAP_HISTORY.md`). Release 2.5.0 (November 2026) is on GitHub with the
-macOS app, not on PyPI; release 2.6.0 (phase 6-ter) is next. The results on
+`ROADMAP_HISTORY.md`). Release 2.6.0 (November 2026, phase 6-ter) is prepared
+(PR 9); 2.5.0 is on GitHub with the macOS app, neither is on PyPI. The results on
 the mock benchmark are those of 2.2.0
 (`benchmarks/results/validate_mocks_baseline.json`) except `metals_auto`,
 which the benchmark does not run (phase 6-ter, PR 7-quater): phases that
@@ -151,10 +151,9 @@ must not change them are checked with `validate_mocks.py --compare`.
 Phase 6-ter (the full MCP server: 65 tools, 48 of them generated from the
 recipe registry, sessions with undo and redo, inspection, notes, gaps, the
 log as text, cancellation, the GUI following a session, a headless Docker
-image) is closed: see "Result of the phase" in `ROADMAP.md`. Next: the
-release 2.6.0 (PR 9: version, CHANGELOG, numerical changes in the notes,
-slow tests and benchmark on the final master, `switcher.json`, macOS app
-build). Then 6-quater (review of the recipe parameters, recipe by recipe;
+image) is closed: see "Result of the phase" in `ROADMAP.md`. Next: publish the
+release 2.6.0 (PR 9 done: version, CHANGELOG, `switcher.json`; left: tag,
+GitHub release, macOS app build). Then 6-quater (review of the recipe parameters, recipe by recipe;
 it starts with ruff `B`, then the type checker and `SessionV2` out of
 `core/` with the renaming of the `V2` suffixes) and phase 7 (robust
 components, measured on the benchmark of phase 4; the real analysis of the
