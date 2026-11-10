@@ -57,11 +57,28 @@ def test_the_ions_found_are_kept(civ_and_siiv, caplog):
     # The ions tried, with their AIC, and the progress of the trials
     (tried,) = result.extra["tried"]
     assert tried["ion"] == "SiIV" and tried["kept"] and tried["delta_aic"] < -100
+    assert tried["reason"] == ""
     assert any(m.startswith("Tried SiIV at z = 1.9: logN = 13.") and m.endswith(": kept.")
                for m in messages)
     trials = [parse_progress(m) for m in messages[:messages.index("Added 1 metal components.")]
               if parse_progress(m) is not None]
     assert trials == [0, 20, 40, 60, 80, 100]
+
+
+@pytest.mark.parametrize("params, reason", [
+    # b of the SiIV is 12: a bound of 10 holds it there
+    ({"max_b": "10"}, "b at its bound (10 km/s)"),
+    # Its AIC change is some -7000 on its 42 pixels
+    ({"aic_penalty": "1e6"}, "AIC change above -1e+06"),
+])
+def test_an_ion_at_a_bound_or_with_too_little_aic_is_not_kept(civ_and_siiv, params, reason):
+    # F121 (Guido's choice, phase 6-ter PR 7-quater): the values at the
+    # bounds were kept (67 of 192 ions on J0103-1305, b = 50), and
+    # aic_penalty was not used
+    result = run(civ_and_siiv, "absorbers.metals_auto", **params)
+    assert not _found(result.session, "SiIV")
+    (tried,) = result.extra["tried"]
+    assert not tried["kept"] and tried["reason"] == reason
 
 
 def test_a_component_with_no_pixel_is_not_fitted(civ_and_siiv):

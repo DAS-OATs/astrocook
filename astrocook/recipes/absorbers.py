@@ -74,13 +74,11 @@ def _methods_forest_auto(p):
 
 
 def _methods_metals_auto(p):
-    # aic_penalty is not used (F121): the text said that an ion was kept
-    # if it decreased the AIC by it (phase 6-ter, PR 7-quater)
-    p.raw('aic_penalty')
     return (f"For each system, the ions {series_list(p.raw('ions'))} were tried "
             f"at its redshift, and each was kept if its fit gave log N >= 12 and "
-            f"2 <= b <= 50 km/s (Cupani et al. 2026){p.menu}; the systems were then "
-            f"refitted, with {fit_bounds(p)}")
+            f"2 <= b <= 50 km/s, neither at the bounds of the fit, and decreased the "
+            f"Akaike information criterion by at least {p['aic_penalty']} (Cupani et "
+            f"al. 2026){p.menu}; the systems were then refitted, with {fit_bounds(p)}")
 
 
 def _methods_identify_lines(p):
@@ -292,10 +290,10 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "references": ("C26", "SciPy"),
         "brief": "Check for associated metals.",
         "requires": ("z_em", "resolution", "continuum"),
-        "details": "For each system already in the list, tries to add other metal ions at its redshift and keeps each whose fit gives logN >= 12 and 2 <= b <= 50 km/s (the AIC change of each ion is reported, not used); skips the ions whose lines fall outside the spectrum; then refits all.",
+        "details": "For each system already in the list, tries to add other metal ions at its redshift and keeps each whose fit gives logN >= 12 and 2 <= b <= 50 km/s, not at the bounds of the fit, and decreases the AIC by the AIC penalty; skips the ions whose lines fall outside the spectrum; then refits all.",
         "params": [
             {"name": "ions", "type": str, "default": "CIV,SiIV,NV,OVI,CII,MgII", "doc": "Comma-separated ions to try, e.g. 'CIV,SiIV,NV,OVI,CII,MgII'."},
-            {"name": "aic_penalty", "type": float, "default": 5.0, "min": 0, "doc": "Not used yet: the AIC change of each ion is reported, the ions are kept by their logN and b (F121)."},
+            {"name": "aic_penalty", "type": float, "default": 5.0, "min": 0, "doc": "Decrease of the AIC needed to keep a new ion (against the same model without it, on the pixels of its fit)."},
             {"name": "z_window_kms", "type": float, "default": 20.0, "gt": 0, "doc": "Half-width of the window in which the redshift of a component can move in the fit (km/s)."},
             {"name": "max_b", "type": float, "default": 50.0, "gt": 1, "max": 300, "doc": "Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."},
             {"name": "max_logN", "type": float, "default": 19.0, "gt": 10, "max": 23, "doc": "Upper bound on logN in the fits; damped systems (logN > 19) are to be fitted by hand."}
@@ -649,6 +647,36 @@ def _remove_narrow(session, series: str, min_b: float, refit_kwargs: dict):
 #: The errors of a fit that does not converge or cannot be evaluated
 #: (ValueError covers np.linalg.LinAlgError and a start outside the bounds)
 FIT_ERRORS = (ValueError, ArithmeticError)
+
+
+#: A fitted value within this fraction of its bound is at the bound
+AT_BOUND_RTOL = 1e-3
+
+
+def _metals_rejection(comp, delta_aic: float, aic_penalty: float, b_max: float,
+                      logN_max: float) -> Optional[str]:
+    """Why ``metals_auto`` does not keep a trial ion, or None if it does.
+
+    The thresholds on logN and b are those the recipe always used. The
+    values at the bounds of the fit and the AIC (F121, Guido's choice,
+    phase 6-ter PR 7-quater): once the ions found were kept (F111), the
+    criterion kept 192 ions of 239 on J0103-1305, 67 with b at its bound
+    of 50 km/s; a value at its bound is not a measure (the fit wanted
+    more), and ``aic_penalty`` was documented and not used.
+    """
+    if comp.logN < 12.0:
+        return "logN below 12"
+    if comp.b < 2.0:
+        return "b below 2 km/s"
+    if comp.b > 50.0:
+        return "b above 50 km/s"
+    if comp.b >= b_max * (1 - AT_BOUND_RTOL):
+        return f"b at its bound ({b_max:g} km/s)"
+    if comp.logN >= logN_max * (1 - AT_BOUND_RTOL):
+        return f"logN at its bound ({logN_max:g})"
+    if delta_aic > -aic_penalty:
+        return f"AIC change above -{aic_penalty:g}"
+    return None
 
 
 def _fit_cancelled() -> bool:
@@ -1216,9 +1244,12 @@ class RecipeAbsorbersV2:
         ions : str, optional
             Comma-separated list of ions to check. Defaults to ``"CIV,SiIV,NV,OVI,CII,MgII"``.
         aic_penalty : float, optional
-            Not used yet (F121): the AIC change of each ion tried is reported
-            (``tried`` in the extra of the result), and an ion is kept if its
-            fit gives logN >= 12 and 2 <= b <= 50 km/s. Defaults to ``5.0``.
+            Decrease of the AIC needed to keep a new ion, against the same
+            model without it on the pixels of its fit. An ion is also kept
+            only if its fit gives logN >= 12 and 2 <= b <= 50 km/s, with
+            neither b nor logN at the bounds of the fit (F121). Each ion
+            tried is reported (``tried`` in the extra of the result), with
+            the reason when it is not kept. Defaults to ``5.0``.
         z_window_kms : float, optional
             Fit window (km/s) for local island fitting. Defaults to ``20.0``.
         max_b : float, optional
@@ -1234,9 +1265,6 @@ class RecipeAbsorbersV2:
             A new :class:`~astrocook.core.session.SessionV2` with added metals.
         """
         ion_list = [i.strip() for i in ions.split(',')]
-        # aic_penalty: checked by its bounds only, not used (see the
-        # docstring); the AIC of each trial is reported, not used to choose
-        # (F111: to use it is for phase 6-quater, Guido)
         z_win = z_window_kms
         b_max = max_b
         logN_max = max_logN
@@ -1304,22 +1332,22 @@ class RecipeAbsorbersV2:
             fitted_comp = fitted_systs.get_component_by_uuid(new_uuid)
             if not fitted_comp:
                 continue
-            keep = 12.0 <= fitted_comp.logN and 2.0 <= fitted_comp.b <= 50.0
-
             # The AIC with the ion against the same model without it, on
-            # the pixels of its fit (3 more free parameters); reported, not
-            # used to choose (F111)
+            # the pixels of its fit (3 more free parameters)
             chi2_with, n_pix = fitter.chi2_on_fit_pixels(model_flux)
             _, flux_without = VoigtFitterV2(
                 spec, fitted_systs.delete_component(uuid=new_uuid)).compute_model_flux()
             chi2_without, _ = fitter.chi2_on_fit_pixels(flux_without)
             delta_aic = chi2_with - chi2_without + 2 * 3
+            reason = _metals_rejection(fitted_comp, delta_aic, aic_penalty, b_max, logN_max)
+            keep = reason is None
             tried.append({"ion": ion, "z": float(z_val), "logN": round(float(fitted_comp.logN), 3),
                           "b": round(float(fitted_comp.b), 2), "pixels": n_pix,
-                          "delta_aic": round(float(delta_aic), 2), "kept": bool(keep)})
+                          "delta_aic": round(float(delta_aic), 2), "kept": keep,
+                          "reason": reason or ""})
             logger.info(f"Tried {ion} at z = {z_val}: logN = {fitted_comp.logN:.2f}, "
                         f"b = {fitted_comp.b:.1f} km/s, AIC change {delta_aic:+.1f} on "
-                        f"{n_pix} pixels: {'kept' if keep else 'not kept'}.")
+                        f"{n_pix} pixels: {'kept' if keep else 'not kept, ' + reason}.")
             if keep:
                 logger.info(f"Found {ion} at z = {z_val} (logN = {fitted_comp.logN:.2f}).")
                 running_systs = fitted_systs
