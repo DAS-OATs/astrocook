@@ -30,7 +30,8 @@ RUN pip install \
     "scipy>=1.14" \
     "matplotlib>=3.9" \
     "numexpr" \
-    "mcp>=2.3,<3"
+    "mcp>=2.3,<3" \
+    "anyio>=4.11"
 # deps:end
 
 # Layers in order of change: the package last

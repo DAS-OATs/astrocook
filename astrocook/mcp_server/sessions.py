@@ -30,11 +30,13 @@ import shutil
 import tarfile
 import tempfile
 import threading
+import time
 import weakref
+from contextlib import contextmanager
 from copy import deepcopy
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Iterator, Optional
 
 from mcp.server.mcpserver.exceptions import ToolError
 
@@ -96,21 +98,43 @@ class SessionMeta:
 class SessionStore:
     """Sessions by identifier.
 
-    ``lock`` serializes the tool calls that run recipes: the SDK runs the
-    calls in worker threads, and the recipes were written for one call at
-    a time (e.g. module-level state, F12).
+    Two locks (phase 6-ter, F113). ``recipe_lock`` serializes the tool calls
+    that run recipes or change the states: the SDK runs the calls in worker
+    threads, and the recipes were written for one call at a time (e.g.
+    module-level state, F12). ``state_lock`` guards the histories and the
+    records of the store, and is held only briefly: the tools that read a
+    session (and save it, or write a note) take only this one, so that they
+    answer while a recipe runs. They see the last state made: the states
+    are immutable, and a recipe adds its own only when it ends. A tool that
+    changes the states takes both (:meth:`writing`), always in this order.
     """
 
     def __init__(self):
         self._histories: dict[str, SessionHistory] = {}
         self.meta: dict[str, SessionMeta] = {}
-        self.lock = threading.Lock()
+        self.recipe_lock = threading.Lock()
+        self.state_lock = threading.RLock()
+        #: The recipe running on a session, and when it started (monotonic)
+        self.running: dict[str, tuple[str, float]] = {}
         #: Passed to the sessions as their ``gui``, so that the recipes
         #: find the other open sessions
         self.context = _Context(self._histories)
         #: The folder of the archives followed by the GUI, made when the
         #: first one is
         self._gui_folder: Optional[Path] = None
+
+    @contextmanager
+    def writing(self) -> Iterator[None]:
+        """Both locks: for a tool that changes the states of a session."""
+        with self.recipe_lock, self.state_lock:
+            yield
+
+    def running_text(self, session_id: str) -> Optional[str]:
+        """The recipe running on a session and for how long, or None."""
+        if session_id not in self.running:
+            return None
+        recipe, start = self.running[session_id]
+        return f"{recipe}, for {time.monotonic() - start:.0f} s"
 
     @property
     def ids(self) -> list[str]:

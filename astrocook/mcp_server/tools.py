@@ -18,6 +18,7 @@ the phase, ``ROADMAP.md``, phase 6-ter). The values of the parameters are
 checked and converted by the registry, as for the GUI and the scripts
 (``typed_recipe``): a wrong value is refused with the message of the recipe.
 """
+import time
 from typing import Annotated, Any, Callable
 
 from mcp.server.mcpserver import Context, MCPServer
@@ -197,9 +198,12 @@ def run_tool(store: SessionStore, spec: RecipeSpec, session_id: str,
                         f"{', '.join(unknown)}. Its parameters: "
                         f"{', '.join(sorted(offered)) or 'none'}.")
     recipe = f"{spec.category}.{spec.name}"
-    with store.lock:
-        history = store.get(session_id)
-        before = history.current_state
+    # The recipe runs under the lock of the recipes only: the tools that read
+    # the session answer meanwhile, and see the state before it (F113)
+    with store.recipe_lock:
+        with store.state_lock:
+            before = store.get(session_id).current_state
+            store.running[session_id] = (tool_name(spec), time.monotonic())
 
         def call():
             try:
@@ -214,38 +218,51 @@ def run_tool(store: SessionStore, spec: RecipeSpec, session_id: str,
             with report_progress(ctx, tool_name(spec)):
                 result, _ = run_recipe(tool_name(spec), call)
         except ToolError as e:
-            _record_gap(store, spec, session_id, before, e)
+            with store.state_lock:
+                _record_gap(store, spec, session_id, before, e)
             raise
-        removed = dict(result.extra.get("removed", {}))
-        out: dict[str, Any] = {"recipe": recipe,
-                               "not_fitted": [str(u) for u in result.extra.get("not_fitted", ())]}
-        if result.branching and result.session is not None:
-            all_changes = (result.changes if isinstance(result.changes, tuple)
-                           else (result.changes,))
-            new_ids = store.branch(session_id, result.sessions, spec.name, result.params,
-                                   provided=result.provided, reason=reason)
-            out["new_sessions"] = [
-                NewSession(session_id=i, spectrum=spectrum_summary(s),
-                           summary="; ".join(c.describe()) or "no change")
-                for i, s, c in zip(new_ids, result.sessions, all_changes, strict=True)]
-            if len(new_ids) == 1:
-                out.update(summaries(result, before, result.session, spec.provides,
-                                     max_listed))
-        elif result.session is not None:
-            store.apply(session_id, result.session, spec.name, result.params,
-                        provided=result.provided, reason=reason)
-            out["changes"] = changes_summary(result.changes, removed, max_listed)
-            if result.changes.components_removed or result.changes.columns_removed:
-                # Decision 1 of the phase: what a recipe removed can be had
-                # back from the history of the session
-                out["undo_hint"] = UNDO_HINT
+        finally:
+            with store.state_lock:
+                store.running.pop(session_id, None)
+        with store.state_lock:
+            return _store_result(store, spec, session_id, before, result,
+                                 recipe, max_listed, reason)
+
+
+def _store_result(store: SessionStore, spec: RecipeSpec, session_id: str,
+                  before, result, recipe: str, max_listed: int,
+                  reason: str | None) -> RecipeInfo:
+    """Add the result of a recipe to its session and build the output."""
+    removed = dict(result.extra.get("removed", {}))
+    out: dict[str, Any] = {"recipe": recipe,
+                           "not_fitted": [str(u) for u in result.extra.get("not_fitted", ())]}
+    if result.branching and result.session is not None:
+        all_changes = (result.changes if isinstance(result.changes, tuple)
+                       else (result.changes,))
+        new_ids = store.branch(session_id, result.sessions, spec.name, result.params,
+                               provided=result.provided, reason=reason)
+        out["new_sessions"] = [
+            NewSession(session_id=i, spectrum=spectrum_summary(s),
+                       summary="; ".join(c.describe()) or "no change")
+            for i, s, c in zip(new_ids, result.sessions, all_changes, strict=True)]
+        if len(new_ids) == 1:
             out.update(summaries(result, before, result.session, spec.provides,
                                  max_listed))
-        else:
-            # A value (e.g. a redshift): the session does not change, and
-            # nothing is logged, as in the GUI
-            out["value"] = _value(result.value)
-        return RecipeInfo(**session_info(store, session_id, result).model_dump(), **out)
+    elif result.session is not None:
+        store.apply(session_id, result.session, spec.name, result.params,
+                    provided=result.provided, reason=reason)
+        out["changes"] = changes_summary(result.changes, removed, max_listed)
+        if result.changes.components_removed or result.changes.columns_removed:
+            # Decision 1 of the phase: what a recipe removed can be had
+            # back from the history of the session
+            out["undo_hint"] = UNDO_HINT
+        out.update(summaries(result, before, result.session, spec.provides,
+                             max_listed))
+    else:
+        # A value (e.g. a redshift): the session does not change, and
+        # nothing is logged, as in the GUI
+        out["value"] = _value(result.value)
+    return RecipeInfo(**session_info(store, session_id, result).model_dump(), **out)
 
 
 def session_info(store: SessionStore, session_id: str, result=None) -> SessionInfo:

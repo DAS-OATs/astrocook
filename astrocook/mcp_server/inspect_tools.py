@@ -137,7 +137,7 @@ def register_inspect_tools(server: MCPServer, store: SessionStore) -> None:
         """List the absorption components of a session, with their errors,
         the reduced chi2 and flags of their last fit, their fit group and
         their constraints, by redshift."""
-        with store.lock:
+        with store.state_lock:
             session = store.get(session_id).current_state
             systs = session.systs
             comps = list(systs.components) if systs else []
@@ -185,7 +185,7 @@ def register_inspect_tools(server: MCPServer, store: SessionStore) -> None:
         numbers. A long range is averaged in blocks of pixels (said in
         binned_by), so that it fits in the context of a model; for a look
         at the shape, spectrum_plot is cheaper."""
-        with store.lock:
+        with store.state_lock:
             spec = store.get(session_id).current_state.spec
             if columns is None:
                 columns = [c for c in DEFAULT_COLUMNS if c in spec.t.colnames]
@@ -219,7 +219,7 @@ def register_inspect_tools(server: MCPServer, store: SessionStore) -> None:
         the flux and its error, the continuum and the model (if any), and a
         tick at each line of each component, labelled with its series."""
         from astrocook.plotting import figure_png, plot_spectrum
-        with store.lock:
+        with store.state_lock:
             session = store.get(session_id).current_state
             try:
                 fig = plot_spectrum(session, x_min, x_max, normalized)
