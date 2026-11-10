@@ -226,6 +226,9 @@ class LinesMixin:
 
         # --- Rate Candidates ---
         reliable_ids = {} 
+        # The candidates scored and dropped, for the result of the recipe
+        # (F119): which, how well they scored and against what
+        rejected = []
         for (rid_1, rid_2, z_test, series_name, threshold) in all_candidates:
             if series_name == 'Ly_ab':
                 threshold = score_threshold 
@@ -246,6 +249,13 @@ class LinesMixin:
                 spec, mask_1, mask_2, series_name, z_test, debug_rating=debug_rating
             )
             
+            if not (r2_score > threshold or bypass_scoring) and threshold <= 1.0:
+                # (not the metal doublets of the forest, which no score
+                # accepts: they would be listed by the hundred)
+                rejected.append({
+                    'series': series_name, 'z': float(z_test),
+                    'score': float(r2_score), 'threshold': float(threshold),
+                    'x_nm': [float(x_nm[mask_1].min()), float(x_nm[mask_1].max())]})
             if r2_score > threshold or bypass_scoring:
                 lines = STANDARD_MULTIPLETS[series_name]
                 comp_1, comp_2 = lines[0], lines[1]
@@ -396,6 +406,7 @@ class LinesMixin:
         new_meta['b_map_json'] = json.dumps(system_b_map)
         new_meta['region_map_json'] = json.dumps(system_region_map)
         new_meta['score_map_json'] = json.dumps(system_score_map)
+        new_meta['rejected_candidates_json'] = json.dumps(rejected)
         
         # rich UI Metadata [THE FIX]
         new_meta['region_identifications'] = json.dumps(region_info)

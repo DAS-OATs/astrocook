@@ -418,7 +418,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "uuid", "type": str, "default": "", "doc": "Identifier of the component.", "gui_hidden": True},
             {"name": "param", "type": str, "default": "", "doc": "Parameter: 'z', 'logN', 'b' or 'btur'.", "choices": ["z", "logN", "b", "btur"]},
             {"name": "is_free", "type": bool, "default": None, "optional": True, "doc": "True: free to vary in the fits; False: frozen."},
-            {"name": "expression", "type": str, "default": None, "optional": True, "doc": "Expression that links the parameter to another component, e.g. 'p[\"z\"]' (None: no link)."},
+            {"name": "expression", "type": str, "default": None, "optional": True, "doc": "Expression that links the parameter to another component, e.g. \"p['<uuid of the other component>'].z\" (None: no link); one that cannot be evaluated is refused."},
             {"name": "target_uuid", "type": str, "default": None, "optional": True, "doc": "Identifier of the component it is linked to."} 
         ],
         "url": "absorbers_cb.html#update_constraint",
@@ -561,7 +561,10 @@ def _identification_extra(spec) -> dict:
                                 {'transition': t, 'score': float(sc)}
                                 for t, sc in sorted(idents.get(rid, []),
                                                     key=lambda ts: -ts[1])]})
-    return {'candidates': candidates, 'regions': regions}
+    dropped = meta.get('rejected_candidates_json') or '[]'
+    dropped = json.loads(dropped) if isinstance(dropped, str) else list(dropped)
+    return {'candidates': candidates, 'regions': regions,
+            'dropped_candidates': dropped}
 
 
 def merge_region_ids(old_ids, old_ident, new_ids, new_ident):
@@ -1993,6 +1996,7 @@ class RecipeAbsorbersV2:
 
         _warn_if_unconvolved(current_session.spec)
 
+        trace = {}
         new_systs = current_session.systs.optimize_hierarchy(
             spec=current_session.spec,
             uuid_seed=uuid,
@@ -2002,8 +2006,11 @@ class RecipeAbsorbersV2:
             z_window_kms=z_win,
             min_dv=min_dv_f,
             group_depth=depth,
-            patience=pat
+            patience=pat,
+            trace=trace
         )
+        # What the search tried and why it stopped, for the result (F118)
+        report('optimization', trace)
             
         if new_systs.constraint_model:
             new_systs.constraint_model.set_active_components(None)

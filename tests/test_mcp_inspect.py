@@ -149,6 +149,22 @@ def test_spectrum_read(mock_archive):
     assert "No pixel between 900" in error_text(empty)
 
 
+def test_spectrum_read_accepts_the_names_of_the_gui(mock_archive):
+    # F120 (trial 3 of PR 7): the expression recipes say F and dF
+    _, gui, internal = calls(
+        build_server(), ("session_open", {"path": str(mock_archive)}),
+        ("spectrum_read", {"session_id": "mock", "x_min": 449, "x_max": 450,
+                           "columns": ["F", "dF", "cont"]}),
+        ("spectrum_read", {"session_id": "mock", "x_min": 449, "x_max": 450,
+                           "columns": ["y", "dy", "cont"]}))
+    g, i = ok(gui), ok(internal)
+    # the values under the names asked
+    assert set(g["columns"]) == {"x", "F", "dF", "cont"}
+    assert g["columns"]["F"] == i["columns"]["y"]
+    assert g["columns"]["dF"] == i["columns"]["dy"]
+    assert g["units"]["F"] == i["units"]["y"]
+
+
 def test_spectrum_plot(mock_archive):
     _, _, plot, normalized = calls(
         build_server(), open_mock(mock_archive), add("CIV", Z1),
@@ -160,3 +176,26 @@ def test_spectrum_plot(mock_archive):
         assert image.type == "image" and image.mime_type == "image/png"
         assert base64.b64decode(image.data)[:8] == b"\x89PNG\r\n\x1a\n"
     assert normalized.content[1].text.endswith("(normalized)")
+
+
+def test_what_a_recipe_reports_reaches_the_agent_in_details(mock_archive):
+    # F118, F119 (trial 3 of PR 7): the same for every recipe, from
+    # RecipeResult.extra, no recipe named in the server
+    _, _, ident = calls(
+        build_server(), open_mock(mock_archive),
+        ("continuum_estimate_auto", {"session_id": "mock"}),
+        ("absorbers_identify_lines", {"session_id": "mock", "score_threshold": 0.5}),
+        )
+    assert isinstance(ok(ident)["details"]["dropped_candidates"], list)
+
+    async def optimize():
+        async with Client(build_server()) as client:
+            await client.call_tool(*open_mock(mock_archive))
+            await client.call_tool("continuum_estimate_auto", {"session_id": "mock"})
+            await client.call_tool(*add("CIV", Z1))
+            listed = ok(await client.call_tool("components_list", {"session_id": "mock"}))
+            return await client.call_tool(
+                "absorbers_optimize_system",
+                {"session_id": "mock", "uuid": listed["components"][0]["uuid"]})
+    optimization = ok(asyncio.run(optimize()))["details"]["optimization"]
+    assert optimization["stopped"] and isinstance(optimization["tried"], list)

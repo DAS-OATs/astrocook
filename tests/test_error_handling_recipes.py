@@ -291,3 +291,38 @@ def test_fit_with_a_resolution_has_no_such_warning(caplog):
     with caplog.at_level(logging.WARNING):
         session.absorbers.refit_all()
     assert msg_no_resolution not in _warnings(caplog)
+
+
+# --- Trial 3 of the MCP server (phase 6-ter, PR 7; F117) ---------------------------
+# The example of the description, ``p["z"]``, cannot be evaluated, and with
+# ``is_free`` left out the link was stored unchecked (the check ran only with
+# ``is_free=False``): the fit then kept the parameter frozen, with a line of
+# the log that nobody read
+
+def test_link_without_is_free_is_checked(caplog):
+    session, (a, b) = _two()
+    with pytest.raises(RecipeFailed, match="Update constraint: The link of z") as info:
+        session.absorbers.update_constraint(
+            b, "z", expression='p["z"]', target_uuid=a)
+    assert "KeyError" in str(info.value)
+    # nothing is stored: the session is the one it was
+    assert (b, "z") not in session.systs.parsed_constraints
+    assert caplog.text == ""
+
+
+def test_link_without_is_free_that_works_is_kept():
+    # unchanged: a valid link is a link, free or not given
+    session, (a, b) = _two()
+    new = session.absorbers.update_constraint(
+        b, "z", expression=f"p['{a}'].z", target_uuid=a)
+    assert new.systs.get_component_by_uuid(b).z == pytest.approx(2.0)
+    assert new.systs.parsed_constraints[(b, "z")].expression == f"p['{a}'].z"
+
+
+def test_unlinking_does_not_check_the_old_expression():
+    # is_free=True wipes the link: no check, whatever was passed
+    session, (a, b) = _two()
+    linked = session.absorbers.update_constraint(
+        b, "z", is_free=False, expression=f"p['{a}'].z", target_uuid=a)
+    freed = linked.absorbers.update_constraint(b, "z", is_free=True)
+    assert freed.systs.parsed_constraints[(b, "z")].expression is None

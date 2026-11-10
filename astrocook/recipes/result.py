@@ -203,6 +203,21 @@ def _plain(value):
     return value.item() if isinstance(value, np.generic) else value
 
 
+#: Relative size below which a parameter of a component is the same after a
+#: refit: the optimizer returns the values of the start to ~1e-10 and the
+#: result listed such components as changed (trial 3 of the MCP server, PR 7)
+SAME_PARAMETER_RTOL = 1e-8
+
+
+def _differs(old, new) -> bool:
+    """Whether a field of a component is not the same, the numbers beyond
+    ``SAME_PARAMETER_RTOL`` (and not NaN against NaN)."""
+    if isinstance(old, (float, np.floating)) and isinstance(new, (float, np.floating)):
+        return not np.isclose(old, new, rtol=SAME_PARAMETER_RTOL, atol=0.0,
+                              equal_nan=True)
+    return old != new
+
+
 def _ref(c) -> ComponentRef:
     return ComponentRef(uuid=c.uuid, series=c.series, z=_plain(c.z),
                         logN=_plain(c.logN), b=_plain(c.b))
@@ -260,7 +275,7 @@ def compare_sessions(before, after) -> Changes:
         if u in old:
             diff = {f: (_plain(getattr(old[u], f, None)), _plain(getattr(new[u], f, None)))
                     for f in COMPONENT_FIELDS
-                    if getattr(old[u], f, None) != getattr(new[u], f, None)}
+                    if _differs(getattr(old[u], f, None), getattr(new[u], f, None))}
             if diff:
                 changed.append(ComponentChange(_ref(new[u]), diff))
     cols_old = _columns(getattr(before, 'spec', None))

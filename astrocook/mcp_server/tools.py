@@ -28,7 +28,7 @@ from pydantic import ConfigDict, Field
 
 from astrocook.mcp_server.errors import run_recipe
 from astrocook.mcp_server.outputs import (
-    NewSession, RecipeInfo, SessionInfo, _value, changes_summary,
+    NewSession, RecipeInfo, SessionInfo, _value, changes_summary, details,
     spectrum_summary, summaries)
 from astrocook.mcp_server.progress import report_progress
 from astrocook.mcp_server.schemas import parameters_schema
@@ -235,7 +235,8 @@ def _store_result(store: SessionStore, spec: RecipeSpec, session_id: str,
     """Add the result of a recipe to its session and build the output."""
     removed = dict(result.extra.get("removed", {}))
     out: dict[str, Any] = {"recipe": recipe,
-                           "not_fitted": [str(u) for u in result.extra.get("not_fitted", ())]}
+                           "not_fitted": [str(u) for u in result.extra.get("not_fitted", ())],
+                           "details": details(result.extra)}
     if result.branching and result.session is not None:
         all_changes = (result.changes if isinstance(result.changes, tuple)
                        else (result.changes,))

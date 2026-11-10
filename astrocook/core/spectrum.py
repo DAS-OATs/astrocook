@@ -16,6 +16,11 @@ from astrocook.core.spectrum_flux import FluxMixin
 from astrocook.core.spectrum_lines import LinesMixin
 
 
+#: The names of the core columns in the GUI and in the expressions of its
+#: dialogs, and the ones in the table (the MCP reads accept both, F120)
+GUI_COLUMN_NAMES = {'λ': 'x', 'λmin': 'xmin', 'λmax': 'xmax', 'F': 'y', 'dF': 'dy'}
+
+
 def _block_means(values: np.ndarray, n: int, error: bool = False) -> np.ndarray:
     """Means over blocks of ``n`` values (the last block may be shorter);
     an error column (``error``) as the error of the mean. NaN are skipped."""
@@ -406,7 +411,10 @@ class SpectrumV2(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, Line
         Parameters
         ----------
         names : list of str
-            The columns (``x`` is always given).
+            The columns (``x`` is always given). The names of the GUI are
+            accepted for the core ones (``λ``, ``λmin``, ``λmax``, ``F``,
+            ``dF``: ``x``, ``xmin``, ``xmax``, ``y``, ``dy``) and the values
+            are given under the name asked (F120).
         x_min, x_max : float, optional
             The range, in the unit of x; None: the start (end) of the
             spectrum.
@@ -428,7 +436,8 @@ class SpectrumV2(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, Line
         """
         table = self.t
         available = table.colnames
-        missing = [n for n in names if n not in available]
+        internal = {n: GUI_COLUMN_NAMES.get(n, n) for n in names}
+        missing = [n for n in names if internal[n] not in available]
         if missing:
             raise KeyError(f"No column {', '.join(missing)}. The columns: "
                            f"{', '.join(available)}.")
@@ -447,9 +456,10 @@ class SpectrumV2(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, Line
         binned_by = 1 if not max_points else max(1, int(np.ceil(n / max_points)))
         columns, units = {}, {}
         for name in ["x", *[c for c in names if c != "x"]]:
-            values = np.asarray(table[name].value, dtype=float)[sel]
-            columns[name] = _block_means(values, binned_by, error=name.startswith("d"))
-            units[name] = str(table[name].unit or "")
+            col = internal.get(name, name)
+            values = np.asarray(table[col].value, dtype=float)[sel]
+            columns[name] = _block_means(values, binned_by, error=col.startswith("d"))
+            units[name] = str(table[col].unit or "")
         return {"columns": columns, "units": units, "n_pixels": n,
                 "binned_by": binned_by}
 
