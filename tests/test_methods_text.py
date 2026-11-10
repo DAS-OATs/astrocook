@@ -50,7 +50,9 @@ def history():
     step(h, "absorbers.add_component", reason="The doublet at 440.9 nm.",
          series="CIV", z=Z, logN=13.5, b=10.0)
     step(h, "absorbers.refit_all")
-    step(h, "absorbers.add_component", series="SiIV", z=Z)
+    # MgII, inside the spectrum (a SiIV at Z, outside it, is refused since
+    # F111, phase 6-ter PR 7-quater)
+    step(h, "absorbers.add_component", series="MgII", z=0.6)
     h.log_manager.add_note("Written after the step undone.")
     h.undo()
     return h
@@ -103,7 +105,7 @@ def test_reason_text_changes_and_notes(history):
 
 def test_the_recipes_undone_are_left_out(history):
     text = methods_text(history).text
-    assert "Si IV" not in text and "Written after the step undone" not in text
+    assert "Mg II" not in text and "Written after the step undone" not in text
 
 
 def test_references(history):

@@ -267,6 +267,15 @@ a session (`session_list`, `session_history`, `components_list`,
 the state before the recipe (`session_list` says what is running); the
 other recipes and the tools that change the states wait for it to end.
 
+**Cancelling a recipe.** A client that cancels its call (the MCP
+cancellation, which most clients send when the user interrupts the agent or
+a call times out) stops the recipe; for a client that does not, the tool
+`session_cancel` does the same. The recipe stops at its next step (a group
+of a fit, a trial ion of *Check Associated Metals*, at most one fit) and
+its call ends with an error: nothing of the recipe is kept, and the
+session stays as it was before it. The Stop button of the progress dialog
+of the GUI works in the same way.
+
 **Watching the agent in the GUI.** When the agent calls `gui_open` on a
 session, the Astrocook GUI opens on it, and after every change of the
 session (a recipe, an undo or redo, a note) it shows the new state: you

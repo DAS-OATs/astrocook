@@ -1,5 +1,6 @@
 import logging
 import re
+import threading
 from PySide6.QtCore import QObject, QRunnable, Signal
 from typing import TYPE_CHECKING, Dict
 
@@ -7,9 +8,10 @@ from astrocook.core.session import SessionV2
 from astrocook.core.session_manager import SessionHistory
 from astrocook.core.structures import HistoryLogV2
 from astrocook.gui.log_script import ScriptComments
-from astrocook.recipes.errors import RecipeError
+from astrocook.recipes.errors import RecipeCancelled, RecipeError
 from astrocook.recipes.params import resolve_params
 from astrocook.recipes.prerequisites import collect_provided
+from astrocook.recipes.progress import cancellable
 from astrocook.recipes.registry import find_recipe
 from astrocook.recipes.result import run
 
@@ -28,10 +30,13 @@ class WorkerSignals(QObject):
     - finished: Emits the new SessionHistory object on success.
     - error: Emits a tuple of (line_number, line_text, error_message).
     - progress: Emits a string to update the user (e.g., "Running line 5...")
+    - stopped: Emits the name of the recipe stopped by the user (it left
+      no new state)
     """
     finished = Signal(object) 
     error = Signal(tuple)
     progress = Signal(str)
+    stopped = Signal(str)
 
 
 class RecipeWorker(QRunnable):
@@ -54,25 +59,21 @@ class RecipeWorker(QRunnable):
         self.recipe_name = recipe_name
         self.params = params
         self.alias_map = alias_map
-        self._is_stopped = False
+        #: Set by the Stop: the recipe, run in :func:`cancellable`, stops at
+        #: its next check (phase 6-ter, PR 7-quater; it was a ``_stop_flag``
+        #: written in the session)
+        self._cancel = threading.Event()
 
     def stop(self):
         """Thread-safe method to request a stop."""
         logger.info(f"Stopping {self.recipe_name}.")
-        self._is_stopped = True
-        
-        # Inject the stop flag into the session object so recipes can see it
-        # This acts as a 'shared variable' between GUI thread and Physics thread
-        self.session._stop_flag = True
+        self._cancel.set()
         
     def run(self):
         """The main work. This runs on the background thread."""
         try:
             logger.debug(f"Running {self.category}.{self.recipe_name}.")
 
-            # Reset stop flag on session start
-            self.session._stop_flag = False
-            
             # 1. Find the recipe method
             recipe_instance = getattr(self.session, self.category, None)
             if not recipe_instance:
@@ -87,27 +88,20 @@ class RecipeWorker(QRunnable):
                 self.params['alias_map'] = self.alias_map
 
             # 3. Run the recipe, with its structured result (phase 6-bis, PR 4)
-            if find_recipe(self.recipe_name) is not None:
-                self.result = run(self.session, f"{self.category}.{self.recipe_name}",
-                                  **self.params)
-                new_session_state = (self.result.session if self.result.session is not None
-                                     else self.result.value)
-                if isinstance(new_session_state, tuple):
-                    new_session_state = list(new_session_state)
-            else:
-                new_session_state = recipe_method(**self.params)
+            with cancellable(self._cancel):
+                if find_recipe(self.recipe_name) is not None:
+                    self.result = run(self.session, f"{self.category}.{self.recipe_name}",
+                                      **self.params)
+                    new_session_state = (self.result.session if self.result.session is not None
+                                         else self.result.value)
+                    if isinstance(new_session_state, tuple):
+                        new_session_state = list(new_session_state)
+                else:
+                    new_session_state = recipe_method(**self.params)
 
-            if self._is_stopped or getattr(self.session, '_stop_flag', False):
-                logger.warning(f"{self.recipe_name} was stopped.")
-                
-                # Use the returned session (likely the original one) or fallback
-                result_session = new_session_state if new_session_state else self.session
-                
-                # [CRITICAL] Tag the RESULT object so MainWindow knows to abort history update
-                result_session._stop_flag = True
-                
-                self.signals.finished.emit((result_session, self.recipe_name, self.params))
-                return
+            if self._cancel.is_set():
+                # Stopped after its last check: its result is not kept
+                raise RecipeCancelled("stopped after its last step: the session is as before it")
 
             if new_session_state is None or isinstance(new_session_state, int):
                 # A recipe raises when it fails (phase 6-bis, PR 3): no result
@@ -122,6 +116,12 @@ class RecipeWorker(QRunnable):
             
             import traceback
             
+            if isinstance(e, RecipeCancelled):
+                # The Stop of the user: no new state, no error dialog
+                logger.warning(f"{self.recipe_name} was stopped.")
+                self.signals.stopped.emit(self.recipe_name)
+                return
+
             if isinstance(e, RecipeError):
                 # The recipe could not do what was asked: the message names
                 # the recipe (and the step of a pipeline) and the reason.

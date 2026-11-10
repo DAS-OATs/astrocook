@@ -116,6 +116,10 @@ class SessionStore:
         self.state_lock = threading.RLock()
         #: The recipe running on a session, and when it started (monotonic)
         self.running: dict[str, tuple[str, float]] = {}
+        #: The event that cancels the recipe running on a session (set by
+        #: the cancellation of the client or by session_cancel, phase 6-ter,
+        #: PR 7-quater)
+        self.cancels: dict[str, threading.Event] = {}
         #: Passed to the sessions as their ``gui``, so that the recipes
         #: find the other open sessions
         self.context = _Context(self._histories)
@@ -135,6 +139,19 @@ class SessionStore:
             return None
         recipe, start = self.running[session_id]
         return f"{recipe}, for {time.monotonic() - start:.0f} s"
+
+    def cancel(self, session_id: str) -> Optional[str]:
+        """Cancel the recipe running on a session: it stops at its next
+        check and leaves no new state. Returns what was running (as
+        :meth:`running_text`), or None if nothing was."""
+        with self.state_lock:
+            self.get(session_id)
+            text = self.running_text(session_id)
+            event = self.cancels.get(session_id)
+            if text is None or event is None:
+                return None
+            event.set()
+            return text
 
     @property
     def ids(self) -> list[str]:

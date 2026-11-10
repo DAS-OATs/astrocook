@@ -6,11 +6,23 @@ those lines is whoever shows the progress: the GUI (the dialog with its
 bar, ``gui/recipe_progress.py``), the MCP server (progress notifications to
 the client, phase 6-ter PR 4) or a script (:func:`watch_progress`). The
 format is read here only, so that the readers cannot differ.
+
+The same places are where a recipe can be cancelled (phase 6-ter, PR
+7-quater): whoever runs a recipe in a thread runs it inside
+:func:`cancellable`, with a ``threading.Event`` that it sets from another
+thread to cancel it (the Stop of the GUI, the cancellation of a client of
+the MCP server, its ``session_cancel`` tool); the recipe calls
+:func:`check_cancelled`, or :func:`progress`, which also logs the progress
+line, and stops with :class:`~astrocook.recipes.errors.RecipeCancelled`.
+The event belongs to the thread, not to the session, so that the sessions
+stay immutable and the steps of a pipeline (each on a new session) see it.
 """
 import logging
 import threading
 from contextlib import contextmanager
-from typing import Callable, Iterator
+from typing import Callable, Iterator, Optional
+
+from astrocook.recipes.errors import RecipeCancelled
 
 #: What a recipe writes before the percentage
 PROGRESS_MARKER = ">> PROGRESS:"
@@ -77,3 +89,49 @@ def watch_progress(callback: Callable[[int, str], None],
     finally:
         logger.removeHandler(handler)
         logger.setLevel(level)
+
+
+# --- Cancellation (phase 6-ter, PR 7-quater) ------------------------------
+
+_current = threading.local()
+
+
+@contextmanager
+def cancellable(event: Optional[threading.Event] = None) -> Iterator[threading.Event]:
+    """Run the block (a recipe) so that setting ``event`` cancels it.
+
+    The event (a new one if None) is the one that :func:`check_cancelled`
+    reads in the current thread while the block runs; it is yielded, to be
+    set from another thread.
+    """
+    event = event if event is not None else threading.Event()
+    previous = getattr(_current, "event", None)
+    _current.event = event
+    try:
+        yield event
+    finally:
+        _current.event = previous
+
+
+def cancel_requested() -> bool:
+    """Whether the recipe running in the current thread was cancelled."""
+    event = getattr(_current, "event", None)
+    return event is not None and event.is_set()
+
+
+def check_cancelled() -> None:
+    """Stop the recipe running in the current thread if it was cancelled.
+
+    Raises
+    ------
+    RecipeCancelled
+        If the event of :func:`cancellable` is set.
+    """
+    if cancel_requested():
+        raise RecipeCancelled("cancelled while it ran: the session is as before it")
+
+
+def progress(logger: logging.Logger, percent: int) -> None:
+    """Log the progress line of a recipe, then stop it if it was cancelled."""
+    logger.info(f"{PROGRESS_MARKER} {percent}")
+    check_cancelled()

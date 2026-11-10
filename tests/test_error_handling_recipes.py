@@ -279,7 +279,13 @@ def test_refit_all_says_it_estimates_the_continuum(caplog):
 def test_fit_without_a_resolution_is_a_warning(name, caplog):
     session, (uuid, _) = _two()
     with caplog.at_level(logging.WARNING):
-        FIT_RECIPES[name](session, uuid)
+        if name == "fit_component":
+            # The components of _two are outside the spectrum: refused
+            # since F111 (phase 6-ter, PR 7-quater), after the warning
+            with pytest.raises(RecipeFailed, match="No valid pixels around the components"):
+                FIT_RECIPES[name](session, uuid)
+        else:
+            FIT_RECIPES[name](session, uuid)
     assert msg_no_resolution in _warnings(caplog)
 
 

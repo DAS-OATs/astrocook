@@ -59,7 +59,7 @@ MAIN_WINDOW = {
     '_on_equalized_stitch_dialog_requested', '_on_export_requested',
     '_on_identification_viewer_closed', '_on_import_requested', '_zoom_main_plot', '_flux_limits_in',
     '_on_log_scripter_closed', '_on_open_spectrum', '_on_recipe_dialog_finished',
-    '_on_recipe_error', '_on_recipe_finished', '_on_recipe_requested',
+    '_on_recipe_error', '_on_recipe_finished', '_on_recipe_requested', '_on_recipe_stopped',
     '_on_reset_continuum_clicked', '_on_save_session', '_on_save_session_context',
     '_on_script_error', '_on_script_finished', '_on_script_progress',
     '_on_session_info', '_on_session_list_context_menu', '_on_session_name_changed',

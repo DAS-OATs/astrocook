@@ -449,15 +449,15 @@ def test_branching_result_logged_in_the_branch(ready):
         assert branch.log_manager.entries[-1].recipe_name == "split"
 
 
-def test_cancelled_result(ready):
+def test_stopped_recipe(ready):
+    # The worker says it was stopped (it was a _stop_flag written in the
+    # result, phase 6-ter PR 7-quater): the history does not change
     window = ready
     history = window.active_history
-    state = history.current_state
-    cancelled = state.with_new_spectrum(state.spec)
-    cancelled._stop_flag = True
     n = len(history.states)
-    window._process_recipe_result((cancelled, "lya_auto", {}))
-    assert len(history.states) == n
+    window._pending_recipe = ("absorbers", "lya_auto", {}, {})
+    window._on_recipe_stopped("lya_auto")
+    assert len(history.states) == n and window._pending_recipe is None
 
 
 def test_refit_warning(ready, monkeypatch):

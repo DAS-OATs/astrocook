@@ -91,6 +91,13 @@ def voigt_optical_depth(wave_grid_ang: np.ndarray,
     return np.bincount(idx, weights=tau0[line] * H_ax, minlength=len(wave_grid_ang))
 
 
+class NoPixelsToFit(ValueError):
+    """No valid pixel is around the components to fit: their lines fall
+    outside the spectrum, or on pixels that cannot be used (F111, phase
+    6-ter, PR 7-quater). A ``ValueError``: the recipes report it as a fit
+    that could not be done."""
+
+
 class VoigtFitterV2:
     """
     Engine for fitting Voigt profiles to spectral data.
@@ -692,6 +699,11 @@ class VoigtFitterV2:
                         logN=comp.logN
                     )
                     
+                    # A window narrower than 30 km/s (a very narrow line, or
+                    # limits not found) is replaced by a fixed one of at
+                    # least 150 km/s, so that the fit of a very narrow
+                    # component still has pixels (its purpose as Guido
+                    # recalls it, November 2026, F111)
                     use_fallback = True
                     if lam_min is not None and lam_max is not None:
                         width_v = c_kms * (lam_max - lam_min) / lam_max
@@ -713,23 +725,24 @@ class VoigtFitterV2:
             indices = np.where(self._fit_mask)[0]
             self._sl = slice(max(0, np.min(indices) - 50), min(len(self._x_ang), np.max(indices) + 51))
         else:
-            logger.warning("No valid pixels around the components to fit: the whole "
-                           "spectrum is used.")
-            self._sl = slice(None)
-            self._fit_mask = self._valid_mask.copy()
+            # It fitted the whole spectrum, with a WARNING: the components
+            # (usually lines out of the spectrum) stayed at their first
+            # values, and the fit took hours on a long spectrum (F111;
+            # Guido's choice, phase 6-ter, PR 7-quater)
+            listed = ", ".join(f"{c.series} at z = {c.z:.4f}" for c in active_components[:5])
+            if len(active_components) > 5:
+                listed += f" and {len(active_components) - 5} more"
+            raise NoPixelsToFit(
+                f"No valid pixels around the components to fit ({listed}): their lines "
+                f"fall outside the spectrum ({self._x_ang.min() / 10:.1f}-"
+                f"{self._x_ang.max() / 10:.1f} nm) or on pixels that cannot be used.")
 
         self._x_calc = self._x_ang[self._sl]
         self._y_norm_calc = self._y_norm[self._sl]
         self._dy_norm_calc = self._dy_norm[self._sl]
         self._fit_mask_calc = self._fit_mask[self._sl]
         
-        #logging.info(f"Fitting context: {len(self._x_calc)} pixels in slice, {np.sum(self._fit_mask_calc)} pixels in fit mask.")
-        if np.sum(self._fit_mask_calc) == 0:
-            logger.debug("FIT MASK IS EMPTY!")
-            # Debug: what are we searching for?
-            for idx, comp in enumerate(active_components):
-                logger.debug(f"  Comp {idx}: z={comp.z:.5f}, series={comp.series}")
-        
+
         if self._use_variable_resolution and self._resol_column is not None:
             self._resol_calc = self._resol_column[self._sl]
         else:
@@ -1069,6 +1082,15 @@ class VoigtFitterV2:
 
         logger.debug(f"Fit complete. Reduced chi2 (constraining pixels): {red_chi2:.2f}.")
         return new_system_list, final_model_flux, res
+
+    def chi2_on_fit_pixels(self, model_flux: np.ndarray) -> Tuple[float, int]:
+        """The chi2 of a model flux (in the units of :meth:`fit` and
+        :meth:`compute_model_flux`, on the whole spectrum) on the pixels of
+        the last fit, and their number: two models compared on the same
+        pixels (``metals_auto``, F111)."""
+        mask = self._fit_mask
+        resid = (self._y_norm[mask] - model_flux[mask] / self._norm[mask]) / self._dy_norm[mask]
+        return float(np.sum(resid[np.isfinite(resid)] ** 2)), int(np.sum(mask))
 
     def compute_model_flux(self) -> Tuple[np.ndarray, np.ndarray]:
         """

@@ -5,11 +5,12 @@ import numpy as np
 from typing import TYPE_CHECKING, Optional
 
 from astrocook.core.atomic_data import STANDARD_MULTIPLETS, is_multiplet, series_lines
-from astrocook.fitting.voigt_fitter import VoigtFitterV2
+from astrocook.fitting.voigt_fitter import NoPixelsToFit, VoigtFitterV2
 
 from astrocook.fitting.voigt_model import LINK_ERRORS, LINK_FUNCTIONS
 from astrocook.recipes.errors import InvalidParameter, MissingPrerequisite, RecipeFailed
 from astrocook.recipes.params import typed_recipe
+from astrocook.recipes.progress import check_cancelled, progress
 from astrocook.recipes.result import report, report_removed
 from astrocook.recipes.messages import (msg_no_resolution, msg_session_not_found,
                                        msg_z_em_unset)
@@ -74,9 +75,10 @@ def _methods_forest_auto(p):
 
 def _methods_metals_auto(p):
     return (f"For each system, the ions {series_list(p.raw('ions'))} were tried "
-            f"at its redshift, and each was kept only if it decreased the Akaike "
-            f"information criterion by at least {p['aic_penalty']} (Cupani et al. "
-            f"2026){p.menu}; the systems were then refitted, with {fit_bounds(p)}")
+            f"at its redshift, and each was kept if its fit gave log N >= 12 and "
+            f"2 <= b <= 50 km/s, neither at the bounds of the fit, and decreased the "
+            f"Akaike information criterion by at least {p['aic_penalty']} (Cupani et "
+            f"al. 2026){p.menu}; the systems were then refitted, with {fit_bounds(p)}")
 
 
 def _methods_identify_lines(p):
@@ -288,10 +290,10 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "references": ("C26", "SciPy"),
         "brief": "Check for associated metals.",
         "requires": ("z_em", "resolution", "continuum"),
-        "details": "For each system already in the list, tries to add other metal ions at its redshift and keeps each only if it improves the fit by the AIC penalty; then refits all.",
+        "details": "For each system already in the list, tries to add other metal ions at its redshift and keeps each whose fit gives logN >= 12 and 2 <= b <= 50 km/s, not at the bounds of the fit, and decreases the AIC by the AIC penalty; skips the ions whose lines fall outside the spectrum; then refits all.",
         "params": [
             {"name": "ions", "type": str, "default": "CIV,SiIV,NV,OVI,CII,MgII", "doc": "Comma-separated ions to try, e.g. 'CIV,SiIV,NV,OVI,CII,MgII'."},
-            {"name": "aic_penalty", "type": float, "default": 5.0, "min": 0, "doc": "Decrease of the AIC needed to keep a new ion."},
+            {"name": "aic_penalty", "type": float, "default": 5.0, "min": 0, "doc": "Decrease of the AIC needed to keep a new ion (against the same model without it, on the pixels of its fit)."},
             {"name": "z_window_kms", "type": float, "default": 20.0, "gt": 0, "doc": "Half-width of the window in which the redshift of a component can move in the fit (km/s)."},
             {"name": "max_b", "type": float, "default": 50.0, "gt": 1, "max": 300, "doc": "Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."},
             {"name": "max_logN", "type": float, "default": 19.0, "gt": 10, "max": 23, "doc": "Upper bound on logN in the fits; damped systems (logN > 19) are to be fitted by hand."}
@@ -647,6 +649,44 @@ def _remove_narrow(session, series: str, min_b: float, refit_kwargs: dict):
 FIT_ERRORS = (ValueError, ArithmeticError)
 
 
+#: A fitted value within this fraction of its bound is at the bound
+AT_BOUND_RTOL = 1e-3
+
+
+def _metals_rejection(comp, delta_aic: float, aic_penalty: float, b_max: float,
+                      logN_max: float) -> Optional[str]:
+    """Why ``metals_auto`` does not keep a trial ion, or None if it does.
+
+    The thresholds on logN and b are those the recipe always used. The
+    values at the bounds of the fit and the AIC (F121, Guido's choice,
+    phase 6-ter PR 7-quater): once the ions found were kept (F111), the
+    criterion kept 192 ions of 239 on J0103-1305, 67 with b at its bound
+    of 50 km/s; a value at its bound is not a measure (the fit wanted
+    more), and ``aic_penalty`` was documented and not used.
+    """
+    if comp.logN < 12.0:
+        return "logN below 12"
+    if comp.b < 2.0:
+        return "b below 2 km/s"
+    if comp.b > 50.0:
+        return "b above 50 km/s"
+    if comp.b >= b_max * (1 - AT_BOUND_RTOL):
+        return f"b at its bound ({b_max:g} km/s)"
+    if comp.logN >= logN_max * (1 - AT_BOUND_RTOL):
+        return f"logN at its bound ({logN_max:g})"
+    if delta_aic > -aic_penalty:
+        return f"AIC change above -{aic_penalty:g}"
+    return None
+
+
+def _fit_cancelled() -> bool:
+    """The stop check of the fitter (called at each evaluation of the
+    residuals): raises RecipeCancelled when the recipe was cancelled, so
+    that a long fit stops too (phase 6-ter, PR 7-quater)."""
+    check_cancelled()
+    return False
+
+
 def _warn_if_unconvolved(spec) -> None:
     """WARNING when a fit runs without a resolution (it was at DEBUG only,
     in the fitter): the profiles are not convolved, so b includes the
@@ -742,27 +782,6 @@ class RecipeAbsorbersV2:
         self._session = session_v2
         self._tag = 'abs'
 
-    def _is_stop_requested(self):
-        """
-        Robustly checks if a stop has been requested.
-        Looks at the local session flag AND the active GUI worker.
-        """
-        # 1. Check direct flag (works if we are on the root session)
-        if getattr(self._session, '_stop_flag', False):
-            return True
-            
-        # 2. Check via GUI worker (works for derived sessions in pipelines)
-        # The _gui reference is preserved across session copies.
-        if hasattr(self._session, '_gui') and self._session._gui:
-            gui = self._session._gui
-            # Access the worker stored in MainWindow
-            if hasattr(gui, '_current_worker') and gui._current_worker:
-                # Check the worker's internal flag
-                if getattr(gui._current_worker, '_is_stopped', False):
-                    return True
-                    
-        return False
-
     @typed_recipe
     def components_auto(self, multiplets: str = "CIV,SiIV,MgII,Ly_ab",
                         score_threshold: float = 0.5,
@@ -829,7 +848,7 @@ class RecipeAbsorbersV2:
         SessionV2
             A new :class:`~astrocook.core.session.SessionV2` with detected systems.
         """
-        logger.info(">> PROGRESS: 0")
+        progress(logger, 0)
         logger.info(f"Searching for components (region: {region_limit}).")
         _check_region(self._session.spec, region_limit)
 
@@ -922,8 +941,7 @@ class RecipeAbsorbersV2:
             z_em_margin_kms=z_em_margin_kms
         )
         
-        logger.info(">> PROGRESS: 30")
-        if self._is_stop_requested(): return self._session
+        progress(logger, 30)
 
         # --- 2.5 MERGE IDENTIFICATION IDs ---
         if old_abs_ids is not None and session_step1.spec.has_aux_column('abs_ids'):
@@ -958,8 +976,7 @@ class RecipeAbsorbersV2:
             z_map_json=z_map_json
         )
 
-        logger.info(">> PROGRESS: 50")
-        if self._is_stop_requested(): return self._session
+        progress(logger, 50)
         
         # --- 4. REFIT ALL ---
         logger.info("Fitting the components (step 3 of 3).")
@@ -981,7 +998,7 @@ class RecipeAbsorbersV2:
 
         # Check for stop request on the valid final session
 
-        if self._is_stop_requested(): return self._session
+        check_cancelled()
         
         final_session = _drop_negligible(final_session)
         logger.debug("Component pipeline complete.")
@@ -1083,7 +1100,7 @@ class RecipeAbsorbersV2:
         SessionV2
             A new :class:`~astrocook.core.session.SessionV2` with the forest model.
         """
-        logger.info(">> PROGRESS: 0")
+        progress(logger, 0)
         logger.info("Fitting the Lyman-alpha forest.")
         
         # 1. Run Pipeline (FORCE region='lya_forest')
@@ -1098,12 +1115,12 @@ class RecipeAbsorbersV2:
             mask=mask,
             z_em_margin_kms=z_em_margin_kms
         )
-        if self._is_stop_requested(): return self._session
+        check_cancelled()
         
         # 2. Cleanup Phase (Interlopers): the Ly-a narrower than min_b are
         # removed and the rest refitted, MIN_B_ROUNDS times; those still
         # narrower after the last refit are removed without a refit (#517)
-        logger.info(">> PROGRESS: 0")
+        progress(logger, 0)
         logger.info(f"Removing the lines narrower than {min_b} km/s (interlopers).")
         
         min_b_val = min_b
@@ -1227,8 +1244,12 @@ class RecipeAbsorbersV2:
         ions : str, optional
             Comma-separated list of ions to check. Defaults to ``"CIV,SiIV,NV,OVI,CII,MgII"``.
         aic_penalty : float, optional
-            AIC improvement required to keep a new ion (Not currently used in logic).
-            Defaults to ``5.0``.
+            Decrease of the AIC needed to keep a new ion, against the same
+            model without it on the pixels of its fit. An ion is also kept
+            only if its fit gives logN >= 12 and 2 <= b <= 50 km/s, with
+            neither b nor logN at the bounds of the fit (F121). Each ion
+            tried is reported (``tried`` in the extra of the result), with
+            the reason when it is not kept. Defaults to ``5.0``.
         z_window_kms : float, optional
             Fit window (km/s) for local island fitting. Defaults to ``20.0``.
         max_b : float, optional
@@ -1244,7 +1265,6 @@ class RecipeAbsorbersV2:
             A new :class:`~astrocook.core.session.SessionV2` with added metals.
         """
         ion_list = [i.strip() for i in ions.split(',')]
-        # aic_penalty: checked by its bounds only, not used (see the docstring)
         z_win = z_window_kms
         b_max = max_b
         logN_max = max_logN
@@ -1264,63 +1284,93 @@ class RecipeAbsorbersV2:
         for c in current_session.systs.components:
             z_round = round(c.z, 4)
             systems_by_z[z_round].append(c)
-            
-        from astrocook.fitting.voigt_fitter import VoigtFitterV2
-        
+        trials = [(z_val, ion) for z_val, comps in systems_by_z.items()
+                  for ion in ion_list if ion not in {c.series for c in comps}]
+
+        spec = current_session.spec
         running_systs = current_session.systs
         count_added = 0
         failed_trials = 0
+        out_of_spectrum = []
+        tried = []
+        progress(logger, 0)
 
-        for z_val, comps in systems_by_z.items():
-            existing_series = {c.series for c in comps}
-            
-            for ion in ion_list:
-                if ion in existing_series: continue
-                
-                logger.debug(f"  Checking {ion} at z={z_val}...")
-                
-                # A. Add
-                trial_systs = running_systs.add_component(ion, z_val, logN=13.0, b=10.0)
-                new_uuid = trial_systs.components[-1].uuid
-                
-                # B. Fit (Local Island)
-                group = trial_systs.get_connected_group([new_uuid], spec=current_session.spec)
-                
-                try:
-                    with trial_systs.fitting_context(list(group), group_depth=FIT_EXPANSION_DEPTH,
-                                                     spec=current_session.spec):
-                        fitter = VoigtFitterV2(current_session.spec, trial_systs)
-                        fitted_systs, _, res = fitter.fit(max_nfev=100, z_window_kms=z_win, verbose=0,
-                                                                   b_max=b_max, logN_max=logN_max)
-                        
-                        # C. Evaluate
-                        fitted_comp = fitted_systs.get_component_by_uuid(new_uuid)
-                        if not fitted_comp: continue 
-                        
-                        keep = True
-                        if fitted_comp.logN < 12.0: keep = False
-                        if fitted_comp.b > 50.0: keep = False
-                        if fitted_comp.b < 2.0: keep = False
-                        
-                        if keep:
-                            logger.info(f"Found {ion} at z = {z_val} (logN = {fitted_comp.logN:.2f}).")
-                            running_systs = fitted_systs
-                            count_added += 1
-                            existing_series.add(ion) 
-                except FIT_ERRORS as e:
-                    # A trial that cannot be fitted is a candidate rejected;
-                    # the other errors reach the recipe (phase 6)
-                    failed_trials += 1
-                    logger.debug(f"The trial fit of {ion} at z = {z_val} failed: {e}")
+        for i, (z_val, ion) in enumerate(trials):
+            check_cancelled()
+            logger.debug(f"  Checking {ion} at z={z_val}...")
 
+            # A. Add
+            trial_systs = running_systs.add_component(ion, z_val, logN=13.0, b=10.0)
+            new_uuid = trial_systs.components[-1].uuid
+
+            # B. Fit (Local Island)
+            group = trial_systs.get_connected_group([new_uuid], spec=spec)
+
+            try:
+                with trial_systs.fitting_context(list(group), group_depth=FIT_EXPANSION_DEPTH,
+                                                 spec=spec):
+                    fitter = VoigtFitterV2(spec, trial_systs, check_stop=_fit_cancelled)
+                    fitted_systs, model_flux, res = fitter.fit(max_nfev=100, z_window_kms=z_win,
+                                                               verbose=0, b_max=b_max,
+                                                               logN_max=logN_max)
+            except NoPixelsToFit:
+                # Its lines are outside the spectrum: it cannot be tried, and
+                # it was fitted on the whole spectrum, for hours on a long
+                # one, and kept at its first values (F111, Guido's choice)
+                out_of_spectrum.append(f"{ion} at z = {z_val}")
+                continue
+            except FIT_ERRORS as e:
+                # A trial that cannot be fitted is a candidate rejected;
+                # the other errors reach the recipe (phase 6)
+                failed_trials += 1
+                logger.debug(f"The trial fit of {ion} at z = {z_val} failed: {e}")
+                continue
+            finally:
+                progress(logger, int(100 * (i + 1) / len(trials)))
+
+            # C. Evaluate
+            fitted_comp = fitted_systs.get_component_by_uuid(new_uuid)
+            if not fitted_comp:
+                continue
+            # The AIC with the ion against the same model without it, on
+            # the pixels of its fit (3 more free parameters)
+            chi2_with, n_pix = fitter.chi2_on_fit_pixels(model_flux)
+            _, flux_without = VoigtFitterV2(
+                spec, fitted_systs.delete_component(uuid=new_uuid)).compute_model_flux()
+            chi2_without, _ = fitter.chi2_on_fit_pixels(flux_without)
+            delta_aic = chi2_with - chi2_without + 2 * 3
+            reason = _metals_rejection(fitted_comp, delta_aic, aic_penalty, b_max, logN_max)
+            keep = reason is None
+            tried.append({"ion": ion, "z": float(z_val), "logN": round(float(fitted_comp.logN), 3),
+                          "b": round(float(fitted_comp.b), 2), "pixels": n_pix,
+                          "delta_aic": round(float(delta_aic), 2), "kept": keep,
+                          "reason": reason or ""})
+            logger.info(f"Tried {ion} at z = {z_val}: logN = {fitted_comp.logN:.2f}, "
+                        f"b = {fitted_comp.b:.1f} km/s, AIC change {delta_aic:+.1f} on "
+                        f"{n_pix} pixels: {'kept' if keep else 'not kept, ' + reason}.")
+            if keep:
+                logger.info(f"Found {ion} at z = {z_val} (logN = {fitted_comp.logN:.2f}).")
+                running_systs = fitted_systs
+                count_added += 1
+
+        report("tried", tried)
+        if out_of_spectrum:
+            listed = ", ".join(out_of_spectrum[:10])
+            more = f" and {len(out_of_spectrum) - 10} more" if len(out_of_spectrum) > 10 else ""
+            logger.warning(f"{len(out_of_spectrum)} trial ion{'s' if len(out_of_spectrum) > 1 else ''} "
+                           f"not tried, their lines outside the spectrum: {listed}{more}.")
         if failed_trials:
             logger.warning(f"{failed_trials} trial fit{'s' if failed_trials > 1 else ''} "
                            "failed: those candidates were not added.")
         if count_added > 0:
             logger.info(f"Added {count_added} metal components.")
             # The values the pipeline always used, before the defaults of
-            # refit_all were aligned with the GUI (#573)
-            return self.refit_all(max_b=max_b, max_logN=max_logN, group_depth='0', max_nfev='100')
+            # refit_all were aligned with the GUI (#573). The session with
+            # the ions found: it refitted the session it started from, and
+            # lost them (F111)
+            found = current_session.with_new_system_list(running_systs)
+            return RecipeAbsorbersV2(found).refit_all(max_b=max_b, max_logN=max_logN,
+                                                      group_depth='0', max_nfev='100')
         else:
             logger.info("No metals found.")
             return current_session
@@ -1738,23 +1788,13 @@ class RecipeAbsorbersV2:
 
         current_session = self._session
 
-        # Define the callback using the recipe's stop check
-        def check_stop(): return self._is_stop_requested()
+        _warn_if_unconvolved(current_session.spec)
+        with current_session.systs.fitting_context([uuid], group_depth=depth_i,
+                                                   spec=current_session.spec):
+            fitter = VoigtFitterV2(current_session.spec, current_session.systs,
+                                   check_stop=_fit_cancelled)
+            new_systs, model_flux, res = fitter.fit(max_nfev=max_nfev_i, z_window_kms=z_win_f)
 
-        try:
-            _warn_if_unconvolved(current_session.spec)
-
-            with current_session.systs.fitting_context([uuid], group_depth=depth_i,
-                                                       spec=current_session.spec):
-                fitter = VoigtFitterV2(current_session.spec, current_session.systs, check_stop=check_stop)
-                new_systs, model_flux, res = fitter.fit(max_nfev=max_nfev_i, z_window_kms=z_win_f)
-            
-        except RuntimeError as e:
-            if "stopped" in str(e):
-                logger.info("The fit was stopped: the components are as before it.")
-                return self._session # Return the session as it was before fitting started
-            raise e # Re-raise if it's a real error
-            
         if new_systs.constraint_model:
             new_systs.constraint_model.set_active_components(None)
 
@@ -2186,7 +2226,7 @@ class RecipeAbsorbersV2:
             with current_session.systs.fitting_context(list(combined_active_set), group_depth=FIT_EXPANSION_DEPTH,
                                                        spec=current_session.spec):
                 fitter = VoigtFitterV2(current_session.spec, current_session.systs, 
-                                      check_stop=self._is_stop_requested)
+                                      check_stop=_fit_cancelled)
                 new_systs, model_flux, res = fitter.fit(
                     max_nfev=max_nfev_i, z_window_kms=z_win_f, b_max=b_max_f,
                     logN_max=logN_max_f
@@ -2270,7 +2310,7 @@ class RecipeAbsorbersV2:
 
         total_units = len(work_units)
         logger.info(f"Fitting {total_units} groups of components.")
-        logger.info(">> PROGRESS: 0")
+        progress(logger, 0)
 
         # 2. Sequential Local Fit Loop
         reference_systs = current_session.systs
@@ -2283,12 +2323,7 @@ class RecipeAbsorbersV2:
         not_fitted = []  # the components of the groups that could not be fitted
         for i, target_uuids in enumerate(work_units):
 
-            if self._is_stop_requested():
-                logger.warning("The refit was stopped.")
-                return self._session  # Return original state (revert)
-            
-            pct = int(100 * (i + 1) / total_units)
-            logger.info(f">> PROGRESS: {pct}")
+            progress(logger, int(100 * (i + 1) / total_units))
                 
             if target_uuids:
                 peek_comp = next((c for c in reference_systs.components if c.uuid == target_uuids[0]), None)
@@ -2344,7 +2379,7 @@ class RecipeAbsorbersV2:
                            "their previous values.")
 
         # 3. Batch Merge
-        logger.info(">> PROGRESS: 100")
+        progress(logger, 100)
         logger.debug(f"Refit All: Merging {len(updated_components_map)} fitted components...")
             
         final_comps = []

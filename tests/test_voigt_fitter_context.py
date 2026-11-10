@@ -1,5 +1,6 @@
 """Tests for the preparation of the Voigt fit context."""
 import numpy as np
+import pytest
 import astropy.units as au
 
 from astrocook.core.spectrum import SpectrumV2
@@ -7,13 +8,14 @@ from astrocook.core.structures import (
     ComponentDataV2, DataColumnV2, SpectrumDataV2, SystemListDataV2
 )
 from astrocook.core.system_list import SystemListV2
-from astrocook.fitting.voigt_fitter import VoigtFitterV2
+from astrocook.fitting.voigt_fitter import NoPixelsToFit, VoigtFitterV2
 
 
 def test_prepare_fit_context_with_no_valid_pixels():
     # With no valid pixel the fit mask stays empty; the debug branch that
     # lists the components used an unassigned variable and raised
-    # UnboundLocalError.
+    # UnboundLocalError. Then the whole spectrum was fitted; since F111
+    # (phase 6-ter, PR 7-quater) the fit is refused with a clear message.
     x = np.linspace(4630.0, 4660.0, 300)
     one = np.ones_like(x)
     spec = SpectrumV2(SpectrumDataV2(
@@ -28,7 +30,6 @@ def test_prepare_fit_context_with_no_valid_pixels():
                            b=20.0, db=None, series='CIV')
     fitter = VoigtFitterV2(spec, SystemListV2(SystemListDataV2(components=[comp])))
 
-    lower, upper = fitter.prepare_fit_context()
-
-    assert len(lower) == len(upper) == 3  # z, logN, b (btur fixed)
-    assert np.all(lower < upper)
+    with pytest.raises(NoPixelsToFit, match=r"\(CIV at z = 2\.0000\): .* or on pixels "
+                                             "that cannot be used"):
+        fitter.prepare_fit_context()

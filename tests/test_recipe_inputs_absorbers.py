@@ -513,11 +513,11 @@ CASES = [
     ('populate_from_identification', 'ident', 'series_map_json', 'abc', {'z_map_json': Z_JSON}, FAILS),
     ('populate_from_identification', 'ident', 'series_map_json', None, {'z_map_json': Z_JSON}, REFUSED),
     ('populate_from_identification', 'ident', 'series_map_json', '{}', {'z_map_json': Z_JSON}, '{}'),
-    ('add_component', 'fitted', 'z', '2.0', {'series': 'CIV'}, 2.0),
-    ('add_component', 'fitted', 'z', 2.0, {'series': 'CIV'}, 2.0),
-    ('add_component', 'fitted', 'z', 2, {'series': 'CIV'}, 2.0),
-    ('add_component', 'fitted', 'z', ' 2 ', {'series': 'CIV'}, 2.0),
-    ('add_component', 'fitted', 'z', '1e1', {'series': 'CIV'}, 10.0),
+    ('add_component', 'fitted', 'z', '2.0', {'series': 'CIV'}, FAILS),  # F111: no pixel (outside the spectrum), fitted on the whole spectrum until PR 7-quater
+    ('add_component', 'fitted', 'z', 2.0, {'series': 'CIV'}, FAILS),  # F111: no pixel (outside the spectrum), fitted on the whole spectrum until PR 7-quater
+    ('add_component', 'fitted', 'z', 2, {'series': 'CIV'}, FAILS),  # F111: no pixel (outside the spectrum), fitted on the whole spectrum until PR 7-quater
+    ('add_component', 'fitted', 'z', ' 2 ', {'series': 'CIV'}, FAILS),  # F111: no pixel (outside the spectrum), fitted on the whole spectrum until PR 7-quater
+    ('add_component', 'fitted', 'z', '1e1', {'series': 'CIV'}, FAILS),  # F111: no pixel (outside the spectrum), fitted on the whole spectrum until PR 7-quater
     ('add_component', 'fitted', 'z', 'abc', {'series': 'CIV'}, REFUSED),
     ('add_component', 'fitted', 'z', '', {'series': 'CIV'}, REFUSED),
     ('add_component', 'fitted', 'z', 'None', {'series': 'CIV'}, REFUSED),
@@ -526,7 +526,7 @@ CASES = [
     ('add_component', 'fitted', 'z', 'inf', {'series': 'CIV'}, REFUSED),
     ('add_component', 'fitted', 'z', True, {'series': 'CIV'}, REFUSED),  # 2.4.0: accepted as 1
     ('add_component', 'fitted', 'z', '-1', {'series': 'CIV'}, REFUSED),  # 2.4.0: accepted
-    ('add_component', 'fitted', 'z', '0', {'series': 'CIV'}, 0.0),
+    ('add_component', 'fitted', 'z', '0', {'series': 'CIV'}, FAILS),  # F111: no pixel (outside the spectrum), fitted on the whole spectrum until PR 7-quater
     ('add_component', 'fitted', 'z', '1.931', {'series': 'CIV'}, 1.931),
     ('add_component', 'fitted', 'logN', '2.0', {'series': 'CIV', 'z': 1.931}, REFUSED),  # 2.4.0: accepted
     ('add_component', 'fitted', 'logN', 2.0, {'series': 'CIV', 'z': 1.931}, REFUSED),  # 2.4.0: accepted
@@ -589,9 +589,9 @@ CASES = [
     ('add_component', 'fitted', 'z_window_kms', '0', {'series': 'CIV', 'z': 1.931}, REFUSED),  # 2.4.0: accepted
     ('add_component', 'fitted', 'z_window_kms', '30', {'series': 'CIV', 'z': 1.931}, 30.0),
     ('add_component', 'fitted', 'series', 'CIV', {'z': 1.931}, 'CIV'),
-    ('add_component', 'fitted', 'series', 'Ly_a', {'z': 1.931}, 'Ly_a'),
-    ('add_component', 'fitted', 'series', 'nope', {'z': 1.931}, 'nope'),
-    ('add_component', 'fitted', 'series', '', {'z': 1.931}, ''),
+    ('add_component', 'fitted', 'series', 'Ly_a', {'z': 1.931}, FAILS),  # F111: no pixel (outside the spectrum), fitted on the whole spectrum until PR 7-quater
+    ('add_component', 'fitted', 'series', 'nope', {'z': 1.931}, FAILS),  # F111: no transition, so no pixel; fitted on the whole spectrum until PR 7-quater
+    ('add_component', 'fitted', 'series', '', {'z': 1.931}, FAILS),  # F111: no transition, so no pixel; fitted on the whole spectrum until PR 7-quater
     ('add_component', 'fitted', 'series', None, {'z': 1.931}, REFUSED),  # 2.4.0: crashed (TypeError)
     ('update_component', 'fitted', 'z', '2.0', {'uuid': UUID}, 2.0),
     ('update_component', 'fitted', 'z', 2.0, {'uuid': UUID}, 2.0),
@@ -846,11 +846,11 @@ CASES = [
     ('update_constraints_column', 'fitted', 'param', 'nope', {'is_free': False}, REFUSED),
     ('update_constraints_column', 'fitted', 'param', '', {'is_free': False}, REFUSED),
     ('update_constraints_column', 'fitted', 'param', None, {'is_free': False}, REFUSED),  # 2.4.0: accepted
-    ('add_linked_system', 'fitted', 'z', '2.0', {'series_list': 'CIV,SiIV'}, 2.0),  # 2.4.0: crashed (ValueError)
-    ('add_linked_system', 'fitted', 'z', 2.0, {'series_list': 'CIV,SiIV'}, 2.0),
-    ('add_linked_system', 'fitted', 'z', 2, {'series_list': 'CIV,SiIV'}, 2.0),
-    ('add_linked_system', 'fitted', 'z', ' 2 ', {'series_list': 'CIV,SiIV'}, 2.0),  # 2.4.0: crashed (ValueError)
-    ('add_linked_system', 'fitted', 'z', '1e1', {'series_list': 'CIV,SiIV'}, 10.0),  # 2.4.0: crashed (ValueError)
+    ('add_linked_system', 'fitted', 'z', '2.0', {'series_list': 'CIV,SiIV'}, FAILS),  # F111: no pixel (outside the spectrum), fitted on the whole spectrum until PR 7-quater
+    ('add_linked_system', 'fitted', 'z', 2.0, {'series_list': 'CIV,SiIV'}, FAILS),  # F111: no pixel (outside the spectrum), fitted on the whole spectrum until PR 7-quater
+    ('add_linked_system', 'fitted', 'z', 2, {'series_list': 'CIV,SiIV'}, FAILS),  # F111: no pixel (outside the spectrum), fitted on the whole spectrum until PR 7-quater
+    ('add_linked_system', 'fitted', 'z', ' 2 ', {'series_list': 'CIV,SiIV'}, FAILS),  # F111: no pixel (outside the spectrum), fitted on the whole spectrum until PR 7-quater
+    ('add_linked_system', 'fitted', 'z', '1e1', {'series_list': 'CIV,SiIV'}, FAILS),  # F111: no pixel (outside the spectrum), fitted on the whole spectrum until PR 7-quater
     ('add_linked_system', 'fitted', 'z', 'abc', {'series_list': 'CIV,SiIV'}, REFUSED),  # 2.4.0: crashed (ValueError)
     ('add_linked_system', 'fitted', 'z', '', {'series_list': 'CIV,SiIV'}, REFUSED),  # 2.4.0: crashed (ValueError)
     ('add_linked_system', 'fitted', 'z', 'None', {'series_list': 'CIV,SiIV'}, REFUSED),  # 2.4.0: crashed (ValueError)
@@ -859,7 +859,7 @@ CASES = [
     ('add_linked_system', 'fitted', 'z', 'inf', {'series_list': 'CIV,SiIV'}, REFUSED),  # 2.4.0: crashed (ValueError)
     ('add_linked_system', 'fitted', 'z', True, {'series_list': 'CIV,SiIV'}, REFUSED),  # 2.4.0: accepted as 1
     ('add_linked_system', 'fitted', 'z', '-1', {'series_list': 'CIV,SiIV'}, REFUSED),  # 2.4.0: crashed (ValueError)
-    ('add_linked_system', 'fitted', 'z', '0', {'series_list': 'CIV,SiIV'}, 0.0),  # 2.4.0: crashed (ValueError)
+    ('add_linked_system', 'fitted', 'z', '0', {'series_list': 'CIV,SiIV'}, FAILS),  # F111: no pixel (outside the spectrum), fitted on the whole spectrum until PR 7-quater
     ('add_linked_system', 'fitted', 'z', '1.931', {'series_list': 'CIV,SiIV'}, 1.931),  # 2.4.0: crashed (ValueError)
     ('add_linked_system', 'fitted', 'logN', '2.0', {'series_list': 'CIV,SiIV', 'z': 1.931}, REFUSED),
     ('add_linked_system', 'fitted', 'logN', 2.0, {'series_list': 'CIV,SiIV', 'z': 1.931}, REFUSED),  # 2.4.0: accepted
@@ -908,7 +908,7 @@ CASES = [
     ('add_linked_system', 'fitted', 'z_window_kms', '30', {'series_list': 'CIV,SiIV', 'z': 1.931}, 30.0),
     ('add_linked_system', 'fitted', 'series_list', 'CIV', {'z': 1.931}, 'CIV'),
     ('add_linked_system', 'fitted', 'series_list', 'CIV,SiIV', {'z': 1.931}, 'CIV,SiIV'),
-    ('add_linked_system', 'fitted', 'series_list', 'nope', {'z': 1.931}, 'nope'),
+    ('add_linked_system', 'fitted', 'series_list', 'nope', {'z': 1.931}, FAILS),  # F111: no transition, so no pixel; fitted on the whole spectrum until PR 7-quater
     ('add_linked_system', 'fitted', 'series_list', '', {'z': 1.931}, REFUSED),
     ('add_linked_system', 'fitted', 'series_list', None, {'z': 1.931}, REFUSED),  # 2.4.0: crashed (AttributeError)
     ('optimize_system', 'fitted', 'max_components', '2', {'uuid': UUID}, 2),

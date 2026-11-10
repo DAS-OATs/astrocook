@@ -72,6 +72,11 @@ anything again. To try something on a copy, use session_duplicate.
 session_list lists the open sessions; session_close closes one, and
 refuses if it has changes not saved.
 
+A long recipe sends its progress, and a line every 20 s when it is silent.
+To stop one, cancel its call; if your client cannot, session_cancel does
+it. A recipe cancelled stops at its next step and leaves the session as it
+was before it.
+
 To look into a session: session_describe (its columns), components_list
 (the components with their errors, flags, fit groups and constraints),
 spectrum_read (the columns in a range, as numbers) and spectrum_plot (a

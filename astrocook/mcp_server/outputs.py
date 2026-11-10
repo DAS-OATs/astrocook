@@ -561,6 +561,16 @@ class StateInfo(BaseModel):
     current: bool = Field(False, description="True for the current state.")
 
 
+class CancelResult(BaseModel):
+    """What session_cancel did (phase 6-ter, PR 7-quater)."""
+
+    session_id: str
+    cancelled: Optional[str] = Field(description=(
+        "The recipe cancelled and for how long it ran, or null if none was "
+        "running."))
+    message: str
+
+
 class NoteResult(BaseModel):
     """A note added to the log of a session."""
 
