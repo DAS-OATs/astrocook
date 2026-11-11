@@ -1,0 +1,7 @@
+astrocook.session.session module
+================================
+
+.. automodule:: astrocook.session.session
+   :members:
+   :show-inheritance:
+   :undoc-members:

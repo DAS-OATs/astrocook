@@ -439,6 +439,7 @@
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.debug_hooks.html">astrocook.core.debug_hooks module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.resolution.html">astrocook.core.resolution module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.session.html">astrocook.core.session module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.session_manager.html">astrocook.core.session_manager module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.spectrum.html">astrocook.core.spectrum module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.structures.html">astrocook.core.structures module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.system_list.html">astrocook.core.system_list module</a></li>
@@ -565,14 +566,14 @@
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">astrocook.fitting.bayesian_fitter.</span></span><span class="sig-name descname"><span class="pre">BayesianVoigtFitter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">systs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_window_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/fitting/bayesian_fitter.html#BayesianVoigtFitter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.bayesian_fitter.BayesianVoigtFitter" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Bayesian engine for Voigt profile fitting.</p>
-<p>This class wraps a <a class="reference internal" href="astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitterV2" title="astrocook.fitting.voigt_fitter.VoigtFitterV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">VoigtFitterV2</span></code></a>
+<p>This class wraps a <a class="reference internal" href="astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitter" title="astrocook.fitting.voigt_fitter.VoigtFitter"><code class="xref py py-class docutils literal notranslate"><span class="pre">VoigtFitter</span></code></a>
 instance to perform Markov Chain Monte Carlo (MCMC) or Nested Sampling
 using the exact same physical model, constraints, and data preparation.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>spec</strong> (<a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><em>SpectrumV2</em></a>) – The spectral data to fit.</p></li>
-<li><p><strong>systs</strong> (<a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><em>SystemListV2</em></a>) – The system list containing the components to model.</p></li>
+<li><p><strong>spec</strong> (<a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.Spectrum" title="astrocook.core.spectrum.Spectrum"><em>Spectrum</em></a>) – The spectral data to fit.</p></li>
+<li><p><strong>systs</strong> (<a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemList" title="astrocook.core.system_list.SystemList"><em>SystemList</em></a>) – The system list containing the components to model.</p></li>
 <li><p><strong>z_window_kms</strong> (<em>float</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Velocity window (km/s) around component centers to include in the fit mask.
 Defaults to <code class="docutils literal notranslate"><span class="pre">20.0</span></code>.</p></li>
 </ul>
@@ -723,7 +724,7 @@ in the system list. Fixed or linked parameters maintain their prior state.</p>
 <dd class="field-even"><p>A new system list containing the updated parameters and Bayesian errors.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2">SystemListV2</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemList" title="astrocook.core.system_list.SystemList">SystemList</a></p>
 </dd>
 </dl>
 </dd></dl>

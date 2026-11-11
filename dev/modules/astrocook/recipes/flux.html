@@ -471,7 +471,8 @@
                 <article class="bd-article">
                   
   <h1>Source code for astrocook.recipes.flux</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">astropy</span><span class="w"> </span><span class="kn">import</span> <span class="n">units</span> <span class="k">as</span> <span class="n">au</span>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">astrocook._renamed</span><span class="w"> </span><span class="kn">import</span> <span class="n">renamed</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astropy</span><span class="w"> </span><span class="kn">import</span> <span class="n">units</span> <span class="k">as</span> <span class="n">au</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Optional</span>
@@ -482,7 +483,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.params</span><span class="w"> </span><span class="kn">import</span> <span class="n">typed_recipe</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.session</span><span class="w"> </span><span class="kn">import</span> <span class="n">SessionV2</span> 
+    <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.session.session</span><span class="w"> </span><span class="kn">import</span> <span class="n">Session</span> 
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
@@ -582,7 +583,7 @@
 <span class="p">}</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_find_session</span><span class="p">(</span><span class="n">session</span><span class="p">:</span> <span class="s1">'SessionV2'</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_find_session</span><span class="p">(</span><span class="n">session</span><span class="p">:</span> <span class="s1">'Session'</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""The history of the open session called ``name`` (RecipeFailed if</span>
 <span class="sd">    there is none, or no GUI to find it in)."""</span>
     <span class="n">gui</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="s1">'_gui'</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
@@ -592,35 +593,35 @@
     <span class="k">raise</span> <span class="n">RecipeFailed</span><span class="p">(</span><span class="n">msg_session_not_found</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">))</span>
 
 
-<div class="viewcode-block" id="RecipeFluxV2">
-<a class="viewcode-back" href="../../../api/astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFluxV2">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">RecipeFluxV2</span><span class="p">:</span>
+<div class="viewcode-block" id="RecipeFlux">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFlux">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">RecipeFlux</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Recipes for manipulating spectral flux and grid sampling.</span>
 
 <span class="sd">    These methods are accessed via the ``session.flux`` attribute and delegate</span>
-<span class="sd">    logic to :class:`~astrocook.core.spectrum.SpectrumV2`.</span>
+<span class="sd">    logic to :class:`~astrocook.core.spectrum.Spectrum`.</span>
 <span class="sd">    """</span>
-<div class="viewcode-block" id="RecipeFluxV2.__init__">
-<a class="viewcode-back" href="../../../api/astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFluxV2.__init__">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session_v2</span><span class="p">:</span> <span class="s1">'SessionV2'</span><span class="p">):</span>
+<div class="viewcode-block" id="RecipeFlux.__init__">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFlux.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session_v2</span><span class="p">:</span> <span class="s1">'Session'</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_session</span> <span class="o">=</span> <span class="n">session_v2</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_tag</span> <span class="o">=</span> <span class="s1">'cb'</span></div>
 
 
-<div class="viewcode-block" id="RecipeFluxV2.calculate_running_std">
-<a class="viewcode-back" href="../../../api/astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFluxV2.calculate_running_std">[docs]</a>
+<div class="viewcode-block" id="RecipeFlux.calculate_running_std">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFlux.calculate_running_std">[docs]</a>
     <span class="nd">@typed_recipe</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">calculate_running_std</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                               <span class="n">input_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'y'</span><span class="p">,</span>
                               <span class="n">output_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'running_std'</span><span class="p">,</span>
-                              <span class="n">window_pix</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">21</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+                              <span class="n">window_pix</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">21</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'Session'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Calculate running standard deviation.</span>
 
 <span class="sd">        Calculates a running Root-Mean-Square (RMS) on a specific column to estimate</span>
 <span class="sd">        local error or variability.</span>
-<span class="sd">        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.calculate_running_std`.</span>
+<span class="sd">        Delegates to :meth:`astrocook.core.spectrum.Spectrum.calculate_running_std`.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -635,8 +636,8 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        SessionV2</span>
-<span class="sd">            A new :class:`~astrocook.core.session.SessionV2` with the calculated column added.</span>
+<span class="sd">        Session</span>
+<span class="sd">            A new :class:`~astrocook.session.session.Session` with the calculated column added.</span>
 <span class="sd">        """</span>
         <span class="n">window_pix_i</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">window_pix</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">window_pix_i</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="c1"># Ensure it's odd</span>
@@ -650,16 +651,16 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="RecipeFluxV2.smooth">
-<a class="viewcode-back" href="../../../api/astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFluxV2.smooth">[docs]</a>
+<div class="viewcode-block" id="RecipeFlux.smooth">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFlux.smooth">[docs]</a>
     <span class="nd">@typed_recipe</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">smooth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sigma_kms</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">100.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">smooth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sigma_kms</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">100.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'Session'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Smooth spectrum.</span>
 
 <span class="sd">        Applies a Gaussian filter to the spectrum flux (y-axis), error (dy-axis),</span>
 <span class="sd">        and auxiliary columns.</span>
-<span class="sd">        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.smooth`.</span>
+<span class="sd">        Delegates to :meth:`astrocook.core.spectrum.Spectrum.smooth`.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -668,24 +669,24 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        SessionV2</span>
-<span class="sd">            A new :class:`~astrocook.core.session.SessionV2` with smoothed columns.</span>
+<span class="sd">        Session</span>
+<span class="sd">            A new :class:`~astrocook.session.session.Session` with smoothed columns.</span>
 <span class="sd">        """</span>
         <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="n">spec_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span><span class="o">.</span><span class="n">smooth</span><span class="p">(</span><span class="n">sigma_kms</span><span class="o">=</span><span class="n">sigma_kms</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="RecipeFluxV2.rebin">
-<a class="viewcode-back" href="../../../api/astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFluxV2.rebin">[docs]</a>
+<div class="viewcode-block" id="RecipeFlux.rebin">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFlux.rebin">[docs]</a>
     <span class="nd">@typed_recipe</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">rebin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xstart</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">xend</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
               <span class="n">dx</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">10.0</span><span class="p">,</span> <span class="n">xunit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'km/s'</span><span class="p">,</span> <span class="n">kappa</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">5.0</span><span class="p">,</span>
-              <span class="n">filling</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">norm</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'False'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+              <span class="n">filling</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">norm</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'False'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'Session'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Rebin spectrum.</span>
 
 <span class="sd">        Applies a new binning to a spectrum with a constant bin size.</span>
-<span class="sd">        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.rebin`.</span>
+<span class="sd">        Delegates to :meth:`astrocook.core.spectrum.Spectrum.rebin`.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -713,8 +714,8 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        SessionV2</span>
-<span class="sd">            A new :class:`~astrocook.core.session.SessionV2` with the rebinned spectrum.</span>
+<span class="sd">        Session</span>
+<span class="sd">            A new :class:`~astrocook.session.session.Session` with the rebinned spectrum.</span>
 <span class="sd">        """</span>
 
         <span class="n">xstart_q</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">xstart</span><span class="p">,</span> <span class="n">au</span><span class="o">.</span><span class="n">nm</span><span class="p">)</span> <span class="k">if</span> <span class="n">xstart</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
@@ -738,14 +739,14 @@
             <span class="n">xstart</span><span class="o">=</span><span class="n">xstart_q</span><span class="p">,</span> <span class="n">xend</span><span class="o">=</span><span class="n">xend_q</span><span class="p">,</span> <span class="n">dx</span><span class="o">=</span><span class="n">dx_q</span><span class="p">,</span> <span class="n">kappa</span><span class="o">=</span><span class="n">kappa</span><span class="p">,</span> <span class="n">filling</span><span class="o">=</span><span class="n">filling</span>
         <span class="p">)</span>
         
-        <span class="c1"># 6. Return a NEW SessionV2 instance (the new state)</span>
+        <span class="c1"># 6. Return a NEW Session instance (the new state)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span></div>
 
     
-<div class="viewcode-block" id="RecipeFluxV2.equalize">
-<a class="viewcode-back" href="../../../api/astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFluxV2.equalize">[docs]</a>
+<div class="viewcode-block" id="RecipeFlux.equalize">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFlux.equalize">[docs]</a>
     <span class="nd">@typed_recipe</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">equalize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reference_session</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'None'</span><span class="p">,</span> <span class="n">order</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">equalize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reference_session</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'None'</span><span class="p">,</span> <span class="n">order</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'Session'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Equalize flux to a reference session.</span>
 
@@ -762,7 +763,7 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        SessionV2</span>
+<span class="sd">        Session</span>
 <span class="sd">            A new session with the scaled flux. </span>
 <span class="sd">        """</span>
         <span class="k">if</span> <span class="n">reference_session</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">'None'</span><span class="p">,</span> <span class="s1">''</span><span class="p">]:</span>
@@ -774,16 +775,16 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec</span><span class="p">)</span></div>
 
     
-<div class="viewcode-block" id="RecipeFluxV2.resample">
-<a class="viewcode-back" href="../../../api/astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFluxV2.resample">[docs]</a>
+<div class="viewcode-block" id="RecipeFlux.resample">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFlux.resample">[docs]</a>
     <span class="nd">@typed_recipe</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">resample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_session</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'None'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">resample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_session</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'None'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'Session'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Resample on another grid.</span>
 
 <span class="sd">        Resamples this spectrum onto the exact wavelength grid of another open session.</span>
 <span class="sd">        This is often a prerequisite for multi-session arithmetic.</span>
-<span class="sd">        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.resample_on_grid`.</span>
+<span class="sd">        Delegates to :meth:`astrocook.core.spectrum.Spectrum.resample_on_grid`.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -792,8 +793,8 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        SessionV2</span>
-<span class="sd">            A new :class:`~astrocook.core.session.SessionV2` interpolated to the target grid.</span>
+<span class="sd">        Session</span>
+<span class="sd">            A new :class:`~astrocook.session.session.Session` interpolated to the target grid.</span>
 <span class="sd">        """</span>
         <span class="k">if</span> <span class="n">target_session</span> <span class="o">==</span> <span class="s1">'None'</span> <span class="ow">or</span> <span class="n">target_session</span> <span class="o">==</span> <span class="s1">''</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">RecipeFailed</span><span class="p">(</span><span class="s2">"No target session is selected."</span><span class="p">)</span>
@@ -804,15 +805,15 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span></div>
 
         
-<div class="viewcode-block" id="RecipeFluxV2.calibrate_from_magnitudes">
-<a class="viewcode-back" href="../../../api/astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFluxV2.calibrate_from_magnitudes">[docs]</a>
+<div class="viewcode-block" id="RecipeFlux.calibrate_from_magnitudes">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFlux.calibrate_from_magnitudes">[docs]</a>
     <span class="nd">@typed_recipe</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">calibrate_from_magnitudes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">magnitudes</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"SDSS_r=17.0"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">calibrate_from_magnitudes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">magnitudes</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"SDSS_r=17.0"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'Session'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Flux calibrate (multi-band).</span>
 
 <span class="sd">        Warps the spectrum SED to match multiple photometric points.</span>
-<span class="sd">        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.calibrate`.</span>
+<span class="sd">        Delegates to :meth:`astrocook.core.spectrum.Spectrum.calibrate`.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -822,13 +823,16 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        SessionV2</span>
-<span class="sd">            A new :class:`~astrocook.core.session.SessionV2` with calibrated flux.</span>
+<span class="sd">        Session</span>
+<span class="sd">            A new :class:`~astrocook.session.session.Session` with calibrated flux.</span>
 <span class="sd">        """</span>
         <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="n">spec_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span><span class="o">.</span><span class="n">calibrate</span><span class="p">(</span><span class="n">magnitudes</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span></div>
 </div>
 
+
+<span class="c1"># Old names (phase 6-quater, PR 6): see astrocook/_renamed.py</span>
+<span class="fm">__getattr__</span> <span class="o">=</span> <span class="n">renamed</span><span class="p">(</span><span class="vm">__name__</span><span class="p">,</span> <span class="p">{</span><span class="s2">"RecipeFluxV2"</span><span class="p">:</span> <span class="s2">"RecipeFlux"</span><span class="p">})</span>
 </pre></div>
 
                 </article>

@@ -6,7 +6,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>astrocook.core.session &#8212; Astrocook dev documentation</title>
+    <title>astrocook.session.session &#8212; Astrocook dev documentation</title>
   
   
   
@@ -42,7 +42,7 @@
     <script src="../../../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../../../static/design-tabs.js?v=fcb327ea"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'modules/astrocook/core/session';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'modules/astrocook/session/session';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
@@ -453,7 +453,7 @@
     
     <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">astrocook.core.session</span></li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">astrocook.session.session</span></li>
   </ul>
 </nav>
 </div>
@@ -470,8 +470,9 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <h1>Source code for astrocook.core.session</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+  <h1>Source code for astrocook.session.session</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">astrocook._renamed</span><span class="w"> </span><span class="kn">import</span> <span class="n">renamed</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
@@ -481,25 +482,25 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.io.adapter</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_and_migrate_structure</span><span class="p">,</span> <span class="n">save_archive_v2</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.io.v1_archive</span><span class="w"> </span><span class="kn">import</span> <span class="n">V1ArchiveManager</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.continuum</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeContinuumV2</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.absorbers</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeAbsorbersV2</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.edit</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeEditV2</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.file</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeFileV2</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.flux</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeFluxV2</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum</span><span class="w"> </span><span class="kn">import</span> <span class="n">SpectrumV2</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.continuum</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeContinuum</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.absorbers</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeAbsorbers</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.edit</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeEdit</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.file</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeFile</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.flux</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeFlux</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Spectrum</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">SystemListDataV2</span><span class="p">,</span> <span class="n">HistoryLogV2</span>
+    <span class="n">SystemListData</span><span class="p">,</span> <span class="n">HistoryLog</span>
 <span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.system_list</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemListV2</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.system_list</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemList</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 <span class="c1"># Define the type for the log manager</span>
-<span class="n">LogManager</span> <span class="o">=</span> <span class="n">HistoryLogV2</span>
+<span class="n">LogManager</span> <span class="o">=</span> <span class="n">HistoryLog</span>
 
 <div class="viewcode-block" id="load_session_from_file">
-<a class="viewcode-back" href="../../../api/astrocook.core.session.html#astrocook.core.session.load_session_from_file">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">load_session_from_file</span><span class="p">(</span><span class="n">archive_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">gui_context</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">format_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="s1">'SessionV2'</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+<a class="viewcode-back" href="../../../api/astrocook.session.session.html#astrocook.session.session.load_session_from_file">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_session_from_file</span><span class="p">(</span><span class="n">archive_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">gui_context</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">format_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="s1">'Session'</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Orchestrate the loading of a session from a file or archive.</span>
 
@@ -522,8 +523,8 @@
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">    SessionV2 or int</span>
-<span class="sd">        The loaded :class:`~astrocook.core.session.SessionV2` object if successful.</span>
+<span class="sd">    Session or int</span>
+<span class="sd">        The loaded :class:`~astrocook.session.session.Session` object if successful.</span>
 <span class="sd">        Returns ``0`` (integer) if the loading process failed.</span>
 
 <span class="sd">    Raises</span>
@@ -559,7 +560,7 @@
         <span class="k">if</span> <span class="n">v2_loader</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">spec_data</span> <span class="o">=</span> <span class="n">v2_loader</span><span class="p">(</span><span class="n">archive_path</span><span class="p">)</span>
-                <span class="k">return</span> <span class="n">SessionV2</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">gui</span><span class="o">=</span><span class="n">gui_context</span><span class="p">,</span> <span class="n">spec</span><span class="o">=</span><span class="n">SpectrumV2</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">spec_data</span><span class="p">))</span>
+                <span class="k">return</span> <span class="n">Session</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">gui</span><span class="o">=</span><span class="n">gui_context</span><span class="p">,</span> <span class="n">spec</span><span class="o">=</span><span class="n">Spectrum</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">spec_data</span><span class="p">))</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Could not read </span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">archive_path</span><span class="p">)</span><span class="si">}</span><span class="s2"> "</span>
                              <span class="sa">f</span><span class="s2">"as </span><span class="si">{</span><span class="n">format_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -637,7 +638,7 @@
         <span class="c1"># legacy FWHM converted to R</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.resolution</span><span class="w"> </span><span class="kn">import</span> <span class="n">migrate_component_resolutions</span>
         <span class="n">system_list_v2</span> <span class="o">=</span> <span class="n">migrate_component_resolutions</span><span class="p">(</span><span class="n">system_list_v2</span><span class="p">,</span> <span class="n">spectrum_v2</span><span class="p">)</span>
-        <span class="n">session</span> <span class="o">=</span> <span class="n">SessionV2</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">gui</span><span class="o">=</span><span class="n">gui_context</span><span class="p">,</span> <span class="n">spec</span><span class="o">=</span><span class="n">spectrum_v2</span><span class="p">,</span> <span class="n">systs</span><span class="o">=</span><span class="n">system_list_v2</span><span class="p">)</span>
+        <span class="n">session</span> <span class="o">=</span> <span class="n">Session</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">gui</span><span class="o">=</span><span class="n">gui_context</span><span class="p">,</span> <span class="n">spec</span><span class="o">=</span><span class="n">spectrum_v2</span><span class="p">,</span> <span class="n">systs</span><span class="o">=</span><span class="n">system_list_v2</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">v2_metadata</span><span class="p">:</span>
             <span class="c1"># Not recorded before 2.1 (F45)</span>
             <span class="n">session</span><span class="o">.</span><span class="n">saved_with_version</span> <span class="o">=</span> <span class="n">v2_metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'astrocook_version'</span><span class="p">)</span>
@@ -645,7 +646,7 @@
                          <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">session</span><span class="o">.</span><span class="n">saved_with_version</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">'2.0.3 or earlier'</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">v2_metadata</span> <span class="ow">and</span> <span class="n">v2_metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'log_type'</span><span class="p">)</span> <span class="o">==</span> <span class="s1">'v2'</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">log</span> <span class="o">=</span> <span class="n">HistoryLogV2</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">v2_metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'log_history_json'</span><span class="p">))</span>
+                <span class="n">log</span> <span class="o">=</span> <span class="n">HistoryLog</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">v2_metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'log_history_json'</span><span class="p">))</span>
                 <span class="c1"># The parameters renamed since the archive was saved, by</span>
                 <span class="c1"># their new names (phase 6-quater, PR 2); the archive is not</span>
                 <span class="c1"># changed</span>
@@ -669,9 +670,9 @@
 
             
 
-<div class="viewcode-block" id="SessionV2">
-<a class="viewcode-back" href="../../../api/astrocook.core.session.html#astrocook.core.session.SessionV2">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">SessionV2</span><span class="p">:</span>
+<div class="viewcode-block" id="Session">
+<a class="viewcode-back" href="../../../api/astrocook.session.session.html#astrocook.session.session.Session">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Session</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    The central coordinator for an Astrocook analysis session.</span>
 
@@ -680,10 +681,10 @@
 <span class="sd">    high-level analysis workflows ("Recipes").</span>
 
 <span class="sd">    .. note::</span>
-<span class="sd">       **Immutability Pattern**: In Astrocook V2, the ``SessionV2`` object is designed</span>
+<span class="sd">       **Immutability Pattern**: In Astrocook V2, the ``Session`` object is designed</span>
 <span class="sd">       to be treated as immutable within the undo/redo history stack. Operations that</span>
 <span class="sd">       modify data (like smoothing flux or fitting a continuum) do not modify the object</span>
-<span class="sd">       in-place; instead, they return a *new* ``SessionV2`` instance containing the</span>
+<span class="sd">       in-place; instead, they return a *new* ``Session`` instance containing the</span>
 <span class="sd">       updated data structures.</span>
 
 <span class="sd">    Attributes</span>
@@ -694,26 +695,26 @@
 <span class="sd">        The version of Astrocook that saved the ``.acs2`` archive this session</span>
 <span class="sd">        was opened from; ``None`` if it was not opened from an ``.acs2``</span>
 <span class="sd">        archive, or if the archive does not record it (versions up to 2.0.3).</span>
-<span class="sd">    systs : astrocook.core.system_list.SystemListV2, optional</span>
+<span class="sd">    systs : astrocook.core.system_list.SystemList, optional</span>
 <span class="sd">        The container for identified absorption systems and Voigt profile components.</span>
-<span class="sd">    file : astrocook.recipes.file.RecipeFileV2</span>
+<span class="sd">    file : astrocook.recipes.file.RecipeFile</span>
 <span class="sd">        Access to file import/export recipes (e.g., ``import_ascii``, ``export_ascii``).</span>
-<span class="sd">    edit : astrocook.recipes.edit.RecipeEditV2</span>
+<span class="sd">    edit : astrocook.recipes.edit.RecipeEdit</span>
 <span class="sd">        Access to editing recipes (e.g., ``set_properties``, ``convert_x_axis``).</span>
-<span class="sd">    flux : astrocook.recipes.flux.RecipeFluxV2</span>
+<span class="sd">    flux : astrocook.recipes.flux.RecipeFlux</span>
 <span class="sd">        Access to flux manipulation recipes (e.g., ``smooth``, ``rebin``).</span>
-<span class="sd">    continuum : astrocook.recipes.continuum.RecipeContinuumV2</span>
+<span class="sd">    continuum : astrocook.recipes.continuum.RecipeContinuum</span>
 <span class="sd">        Access to continuum estimation and fitting recipes.</span>
-<span class="sd">    absorbers : astrocook.recipes.absorbers.RecipeAbsorbersV2</span>
+<span class="sd">    absorbers : astrocook.recipes.absorbers.RecipeAbsorbers</span>
 <span class="sd">        Access to line identification and fitting recipes.</span>
 <span class="sd">    """</span>
-<div class="viewcode-block" id="SessionV2.__init__">
-<a class="viewcode-back" href="../../../api/astrocook.core.session.html#astrocook.core.session.SessionV2.__init__">[docs]</a>
+<div class="viewcode-block" id="Session.__init__">
+<a class="viewcode-back" href="../../../api/astrocook.session.session.html#astrocook.session.session.Session.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
                  <span class="n">gui</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> 
-                 <span class="n">spec</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SpectrumV2</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> 
-                 <span class="n">systs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SystemListV2</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+                 <span class="n">spec</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Spectrum</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> 
+                 <span class="n">systs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SystemList</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_gui</span> <span class="o">=</span> <span class="n">gui</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
@@ -721,13 +722,13 @@
         <span class="c1"># Documented in "Attributes" above (F45)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">saved_with_version</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_current_spectrum</span> <span class="o">=</span> <span class="n">spec</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">systs</span> <span class="o">=</span> <span class="n">systs</span> <span class="k">if</span> <span class="n">systs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">SystemListV2</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">SystemListDataV2</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">systs</span> <span class="o">=</span> <span class="n">systs</span> <span class="k">if</span> <span class="n">systs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">SystemList</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">SystemListData</span><span class="p">())</span>
         
-        <span class="bp">self</span><span class="o">.</span><span class="n">file</span> <span class="o">=</span> <span class="n">RecipeFileV2</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">edit</span> <span class="o">=</span> <span class="n">RecipeEditV2</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">flux</span> <span class="o">=</span> <span class="n">RecipeFluxV2</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">continuum</span> <span class="o">=</span> <span class="n">RecipeContinuumV2</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">absorbers</span> <span class="o">=</span> <span class="n">RecipeAbsorbersV2</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file</span> <span class="o">=</span> <span class="n">RecipeFile</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">edit</span> <span class="o">=</span> <span class="n">RecipeEdit</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">flux</span> <span class="o">=</span> <span class="n">RecipeFlux</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">continuum</span> <span class="o">=</span> <span class="n">RecipeContinuum</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">absorbers</span> <span class="o">=</span> <span class="n">RecipeAbsorbers</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">cb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">edit</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_shade</span> <span class="o">=</span> <span class="kc">False</span> 
@@ -735,7 +736,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_clicks</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>  
         <span class="bp">self</span><span class="o">.</span><span class="n">_z_sel</span> <span class="o">=</span> <span class="mf">0.0</span>   
         <span class="bp">self</span><span class="o">.</span><span class="n">_series_sel</span> <span class="o">=</span> <span class="s1">'Ly_a'</span> 
-        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"SessionV2 '</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">' initialized."</span><span class="p">)</span></div>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Session '</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">' initialized."</span><span class="p">)</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
@@ -750,7 +751,7 @@
         <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"'</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">' object has no attribute '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">'"</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">spec</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SpectrumV2</span><span class="p">]:</span> 
+    <span class="k">def</span><span class="w"> </span><span class="nf">spec</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Spectrum</span><span class="p">]:</span> 
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        The main container for spectral data (flux, wavelength, error, etc.).</span>
 <span class="sd">        """</span>
@@ -760,12 +761,12 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">lines</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lines</span> 
 
-<div class="viewcode-block" id="SessionV2.open_new">
-<a class="viewcode-back" href="../../../api/astrocook.core.session.html#astrocook.core.session.SessionV2.open_new">[docs]</a>
+<div class="viewcode-block" id="Session.open_new">
+<a class="viewcode-back" href="../../../api/astrocook.session.session.html#astrocook.session.session.Session.open_new">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">open_new</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">gui_context</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">format_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="s1">'SessionV2'</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>        
+    <span class="k">def</span><span class="w"> </span><span class="nf">open_new</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">gui_context</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">format_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="s1">'Session'</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>        
 <span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Factory method: Create a new SessionV2 by loading data from a file.</span>
+<span class="sd">        Factory method: Create a new Session by loading data from a file.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -780,8 +781,8 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        SessionV2 or int</span>
-<span class="sd">            A new SessionV2 instance, or 0 on failure.</span>
+<span class="sd">        Session or int</span>
+<span class="sd">            A new Session instance, or 0 on failure.</span>
 <span class="sd">        """</span>
         <span class="c1"># load_session_from_file reports its own failures and returns 0</span>
         <span class="k">return</span> <span class="n">load_session_from_file</span><span class="p">(</span>
@@ -792,24 +793,24 @@
         <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="SessionV2.with_new_spectrum">
-<a class="viewcode-back" href="../../../api/astrocook.core.session.html#astrocook.core.session.SessionV2.with_new_spectrum">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">with_new_spectrum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_spectrum</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SpectrumV2</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+<div class="viewcode-block" id="Session.with_new_spectrum">
+<a class="viewcode-back" href="../../../api/astrocook.session.session.html#astrocook.session.session.Session.with_new_spectrum">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">with_new_spectrum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_spectrum</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Spectrum</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s1">'Session'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Return a new SessionV2 instance with an updated spectrum.</span>
+<span class="sd">        Return a new Session instance with an updated spectrum.</span>
 
 <span class="sd">        This is used by recipes that modify spectral data (e.g., smoothing,</span>
 <span class="sd">        continuum fitting) to ensure history preservation.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        new_spectrum : SpectrumV2 or None</span>
+<span class="sd">        new_spectrum : Spectrum or None</span>
 <span class="sd">            The new spectral data object (``None``: a session without</span>
 <span class="sd">            spectrum is copied as it is).</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        SessionV2</span>
+<span class="sd">        Session</span>
 <span class="sd">            A shallow copy of the session pointing to the new spectrum.</span>
 <span class="sd">        """</span>
         <span class="n">constructor_args</span> <span class="o">=</span> <span class="p">{</span>
@@ -818,26 +819,26 @@
             <span class="s1">'spec'</span><span class="p">:</span> <span class="n">new_spectrum</span><span class="p">,</span>
             <span class="s1">'systs'</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">systs</span><span class="p">,</span>
         <span class="p">}</span>
-        <span class="n">new_session</span> <span class="o">=</span> <span class="n">SessionV2</span><span class="p">(</span><span class="o">**</span><span class="n">constructor_args</span><span class="p">)</span>
+        <span class="n">new_session</span> <span class="o">=</span> <span class="n">Session</span><span class="p">(</span><span class="o">**</span><span class="n">constructor_args</span><span class="p">)</span>
         <span class="n">new_session</span><span class="o">.</span><span class="n">log_manager</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_manager</span> 
         <span class="n">new_session</span><span class="o">.</span><span class="n">saved_with_version</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">saved_with_version</span>
         <span class="k">return</span> <span class="n">new_session</span></div>
 
 
-<div class="viewcode-block" id="SessionV2.with_new_system_list">
-<a class="viewcode-back" href="../../../api/astrocook.core.session.html#astrocook.core.session.SessionV2.with_new_system_list">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">with_new_system_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_systs</span><span class="p">:</span> <span class="n">SystemListV2</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+<div class="viewcode-block" id="Session.with_new_system_list">
+<a class="viewcode-back" href="../../../api/astrocook.session.session.html#astrocook.session.session.Session.with_new_system_list">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">with_new_system_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_systs</span><span class="p">:</span> <span class="n">SystemList</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'Session'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Return a new SessionV2 instance with an updated system list.</span>
+<span class="sd">        Return a new Session instance with an updated system list.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        new_systs : SystemListV2</span>
+<span class="sd">        new_systs : SystemList</span>
 <span class="sd">            The new system list object.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        SessionV2</span>
+<span class="sd">        Session</span>
 <span class="sd">            A shallow copy of the session pointing to the new system list.</span>
 <span class="sd">        """</span>
         <span class="n">constructor_args</span> <span class="o">=</span> <span class="p">{</span>
@@ -846,16 +847,16 @@
             <span class="s1">'spec'</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span>
             <span class="s1">'systs'</span><span class="p">:</span> <span class="n">new_systs</span><span class="p">,</span>
         <span class="p">}</span>
-        <span class="n">new_session</span> <span class="o">=</span> <span class="n">SessionV2</span><span class="p">(</span><span class="o">**</span><span class="n">constructor_args</span><span class="p">)</span>
+        <span class="n">new_session</span> <span class="o">=</span> <span class="n">Session</span><span class="p">(</span><span class="o">**</span><span class="n">constructor_args</span><span class="p">)</span>
         <span class="n">new_session</span><span class="o">.</span><span class="n">log_manager</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_manager</span>
         <span class="n">new_session</span><span class="o">.</span><span class="n">saved_with_version</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">saved_with_version</span>
         <span class="k">return</span> <span class="n">new_session</span></div>
 
     
-<div class="viewcode-block" id="SessionV2.save">
-<a class="viewcode-back" href="../../../api/astrocook.core.session.html#astrocook.core.session.SessionV2.save">[docs]</a>
+<div class="viewcode-block" id="Session.save">
+<a class="viewcode-back" href="../../../api/astrocook.session.session.html#astrocook.session.session.Session.save">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> 
-             <span class="n">initial_session</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">'SessionV2'</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> 
+             <span class="n">initial_session</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">'Session'</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> 
              <span class="n">models</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Save the current session state to an ``.acs2`` archive.</span>
@@ -870,7 +871,7 @@
 <span class="sd">        ----------</span>
 <span class="sd">        file_path : str</span>
 <span class="sd">            The destination path. ``.acs2`` is appended if missing.</span>
-<span class="sd">        initial_session : SessionV2, optional</span>
+<span class="sd">        initial_session : Session, optional</span>
 <span class="sd">            The state of the session *before* any modifications, saved in the</span>
 <span class="sd">            archive so that it contains the original raw data for</span>
 <span class="sd">            reproducibility.</span>
@@ -903,6 +904,9 @@
         <span class="k">return</span> <span class="mi">0</span></div>
 </div>
 
+
+<span class="c1"># Old names (phase 6-quater, PR 6): see astrocook/_renamed.py</span>
+<span class="fm">__getattr__</span> <span class="o">=</span> <span class="n">renamed</span><span class="p">(</span><span class="vm">__name__</span><span class="p">,</span> <span class="p">{</span><span class="s2">"SessionV2"</span><span class="p">:</span> <span class="s2">"Session"</span><span class="p">})</span>
 </pre></div>
 
                 </article>
