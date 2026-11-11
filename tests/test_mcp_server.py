@@ -6,6 +6,7 @@ import logging
 import sys
 import threading
 from importlib.metadata import entry_points
+from itertools import pairwise
 from pathlib import Path
 
 import numpy as np
@@ -403,7 +404,7 @@ def test_identify_lines_one_candidate_per_doublet(forest_archive):
         ("absorbers_identify_lines", {"session_id": "forest"}))
     civ = sorted(s["z"] for s in result.structured_content["identification"]
                  ["systems"] if s["series"] == "CIV")
-    close = [b - a for a, b in zip(civ, civ[1:]) if (b - a) / (1 + b) * C_KMS < 2]
+    close = [b - a for a, b in pairwise(civ) if (b - a) / (1 + b) * C_KMS < 2]
     assert civ and not close
 
 

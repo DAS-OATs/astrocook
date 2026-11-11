@@ -238,7 +238,7 @@ def test_optimize_system_adds_the_blended_component(one_civ):
     civ = sorted((c for c in out.systs.components if c.series == "CIV"),
                  key=lambda c: c.z)
     assert len(civ) == 2
-    for comp, true in zip(civ, TRUE_COMPONENTS[:2]):
+    for comp, true in zip(civ, TRUE_COMPONENTS[:2], strict=True):
         assert _dv(comp.z, true["z"]) < 3.0
         assert comp.logN == pytest.approx(true["logN"], abs=0.2)
     # With the default threshold (2.5 sigma) no component is added
@@ -332,12 +332,12 @@ def test_fit_component_group_depth_0_freezes_neighbours(data):
     session = _session(data, _lya_chain())
     centre = session.systs.components[3]
     out = session.absorbers.fit_component(centre.uuid, group_depth="0")
-    changed = [c.uuid for c, old in zip(out.systs.components, session.systs.components)
+    changed = [c.uuid for c, old in zip(out.systs.components, session.systs.components, strict=True)
                if (c.z, c.logN, c.b) != (old.z, old.logN, old.b)]
     assert changed == [centre.uuid]
     # The default (2) fits the neighbours too
     out2 = session.absorbers.fit_component(centre.uuid)
-    changed2 = [c for c, old in zip(out2.systs.components, session.systs.components)
+    changed2 = [c for c, old in zip(out2.systs.components, session.systs.components, strict=True)
                 if (c.z, c.logN, c.b) != (old.z, old.logN, old.b)]
     assert len(changed2) > 1
 

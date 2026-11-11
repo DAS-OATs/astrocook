@@ -619,7 +619,7 @@ class VelocityPlotWidget(QWidget):
         if cached is None:
             return
         positions, labels = cached
-        for ax, pos in zip(self.fig.axes, positions):
+        for ax, pos in zip(self.fig.axes, positions, strict=True):
             ax.set_position(pos)
         for name, pos in labels.items():
             label = getattr(self.fig, name, None)
@@ -696,7 +696,7 @@ class VelocityPlotWidget(QWidget):
             trans_name, line_main, line_resid = self._panel_map[ax]
             
             siblings = [trans_name]
-            for series_key, members in STANDARD_MULTIPLETS.items():
+            for members in STANDARD_MULTIPLETS.values():
                 if trans_name in members:
                     siblings = [m for m in members if m in self._all_transitions]
                     break

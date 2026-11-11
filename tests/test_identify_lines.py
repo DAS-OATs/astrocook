@@ -40,7 +40,7 @@ def test_one_candidate_per_component(identified, series):
     found = sorted(z for s, z in _systems(identified) if s == series)
     true = sorted(c.z for c in COMPONENTS if c.series == series)
     assert len(found) == len(true)
-    for z_found, z_true in zip(found, true):
+    for z_found, z_true in zip(found, true, strict=True):
         assert abs(z_found - z_true) / (1 + z_true) * C_KMS < 5.0
 
 

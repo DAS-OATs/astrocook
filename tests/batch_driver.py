@@ -97,7 +97,7 @@ def run_sightline_pipeline(data_dir: str, output_dir: str, los_id: str,
             others_specs=[s for s in group_specs if s is not sess.spec],
             z_target=z_anchor,
             trans_self=trans,
-            trans_others=[t for s, t in zip(group_specs, group_trans) if s is not sess.spec],
+            trans_others=[t for s, t in zip(group_specs, group_trans, strict=True) if s is not sess.spec],
             window_kms=trim_window
         )
         

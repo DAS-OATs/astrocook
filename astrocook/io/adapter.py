@@ -150,7 +150,7 @@ def _v2_table_to_component_list(systs_table: Table) -> (List[ComponentDataV2], D
 
     for row in systs_table:
         # [FIX] Robust value extractor for Astropy Rows
-        def safe_float(col_name):
+        def safe_float(col_name, row=row):
             val = row[col_name]
             # Handle MaskedConstant (Astropy) or NaN (Numpy)
             if np.ma.is_masked(val) or (isinstance(val, float) and np.isnan(val)):

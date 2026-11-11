@@ -263,7 +263,7 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
                         self.plot_widget.plot_spectrum(session_state=session_state) # Recreate artists
                     else:
                         # Update existing artists
-                        for artist, x_pos in zip(self.cursor_artists, new_x_positions):
+                        for artist, x_pos in zip(self.cursor_artists, new_x_positions, strict=True):
                             artist.set_xdata([x_pos])
                         self.update_cursor_label(new_z, new_x_positions)
                         self.draw_animated() # Use blitting redraw

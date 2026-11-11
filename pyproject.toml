@@ -136,8 +136,9 @@ filterwarnings = [
 extend-exclude = ["tests/reference/v1", "docs_backup"]
 
 [tool.ruff.lint]
-# Start with pyflakes rules only (likely bugs, not style); extend gradually
-select = ["F"]
+# Pyflakes (F) and flake8-bugbear (B, phase 6-quater): likely bugs, not
+# style; the style rules (E, W) are left out
+select = ["F", "B"]
 
 [tool.coverage.run]
 source = ["astrocook"]

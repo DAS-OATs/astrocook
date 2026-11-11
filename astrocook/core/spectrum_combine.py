@@ -7,6 +7,7 @@ are used as before (``spec.rebin(...)``).
 """
 import astropy.units as au
 from copy import deepcopy
+from itertools import pairwise
 import logging
 import numpy as np
 from typing import TYPE_CHECKING, List, Optional
@@ -107,7 +108,7 @@ class CombineMixin:
         # as a zigzag: ask the GUI for a scatter plot (issue #442). Rebin and
         # coadd remove the tag again.
         ranges = sorted((np.nanmin(x), np.nanmax(x)) for x in xs if len(x))
-        if any(lo < prev_hi for (_, prev_hi), (lo, _) in zip(ranges, ranges[1:])):
+        if any(lo < prev_hi for (_, prev_hi), (lo, _) in pairwise(ranges)):
             new_meta['plot_style'] = 'scatter'
         
         new_data = SpectrumDataV2(

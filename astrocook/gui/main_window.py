@@ -164,7 +164,7 @@ class MainWindowV2(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, Main
         self.mock_gui_context = MockV1GUIContext()
 
         # Iterate and add all passed sessions
-        for i, session in enumerate(init_list):
+        for session in init_list:
             if isinstance(session, SessionV2) and session.spec and len(session.spec.x) > 0:
                 
                 log_object = self._log_for_new_session(session)

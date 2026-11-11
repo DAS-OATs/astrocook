@@ -103,7 +103,7 @@ def run_comparison(n_components=1, snr=20, regime='unsaturated'):
     fit_sys, model_flux, res = f_fitter.fit(verbose=0)
     
     logging.info(f"Frequentist Success: {res.success}")
-    for i, (t, f) in enumerate(zip(true_sys.components, fit_sys.components)):
+    for i, (t, f) in enumerate(zip(true_sys.components, fit_sys.components, strict=True)):
         logging.info(f"Comp {i} - logN: True={t.logN:.2f}, Fit={f.logN:.2f} +/- {f.dlogN:.2f}")
     
     # 3. Bayesian Fit

@@ -1257,6 +1257,63 @@ banner of a followed session saying which server writes the archive (pid
 and version of the marker). The plan itself is to be written at the start
 of the phase, in a conversation of its own.
 
+**Plan of the phase** (agreed with Guido at the start of the phase, 11
+November 2026, in the conversation of PR 1; each PR in a conversation of
+its own, except the smallest; the model of each PR proposed by the rule
+"Choice of the model" in `CLAUDE.md`):
+- *Starting point* (master after 2.6.0).
+  - Recipes in the scope of the phase: file 2 (5 parameters), edit 15
+    (42), flux 6 (14), the manual fits of `absorbers` (about 12, about 60
+    parameters); continuum (5) and identification and the pipelines of
+    `absorbers` go with phase 7. Examples of what the review is for:
+    `rebin(norm: str = 'False')`, `equalize(reference_session: str =
+    'None')`, booleans and None written as strings.
+  - Ruff `B`: 33 warnings, as in the review of 2.5.0 (21 `B905`, 5
+    `B007`, 3 `B008`, 2 `B023`, 2 `B904`).
+  - Mypy (`--ignore-missing-imports --follow-imports=silent`, no other
+    option): 149 errors in `recipes/` and `mcp_server/`, 336 in `core/`
+    and `fitting/`.
+  - `V2` suffixes: 21 classes; the most used `DataColumnV2` (~470
+    occurrences), `SessionV2` (~370, in 67 files), `SpectrumV2` (~320).
+- *PRs*, in this order (estimates in working time of the session, before
+  Guido's review):
+
+| PR | Content | Model | Estimate |
+|---|---|---|---|
+| 1 | Ruff `B` on, its 33 warnings fixed (with the plan of the phase and the rule of the model in `CLAUDE.md`) | Sonnet | 1-2 h |
+| 2 | Aliases of renamed names: one mechanism in the registry for a renamed parameter (the old name accepted by the session logs, the scripts and the MCP tools), reused for the `V2` classes | Opus | half a day |
+| 3 | Type checker, step 1: mypy in CI on `recipes/` and `mcp_server/` | Sonnet | half a day |
+| 4 | Type checker, step 2: `core/` and `fitting/` | Sonnet | half a day to a day |
+| 5 | `SessionV2` (and `SessionHistory`) out of `core/`, e.g. into `astrocook/session/`, the old import kept as an alias | Sonnet | 2-3 h |
+| 6 | The `V2` suffixes dropped, with the aliases of PR 2 (code, tests, docs) | Sonnet | half a day |
+| 7 | Review of the recipes of file and flux (8 recipes) | Opus | half a day |
+| 8 | Review of edit, columns and expressions (`set_properties`, `x_convert`, `y_convert`, `apply_expression`, `mask_expression`, `smooth_column`), with F120 (one set of column names) | Opus | half a day to a day |
+| 9 | Review of edit, several spectra (`delete`, `split`, `extract_preset`, `trim_common`, `stitch`, `equalize_and_stitch` with its complexity of 31, `coadd`, `import_systems`, `import_systems_ascii`) | Opus | a day |
+| 10 | Review of the manual fits (`add_component`, `update_component(s)`, `delete_component`, `detect_anchor`, `fit_component`, `update_constraint(s)` with F117, `add_linked_system`, `optimize_system`, `fit_bayesian`); possibly split in two | Opus | a day to a day and a half |
+| 11 | F107: the labels of the menus of the GUI from the registry (and the screenshots) | Sonnet | 2-4 h |
+| 12 | MCP server: the descriptions of the shared parameters shorter, a paragraph of typical workflows in the instructions, the banner of a followed session with the pid and the version of the marker | Sonnet | 2-3 h |
+
+- *How a review PR (7-10) works*: the conversation opens with a table of
+  the parameters of its recipes, as they are and as proposed (name,
+  type, default, unit, description); Guido agrees it, then the change is
+  made, with characterization tests first. No PR of the phase should
+  change the numbers of the benchmark: a change of a numerical default
+  is said before, and checked with `validate_mocks.py --compare`.
+- *Total*: 12-13 PRs, about 6-9 working days of the sessions (phase
+  6-bis: 19 PRs in about 3 days; 6-ter: about 15 in 5); 2-3 weeks of
+  calendar, the bottleneck being one PR at a time and Guido's review of
+  the tables of PRs 7-10.
+- *Open decisions*, to be taken in the PR concerned:
+  - an old name (parameter or class): a silent alias, or a
+    `DeprecationWarning` with a version of removal (the tests treat
+    warnings as errors) (PR 2);
+  - `refit_all` and `clean_negligible`: in the manual fits (PR 10) or in
+    phase 7, which rewrites `refit_all`;
+  - F101 (the `app.run_recipe` of the script console fails with a
+    TypeError): in PR 10, or with the decision on the console;
+  - PRs 3-6 before the reviews (the order proposed), or the renaming
+    last, so that the reviews do not meet a change of every file.
+
 ### Phase 7 – Robust components: emission model and identification
 Agreed with Guido at the start of the MCP pilot (October 2026). The goal of section 5, a complete fit of a spectrum in a single
 operation, rests on its components: today the continuum works "well
@@ -1887,5 +1944,5 @@ One line per concluded phase; the long rows are in `ROADMAP_HISTORY.md`, "7. Pro
 | 6 – Error handling | done (November 2026), PRs #691-#701; release 2.4.0 |
 | 6-bis – Recipe API | done (November 2026), PRs #705-#723; release 2.5.0 |
 | 6-ter – Full MCP server | done (November 2026), PRs #726-#747 and the closing PR 8; release 2.6.0 published on GitHub on 10 November 2026 (PR 9, #751: version, CHANGELOG, `switcher.json`); plan of the phase agreed (PR 0, #726); the tools generated from the registry, F106 found (PR 1, #729); F106 fixed (PR 1-bis, #730); the tools of the sessions, undo and redo (PR 2, #731); the tools of inspection (PR 3, #732); progress notifications (PR 4, #733); the agent's decisions in the log (PR 5a); the gaps of the recipes (PR 5b); the log as the text of a methods section (PR 5c); the GUI following a session of the server, F109 found (PR 5-bis); the headless Docker image, F110 found (PR 6, not published); trials with fresh agents, F111-F116 found (PR 7, report in section 4.3); heartbeat and reads during a recipe, F113 in part (PR 7-bis); trial 3, the editing tools, F117-F120 found (PR 7); the outputs of trial 3 (PR 7-ter); F111 and the cancellation, F113 closed, F121 found (PR 7-quater) |
-| 6-quater – Review of the recipe parameters | not started |
+| 6-quater – Review of the recipe parameters | in progress (November 2026): plan of the phase agreed (in PR 1, ruff `B`) |
 | 7 – Robust components | not started |

@@ -25,6 +25,9 @@ COL_MAP = {
     "btur": "btur"
 }
 COLUMNS = list(COL_MAP.keys())
+# The invalid index, the default parent of a flat table (one instance, not
+# a call in each default argument: ruff B008)
+_NO_PARENT = QModelIndex()
 EDITABLE_COLS = {"z", "logN", "b", "btur"}
 
 #: The speed of light (km/s), for the error of z in velocity
@@ -199,8 +202,8 @@ class SystemTableModel(QAbstractTableModel):
                                   self.index(len(self._components) - 1, len(COLUMNS) - 1),
                                   [_FOREGROUND, _BACKGROUND])
 
-    def rowCount(self, parent=QModelIndex()): return len(self._components)
-    def columnCount(self, parent=QModelIndex()): return len(COLUMNS)
+    def rowCount(self, parent=_NO_PARENT): return len(self._components)
+    def columnCount(self, parent=_NO_PARENT): return len(COLUMNS)
     
     def flags(self, index):
         if not index.isValid(): return _NO_ITEM_FLAGS

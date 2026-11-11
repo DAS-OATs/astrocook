@@ -25,7 +25,7 @@ def _read_atomic_data(path: Path) -> Dict[str, Dict[str, float]]:
     header = next(reader)
     data: Dict[str, Dict[str, float]] = {}
     for values in reader:
-        row = dict(zip(header, values))
+        row = dict(zip(header, values, strict=True))
         if row['name'] in data:
             raise ValueError(f"{path.name}: duplicate transition {row['name']}")
         data[row['name']] = {key: float(row[key])
