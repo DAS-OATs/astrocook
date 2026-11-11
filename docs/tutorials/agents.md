@@ -321,8 +321,10 @@ next to it, then renamed), so the GUI never reads it half written. This
 archive is not your save: save the session with `session_save` as usual.
 
 *File > Export to ASCII* (`file_export_ascii`) writes the files in the
-folder `path`, named after `prefix`, and does not replace files that exist
-unless asked (`overwrite=true`).
+folder `folder` (called `path` until 2.6.0, a name still accepted), named
+after `prefix`, and does not replace files that exist unless asked
+(`overwrite=true`). The tools that read another session
+(`flux_equalize`, `flux_resample`) require its `session_id`.
 
 The sessions live in the server while the client is running: save the
 result with `session_save` before closing the client.

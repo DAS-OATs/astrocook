@@ -2,8 +2,9 @@ from astrocook._renamed import renamed
 from astropy import units as au
 import logging
 import numpy as np
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Union
 
+from astrocook.core.photometry import STANDARD_FILTERS
 from astrocook.recipes.errors import InvalidParameter, RecipeFailed
 from astrocook.recipes.messages import msg_session_not_found
 from astrocook.recipes._spectrum import spec_of
@@ -31,15 +32,39 @@ def _methods_equalize(p):
             f"where they overlap, by {how}{p.menu}")
 
 
+def _window_used(window_pix) -> int:
+    """The window that :meth:`RecipeFlux.calculate_running_std` uses: an
+    odd number of pixels, at least 3."""
+    window = max(int(window_pix), 3)
+    return window + 1 if window % 2 == 0 else window
+
+
+def _methods_running_std(p):
+    # The window used, not the one passed (phase 6-quater, PR 7: an even
+    # window passed was written as it was)
+    try:
+        window = str(_window_used(p.raw('window_pix')))
+    except (TypeError, ValueError):
+        window = p['window_pix']  # a log written by hand: as written
+    return (f"The standard deviation of the column {p['input_col']} was computed in a "
+            f"running window of {window} pixels and written "
+            f"in the column {p['output_col']}{p.menu}")
+
+
+#: The columns of every spectrum: not a name for a column written by a recipe
+#: (phase 6-quater, PR 7: the result went to a column that nothing shows)
+CORE_COLUMNS = ('x', 'xmin', 'xmax', 'y', 'dy')
+
+
 FLUX_RECIPES_SCHEMAS = {
     "calculate_running_std": {
-        "methods": "The standard deviation of the column {input_col} was computed in a running window of {window_pix} pixels and written in the column {output_col}{menu}",
+        "methods": _methods_running_std,
         "brief": "Calculate running standard deviation.",
         "details": "Computes the standard deviation of a column in a running window, e.g. to estimate the local noise of the flux; written in a new column.",
         "params": [
             {"name": "input_col", "type": str, "default": "y", "doc": "Column of which the standard deviation is computed, e.g. 'y' (the flux).", "kind": "column"},
-            {"name": "output_col", "type": str, "default": "running_std", "doc": "Name of the column to write."},
-            {"name": "window_pix", "type": int, "default": 21, "gt": 0, "doc": "Width of the window (pixels; an odd number)."}
+            {"name": "output_col", "type": str, "default": "running_std", "doc": "Name of the column to write (a new one, or one to replace; not x, xmin, xmax, y, dy)."},
+            {"name": "window_pix", "type": int, "default": 21, "gt": 0, "doc": "Width of the window (pixels): an odd number; an even one is increased by 1, and one below 3 is 3."}
         ],
         "url": "edit_cb.html#calculate_running_std" # Placeholder URL
     },
@@ -59,20 +84,21 @@ FLUX_RECIPES_SCHEMAS = {
         "params": [
             # None (written 'None' in the dialog and the log): the data range
             {"name": "xstart", "type": float, "default": None, "optional": True, "doc": "Start of the new grid (nm); None: the start of the data."},
-            {"name": "xend", "type": float, "default": None, "optional": True, "doc": "End of the new grid (nm); None: the end of the data."},
+            {"name": "xend", "type": float, "default": None, "optional": True, "doc": "End of the new grid (nm), above xstart; None: the end of the data."},
             
             # CRITICAL: dx needs to be a number (10.0) but the V1 flow expects km/s unit conversion later.
             # We use the raw value here, and the adapter handles the unit.
             {"name": "dx", "type": float, "default": 10.0, "gt": 0, "doc": "Step of the new grid, in the unit of xunit."}, 
             
             # Use string "km/s" for the unit input field
-            {"name": "xunit", "type": str, "default": "km/s", "doc": "Unit of the step: a velocity (km/s) or a wavelength (nm)."},
+            {"name": "xunit", "type": str, "default": "km/s", "doc": "Unit of the step: a velocity (km/s, a grid uniform in log wavelength) or a wavelength (nm)."},
             
             # None (written 'None'): no clipping
             {"name": "kappa", "type": float, "default": 5.0, "optional": True, "gt": 0, "doc": "Threshold (in sigma) of the clipping of outliers; None: no clipping."},
             
             # 'norm' (V1: return the normalized spectrum) is not offered: it
-            # was never applied in V2 (findings register F37, #560)
+            # was never applied in V2 (findings register F37, #560); the
+            # method still takes it, for the scripts and logs of V1
 
             # NaN (written 'nan') is the default
             {"name": "filling", "type": float, "default": float("nan"), "allow_nan": True, "doc": "Value of the new pixels without data (NaN by default)."},
@@ -84,8 +110,13 @@ FLUX_RECIPES_SCHEMAS = {
         "brief": "Equalize flux to reference.",
         "details": "Scales the flux of this session to match that of another session where they overlap.",
         "params": [
-            {"name": "reference_session", "type": str, "default": "None", "doc": "Name of the open session whose flux is matched.", "kind": "session"},
-            {"name": "order", "type": int, "default": 0, "doc": "Model of the scaling: 0 a constant factor, n > 0 a polynomial of order n, -1 a spline."}
+            # Required (phase 6-quater, PR 7: the default was the string 'None',
+            # which still means "no session" and fails as before)
+            {"name": "reference_session", "type": str, "default": "", "doc": "Name of the open session whose flux is matched.", "kind": "session"},
+            # -1 is the lowest (phase 6-quater, PR 7: -2, -3... were a spline
+            # too, without a word). Not the -1 of coadd, which means no
+            # scaling (findings register F123)
+            {"name": "order", "type": int, "default": 0, "min": -1, "doc": "Model of the scaling: 0 a constant factor, n > 0 a polynomial of order n, -1 a spline."}
         ]
     },
     "resample": {
@@ -94,7 +125,8 @@ FLUX_RECIPES_SCHEMAS = {
         "branching": True,
         "details": "Interpolates this spectrum onto the wavelength grid of another open session, into a new session; the first step to combine two sessions pixel by pixel.",
         "params": [
-            {"name": "target_session", "type": str, "default": "None", "doc": "Name of the open session whose grid is used.", "kind": "session"}
+            # Required, as reference_session of equalize (phase 6-quater, PR 7)
+            {"name": "target_session", "type": str, "default": "", "doc": "Name of the open session whose grid is used.", "kind": "session"}
         ],
         "url": "edit_cb.html#resample" # Placeholder URL
     },
@@ -103,11 +135,31 @@ FLUX_RECIPES_SCHEMAS = {
         "brief": "Flux calibrate (multi-band).",
         "details": "Scales the flux, smoothly with wavelength, to match the magnitudes of the object in one or more photometric filters.",
         "params": [
-            {"name": "magnitudes", "type": str, "default": "SDSS_r=17.0", "doc": "Comma-separated 'filter=magnitude' pairs, e.g. 'SDSS_g=17.5, SDSS_r=17.0'."}
+            {"name": "magnitudes", "type": str, "default": "SDSS_r=17.0", "doc": "Comma-separated 'filter=magnitude' pairs (AB magnitudes), e.g. 'SDSS_g=17.5, SDSS_r=17.0'. Filters: " + ", ".join(STANDARD_FILTERS) + "."}
         ],
         "url": "edit_cb.html#calibrate"
     }
 }
+
+
+def _check_magnitudes(magnitudes: str) -> None:
+    """:class:`InvalidParameter` if ``magnitudes`` is not a list of
+    ``filter=magnitude`` pairs of known filters; the same reading as
+    :func:`astrocook.core.photometry.generate_calibration_curve`."""
+    fmt_error = (f"magnitudes: {magnitudes!r} is not a list of 'filter=magnitude' "
+                 f"pairs, e.g. 'SDSS_g=17.5, SDSS_r=17.0'")
+    for pair in magnitudes.split(','):
+        parts = pair.split('=')
+        if len(parts) != 2:
+            raise InvalidParameter(fmt_error)
+        name, mag = parts[0].strip(), parts[1].strip()
+        try:
+            float(mag)
+        except ValueError:
+            raise InvalidParameter(fmt_error) from None
+        if name not in STANDARD_FILTERS:
+            raise InvalidParameter(f"magnitudes: the filter {name!r} is not known; the "
+                                   f"filters are {', '.join(STANDARD_FILTERS)}")
 
 
 def _find_session(session: 'Session', name: str):
@@ -148,8 +200,10 @@ class RecipeFlux:
         input_col : str, optional
             The column to use for StdDev calculation (e.g., ``'y'``). Defaults to ``'y'``.
         output_col : str, optional
-            Name of the new column to create (e.g., ``'running_std'``).
-            Defaults to ``'running_std'``.
+            Name of the column to write (e.g., ``'running_std'``): a new
+            column, or an auxiliary one to replace; not empty, nor one of
+            the columns of every spectrum (``x``, ``xmin``, ``xmax``, ``y``,
+            ``dy``). Defaults to ``'running_std'``.
         window_pix : int, optional
             Total window size in pixels (should be odd: an even one is
             increased by 1, and one below 3 is 3). Defaults to ``21``.
@@ -158,10 +212,18 @@ class RecipeFlux:
         -------
         Session
             A new :class:`~astrocook.session.session.Session` with the calculated column added.
+
+        Raises
+        ------
+        InvalidParameter
+            If ``output_col`` is empty or the name of a column of every
+            spectrum (phase 6-quater, PR 7: the result went to a hidden
+            column, findings register F122).
         """
-        window_pix_i = max(window_pix, 3)
-        if window_pix_i % 2 == 0: # Ensure it's odd
-            window_pix_i += 1
+        if not output_col.strip() or output_col in CORE_COLUMNS:
+            raise InvalidParameter(f"output_col: {output_col!r} is not a name for a new "
+                                   f"column (nor one of {', '.join(CORE_COLUMNS)})")
+        window_pix_i = _window_used(window_pix)
 
         new_spec_v2 = spec_of(self._session).calculate_running_std(
             input_col=input_col,
@@ -195,7 +257,7 @@ class RecipeFlux:
     @typed_recipe
     def rebin(self, xstart: Optional[float] = None, xend: Optional[float] = None,
               dx: float = 10.0, xunit: str = 'km/s', kappa: Optional[float] = 5.0,
-              filling: float = np.nan, norm: str = 'False') -> 'Session':
+              filling: float = np.nan, norm: Union[bool, str] = False) -> 'Session':
         """
         Rebin spectrum.
 
@@ -208,29 +270,38 @@ class RecipeFlux:
             Start wavelength (nm). None for auto (data minimum).
             Defaults to None.
         xend : float or None, optional
-            End wavelength (nm). None for auto (data maximum).
-            Defaults to None.
+            End wavelength (nm), above ``xstart``. None for auto (data
+            maximum). Defaults to None.
         dx : float, optional
-            Step size in x. Defaults to ``10.0``.
+            Step size, in the unit of ``xunit``. Defaults to ``10.0``.
         xunit : str, optional
-            Unit of wavelength or velocity for the step size (e.g., ``'km/s'``, ``'nm'``).
-            Defaults to ``'km/s'``.
+            Unit of the step: a velocity (``'km/s'``, a grid uniform in log
+            wavelength) or a wavelength (``'nm'``). Defaults to ``'km/s'``.
         kappa : float or None, optional
             Sigma clipping threshold for binning. None for off. Defaults to ``5.0``.
         filling : float, optional
             Value to fill regions without data. Defaults to NaN.
-        norm : str, optional
+        norm : bool or str, optional
             Ignored, kept so that scripts and logs written for V1 still run:
-            the rebinned spectrum is never normalized, and ``'True'`` only
-            logs a warning. To see the normalized flux, use the normalized
-            view of the plot, or ``apply_expression`` with ``y/cont``.
-            Defaults to ``'False'``.
+            the rebinned spectrum is never normalized, and a true value
+            (``True``, ``'True'``, ``'true'``, ``1``) only logs a warning. To
+            see the normalized flux, use the normalized view of the plot, or
+            ``apply_expression`` with ``y/cont``. Defaults to ``False``.
 
         Returns
         -------
         Session
             A new :class:`~astrocook.session.session.Session` with the rebinned spectrum.
+
+        Raises
+        ------
+        InvalidParameter
+            If ``xunit`` is not a unit, or ``xstart`` is not below ``xend``
+            (phase 6-quater, PR 7: an empty spectrum, findings register
+            F124).
         """
+        if xstart is not None and xend is not None and not xstart < xend:
+            raise InvalidParameter(f"xstart: {xstart} is not below xend ({xend})")
 
         xstart_q = au.Quantity(xstart, au.nm) if xstart is not None else None
         xend_q = au.Quantity(xend, au.nm) if xend is not None else None
@@ -243,7 +314,7 @@ class RecipeFlux:
 
         # The V1 normalization was never applied in V2 and is not offered
         # any more (F37, #560): say so instead of ignoring it silently
-        if str(norm) == 'True':
+        if str(norm).strip().lower() in ('true', '1'):
             logger.warning("The parameter 'norm' is ignored: the rebinned spectrum is "
                            "not normalized (use the normalized view of the "
                            "plot, or apply_expression with y/cont).")
@@ -257,7 +328,7 @@ class RecipeFlux:
         return self._session.with_new_spectrum(new_spec_v2)
     
     @typed_recipe
-    def equalize(self, reference_session: str = 'None', order: int = 0) -> 'Session':
+    def equalize(self, reference_session: str = '', order: int = 0) -> 'Session':
         """
         Equalize flux to a reference session.
 
@@ -266,10 +337,13 @@ class RecipeFlux:
 
         Parameters
         ----------
-        reference_session : str, optional
-            The name of the reference session. Defaults to ``'None'``.
+        reference_session : str
+            The name of the open session whose flux is matched (required;
+            ``''`` or ``'None'``, the default of the old logs, fail saying
+            that no session is selected).
         order : int, optional
-            The polynomial order for the scaling model (``0`` = scalar, ``-1`` = spline).
+            The model of the scaling: ``0`` a constant factor, ``n > 0`` a
+            polynomial of order ``n``, ``-1`` a spline (the lowest value).
             Defaults to ``0``.
 
         Returns
@@ -286,7 +360,7 @@ class RecipeFlux:
         return self._session.with_new_spectrum(new_spec)
     
     @typed_recipe
-    def resample(self, target_session: str = 'None') -> 'Session':
+    def resample(self, target_session: str = '') -> 'Session':
         """
         Resample on another grid.
 
@@ -297,14 +371,16 @@ class RecipeFlux:
         Parameters
         ----------
         target_session : str
-            Name of the session to use as the grid source.
+            Name of the open session whose grid is used (required; ``''``
+            or ``'None'``, the default of the old logs, fail saying that no
+            session is selected).
 
         Returns
         -------
         Session
             A new :class:`~astrocook.session.session.Session` interpolated to the target grid.
         """
-        if target_session == 'None' or target_session == '':
+        if target_session in ['None', '']:
             raise RecipeFailed("No target session is selected.")
         target_spec = _find_session(self._session, target_session).current_state.spec
         if target_spec is None:
@@ -323,14 +399,24 @@ class RecipeFlux:
         Parameters
         ----------
         magnitudes : str, optional
-            List of 'Filter=Mag' pairs separated by commas (e.g., ``"SDSS_g=17.5, SDSS_r=17.0"``).
-            Defaults to ``"SDSS_r=17.0"``.
+            List of 'Filter=Mag' pairs (AB magnitudes) separated by commas
+            (e.g., ``"SDSS_g=17.5, SDSS_r=17.0"``), the filters among those
+            of :data:`astrocook.core.photometry.STANDARD_FILTERS`. Defaults
+            to ``"SDSS_r=17.0"``.
 
         Returns
         -------
         Session
             A new :class:`~astrocook.session.session.Session` with calibrated flux.
+
+        Raises
+        ------
+        InvalidParameter
+            If ``magnitudes`` is not a list of pairs, or names a filter that
+            is not known (phase 6-quater, PR 7: a RecipeFailed from the
+            core).
         """
+        _check_magnitudes(magnitudes)
         new_spec_v2 = spec_of(self._session).calibrate(magnitudes)
         return self._session.with_new_spectrum(new_spec_v2)
 

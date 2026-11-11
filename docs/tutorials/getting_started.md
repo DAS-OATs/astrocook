@@ -221,7 +221,7 @@ A dialog will appear allowing you to select exactly what to export:
 * **Spectrum (spec)**: Saves the Wavelength ($x$), Flux ($y$), Error ($dy$), Continuum ($cont$), and any other active spectral columns into a `_spec.csv` file.
 * **System List (systems)**: Saves your identified absorption lines (including Redshift, Column Density, Doppler Parameter, etc.) into a `_systems.csv` file.
 
-You can choose to export entire structures or pick individual columns. The suggested filename will automatically adjust based on your selection, and Astrocook will warn you if you are about to overwrite existing files.
+You can choose to export entire structures or pick individual columns. The suggested filename will automatically adjust based on your selection, and Astrocook will warn you if you are about to overwrite existing files. An item that is neither a column nor `spec` or `systems` (e.g. `cont` before a continuum is estimated) is skipped, and a warning in the log names it.
 
 ### Export Log as Text
 **File > Export Log as Text...** writes the session log as the text of a
@@ -244,7 +244,7 @@ so for those steps.
 
 ### Import from ASCII
 If you have manipulated your exported `_spec.csv` data externally, you can bring it back into Astrocook by going to **File > Import from ASCII...**.
-* Astrocook will match the column headers in your CSV to the columns in the active session and overwrite them.
+* Astrocook will match the column headers in your CSV to the columns in the active session and overwrite them. A column `x` is not read: the grid of the spectrum is kept.
 * **Safety first:** The imported file must have the exact same number of rows (pixels) as your current spectrum. Because this operates through the recipe pipeline, the import is fully undoable via the Log Scripter or `Ctrl+Z` (`Cmd+Z`).
 
 ## 6. When Something Goes Wrong

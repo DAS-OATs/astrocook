@@ -28,10 +28,12 @@ FILE_RECIPES_SCHEMAS = {
     "export_ascii": {
         "methods": "The data ({targets}) were exported as CSV files{menu}",
         "brief": "Export session data to ASCII.",
-        "details": "Writes the chosen data as CSV files in a folder: the columns of the spectrum to <prefix>_spec.csv (always with the wavelength), the system list to <prefix>_systems.csv.",
+        "details": "Writes the chosen data as CSV files in a folder: the columns of the spectrum to <prefix>_spec.csv (always with the wavelength), the system list to <prefix>_systems.csv (always with the series and the redshift). Items that are neither a column nor 'spec' or 'systems' are skipped, with a warning.",
         "params": [
             {"name": "targets", "type": str, "default": "F, cont, systems", "doc": "Comma-separated items to export: 'spec' (all the columns of the spectrum) or some of its columns (e.g. 'F, dF, cont'), and 'systems' (the system list) or some of its columns (e.g. 'z, logN')."},
-            {"name": "path", "type": str, "default": "", "gui_hidden": True, "doc": "Folder where the files are written."},
+            # 'path' until phase 6-quater, PR 7 (an agent could take it for
+            # the path of a file, as in session_save)
+            {"name": "folder", "type": str, "default": "", "gui_hidden": True, "aliases": ["path"], "doc": "Folder where the files are written."},
             # F106: given by the file dialog of the GUI, required elsewhere
             {"name": "prefix", "type": str, "default": "", "gui_hidden": True, "doc": "Beginning of the file names: <prefix>_spec.csv and <prefix>_systems.csv."},
             # F106: the GUI asks before and passes True; a script or an
@@ -43,7 +45,7 @@ FILE_RECIPES_SCHEMAS = {
     "import_ascii": {
         "methods": _methods_import_ascii,
         "brief": "Import session data from ASCII.",
-        "details": "Reads columns from an ASCII/CSV table with a header and adds them to the spectrum, replacing those with the same name; the table must have one row per pixel of the spectrum.",
+        "details": "Reads columns from an ASCII/CSV table with a header and adds them to the spectrum, replacing those with the same name; the table must have one row per pixel of the spectrum. A column x is not read: the grid of the spectrum is kept.",
         "params": [
             {"name": "file_path", "type": str, "default": "", "gui_hidden": True, "doc": "Path of the ASCII/CSV file to read."}
         ],
@@ -64,7 +66,7 @@ class RecipeFile:
         self._tag = 'cb'
 
     @typed_recipe
-    def export_ascii(self, targets: str, path: str, prefix: str,
+    def export_ascii(self, targets: str, folder: str, prefix: str,
                      overwrite: bool = False) -> bool:
         """
         Export selected components of the session to ASCII/CSV files.
@@ -80,8 +82,9 @@ class RecipeFile:
         targets : str
             Comma-separated list of structures or columns to export 
             (e.g., ``'spec, systems'`` or ``'F, cont, logN'``).
-        path : str
-            The destination directory path.
+        folder : str
+            The folder where the files are written (``path`` until phase
+            6-quater, PR 7: the old name is still accepted).
         prefix : str
             The base filename prefix for the exported files.
         overwrite : bool, optional
@@ -102,12 +105,20 @@ class RecipeFile:
             If a file cannot be written (phase 6-bis, PR 3: it returned False).
         """
         spec_req, write_systems, syst_req, target_list = self._export_targets(targets)
+        spec_colnames = spec_of(self._session).t.colnames if self._session.spec else []
+        syst_colnames = self._session.systs.t.colnames if self._session.systs else []
+        skipped = [t for t in target_list if t not in ('spec', 'systems')
+                   and t not in spec_colnames and t not in syst_colnames]
+        if skipped:
+            # Phase 6-quater, PR 7: they were skipped without a word (e.g. a
+            # misspelt 'systems', or the default 'cont' with no continuum)
+            logger.warning(f"Not exported, not found in the session: {', '.join(skipped)}.")
         outputs = (['spec'] if spec_req else []) + (['systems'] if write_systems else [])
         existing = [f"{prefix}_{what}.csv" for what in outputs
-                    if os.path.exists(os.path.join(path, f"{prefix}_{what}.csv"))]
+                    if os.path.exists(os.path.join(folder, f"{prefix}_{what}.csv"))]
         if existing and not overwrite:
             raise RecipeFailed(f"{', '.join(existing)} already "
-                               f"{'exists' if len(existing) == 1 else 'exist'} in {path}: "
+                               f"{'exists' if len(existing) == 1 else 'exist'} in {folder}: "
                                f"nothing is written. Use overwrite=True to replace "
                                f"{'it' if len(existing) == 1 else 'them'}.")
         saved_any = False
@@ -115,7 +126,7 @@ class RecipeFile:
         if spec_req:
             valid_cols = ['x'] + spec_req
             raw_data = {c: spec_of(self._session).t[c] for c in valid_cols}
-            out_path = os.path.join(path, f"{prefix}_spec.csv")
+            out_path = os.path.join(folder, f"{prefix}_spec.csv")
             ascii.write(Table(raw_data), out_path, format='csv', overwrite=True)
             saved_any = True
 
@@ -136,7 +147,7 @@ class RecipeFile:
                 cols_to_keep = [c for c in cols_to_keep if c in syst_table.colnames]
                 syst_table = syst_table[cols_to_keep]
             
-            out_path = os.path.join(path, f"{prefix}_systems.csv")
+            out_path = os.path.join(folder, f"{prefix}_systems.csv")
             ascii.write(syst_table, out_path, format='csv', overwrite=True)
             saved_any = True
             

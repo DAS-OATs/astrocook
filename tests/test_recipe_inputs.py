@@ -315,6 +315,9 @@ CASES = [
     ('calculate_running_std', 'window_pix', '2', 2),
     ('calculate_running_std', 'window_pix', None, REFUSED),  # 2.4.0: crashed (TypeError)
     ('calculate_running_std', 'window_pix', 'None', REFUSED),
+    ('calculate_running_std', 'output_col', 'std', 'std'),
+    ('calculate_running_std', 'output_col', 'y', REFUSED),  # 6-quater PR 7: a hidden column
+    ('calculate_running_std', 'output_col', '', REFUSED),  # 6-quater PR 7: a hidden column
     ('smooth', 'sigma_kms', '2.0', 2.0),
     ('smooth', 'sigma_kms', 2.0, 2.0),
     ('smooth', 'sigma_kms', 2, 2.0),
@@ -426,6 +429,8 @@ CASES = [
     ('equalize', 'order', True, REFUSED),  # 2.4.0: accepted as 1
     ('equalize', 'order', False, REFUSED),  # 2.4.0: accepted as 0
     ('equalize', 'order', '-1', -1),
+    ('equalize', 'order', '-2', REFUSED),  # 6-quater PR 7: a spline, as -1
+    ('equalize', 'order', -5, REFUSED),  # 6-quater PR 7: a spline, as -1
     ('equalize', 'order', '0', 0),
     ('equalize', 'order', '2', 2),
     ('equalize', 'order', None, REFUSED),

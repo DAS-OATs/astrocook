@@ -328,11 +328,11 @@ without a change of the numerical results except where Guido decided it
   run; the log, the methods text, the Log Scripter, the dialogs and the
   schemas show the new name only; the old and the new name together are an
   error. A renaming adds the old name to `aliases` and a row to the table
-  below (and removes `test_no_recipe_of_the_package_is_renamed_yet`).
+  below (and to `RENAMED` of `tests/test_recipe_aliases.py`).
 
   | Recipe | Old name | New name | PR |
   |---|---|---|---|
-  | (none yet) | | | |
+  | `file.export_ascii` | `path` | `folder` | 6-quater, PR 7 |
 
 - *Prerequisites of the recipes* (proposed in phase 6, PR 5c, after an
   analysis asked by Guido, November 2026; to be refined with him before
@@ -1298,7 +1298,7 @@ its own, except the smallest; the model of each PR proposed by the rule
 | 4-bis | Type checker, step 3: `gui/` (361 errors, 199 of them `attr-defined` from the mixins of `MainWindowV2` and `SpectrumPlotWidget`: the same cure as PR 4, a host class for the type checker) | Sonnet | half a day (done, 11 November 2026: see below) |
 | 5 | `SessionV2` (and `SessionHistory`) out of `core/`, e.g. into `astrocook/session/`, the old import kept as an alias | Sonnet | 2-3 h (done, 11 November 2026: see below) |
 | 6 | The `V2` suffixes dropped, with the aliases of PR 2 (code, tests, docs) | Sonnet | half a day (done, 11 November 2026: see below) |
-| 7 | Review of the recipes of file and flux (8 recipes) | Opus | half a day |
+| 7 | Review of the recipes of file and flux (8 recipes) | Opus | half a day (done, 11 November 2026: see below) |
 | 8 | Review of edit, columns and expressions (`set_properties`, `x_convert`, `y_convert`, `apply_expression`, `mask_expression`, `smooth_column`), with F120 (one set of column names) | Opus | half a day to a day |
 | 9 | Review of edit, several spectra (`delete`, `split`, `extract_preset`, `trim_common`, `stitch`, `equalize_and_stitch` with its complexity of 31, `coadd`, `import_systems`, `import_systems_ascii`) | Opus | a day |
 | 10 | Review of the manual fits (`add_component`, `update_component(s)`, `delete_component`, `detect_anchor`, `fit_component`, `update_constraint(s)` with F117, `add_linked_system`, `optimize_system`, `fit_bayesian`); possibly split in two | Opus | a day to a day and a half |
@@ -1536,6 +1536,72 @@ its own, except the smallest; the model of each PR proposed by the rule
   No change of behaviour. `ruff check .` and `mypy` clean, the fast suite
   green (after the snapshot above); no slow test and no benchmark: only names changed, so the numbers
   cannot change.
+- *Result of PR 7* (review of file and flux; 11 November 2026; the table
+  of the parameters agreed with Guido in the conversation of the PR): of
+  the 20 parameters of the 8 recipes (and `norm` of `rebin`, out of the
+  registry), one renamed, two defaults changed, the others kept; no result
+  of a valid call changes, so no benchmark and no slow test.
+  - *Renamed*: `folder` of `file.export_ascii` (it was `path`, which an
+    agent could take for the path of a file, as in `session_save`); `path`
+    is its alias (PR 2), the first of the package (the table of the
+    renamed parameters above, `RENAMED` in `tests/test_recipe_aliases.py`).
+    The export is not logged, so no log holds the old name; scripts and
+    MCP calls with `path` give the same files.
+  - *Defaults*: `reference_session` of `flux.equalize` and `target_session`
+    of `flux.resample`, the string `'None'` → `""`: required, as
+    `sibling_name` of `detect_anchor` (the MCP schema lists them in
+    `required`; the dialog starts with an empty field and the buttons of
+    the sessions). Not `Optional[str]`: without a session the recipe cannot
+    run, so None is not a value. `'None'` and `''` still fail as before
+    ("No reference session is selected"); a log always holds a name (a
+    recipe that fails is not logged). `norm` of `rebin` (out of the
+    registry, #560) is annotated `Union[bool, str] = False` and warns that
+    it is ignored for any true spelling (`'true'`, `1`: only `'True'`
+    before); `'False'` and `'True'` of the V1 logs as before.
+  - *Refused before the recipe runs* (`InvalidParameter`; each gave an
+    empty or hidden result without a word, characterized before the
+    change): `rebin` with `xstart` not below `xend` (a spectrum without
+    pixels, F124); `equalize` with `order` below -1 (`min: -1`; -2, -3...
+    were a spline, as -1); `calculate_running_std` with `output_col` empty
+    or one of the columns of every spectrum (`CORE_COLUMNS` of
+    `recipes/flux.py`: the result went to a hidden auxiliary column, F122);
+    `calibrate_from_magnitudes` with magnitudes that are not
+    `filter=magnitude` pairs or name an unknown filter (a `RecipeFailed` of
+    the core before; checked by `_check_magnitudes`, the same reading as
+    the core). A log with one of these values would no longer replay: none
+    can hold a useful one.
+  - *Kept a string*: `magnitudes` (a structured type would need a new type
+    of the registry, an `object` in JSON, a widget and a parser, for one
+    recipe; one band is the common case, and the string is that of the
+    dialog, the log and the methods text). Its description lists the
+    filters (from `STANDARD_FILTERS`) and says AB magnitudes.
+  - *Descriptions*: `output_col` and `window_pix` of
+    `calculate_running_std` (the rule of the window: an even one is
+    increased by 1, below 3 is 3), `xend` and `xunit` of `rebin` (as
+    `coadd`), the `details` of `export_ascii` (the series and the redshift
+    always written; the items not found skipped) and of `import_ascii` (the
+    column `x` not read); the docstrings aligned. `export_ascii` names the
+    items not found in the session in a WARNING (e.g. `cont` without a
+    continuum, the default, or a misspelt `systems`), the outcome
+    unchanged. The methods text of `calculate_running_std` gives the window
+    used (21 for 20), not the one passed.
+  - *Left to later PRs*: the names of the columns (`F`, `dF` of `targets`
+    against `y` of `input_col`, F120) to PR 8; the meaning of `-1` in
+    `coadd` (F123) and the sessions passed as objects in scripts to PR 9
+    (Guido: `equalize` and `resample` read another session only from the
+    GUI or the MCP server, `stitch` also takes a `Session`; one rule for the
+    parameters of kind `session` there); the *Help* button (F125) to PR 11.
+    F30 (the edges of `running_std`, used by `calculate_running_std`)
+    stays open, numbers unchanged.
+  - *Docs*: the tutorial of Flux (the rebinning is a weighted mean, not a
+    conservation of the flux; the sessions are clicked in a list, not a
+    dropdown; the limits above), *Getting started* (export and import),
+    *Using Astrocook from an AI Agent* (`folder`, the sessions required),
+    the CHANGELOG. No screenshot: the dialogs changed (equalize, resample,
+    the descriptions) are in no scene.
+  - New `tests/test_recipe_review_file_flux.py` (the behaviour kept and
+    the behaviour changed, each test saying what it was), new cases in
+    `test_recipe_inputs.py`; `test_mcp_schemas.py` follows `folder`.
 - *Decisions of PR 2* (old names; proposed in the conversation of PR 2,
   agreed with Guido, 11 November 2026):
   - *A renamed parameter*: its old names are `aliases` of the parameter in
@@ -1806,6 +1872,10 @@ Exception: anything that loses user data or crashes is reported at once.
 | F119 | `doublets_auto` (scoring of the candidates) | The SiIV doublet of the z = 2.2 system of the mock of trial 3 (logN 12.9, b 9, S/N 50; depths 0.55 and 0.33) is found as a kinematic candidate but scored R^2 = 0.483, below the threshold of 0.5, and dropped; 0.485 with the true continuum, so the continuum (on the wing of the NV emission) is not the cause. The candidates dropped are not in the result: the agent found the SiIV by eye | behaviour, output | — | open: the scoring to phase 7 (identification); decided (Guido, on PR 7): the candidates dropped, with their score, in `RecipeResult.extra`, fixed in PR 7-ter (`details.dropped_candidates`: series, z, score, threshold, x range; not the forest doublets, which no score accepts), the scoring open: phase 7 |
 | F120 | names of the columns (expression recipes, MCP reads) | `edit_apply_expression` and `edit_mask_expression` document the columns by the names of the GUI (`λ`, `F`, `dF`, `cont`), `file_export_ascii` too (`F, dF, cont`); `spectrum_read` and `spectrum_plot` want `x`, `y`, `dy`. In trial 3 of PR 7 a read with `F`, `dF` failed (the error listed the valid names) | cosmetic, output | — | open; decided (Guido, on PR 7): `spectrum_read` and `spectrum_plot` also accept the names of the GUI (`λ`, `F`, `dF`, ...) as aliases, fixed in PR 7-ter (`SpectrumV2.columns_in_range`, values under the name asked; `spectrum_plot` takes no columns); the one set of names in phase 6-quater |
 | F121 | `metals_auto` (acceptance of a trial ion) | `metals_auto` kept a trial ion if its fit gave logN >= 12 and 2 <= b <= 50 km/s; `aic_penalty` was accepted and not used, while its description, the `details` of the registry and the methods text said that an ion is kept if it decreases the AIC by it. Once the ions found were kept (F111), the criterion kept 192 ions of 239 on J0103-1305, 67 of them with b = 50 km/s (the bound), 9 with logN = 19 (the bound), 30 with an AIC change above -5; on the mock of trial 1 a spurious SiIV at z = 1.83 (logN 12.80, b = 50.0) | behaviour | — | partly fixed (Guido's choice, PR 7-quater): an ion is not kept with b or logN at the bounds of the fit (within 0.1 per cent) nor with an AIC change above `-aic_penalty` (against the same model without it, on the pixels of its fit), and each ion tried is reported with the reason (`tried`). Open (phase 6-quater or 7): on the mock of trial 1 a spurious CII at z = 1.83 in the forest is still kept (logN 12.58, b 18, AIC change -33); a trial ion that absorbs a Lyman-alpha line improves the AIC anyway, and the model without it keeps the neighbours refitted with it (a bias towards keeping): the comparison with the alternative identification (Lyman-alpha) is for phase 7; measured on the mocks (the benchmark does not run `metals_auto`). Measured on J0103-1305 raw with the code of master after #747 (November 2026; `edit.set_properties` z_em = 4.07, R = 45000, `continuum.estimate_auto`, `doublets_auto`: 65 components, then `metals_auto` on the six default ions, through `recipes.result.run`): 320 trials built (64 redshifts), 81 not tried for their lines outside the spectrum (as before), 239 fitted, **82 kept** (CII 12, CIV 5, NV 17, OVI 18, SiIV 30; against 192 with the old criterion, 67 of them at b = 50 km/s; none now), 157 not kept: b at its bound 108, logN below 12 29, AIC change above -5 7, b below 2 km/s 7, logN at its bound (19) 6. Time: the trials 386 s (6.4 min) and the final `refit_all` 121 s, 507.5 s the recipe, against 26.7 min for the 239 trials of the old criterion; the whole chain 8.9 min; 147 components at the end. The run interrupted at 70 per cent with the rules of F121 kept 60 of 182 tried (33 per cent), the complete one 82 of 239 (34 per cent) |
+| F122 | `calculate_running_std` (`output_col`) | With `output_col` empty or the name of a column of every spectrum (`x`, `xmin`, `xmax`, `y`, `dy`) the result went to an auxiliary column of that name, which the table, the dialogs and the reads do not show (the column of the spectrum unchanged): the result was lost without a word. Found in the review of PR 7 (phase 6-quater) | behaviour | `tests/test_recipe_review_file_flux.py` | fixed (Guido, PR 7 of 6-quater): `InvalidParameter` before the recipe runs |
+| F123 | `equalize` and `coadd` (`order = -1`) | `-1` means two things: a spline in `flux.equalize` (`order`), no scaling in `edit.coadd` (`equalize_order`). Found in the review of PR 7 (phase 6-quater) | cosmetic, interface | — | open: PR 9 of 6-quater (`coadd`); `equalize` keeps -1 as its lowest value (PR 7) |
+| F124 | `rebin` (`xstart`, `xend`) | With `xstart` not below `xend` the recipe gave a spectrum without pixels, without a word. Found in the review of PR 7 (phase 6-quater) | behaviour | `tests/test_recipe_review_file_flux.py` | fixed (Guido, PR 7 of 6-quater): `InvalidParameter`; the same check for the range of `coadd` in PR 9 |
+| F125 | GUI, the *Help* button of the dialogs | The `url` of the recipes in the registry are relative names of pages of the V1 documentation (`file_cb.html#export`, `edit_cb.html#rebin`, ...; some marked "Placeholder URL"), which `webbrowser.open` cannot open as pages of the documentation; some recipes have none. All the recipes. Found in the review of PR 7 (phase 6-quater) | cosmetic | — | open: PR 11 of 6-quater (F107, the menus from the registry): the pages of `docs/` |
 
 Closed findings (fixed or accepted: all the others, F1 to F106 and F108 to F110) are in `ROADMAP_HISTORY.md`, "3.2 Findings register", one row each, to be found by number (`grep "^| F52 "`).
 
@@ -2207,5 +2277,5 @@ One line per concluded phase; the long rows are in `ROADMAP_HISTORY.md`, "7. Pro
 | 6 – Error handling | done (November 2026), PRs #691-#701; release 2.4.0 |
 | 6-bis – Recipe API | done (November 2026), PRs #705-#723; release 2.5.0 |
 | 6-ter – Full MCP server | done (November 2026), PRs #726-#747 and the closing PR 8; release 2.6.0 published on GitHub on 10 November 2026 (PR 9, #751: version, CHANGELOG, `switcher.json`); plan of the phase agreed (PR 0, #726); the tools generated from the registry, F106 found (PR 1, #729); F106 fixed (PR 1-bis, #730); the tools of the sessions, undo and redo (PR 2, #731); the tools of inspection (PR 3, #732); progress notifications (PR 4, #733); the agent's decisions in the log (PR 5a); the gaps of the recipes (PR 5b); the log as the text of a methods section (PR 5c); the GUI following a session of the server, F109 found (PR 5-bis); the headless Docker image, F110 found (PR 6, not published); trials with fresh agents, F111-F116 found (PR 7, report in section 4.3); heartbeat and reads during a recipe, F113 in part (PR 7-bis); trial 3, the editing tools, F117-F120 found (PR 7); the outputs of trial 3 (PR 7-ter); F111 and the cancellation, F113 closed, F121 found (PR 7-quater) |
-| 6-quater – Review of the recipe parameters | in progress (November 2026): plan of the phase agreed (in PR 1, ruff `B`); PR 2, the aliases of the renamed parameters; PR 3-4-bis, mypy on the whole package; PR 5, `SessionV2` and `SessionHistory` into `astrocook/session/` |
+| 6-quater – Review of the recipe parameters | in progress (November 2026): plan of the phase agreed (in PR 1, ruff `B`); PR 2, the aliases of the renamed parameters; PR 3-4-bis, mypy on the whole package; PR 5, `SessionV2` and `SessionHistory` into `astrocook/session/`; PR 6, the `V2` suffixes dropped (#759); PR 7, the review of file and flux, F122-F125 found |
 | 7 – Robust components | not started |
