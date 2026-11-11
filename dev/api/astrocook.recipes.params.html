@@ -597,7 +597,8 @@ the others (e.g. <code class="docutils literal notranslate"><span class="pre">al
 passed, converted, and the defaults of the others, in the order of the
 registry; for the session log (#573, item 3). The parameters passed that
 the registry does not declare (e.g. <code class="docutils literal notranslate"><span class="pre">alias_map</span></code>), and those of a name
-that is not a recipe, are returned as passed.</p>
+that is not a recipe, are returned as passed. A parameter passed by its
+old name is returned by the new one (phase 6-quater, PR 2).</p>
 </dd></dl>
 
 <dl class="py data">
@@ -630,7 +631,9 @@ with a note naming the recipe. Nothing is logged here: the error is
 logged where it is caught (phase 6-bis, PR 3). Before the method runs,
 the prerequisites that the registry declares for it are filled, or
 their absence raised, as the policy of
-<a class="reference internal" href="astrocook.recipes.prerequisites.html#module-astrocook.recipes.prerequisites" title="astrocook.recipes.prerequisites"><code class="xref py py-mod docutils literal notranslate"><span class="pre">astrocook.recipes.prerequisites</span></code></a> says (PR 5).</p>
+<a class="reference internal" href="astrocook.recipes.prerequisites.html#module-astrocook.recipes.prerequisites" title="astrocook.recipes.prerequisites"><code class="xref py py-mod docutils literal notranslate"><span class="pre">astrocook.recipes.prerequisites</span></code></a> says (PR 5). A parameter
+passed by its old name (an alias in the registry) is passed to the
+method by its new name (phase 6-quater, PR 2).</p>
 </dd></dl>
 
 </section>

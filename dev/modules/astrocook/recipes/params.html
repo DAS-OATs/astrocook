@@ -641,11 +641,13 @@
 <span class="sd">    passed, converted, and the defaults of the others, in the order of the</span>
 <span class="sd">    registry; for the session log (#573, item 3). The parameters passed that</span>
 <span class="sd">    the registry does not declare (e.g. ``alias_map``), and those of a name</span>
-<span class="sd">    that is not a recipe, are returned as passed."""</span>
+<span class="sd">    that is not a recipe, are returned as passed. A parameter passed by its</span>
+<span class="sd">    old name is returned by the new one (phase 6-quater, PR 2)."""</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_recipe</span>
     <span class="n">spec</span> <span class="o">=</span> <span class="n">find_recipe</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">spec</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">canonical</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
     <span class="n">resolved</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">spec</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
         <span class="n">resolved</span><span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">convert</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">name</span><span class="p">])</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">params</span> <span class="k">else</span> <span class="n">p</span><span class="o">.</span><span class="n">default</span>
@@ -708,7 +710,9 @@
 <span class="sd">    logged where it is caught (phase 6-bis, PR 3). Before the method runs,</span>
 <span class="sd">    the prerequisites that the registry declares for it are filled, or</span>
 <span class="sd">    their absence raised, as the policy of</span>
-<span class="sd">    :mod:`astrocook.recipes.prerequisites` says (PR 5).</span>
+<span class="sd">    :mod:`astrocook.recipes.prerequisites` says (PR 5). A parameter</span>
+<span class="sd">    passed by its old name (an alias in the registry) is passed to the</span>
+<span class="sd">    method by its new name (phase 6-quater, PR 2).</span>
 <span class="sd">    """</span>
     <span class="n">signature</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">method</span><span class="p">)</span>
 
@@ -724,7 +728,7 @@
             <span class="n">steps</span><span class="o">.</span><span class="n">depth</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="n">depth</span> <span class="o">=</span> <span class="n">_DEPTH</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">_DEPTH</span><span class="o">.</span><span class="n">get</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">bound</span> <span class="o">=</span> <span class="n">signature</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="n">bound</span> <span class="o">=</span> <span class="n">signature</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">spec</span><span class="o">.</span><span class="n">canonical</span><span class="p">(</span><span class="n">kwargs</span><span class="p">))</span>
             <span class="n">passed</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">bound</span><span class="o">.</span><span class="n">arguments</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s1">'self'</span><span class="p">}</span>
             <span class="n">converted</span> <span class="o">=</span> <span class="n">convert_params</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">passed</span><span class="p">)</span>
             <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.prerequisites</span><span class="w"> </span><span class="kn">import</span> <span class="n">fill</span>
