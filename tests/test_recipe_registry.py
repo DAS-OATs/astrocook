@@ -56,6 +56,10 @@ def test_every_parameter_is_in_the_signature(spec):
     signature = inspect.signature(getattr(CLASSES[spec.category], spec.name)).parameters
     for p in spec.params:
         assert p.name in signature, p.name
+        # An old name is not a parameter of the method: the decorator gives
+        # its value to the new one (phase 6-quater, PR 2)
+        for old in p.aliases:
+            assert old not in signature, (p.name, old)
     assert spec.brief
 
 
@@ -226,7 +230,7 @@ def test_build_spec_reads_every_key():
              "params": [{"name": "x", "type": float, "default": 1.0, "doc": "The x.",
                          "gui_hidden": True, "optional": True, "keep": ("_current_",),
                          "min": 0.0, "max": 2.0, "gt": -1.0, "allow_nan": True,
-                         "agents": False},
+                         "agents": False, "aliases": ["old_x"]},
                         {"name": "s", "type": str, "default": "a", "choices": ("a", "b"),
                          "kind": "session"},
                         {"name": "y", "type": int, "default": 3}]}
@@ -242,9 +246,10 @@ def test_build_spec_reads_every_key():
     assert (x.name, x.type, x.default, x.doc, x.gui_hidden, x.optional, x.keep,
             x.min, x.max, x.gt, x.allow_nan, x.agents) == \
         ("x", float, 1.0, "The x.", True, True, ("_current_",), 0.0, 2.0, -1.0, True, False)
+    assert x.aliases == ("old_x",)
     # The defaults of the optional keys
     assert (y.doc, y.gui_hidden, y.optional, y.keep, y.min, y.max, y.gt, y.allow_nan,
-            y.agents) == ("y", False, False, (), None, None, None, False, True)
+            y.agents, y.aliases) == ("y", False, False, (), None, None, None, False, True, ())
     bare = build_spec("flux", "s", {"brief": "B."})
     assert (bare.details, bare.url, bare.params, bare.gui_hidden, bare.branching,
             bare.requires, bare.provides) == ("", None, (), False, False, frozenset(),

@@ -787,6 +787,25 @@ def test_script_run_builds_a_v2_history(ready):
     assert len(history.states) == 3
 
 
+def test_script_run_takes_the_old_name_of_a_parameter(ready, renamed_parameter):
+    # Phase 6-quater, PR 2: a line of an old log, with the old name of a
+    # renamed parameter, runs, and the log rebuilt has the new name
+    from astrocook.gui.qt_workers import ScriptWorker
+    script = ("set_properties(z_em='4.072', resol='45000')\n"
+              "smooth(sigma_old='50.0')\n")
+    worker = ScriptWorker(script, ready.active_history.states[0], ready)
+    results, errors = [], []
+    worker.signals.finished.connect(results.append)
+    worker.signals.error.connect(errors.append)
+    worker.run()
+    assert errors == []
+    (history,) = results
+    assert history.log_manager.entries[1].params == {"sigma_kms": 50.0}
+    expected = history.states[1].flux.smooth(sigma_kms=50.0)
+    assert np.array_equal(history.states[2].spec.y.value, expected.spec.y.value,
+                          equal_nan=True)
+
+
 def test_script_run_keeps_reasons_and_notes(ready):
     # Phase 6-ter, PR 5a: Run All skips the reasons and the notes as steps,
     # and keeps them in the log it rebuilds

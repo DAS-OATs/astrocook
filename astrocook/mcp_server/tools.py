@@ -116,7 +116,8 @@ def input_schema(spec: RecipeSpec) -> dict:
     """The parameters of the recipe offered to agents, with those of the
     server."""
     schema = parameters_schema(spec)
-    clash = set(schema["properties"]) & set(SERVER_PARAMS)
+    names = set(schema["properties"]) | {a for p in spec.params for a in p.aliases}
+    clash = names & set(SERVER_PARAMS)
     if clash:
         raise ValueError(f"The recipe {spec.category}.{spec.name} has parameters "
                          f"named as those of the server: {sorted(clash)}")
@@ -197,7 +198,10 @@ def run_tool(store: SessionStore, spec: RecipeSpec, session_id: str,
     setting ``cancel`` (or calling session_cancel) cancels it: it stops at
     its next check, with an error, and makes no new state (PR 7-quater)."""
     offered = {p.name for p in spec.params if p.agents}
-    unknown = sorted(set(params) - offered)
+    # The old names of a renamed parameter are accepted, not listed (phase
+    # 6-quater, PR 2); the recipe takes them
+    old = {a for p in spec.params if p.agents for a in p.aliases}
+    unknown = sorted(set(params) - offered - old)
     if unknown:
         raise ToolError(f"Unknown parameters for {tool_name(spec)}: "
                         f"{', '.join(unknown)}. Its parameters: "

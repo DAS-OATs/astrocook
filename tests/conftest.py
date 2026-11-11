@@ -198,3 +198,31 @@ def j0103_window_for_fit(j0103_window_with_continuum):
 @pytest.fixture
 def snapshot(request):
     return Snapshot(update=request.config.getoption("--update-snapshots"))
+
+
+#: The parameter renamed by the fixture ``renamed_parameter``: the old name
+#: ``sigma_old`` of ``sigma_kms`` of ``flux.smooth``
+RENAMED_RECIPE = ("flux", "smooth")
+RENAMED = ("sigma_old", "sigma_kms")
+
+
+@pytest.fixture
+def renamed_parameter(monkeypatch):
+    """The registry with ``sigma_kms`` of ``flux.smooth`` declared as renamed
+    from ``sigma_old`` (its alias), as a real renaming would declare it
+    (phase 6-quater, PR 2); no recipe of the package is renamed. Yields the
+    spec of the recipe."""
+    import dataclasses
+    from types import MappingProxyType
+
+    from astrocook.recipes import registry
+    category, name = RENAMED_RECIPE
+    old, new = RENAMED
+    spec = registry.RECIPES[category][name]
+    params = tuple(dataclasses.replace(p, aliases=(old,)) if p.name == new else p
+                   for p in spec.params)
+    renamed = dataclasses.replace(spec, params=params)
+    recipes = dict(registry.RECIPES)
+    recipes[category] = MappingProxyType({**registry.RECIPES[category], name: renamed})
+    monkeypatch.setattr(registry, "RECIPES", MappingProxyType(recipes))
+    yield renamed
