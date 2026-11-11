@@ -20,7 +20,9 @@ concurrency:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    # Pinned (11 November 2026): the ubuntu-latest runners moved to Ubuntu 26.04 and
+    # apt-get failed there (security.ubuntu.com did not resolve)
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -38,8 +40,8 @@ jobs:
 
       - name: Install Qt system libraries
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq libegl1 libgl1 libxkbcommon0 libfontconfig1 libdbus-1-3
+          sudo apt-get update -qq -o Acquire::Retries=3
+          sudo apt-get install -y -qq -o Acquire::Retries=3 libegl1 libgl1 libxkbcommon0 libfontconfig1 libdbus-1-3
 
       - name: Install package
         run: pip install -e ".[dev]"
@@ -54,7 +56,7 @@ jobs:
   # suite covers them): after each merge to master, weekly and on demand.
   slow:
     if: github.event_name != 'pull_request'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     env:
       QT_QPA_PLATFORM: offscreen
@@ -69,8 +71,8 @@ jobs:
 
       - name: Install Qt system libraries
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq libegl1 libgl1 libxkbcommon0 libfontconfig1 libdbus-1-3
+          sudo apt-get update -qq -o Acquire::Retries=3
+          sudo apt-get install -y -qq -o Acquire::Retries=3 libegl1 libgl1 libxkbcommon0 libfontconfig1 libdbus-1-3
 
       - name: Install package
         run: pip install -e ".[dev]"
@@ -84,7 +86,7 @@ jobs:
   # the image changes. The image is not published anywhere (GHCR waits for
   # the LICENSE, #549).
   docker:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -126,7 +128,7 @@ jobs:
             --entrypoint python astrocook-mcp /check.py -- astrocook-mcp
 
   lint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
@@ -145,7 +147,7 @@ jobs:
   # the types of numpy, astropy and mcp are those the checks are written
   # against (without the [mcp] extra the server would be checked as Any)
   types:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 

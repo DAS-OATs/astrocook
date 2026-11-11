@@ -45,7 +45,9 @@ permissions:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    # Pinned (11 November 2026): the ubuntu-latest runners moved to Ubuntu 26.04 and
+    # apt-get failed there (security.ubuntu.com did not resolve)
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
       QT_QPA_PLATFORM: offscreen
@@ -95,8 +97,8 @@ jobs:
       - name: Install Qt system libraries
         if: steps.target.outputs.target != 'none'
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq libegl1 libgl1 libxkbcommon0 libfontconfig1 libdbus-1-3
+          sudo apt-get update -qq -o Acquire::Retries=3
+          sudo apt-get install -y -qq -o Acquire::Retries=3 libegl1 libgl1 libxkbcommon0 libfontconfig1 libdbus-1-3
 
       - name: Install package
         if: steps.target.outputs.target != 'none'
