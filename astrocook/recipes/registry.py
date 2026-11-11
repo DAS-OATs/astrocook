@@ -274,11 +274,11 @@ def _build() -> Mapping[str, Mapping[str, RecipeSpec]]:
     from astrocook.recipes.edit import EDIT_RECIPES_SCHEMAS
     from astrocook.recipes.file import FILE_RECIPES_SCHEMAS
     from astrocook.recipes.flux import FLUX_RECIPES_SCHEMAS
-    sources = {'file': FILE_RECIPES_SCHEMAS, 'edit': EDIT_RECIPES_SCHEMAS,
+    sources: dict[str, Mapping[str, Any]] = {'file': FILE_RECIPES_SCHEMAS, 'edit': EDIT_RECIPES_SCHEMAS,
                'flux': FLUX_RECIPES_SCHEMAS, 'continuum': CONTINUUM_RECIPES_SCHEMAS,
                'absorbers': ABSORBERS_RECIPES_SCHEMAS}
     registry = {}
-    seen = {}
+    seen: dict[str, str] = {}
     for category in CATEGORIES:
         specs = {}
         for name, entry in sources[category].items():

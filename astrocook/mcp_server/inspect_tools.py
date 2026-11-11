@@ -19,6 +19,7 @@ from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import BaseModel, Field
 
 from astrocook.mcp_server.outputs import _jsonable
+from astrocook.recipes._spectrum import spec_of
 from astrocook.mcp_server.session_tools import SESSION_ID
 from astrocook.mcp_server.sessions import SessionStore
 from astrocook.recipes.absorbers import FIT_EXPANSION_DEPTH
@@ -187,7 +188,7 @@ def register_inspect_tools(server: MCPServer, store: SessionStore) -> None:
         binned_by), so that it fits in the context of a model; for a look
         at the shape, spectrum_plot is cheaper."""
         with store.state_lock:
-            spec = store.get(session_id).current_state.spec
+            spec = spec_of(store.get(session_id).current_state)
             if columns is None:
                 columns = [c for c in DEFAULT_COLUMNS if c in spec.t.colnames]
             try:
@@ -228,4 +229,4 @@ def register_inspect_tools(server: MCPServer, store: SessionStore) -> None:
                 raise ToolError(str(e)) from None
             return [Image(data=figure_png(fig), format="png"),
                     f"{session_id}: spectrum plotted"
-                    + (" (normalized)" if normalized and session.spec.cont is not None else "")]
+                    + (" (normalized)" if normalized and spec_of(session).cont is not None else "")]

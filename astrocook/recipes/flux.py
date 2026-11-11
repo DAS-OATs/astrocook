@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Optional
 
 from astrocook.recipes.errors import InvalidParameter, RecipeFailed
 from astrocook.recipes.messages import msg_session_not_found
+from astrocook.recipes._spectrum import spec_of
 from astrocook.recipes.params import typed_recipe
 
 if TYPE_CHECKING:
@@ -161,7 +162,7 @@ class RecipeFluxV2:
         if window_pix_i % 2 == 0: # Ensure it's odd
             window_pix_i += 1
 
-        new_spec_v2 = self._session.spec.calculate_running_std(
+        new_spec_v2 = spec_of(self._session).calculate_running_std(
             input_col=input_col,
             output_col=output_col,
             window_pix=window_pix_i
@@ -187,7 +188,7 @@ class RecipeFluxV2:
         SessionV2
             A new :class:`~astrocook.core.session.SessionV2` with smoothed columns.
         """
-        new_spec_v2 = self._session.spec.smooth(sigma_kms=sigma_kms)
+        new_spec_v2 = spec_of(self._session).smooth(sigma_kms=sigma_kms)
         return self._session.with_new_spectrum(new_spec_v2)
 
     @typed_recipe
@@ -247,7 +248,7 @@ class RecipeFluxV2:
                            "plot, or apply_expression with y/cont).")
 
         # 5. Execute the immutable V2 operation
-        new_spec_v2 = self._session.spec.rebin(
+        new_spec_v2 = spec_of(self._session).rebin(
             xstart=xstart_q, xend=xend_q, dx=dx_q, kappa=kappa, filling=filling
         )
         
@@ -278,7 +279,7 @@ class RecipeFluxV2:
         if reference_session in ['None', '']:
             raise RecipeFailed("No reference session is selected.")
         ref_hist = _find_session(self._session, reference_session)
-        new_spec = self._session.spec.equalize_to_reference(
+        new_spec = spec_of(self._session).equalize_to_reference(
             ref_hist.current_state.spec, order=order
         )
         return self._session.with_new_spectrum(new_spec)
@@ -307,7 +308,7 @@ class RecipeFluxV2:
         target_spec = _find_session(self._session, target_session).current_state.spec
         if target_spec is None:
             raise RecipeFailed(f"The session '{target_session}' has no spectrum.")
-        new_spec_v2 = self._session.spec.resample_on_grid(target_grid_spec=target_spec)
+        new_spec_v2 = spec_of(self._session).resample_on_grid(target_grid_spec=target_spec)
         return self._session.with_new_spectrum(new_spec_v2)
         
     @typed_recipe
@@ -329,5 +330,5 @@ class RecipeFluxV2:
         SessionV2
             A new :class:`~astrocook.core.session.SessionV2` with calibrated flux.
         """
-        new_spec_v2 = self._session.spec.calibrate(magnitudes)
+        new_spec_v2 = spec_of(self._session).calibrate(magnitudes)
         return self._session.with_new_spectrum(new_spec_v2)

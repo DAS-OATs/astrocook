@@ -3,12 +3,13 @@ from astropy import units as au
 import logging
 import numpy as np
 import re
-from typing import TYPE_CHECKING, Any, Dict, Optional, Union, List, Tuple
+from typing import TYPE_CHECKING, Dict, Optional, Union, List, Tuple
 
 from astrocook.core.structures import SystemListDataV2  # <<< *** ADD THIS IMPORT ***
 from astrocook.core.system_list import SystemListV2
 from astrocook.recipes.errors import (InvalidParameter, RecipeError, RecipeFailed,
                                       reason_of)
+from astrocook.recipes._spectrum import spec_of
 from astrocook.recipes.params import DATA_ERRORS, typed_recipe
 from astrocook.recipes.messages import msg_session_not_found
 
@@ -372,7 +373,7 @@ class RecipeEditV2:
         
         return processed_str
 
-    def _prepare_expression_contexts(self, expression: str, alias_map: Dict[str, str]) -> Tuple[str, Dict[str, np.ndarray]]:
+    def _prepare_expression_contexts(self, expression: str, alias_map: Optional[Dict[str, str]]) -> Tuple[str, Dict[str, np.ndarray]]:
         """
         Internal helper to resolve session aliases and delegate parsing to the Core.
 
@@ -427,7 +428,7 @@ class RecipeEditV2:
                                + f" The alias '{alias}' is not resolved.")
 
         # 2. Delegate to Core (Business Logic)
-        return self._session.spec.prepare_expression_context(expression, resolved_specs)
+        return spec_of(self._session).prepare_expression_context(expression, resolved_specs)
     
     def _parse_resolution_string(self, resol_str: str) -> float:
         """
@@ -462,7 +463,7 @@ class RecipeEditV2:
             logger.debug(f"Estimating the resolution for a FWHM of {pix_fwhm:.1f} pixels.")
             
             # 1. Get raw x array
-            x_vals = self._session.spec.x.value
+            x_vals = spec_of(self._session).x.value
             
             if len(x_vals) > 1:
                 # 2. Calculate Median Sampling (dx)
@@ -539,7 +540,7 @@ class RecipeEditV2:
         # 1. Parse numerical inputs (z_em, resol)
         try:
             if str(z_em) == '_current_':
-                z_em_f = self._session.spec._data.z_em
+                z_em_f = spec_of(self._session)._data.z_em
             else:
                 z_em_f = float(z_em)
                 
@@ -559,7 +560,7 @@ class RecipeEditV2:
         new_object = object if object != '_current_' else None
         
         # 3. Apply changes via SpectrumV2.with_properties
-        new_spec = self._session.spec.with_properties(
+        new_spec = spec_of(self._session).with_properties(
             z_em=z_em_f, 
             resol=resol_f,
             object_name=new_object,
@@ -598,7 +599,7 @@ class RecipeEditV2:
         """
         # Handle default logic here
         if z_ref == '_current_':
-            z_ref_float = self._session.spec._data.z_em
+            z_ref_float = spec_of(self._session)._data.z_em
         else:
             z_ref_float = z_ref
             
@@ -608,7 +609,7 @@ class RecipeEditV2:
             raise InvalidParameter(f"xunit: {xunit!r} is not a unit") from None
 
         # 1. Get the new SpectrumV2 instance (the immutable operation)
-        new_spec_v2 = self._session.spec.x_convert(z_ref=z_ref_float, xunit=xunit_obj)
+        new_spec_v2 = spec_of(self._session).x_convert(z_ref=z_ref_float, xunit=xunit_obj)
         
         # 2. Return a NEW SessionV2 instance with the updated spectrum
         return self._session.with_new_spectrum(new_spec_v2) 
@@ -638,13 +639,13 @@ class RecipeEditV2:
             raise InvalidParameter(f"yunit: {yunit!r} is not a unit") from None
 
         # 1. Execute the immutable V2 operation
-        new_spec_v2 = self._session.spec.y_convert(yunit=yunit_obj)
+        new_spec_v2 = spec_of(self._session).y_convert(yunit=yunit_obj)
         
         # 2. Return a NEW SessionV2 instance (the new state)
         return self._session.with_new_spectrum(new_spec_v2)
     
     @typed_recipe
-    def apply_expression(self, target_col: str, expression: str, alias_map: Dict[str, str] = None) -> 'SessionV2':
+    def apply_expression(self, target_col: str, expression: str, alias_map: Optional[Dict[str, str]] = None) -> 'SessionV2':
         """
         Apply expression to columns.
 
@@ -679,14 +680,14 @@ class RecipeEditV2:
 
         # 2. Call the API with the prepared data
         with _expression_errors(expression):
-            new_spec_v2 = self._session.spec.apply_expression(
+            new_spec_v2 = spec_of(self._session).apply_expression(
                 target_col=target_col,
                 expression=final_expression,
                 extra_vars=extra_vars
             )
         return self._session.with_new_spectrum(new_spec_v2)
     @typed_recipe
-    def mask_expression(self, target_col: str, expression: str, alias_map: Dict[str, str] = None) -> 'SessionV2':
+    def mask_expression(self, target_col: str, expression: str, alias_map: Optional[Dict[str, str]] = None) -> 'SessionV2':
         """
         Mask column by expression.
 
@@ -720,7 +721,7 @@ class RecipeEditV2:
         
         # 2. Call the API with the prepared data
         with _expression_errors(expression):
-            new_spec_v2 = self._session.spec.mask_expression(
+            new_spec_v2 = spec_of(self._session).mask_expression(
                 target_col=target_col,
                 expression=final_expression,
                 extra_vars=extra_vars
@@ -753,7 +754,7 @@ class RecipeEditV2:
         # Translate UI symbols back to internal keys
         target_col = self._translate_ui_names(target_col.strip())
         # 1. Call the immutable V2 operation
-        new_spec_v2 = self._session.spec.smooth_column(
+        new_spec_v2 = spec_of(self._session).smooth_column(
             target_col=target_col,
             sigma_kms=sigma_kms,
             renorm_model=renorm_model
@@ -825,10 +826,10 @@ class RecipeEditV2:
             base_systs = SystemListV2(SystemListDataV2())
 
         # 3. Filter Source Components (Delegated to Core)
-        if self._session.spec and len(self._session.spec.x) > 0:
+        if self._session.spec and len(spec_of(self._session).x) > 0:
             try:
-                xmin = np.min(self._session.spec.x.value)
-                xmax = np.max(self._session.spec.x.value)
+                xmin = np.min(spec_of(self._session).x.value)
+                xmax = np.max(spec_of(self._session).x.value)
                 
                 filtered_source_systs = source_systs.filter_by_range(xmin, xmax)
                 
@@ -985,14 +986,14 @@ class RecipeEditV2:
 
         # 2. Handle Columns via Core API
         if target_list:
-            new_spec = self._session.spec.remove_columns(target_list)
+            new_spec = spec_of(self._session).remove_columns(target_list)
         else:
-            new_spec = self._session.spec
+            new_spec = spec_of(self._session)
             
         return self._session.with_new_spectrum(new_spec).with_new_system_list(new_systs)
     
     @typed_recipe
-    def split(self, expression: str, alias_map: Dict[str, str] = None) -> 'SessionV2':
+    def split(self, expression: str, alias_map: Optional[Dict[str, str]] = None) -> 'SessionV2':
         """
         Split spectrum by expression.
 
@@ -1021,7 +1022,7 @@ class RecipeEditV2:
         
         # 2. Call the immutable V2 operation
         with _expression_errors(expression):
-            new_spec_v2 = self._session.spec.split(
+            new_spec_v2 = spec_of(self._session).split(
                 expression=final_expression,
                 extra_vars=extra_vars
             )
@@ -1075,16 +1076,16 @@ class RecipeEditV2:
         for reg in region_list:
             try:
                 # Calculate bounds
-                obs_min, obs_max = self._session.spec.get_region_bounds(reg)
+                obs_min, obs_max = spec_of(self._session).get_region_bounds(reg)
                 
                 # Convert to native units for expression
-                spec_unit = self._session.spec.x.unit
+                spec_unit = spec_of(self._session).x.unit
                 v_min = obs_min.to(spec_unit).value
                 v_max = obs_max.to(spec_unit).value
                 
                 # Build expression
                 expression = f"(λ > {v_min:.4f}) & (λ < {v_max:.4f})"
-                logger.info(f"Extracting {reg} ({expression}, z_em = {self._session.spec._data.z_em:.4f}).")
+                logger.info(f"Extracting {reg} ({expression}, z_em = {spec_of(self._session)._data.z_em:.4f}).")
                 
                 # Create the split session
                 new_session = self.split(expression=expression)
@@ -1165,7 +1166,7 @@ class RecipeEditV2:
             
         # 3. Delegate Calculation to Core (SSOT)
         # The core calculates the physics and returns the boolean expression string
-        split_expression = self._session.spec.calc_intersection_expression(
+        split_expression = spec_of(self._session).calc_intersection_expression(
             others_specs=resolved_others_specs,
             z_target=z_f,
             trans_self=trans_self,
@@ -1215,7 +1216,7 @@ class RecipeEditV2:
         
         for item in other_sessions:
             if isinstance(item, SessionV2):
-                resolved_specs.append(item.spec)
+                resolved_specs.append(spec_of(item))
             elif isinstance(item, str):
                 # GUI Lookup
                 found = None
@@ -1225,7 +1226,7 @@ class RecipeEditV2:
                             found = hist.current_state
                             break
                 if found:
-                    resolved_specs.append(found.spec)
+                    resolved_specs.append(spec_of(found))
                 else:
                     logger.warning(msg_session_not_found.format(name=item) + " It is skipped.")
             else:
@@ -1236,7 +1237,7 @@ class RecipeEditV2:
             raise RecipeFailed("There are no valid sessions to stitch.")
 
         # 2. Delegate Data Manipulation to Core
-        new_spec = self._session.spec.stitch(resolved_specs, sort=sort)
+        new_spec = spec_of(self._session).stitch(resolved_specs, sort=sort)
 
         # Remove NaNs which break the 'step' plot (causing "scatter" look)
         # We use the public split API to keep valid data only.
@@ -1356,7 +1357,7 @@ class RecipeEditV2:
 
         # --- [FIX] 3. Gather and Sort All Arms (Blue-to-Red) ---
         # It doesn't matter which arm was right-clicked; we MUST process them from bluest to reddest.
-        all_sessions_info = [(self._session.name, self._session.spec)]
+        all_sessions_info = [(self._session.name, spec_of(self._session))]
         for name, spec in zip(others_list, resolved_others, strict=True):
             all_sessions_info.append((name, spec))
             
@@ -1433,7 +1434,7 @@ class RecipeEditV2:
     @typed_recipe
     def coadd(self, session_names: str, xstart: Optional[float] = None,
               xend: Optional[float] = None, dx: float = 10.0, xunit: str = 'km/s',
-              kappa: Optional[float] = 5.0, equalize_order: int = 0) -> Dict[str, Any]:
+              kappa: Optional[float] = 5.0, equalize_order: int = 0) -> 'SessionV2':
         """
         Co-add multiple sessions.
 

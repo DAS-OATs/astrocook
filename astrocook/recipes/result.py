@@ -148,8 +148,8 @@ class RecipeResult:
         a pipeline made and dropped, those whose fit failed, the candidate
         systems found; one line each, e.g. ``'2 components removed: logN <
         min_logN = 14.0 (too weak)'``."""
-        from astrocook.recipes.registry import find_recipe
-        out = [f"{find_recipe(p.recipe.split('.')[1]).brief.rstrip('.')} run first: "
+        from astrocook.recipes.registry import get_recipe
+        out = [f"{get_recipe(*p.recipe.split('.', 1)).brief.rstrip('.')} run first: "
                f"{p.reason}" for p in self.provided]
         for key, what in (("removed", "removed"),
                           ("discarded", "made and discarded by the recipe")):
@@ -382,9 +382,10 @@ def run(session, recipe: str, *, on_missing: Optional[str] = None,
     if '.' in recipe:
         spec = get_recipe(*recipe.split('.', 1))
     else:
-        spec = find_recipe(recipe)
-        if spec is None:
+        found = find_recipe(recipe)
+        if found is None:
             raise KeyError(f"There is no recipe {recipe}")
+        spec = found
     method = getattr(getattr(session, spec.category), spec.name)
     chosen = policy(on_missing) if on_missing is not None else nullcontext()
     with chosen, _collect_warnings() as warnings, collect_steps() as steps, \
@@ -402,6 +403,9 @@ def run(session, recipe: str, *, on_missing: Optional[str] = None,
             extra['removed'] = removed
         if discarded:
             extra['discarded'] = discarded
+    new: Any
+    changes: Any
+    value: Any
     if isinstance(out, list):
         out = tuple(out)
     if isinstance(out, tuple):

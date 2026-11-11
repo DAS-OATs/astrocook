@@ -140,3 +140,24 @@ jobs:
       # All the rules configured in pyproject.toml (pyflakes for now)
       - name: Ruff
         run: ruff check .
+
+  # Type checker (phase 6-quater): the whole package is installed, so that
+  # the types of numpy, astropy and mcp are those the checks are written
+  # against (without the [mcp] extra the server would be checked as Any)
+  types:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install package
+        run: pip install -e ".[dev]"
+
+      # Packages and options in [tool.mypy] of pyproject.toml
+      - name: Mypy
+        run: mypy

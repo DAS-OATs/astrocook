@@ -154,6 +154,7 @@ def _register(server: MCPServer, fn: Callable, name: str, description: str,
     tests of the tools fail if it changes)."""
     server.add_tool(fn, name=name, description=description, structured_output=True)
     tool = server._tool_manager.get_tool(name)
+    assert tool is not None  # just added
     tool.parameters = schema
     base = tool.fn_metadata.arg_model
     tool.fn_metadata.arg_model = type(base.__name__, (base, _RecipeArgs),

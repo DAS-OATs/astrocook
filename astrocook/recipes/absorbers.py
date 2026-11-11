@@ -2,13 +2,14 @@ import astropy.units as au
 import json
 import logging
 import numpy as np
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from astrocook.core.atomic_data import STANDARD_MULTIPLETS, is_multiplet, series_lines
 from astrocook.fitting.voigt_fitter import NoPixelsToFit, VoigtFitterV2
 
 from astrocook.fitting.voigt_model import LINK_ERRORS, LINK_FUNCTIONS
 from astrocook.recipes.errors import InvalidParameter, MissingPrerequisite, RecipeFailed
+from astrocook.recipes._spectrum import spec_of
 from astrocook.recipes.params import typed_recipe
 from astrocook.recipes.progress import check_cancelled, progress
 from astrocook.recipes.result import report, report_removed
@@ -861,7 +862,7 @@ class RecipeAbsorbersV2:
         # The mask of the user (e.g. from "Auto-estimate continuum" with other
         # parameters) is given back with the result: the fresh mask below,
         # restricted by region_limit, is used only inside the pipeline (F50)
-        user_mask = session_current.spec._data.aux_cols.get(mask_col)
+        user_mask = spec_of(session_current)._data.aux_cols.get(mask_col)
         
         if mask == "session":
             # The mask of the session, e.g. of Auto-estimate continuum with
@@ -886,7 +887,7 @@ class RecipeAbsorbersV2:
                 template="False"
             )
         kept_mask = (user_mask if user_mask is not None
-                     else session_current.spec._data.aux_cols[mask_col])
+                     else spec_of(session_current)._data.aux_cols[mask_col])
 
         def with_kept_mask(session):
             spec = session.spec.update_column(
@@ -896,7 +897,7 @@ class RecipeAbsorbersV2:
         
         # --- 0.5 SMART CLEAN (Refactored) ---
         if region_limit != "None" and session_current.systs:
-            spec = session_current.spec
+            spec = spec_of(session_current)
             # Get bounds as Quantities
             obs_min, obs_max = spec.get_region_bounds(region_limit)
 
@@ -914,8 +915,8 @@ class RecipeAbsorbersV2:
         if region_limit != "None":
             # (Checked at the start: it was skipped with a WARNING, and the
             # pipeline worked on the whole spectrum, phase 6)
-            obs_min, obs_max = session_current.spec.get_region_bounds(region_limit)
-            new_spec = session_current.spec.mask_region(mask_col, obs_min, obs_max)
+            obs_min, obs_max = spec_of(session_current).get_region_bounds(region_limit)
+            new_spec = spec_of(session_current).mask_region(mask_col, obs_min, obs_max)
             session_current = session_current.with_new_spectrum(new_spec)
         
         # --- 2. IDENTIFY (using the masked session) ---
@@ -923,9 +924,11 @@ class RecipeAbsorbersV2:
         
         # Capture the OLD abs_ids before they are overwritten
         old_abs_ids = None
-        old_ident = session_current.spec.meta.get('region_identifications')
-        if session_current.spec.has_aux_column('abs_ids'):
-            old_abs_ids = session_current.spec.get_column('abs_ids').value.copy()
+        old_ident = spec_of(session_current).meta.get('region_identifications')
+        if spec_of(session_current).has_aux_column('abs_ids'):
+            old_col = spec_of(session_current).get_column('abs_ids')
+            assert old_col is not None  # has_aux_column('abs_ids') just said so
+            old_abs_ids = old_col.value.copy()
             
         # Create a temp recipe wrapper for the masked session
         rec_temp = RecipeAbsorbersV2(session_current)
@@ -1287,7 +1290,7 @@ class RecipeAbsorbersV2:
         trials = [(z_val, ion) for z_val, comps in systems_by_z.items()
                   for ion in ion_list if ion not in {c.series for c in comps}]
 
-        spec = current_session.spec
+        spec = spec_of(current_session)
         running_systs = current_session.systs
         count_added = 0
         failed_trials = 0
@@ -1347,7 +1350,7 @@ class RecipeAbsorbersV2:
                           "reason": reason or ""})
             logger.info(f"Tried {ion} at z = {z_val}: logN = {fitted_comp.logN:.2f}, "
                         f"b = {fitted_comp.b:.1f} km/s, AIC change {delta_aic:+.1f} on "
-                        f"{n_pix} pixels: {'kept' if keep else 'not kept, ' + reason}.")
+                        f"{n_pix} pixels: {'kept' if keep else 'not kept, ' + str(reason)}.")
             if keep:
                 logger.info(f"Found {ion} at z = {z_val} (logN = {fitted_comp.logN:.2f}).")
                 running_systs = fitted_systs
@@ -1422,7 +1425,7 @@ class RecipeAbsorbersV2:
         multiplet_list = [m.strip() for m in multiplets.split(',') if m.strip()]
         
         logger.debug("identify_lines: Calling spec.identify_lines...")
-        new_spec_v2 = self._session.spec.identify_lines(
+        new_spec_v2 = spec_of(self._session).identify_lines(
             multiplet_list=multiplet_list,
             mask_col=mask_col,
             min_pix_region=min_pix_region,
@@ -1476,12 +1479,12 @@ class RecipeAbsorbersV2:
             raise RecipeFailed(f"The identification cannot be read: {e}") from e
 
         running_systs = self._session.systs
-        spec = self._session.spec
+        spec = spec_of(self._session)
 
         # 1. Trigger Continuum if needed
         # The continuum, if missing, was provided before the recipe (PR 5)
         cont_sess = self._session
-        spec = cont_sess.spec
+        spec = spec_of(cont_sess)
         
         logger.info(f"Adding {len(series_map)} components from the identification.")
 
@@ -1600,7 +1603,7 @@ class RecipeAbsorbersV2:
         SessionV2
             A new :class:`~astrocook.core.session.SessionV2` with updated component.
         """
-        changes = {}
+        changes: dict[str, Any] = {}
         # None: unchanged ('None' in the dialogs and the log)
         if z is not None: changes['z'] = z
         if logN is not None: changes['logN'] = logN
@@ -1645,7 +1648,7 @@ class RecipeAbsorbersV2:
             A new :class:`~astrocook.core.session.SessionV2` with updated components.
         """
         # Parse values
-        changes = {}
+        changes: dict[str, Any] = {}
         # None: unchanged ('None' in the dialogs and the log); series is
         # not in the registry and stays a string, 'None' for unchanged
         if z is not None: changes['z'] = z
@@ -1662,7 +1665,7 @@ class RecipeAbsorbersV2:
         return self._session.with_new_system_list(new_systs)
             
     @typed_recipe
-    def delete_component(self, uuid: str = None, uuids: list = None) -> 'SessionV2':
+    def delete_component(self, uuid: Optional[str] = None, uuids: Optional[list] = None) -> 'SessionV2':
         """
         Delete component(s).
 
@@ -1688,11 +1691,11 @@ class RecipeAbsorbersV2:
         
         # 1. Delegate to SystemListV2 (which we updated to handle lists)
         # We pass both arguments; SystemListV2 handles the set logic.
-        new_systs = self._session.systs.delete_component(uuid=uuid, uuids=uuids)
+        new_systs = self._session.systs.delete_component(uuid=uuid, uuids=uuids)  # type: ignore[arg-type]  # the core annotates them `str`/`list` with a None default (core/: PR 4)
         kept = {c.uuid for c in new_systs.components}
         report_removed([c.uuid for c in self._session.systs.components if c.uuid not in kept],
                        "deleted")
-        spec = self._session.spec
+        spec = spec_of(self._session)
 
         # 2. Without a continuum the model cannot be computed: delete the
         # components anyway and drop the model column, which would still
@@ -1748,7 +1751,7 @@ class RecipeAbsorbersV2:
         if not sibling_session:
             raise RecipeFailed(msg_session_not_found.format(name=sibling_name))
             
-        z_found = self._session.spec.detect_doublet_z(
+        z_found = spec_of(self._session).detect_doublet_z(
             sibling_session.spec, trans_self, trans_sibling
         )
         logger.info(f"Anchor redshift: z = {z_found:.5f}.")
@@ -1791,7 +1794,7 @@ class RecipeAbsorbersV2:
         _warn_if_unconvolved(current_session.spec)
         with current_session.systs.fitting_context([uuid], group_depth=depth_i,
                                                    spec=current_session.spec):
-            fitter = VoigtFitterV2(current_session.spec, current_session.systs,
+            fitter = VoigtFitterV2(spec_of(current_session), current_session.systs,
                                    check_stop=_fit_cancelled)
             new_systs, model_flux, res = fitter.fit(max_nfev=max_nfev_i, z_window_kms=z_win_f)
 
@@ -1799,13 +1802,13 @@ class RecipeAbsorbersV2:
             new_systs.constraint_model.set_active_components(None)
 
         # Delegate to SpectrumV2
-        new_spec = current_session.spec.update_model(model_flux)
+        new_spec = spec_of(current_session).update_model(model_flux)
             
         return current_session.with_new_spectrum(new_spec).with_new_system_list(new_systs)
             
     @typed_recipe
-    def update_constraint(self, uuid: str, param: str, is_free: bool = None, 
-                          expression: str = None, target_uuid: str = None) -> 'SessionV2':
+    def update_constraint(self, uuid: str, param: str, is_free: Optional[bool] = None, 
+                          expression: Optional[str] = None, target_uuid: Optional[str] = None) -> 'SessionV2':
         """
         Update constraint.
 
@@ -2036,9 +2039,9 @@ class RecipeAbsorbersV2:
 
         _warn_if_unconvolved(current_session.spec)
 
-        trace = {}
+        trace: dict[str, Any] = {}
         new_systs = current_session.systs.optimize_hierarchy(
-            spec=current_session.spec,
+            spec=spec_of(current_session),
             uuid_seed=uuid,
             max_components=max_c,
             threshold_sigma=thresh,
@@ -2056,18 +2059,18 @@ class RecipeAbsorbersV2:
             new_systs.constraint_model.set_active_components(None)
 
         from astrocook.fitting.voigt_fitter import VoigtFitterV2
-        fitter = VoigtFitterV2(current_session.spec, new_systs)
+        fitter = VoigtFitterV2(spec_of(current_session), new_systs)
         _, model_flux = fitter.compute_model_flux()
             
         # Delegate to SpectrumV2
-        new_spec = current_session.spec.update_model(model_flux)
+        new_spec = spec_of(current_session).update_model(model_flux)
             
         return current_session.with_new_spectrum(new_spec).with_new_system_list(new_systs)
                         
     @typed_recipe
-    def fit_bayesian(self, uuids: list[str] = None, engine: str = 'mcmc',
+    def fit_bayesian(self, uuids: Optional[list[str]] = None, engine: str = 'mcmc',
                      nsteps: int = 500, nlive: int = 250,
-                     group_depth: int = 2) -> int:
+                     group_depth: int = 2) -> 'SessionV2':
         """
         Run Bayesian sampling (MCMC or Nested) on a group of components.
 
@@ -2134,13 +2137,15 @@ class RecipeAbsorbersV2:
                 
             # We store results for ALL active components in the context
             # so the corner plot is accessible from any of them.
+            constraints = b_fitter.fitter._constraints
+            assert constraints is not None  # set by the fitter from the system list
             group_results = {
                 'samples': res['samples'],
-                'labels': b_fitter.fitter._constraints.get_active_param_labels(),
+                'labels': constraints.get_active_param_labels(),
                 'engine': engine
             }
                 
-            active_uuids = b_fitter.fitter._constraints._active_uuids
+            active_uuids = constraints._active_uuids
             for active_uuid in active_uuids:
                 new_meta['bayesian_results'][active_uuid] = group_results
                 
@@ -2151,9 +2156,9 @@ class RecipeAbsorbersV2:
 
         # 3. Update Model flux
         from ..fitting.voigt_fitter import VoigtFitterV2
-        fitter = VoigtFitterV2(current_session.spec, final_systs)
+        fitter = VoigtFitterV2(spec_of(current_session), final_systs)
         _, model_flux = fitter.compute_model_flux()
-        new_spec = current_session.spec.update_model(model_flux)
+        new_spec = spec_of(current_session).update_model(model_flux)
 
         return current_session.with_new_spectrum(new_spec).with_new_system_list(final_systs)
 
@@ -2161,7 +2166,7 @@ class RecipeAbsorbersV2:
     def refit_all(self, max_nfev: int = 200, z_window_kms: float = 100.0,
                   group_depth: int = 2, max_group_size: int = 20,
                   region_limit: str = "None",
-                  selected_uuids: list = None,
+                  selected_uuids: Optional[list] = None,
                   max_b: float = 300.0, max_logN: float = 23.0) -> 'SessionV2':
         """
         Refit all systems.
@@ -2225,7 +2230,7 @@ class RecipeAbsorbersV2:
             # Execute a single fit pass for the entire 'Super-Group'
             with current_session.systs.fitting_context(list(combined_active_set), group_depth=FIT_EXPANSION_DEPTH,
                                                        spec=current_session.spec):
-                fitter = VoigtFitterV2(current_session.spec, current_session.systs, 
+                fitter = VoigtFitterV2(spec_of(current_session), current_session.systs, 
                                       check_stop=_fit_cancelled)
                 new_systs, model_flux, res = fitter.fit(
                     max_nfev=max_nfev_i, z_window_kms=z_win_f, b_max=b_max_f,
@@ -2233,7 +2238,7 @@ class RecipeAbsorbersV2:
                 )
                     
             # Update model and return immediately
-            new_spec = current_session.spec.update_model(model_flux)
+            new_spec = spec_of(current_session).update_model(model_flux)
             _log_flags([c for c in new_systs.components
                         if c.uuid in combined_active_set])
             return current_session.with_new_spectrum(new_spec).with_new_system_list(new_systs)
@@ -2247,7 +2252,7 @@ class RecipeAbsorbersV2:
         if region_limit != "None":
             # (It fitted the whole spectrum, with a WARNING, phase 6)
             _check_region(current_session.spec, region_limit)
-            obs_min_limit, obs_max_limit = current_session.spec.get_region_bounds(region_limit)
+            obs_min_limit, obs_max_limit = spec_of(current_session).get_region_bounds(region_limit)
             use_region_filter = True
             logger.info(f"Refit limited to {region_limit} ({obs_min_limit:.1f} to {obs_max_limit:.1f}).")
 
@@ -2320,7 +2325,7 @@ class RecipeAbsorbersV2:
         from astrocook.core.system_list import SystemListV2
 
         failed_units = []
-        not_fitted = []  # the components of the groups that could not be fitted
+        not_fitted: list[Any] = []  # the components of the groups that could not be fitted
         for i, target_uuids in enumerate(work_units):
 
             progress(logger, int(100 * (i + 1) / total_units))
@@ -2353,7 +2358,7 @@ class RecipeAbsorbersV2:
             local_systs = SystemListV2(local_systs_data)
                 
             try:
-                fitter = VoigtFitterV2(current_session.spec, local_systs)
+                fitter = VoigtFitterV2(spec_of(current_session), local_systs)
                     
                 with local_systs.fitting_context(target_uuids, group_depth=FIT_EXPANSION_DEPTH,
                                                  spec=current_session.spec):
@@ -2408,11 +2413,11 @@ class RecipeAbsorbersV2:
         if final_systs.constraint_model:
             final_systs.constraint_model.set_active_components(None)
             
-        final_fitter = VoigtFitterV2(current_session.spec, final_systs)
+        final_fitter = VoigtFitterV2(spec_of(current_session), final_systs)
         _, model_flux = final_fitter.compute_model_flux()
 
         # Delegate to SpectrumV2
-        new_spec = current_session.spec.update_model(model_flux)
+        new_spec = spec_of(current_session).update_model(model_flux)
         _log_flags(final_systs.components)
             
         return current_session.with_new_spectrum(new_spec).with_new_system_list(final_systs)
