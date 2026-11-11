@@ -1293,7 +1293,7 @@ its own, except the smallest; the model of each PR proposed by the rule
 |---|---|---|---|
 | 1 | Ruff `B` on, its 33 warnings fixed (with the plan of the phase and the rule of the model in `CLAUDE.md`) | Sonnet | 1-2 h |
 | 2 | Aliases of renamed names: one mechanism in the registry for a renamed parameter (the old name accepted by the session logs, the scripts and the MCP tools), reused for the `V2` classes | Opus | half a day |
-| 3 | Type checker, step 1: mypy in CI on `recipes/` and `mcp_server/` | Sonnet | half a day |
+| 3 | Type checker, step 1: mypy in CI on `recipes/` and `mcp_server/` | Sonnet | half a day (done, 11 November 2026: see below) |
 | 4 | Type checker, step 2: `core/` and `fitting/` | Sonnet | half a day to a day |
 | 5 | `SessionV2` (and `SessionHistory`) out of `core/`, e.g. into `astrocook/session/`, the old import kept as an alias | Sonnet | 2-3 h |
 | 6 | The `V2` suffixes dropped, with the aliases of PR 2 (code, tests, docs) | Sonnet | half a day |
@@ -1304,6 +1304,29 @@ its own, except the smallest; the model of each PR proposed by the rule
 | 11 | F107: the labels of the menus of the GUI from the registry (and the screenshots) | Sonnet | 2-4 h |
 | 12 | MCP server: the descriptions of the shared parameters shorter, a paragraph of typical workflows in the instructions, the banner of a followed session with the pid and the version of the marker | Sonnet | 2-3 h |
 
+- *Result of PR 3* (type checker, step 1; 11 November 2026): `mypy`
+  (`[tool.mypy]` in `pyproject.toml`, `files` = `recipes/` and
+  `mcp_server/`, `ignore_missing_imports`, `follow_imports = "silent"`, no
+  strict option) gives zero errors; mypy is in the `[dev]` extra and runs in
+  a `types` job of the CI on the full install (the `[mcp]` extra must be
+  there, or the server would be checked as `Any`). The 149 messages of the
+  starting point (143 errors and 6 `annotation-unchecked` notes, which are
+  not errors and stay): 100 `union-attr` and 19 `arg-type` (almost all
+  from `SessionV2.spec` typed `Optional`: `spec_of(session)` in the new
+  `recipes/_spectrum.py`, an `assert`; `column_of` for `get_column`);
+  21 `assignment` (12 `x: T = None` made `Optional[T]` (the recipe
+  methods only use their signature for `bind`, never the annotations),
+  3 containers typed `dict[str, Any]`, the rest narrowed); 3 `var-annotated`
+  (annotations); 3 `attr-defined` (`assert` on the constraints of the
+  Bayesian fitter, a `type: ignore` on the marker `typed_recipe`); 2
+  `return-value` (the annotation of `coadd` and of `fit_bayesian`, which
+  return a session); 1 `operator` (`str(reason)`, the same text). No change
+  of behaviour; no bug found, so nothing in the findings register. Three
+  `type: ignore` wait for the annotations of `core/` (PR 4):
+  `SessionV2.with_new_spectrum` (a session without spectrum can be
+  copied), `SystemListV2.delete_component` (`str = None`) and
+  `TableAdapterV2.__getitem__`. Only the fast suite was run (3620 passed):
+  the corrections are of types, so the numbers cannot change.
 - *How a review PR (7-10) works*: the conversation opens with a table of
   the parameters of its recipes, as they are and as proposed (name,
   type, default, unit, description); Guido agrees it, then the change is

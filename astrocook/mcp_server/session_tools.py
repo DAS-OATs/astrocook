@@ -13,7 +13,7 @@ not the recipes, which reach the server from the registry
 import os
 from collections import Counter
 from pathlib import Path
-from typing import Annotated, Literal, Optional
+from typing import Annotated, Any, Literal, Optional
 
 from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
@@ -22,6 +22,7 @@ from pydantic import Field
 from astrocook import gaps
 from astrocook.methods_text import methods_text
 from astrocook.core.session import SessionV2
+from astrocook.recipes._spectrum import spec_of
 from astrocook.mcp_server.errors import run_recipe
 from astrocook.mcp_server.outputs import (
     CancelResult, CloseResult, ColumnInfo, GapGroup, GapsSummary, HistoryInfo, LogEntryInfo, MethodsResult,
@@ -91,7 +92,7 @@ def register_session_tools(server: MCPServer, store: SessionStore) -> None:
                 "session_open", SessionV2.open_new, str(file_path),
                 file_path.stem, store.context, "auto")
             session_id = store.add(session, str(file_path))
-        params = {}
+        params: dict[str, Any] = {}
         if z_em is not None:
             params["z_em"] = z_em
         if resol is not None:
@@ -159,8 +160,8 @@ def register_session_tools(server: MCPServer, store: SessionStore) -> None:
             history = store.get(session_id)
             meta = store.meta[session_id]
             state = history.current_state
-            spec = state.spec
-            columns = [ColumnInfo(name=c, unit=str(spec.t[c].unit or ""))
+            spec = spec_of(state)
+            columns = [ColumnInfo(name=c, unit=str(spec.t[c].unit or ""))  # type: ignore[union-attr]  # TableAdapterV2.__getitem__ is typed too loosely (core, PR 4)
                        for c in spec.t.colnames]
             comps = state.systs.components if state.systs else []
             # The log of the archive it was opened from: read only (F109)

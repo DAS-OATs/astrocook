@@ -85,8 +85,17 @@ Current version: 2.6.0. Python ≥3.12.
   excluded). A `zip()` says `strict=True` where its inputs have the same
   length by construction, `itertools.pairwise` for consecutive pairs. New
   code must not add warnings.
+- Types: `mypy` (no arguments; config in `[tool.mypy]` of `pyproject.toml`,
+  no strict option). It checks `astrocook/recipes/` and
+  `astrocook/mcp_server/` with zero errors since phase 6-quater, PR 3;
+  `core/`, `fitting/` and `gui/` come in PR 4. New code in those packages
+  must not add errors. To narrow an `Optional` use `spec_of(session)` or
+  `column_of(spec, name)` (`recipes/_spectrum.py`), `assert` or `cast`, no
+  new branches; a `# type: ignore[code]` says why, and a real bug found
+  goes in the findings register instead of being fixed.
 - CI (GitHub Actions, `.github/workflows/tests.yml`): `pytest` on Python
-  3.12 and 3.13 (coverage report on 3.13), and `ruff check .`. The slow
+  3.12 and 3.13 (coverage report on 3.13), `ruff check .` and `mypy`
+  (the `types` job, on the full `[dev]` install). The slow
   tests (`pytest --run-slow -m slow`) run in a separate job, not on pull
   requests: after each merge to master, weekly (Mondays) and on demand
   from the Actions page.

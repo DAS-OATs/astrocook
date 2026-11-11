@@ -34,7 +34,8 @@ logger = logging.getLogger(__name__)
 POLICIES = ("provide", "raise")
 
 _POLICY = contextvars.ContextVar('astrocook_prerequisites_policy', default="provide")
-_PROVIDED = contextvars.ContextVar('astrocook_prerequisites_provided', default=None)
+_PROVIDED: contextvars.ContextVar[Optional[List[ProvidedStep]]] = contextvars.ContextVar(
+    'astrocook_prerequisites_provided', default=None)
 
 
 def _has_z_em(spec) -> bool:
@@ -185,12 +186,12 @@ def fill(session, recipe, outermost: bool = True):
     if _POLICY.get() == "raise":
         raise MissingPrerequisite("; ".join(g.message for g in gaps) + ".")
     from astrocook.recipes.params import resolve_params
-    from astrocook.recipes.registry import find_recipe
+    from astrocook.recipes.registry import get_recipe
     for gap in gaps:
         if gap.automatic is None:
             continue  # the recipe goes on, with its own WARNING (as before)
         category, name = gap.automatic.split('.')
-        title = find_recipe(name).brief.rstrip('.')
+        title = get_recipe(category, name).brief.rstrip('.')
         logger.warning(f"{gap.reason[0].upper()}{gap.reason[1:]}: it is estimated first "
                        f"with {title}, with its defaults.")
         session = getattr(getattr(session, category), name)()

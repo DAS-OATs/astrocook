@@ -1,9 +1,10 @@
 import astropy.units as au
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from astrocook.recipes.errors import InvalidParameter, MissingPrerequisite
 from astrocook.recipes.messages import msg_z_em_unset
+from astrocook.recipes._spectrum import spec_of
 from astrocook.recipes.params import typed_recipe
 
 if TYPE_CHECKING:
@@ -168,7 +169,7 @@ class RecipeContinuumV2:
     def estimate_auto(self, smooth_len_lya: float = 5000.0, smooth_len_out: float = 400.0,
                       kappa: float = 2.0, fudge: str = 'auto',
                       smooth_fwhm: float = 800.0, template: bool = False, renorm_model: bool = True,
-                      smooth_std: str = None) -> 'SessionV2':
+                      smooth_std: Optional[str] = None) -> 'SessionV2':
         """
         Auto-estimate continuum (single-click).
 
@@ -219,7 +220,7 @@ class RecipeContinuumV2:
         """
         smooth_len_lya_q = smooth_len_lya * au.km/au.s
         smooth_len_out_q = smooth_len_out * au.km/au.s
-        z_em_f = self._session.spec._data.z_em # Read z_em from session
+        z_em_f = spec_of(self._session)._data.z_em # Read z_em from session
         fudge_f = _fudge(fudge)
         smooth_std_f = _smoothing_sigma(smooth_fwhm, smooth_std)  # sigma, km/s
 
@@ -228,7 +229,7 @@ class RecipeContinuumV2:
                            "is estimated as outside it.")
 
         logger.info("Finding the absorbed regions.")
-        spec_with_mask = self._session.spec.find_absorbed(
+        spec_with_mask = spec_of(self._session).find_absorbed(
             smooth_len_lya=smooth_len_lya_q,
             smooth_len_out=smooth_len_out_q,
             kappa=kappa,
@@ -282,14 +283,14 @@ class RecipeContinuumV2:
         """
         smooth_len_lya_q = smooth_len_lya * au.km/au.s
         smooth_len_out_q = smooth_len_out * au.km/au.s
-        z_em_f = self._session.spec._data.z_em # Read z_em from session
+        z_em_f = spec_of(self._session)._data.z_em # Read z_em from session
 
         if z_em_f == 0.0:
             logger.warning(msg_z_em_unset + " The absorbed regions of the Lyman-alpha "
                            "forest are found as outside it.")
             # We don't stop, as the operation function handles z_em=0.0
             
-        new_spec_v2 = self._session.spec.find_absorbed(
+        new_spec_v2 = spec_of(self._session).find_absorbed(
             smooth_len_lya=smooth_len_lya_q,
             smooth_len_out=smooth_len_out_q,
             kappa=kappa,
@@ -300,7 +301,7 @@ class RecipeContinuumV2:
     @typed_recipe
     def fit_continuum(self, fudge: str = 'auto', smooth_fwhm: float = 800.0,
                       mask_col: str = 'abs_mask', renorm_model: bool = True, template: str = 'False',
-                      smooth_std: str = None) -> 'SessionV2':
+                      smooth_std: Optional[str] = None) -> 'SessionV2':
         """
         Fit continuum to mask (V1 logic).
 
@@ -339,7 +340,7 @@ class RecipeContinuumV2:
         smooth_std_f = _smoothing_sigma(smooth_fwhm, smooth_std)
         template_b = str(template) == 'True'
         fudge_arg = _fudge(fudge)
-        new_spec_v2 = self._session.spec.fit_continuum(
+        new_spec_v2 = spec_of(self._session).fit_continuum(
             fudge=fudge_arg,
             smooth_std_kms=smooth_std_f,
             mask_col=mask_col,
@@ -378,10 +379,10 @@ class RecipeContinuumV2:
         RecipeError
             If the recipe cannot run (:mod:`astrocook.recipes.errors`).
         """
-        if self._session.spec._data.z_em == 0.0:
+        if spec_of(self._session)._data.z_em == 0.0:
             raise MissingPrerequisite(msg_z_em_unset + " The power law is fitted in "
                                       "rest-frame regions.")
-        new_spec_v2 = self._session.spec.fit_powerlaw(
+        new_spec_v2 = spec_of(self._session).fit_powerlaw(
             regions_str=regions,
             kappa=kappa
         )
@@ -412,7 +413,7 @@ class RecipeContinuumV2:
             A new :class:`~astrocook.core.session.SessionV2` with the updated continuum.
         """
         # 1. Delegate Business Logic to Core
-        new_spec = self._session.spec.update_continuum_from_knots(
+        new_spec = spec_of(self._session).update_continuum_from_knots(
             knots_x, knots_y, renorm_model
         )
 

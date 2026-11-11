@@ -64,6 +64,7 @@ dev = [
     # the tests also cover the Bayesian fit and the MCP server
     "astrocook[test,bayes,mcp]",
     "ruff",
+    "mypy",
     "mutmut",
 ]
 # User documentation (docs/; generate_sphinx.sh, generate_html.sh,
@@ -129,6 +130,16 @@ filterwarnings = [
     # module of a warning of the compiler is the path of the file
     "ignore:invalid escape sequence:SyntaxWarning:.*reference.v1.cookbook_continuum_old",
 ]
+
+# Type checker (phase 6-quater, PR 3): `mypy` with no arguments checks the
+# packages below; core/, fitting/ and gui/ come in PR 4. The options are the
+# default ones (no strict), apart from these two: the libraries without
+# stubs are not an error, and the modules outside `files` are read for their
+# types but not reported.
+[tool.mypy]
+files = ["astrocook/recipes", "astrocook/mcp_server"]
+ignore_missing_imports = true
+follow_imports = "silent"
 
 [tool.ruff]
 # The verbatim copy of the V1 code for the parity tests and the V1 docs

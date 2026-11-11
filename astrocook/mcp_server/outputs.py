@@ -12,6 +12,7 @@ import numpy as np
 from pydantic import BaseModel, Field
 
 from astrocook.core.session import SessionV2
+from astrocook.recipes._spectrum import column_of, spec_of
 
 
 class SpectrumSummary(BaseModel):
@@ -77,7 +78,7 @@ def _median_resolution(spec) -> float:
 
 def spectrum_summary(session: SessionV2) -> SpectrumSummary:
     """Summarize the spectrum and the components of a session."""
-    spec = session.spec
+    spec = spec_of(session)
     x = spec.x
     return SpectrumSummary(
         n_pixels=len(x),
@@ -119,7 +120,7 @@ class ContinuumInfo(SessionInfo):
 def _lya_split(session: SessionV2) -> Optional[np.ndarray]:
     """True for the pixels bluewards of the Lyman-alpha emission, or None
     if z_em is not set or the x axis is not a wavelength."""
-    spec = session.spec
+    spec = spec_of(session)
     z_em = float(spec._data.z_em)
     if z_em <= 0:
         return None
@@ -136,9 +137,9 @@ def _fraction(mask: np.ndarray) -> Optional[float]:
 
 def continuum_summary(session: SessionV2) -> ContinuumSummary:
     """Summarize the continuum and the absorbed mask of a session."""
-    spec = session.spec
-    absorbed = spec.get_column("abs_mask").value.astype(bool)
-    out = {"absorbed_fraction": float(np.mean(absorbed))}
+    spec = spec_of(session)
+    absorbed = column_of(spec, "abs_mask").value.astype(bool)
+    out: dict[str, Any] = {"absorbed_fraction": float(np.mean(absorbed))}
     blue = _lya_split(session)
     if blue is not None:
         out["absorbed_fraction_forest"] = _fraction(absorbed[blue])
@@ -211,10 +212,10 @@ def identification_summary(session: SessionV2, max_listed: int
                            ) -> IdentificationSummary:
     """Summarize the output of identify_lines, which lives in the
     ``abs_ids`` column and in JSON strings in the metadata."""
-    spec = session.spec
+    spec = spec_of(session)
     meta = spec.meta
     x = spec.x.value
-    ids = spec.get_column("abs_ids").value.astype(int)
+    ids = column_of(spec, "abs_ids").value.astype(int)
     region_info = _json_meta(meta, "region_identifications")
     series = _json_meta(meta, "series_map_json")
     z = _json_meta(meta, "z_map_json")
@@ -241,7 +242,7 @@ def identification_summary(session: SessionV2, max_listed: int
 
     identified = None
     if spec.has_aux_column("abs_mask"):
-        absorbed = spec.get_column("abs_mask").value.astype(bool)
+        absorbed = column_of(spec, "abs_mask").value.astype(bool)
         if absorbed.any():
             identified = float(np.mean(ids[absorbed] > 0))
     return IdentificationSummary(
@@ -476,15 +477,15 @@ def summaries(result, before: SessionV2, after: SessionV2, provides,
     """The summaries of the pilot that fit what the recipe did: the
     continuum when it provides one or changed it, the identification when
     it identified lines, the fit when it added components."""
-    out = {}
+    out: dict[str, Any] = {}
     changes = result.changes
     touched = set(changes.columns_added) | set(changes.columns_changed)
-    if after.spec.cont is not None and after.spec.has_aux_column("abs_mask") and (
+    if spec_of(after).cont is not None and spec_of(after).has_aux_column("abs_mask") and (
             "continuum" in provides or touched & {"cont", "abs_mask"}):
         out["continuum"] = continuum_summary(after)
     if ("candidates" in result.extra or "regions" in result.extra) \
-            and after.spec.has_aux_column("abs_ids") \
-            and "region_identifications" in after.spec.meta:
+            and spec_of(after).has_aux_column("abs_ids") \
+            and "region_identifications" in spec_of(after).meta:
         out["identification"] = identification_summary(after, max_listed)
     if changes.components_added:
         out["fit"] = fit_summary(before, after, max_listed)

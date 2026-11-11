@@ -7,6 +7,7 @@ from astropy.table import Table
 from typing import TYPE_CHECKING, List
 
 from astrocook.recipes.errors import RecipeFailed
+from astrocook.recipes._spectrum import spec_of
 from astrocook.recipes.params import typed_recipe
 
 if TYPE_CHECKING:
@@ -112,7 +113,7 @@ class RecipeFileV2:
 
         if spec_req:
             valid_cols = ['x'] + spec_req
-            raw_data = {c: self._session.spec.t[c] for c in valid_cols}
+            raw_data = {c: spec_of(self._session).t[c] for c in valid_cols}
             out_path = os.path.join(path, f"{prefix}_spec.csv")
             ascii.write(Table(raw_data), out_path, format='csv', overwrite=True)
             saved_any = True
@@ -181,7 +182,7 @@ class RecipeFileV2:
         target_list = [t.strip() for t in processed_targets.split(',') if t.strip()]
 
         # Get authoritative column lists
-        spec_colnames = self._session.spec.t.colnames if self._session.spec else []
+        spec_colnames = spec_of(self._session).t.colnames if self._session.spec else []
         syst_colnames = self._session.systs.t.colnames if self._session.systs else []
 
         # Any target that exists in spec table (and isn't the literal 'systems')
@@ -220,7 +221,7 @@ class RecipeFileV2:
             spectrum.
         """
         table = ascii.read(file_path)
-        current_len = len(self._session.spec.x)
+        current_len = len(spec_of(self._session).x)
         import_len = len(table)
 
         # 2. Safety Check: Pixel count must match
@@ -228,7 +229,7 @@ class RecipeFileV2:
             raise RecipeFailed(f"The file has {import_len} pixels and the session "
                                f"{current_len}: they must be the same.")
 
-        new_spec = self._session.spec
+        new_spec = spec_of(self._session)
         imported_cols = []
 
         # 3. Iterate through columns in the ASCII file

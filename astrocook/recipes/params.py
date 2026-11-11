@@ -264,5 +264,5 @@ def typed_recipe(method: Callable) -> Callable:
             if steps is not None:
                 steps.depth -= 1
 
-    wrapper.typed_recipe = True  # checked by tests/test_recipe_params.py
+    wrapper.typed_recipe = True  # type: ignore[attr-defined]  # a marker attribute on the function; checked by tests/test_recipe_params.py
     return wrapper
