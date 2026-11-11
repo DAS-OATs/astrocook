@@ -4,7 +4,7 @@ from copy import deepcopy
 import dataclasses
 import logging
 import numpy as np
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, overload
 
 from astrocook.core.spectrum_operations import convert_x_axis, convert_y_axis
 from astrocook.core.structures import SpectrumDataV2, DataColumnV2
@@ -65,6 +65,10 @@ class TableAdapterV2(object):
             return row_data
         raise StopIteration
     
+    @overload
+    def __getitem__(self, key: str) -> au.Quantity: ...
+    @overload
+    def __getitem__(self, key: slice) -> 'TableAdapterV2': ...
     def __getitem__(self, key: Union[str, slice]) -> Union[au.Quantity, 'TableAdapterV2']:
         """
         Handles access via column name (string) OR slicing (slice object).
@@ -140,8 +144,8 @@ def _edges_with_unit(data: SpectrumDataV2) -> SpectrumDataV2:
             xmin, xmax = x.copy(), x.copy()
     return dataclasses.replace(
         data,
-        xmin=DataColumnV2(xmin, x_unit, getattr(data.xmin, 'description', None)),
-        xmax=DataColumnV2(xmax, x_unit, getattr(data.xmax, 'description', None)))
+        xmin=DataColumnV2(xmin, x_unit, getattr(data.xmin, 'description', '')),
+        xmax=DataColumnV2(xmax, x_unit, getattr(data.xmax, 'description', '')))
 
 
 class SpectrumV2(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, LinesMixin):
@@ -160,7 +164,7 @@ class SpectrumV2(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, Line
         A list of strings describing the modification history of this spectrum.
     """
     
-    def __init__(self, data: SpectrumDataV2, history: list = None):
+    def __init__(self, data: SpectrumDataV2, history: Optional[list] = None):
         # The resolution lives in the 'resol' column only: legacy sources
         # (attribute, meta keys) are migrated into it here (#526)
         self._data = migrate_resolution(_edges_with_unit(data))

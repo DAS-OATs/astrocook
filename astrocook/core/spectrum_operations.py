@@ -262,7 +262,8 @@ def rebin_spectrum(
         xstart: Optional[au.Quantity], xend: Optional[au.Quantity], 
         dx: au.Quantity, calc_unit: au.Unit,
         kappa: Optional[float], filling: float
-    ) -> Tuple[au.Quantity, au.Quantity, au.Quantity, au.Quantity, au.Quantity]:
+    ) -> Tuple[au.Quantity, au.Quantity, au.Quantity, au.Quantity, au.Quantity,
+               Optional[np.ndarray]]:
     """
     High-performance vectorized rebinning (Inverse/Drizzle method)
     with optional local sigma clipping (single pass, upward only): pixels
@@ -956,7 +957,7 @@ def _find_kinematic_doublet_candidates(
     z_ref: float,
     multiplet_name: str,
     z_em: float
-) -> List[Tuple[int, float]]:
+) -> List[Tuple[int, int, float]]:
     """
     Performs a kinematic region-overlap check to find doublet candidates.
     This is Step 2 & 3 of the new algorithm.

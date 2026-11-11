@@ -1,7 +1,7 @@
 import logging
 import numpy as np
 import re
-from typing import List, Dict, Any, TYPE_CHECKING, Optional, Set, Tuple
+from typing import Collection, List, Dict, Any, TYPE_CHECKING, Optional, Set, Tuple
 
 from astrocook.core.structures import ParameterConstraintV2 
 
@@ -78,7 +78,7 @@ class VoigtModelConstraintV2:
         'btur': (0.0, 100.0)
     }
 
-    def __init__(self, system_list: 'SystemListV2', constraints: Dict[str, Any] = None):
+    def __init__(self, system_list: 'SystemListV2', constraints: Optional[Dict[str, Any]] = None):
         self._system_list = system_list
         self.v2_constraints_by_uuid: Dict[str, Dict[str, ParameterConstraintV2]] = {}          
 
@@ -93,7 +93,7 @@ class VoigtModelConstraintV2:
         
         logger.debug(f"Initialized VoigtModelConstraintV2 with {len(self.p_free_vector)} free parameters.")
 
-    def set_active_components(self, target_uuids: List[str] = None, group_depth: int = 2,
+    def set_active_components(self, target_uuids: Optional[Collection[str]] = None, group_depth: int = 2,
                               spec=None):
         """
         Define the set of components to be fit (the "Fluid Group").

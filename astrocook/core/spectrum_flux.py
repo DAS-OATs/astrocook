@@ -10,14 +10,12 @@ from copy import deepcopy
 import dataclasses
 import logging
 import numpy as np
-from typing import TYPE_CHECKING, Union
+from typing import Self, Union
 
 from astrocook.core.photometry import generate_calibration_curve
 from astrocook.core.spectrum_operations import running_std, smooth_spectrum
 from astrocook.core.structures import DataColumnV2, SpectrumDataV2
-
-if TYPE_CHECKING:
-    from astrocook.core.spectrum import SpectrumV2
+from astrocook.core._spectrum_host import HostBase
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +30,7 @@ FLUX_AUX_COLUMNS = ('cont', 'model', 'cont_pl')
 TRANSMISSION_AUX_COLUMNS = ('telluric_model',)
 
 
-class FluxMixin:
+class FluxMixin(HostBase):
     """Operations on the flux: scaling, running standard deviation,
     smoothing (of the spectrum or of one column), calibration on magnitudes.
 
@@ -41,7 +39,7 @@ class FluxMixin:
     results are new instances of the class (``self.__class__``).
     """
 
-    def scale_flux(self, scale_factor: Union[float, np.ndarray]) -> 'SpectrumV2':
+    def scale_flux(self, scale_factor: Union[float, np.ndarray]) -> Self:
         """
         Scale the flux (y, dy) and the flux auxiliary columns (cont, model,
         cont_pl).
@@ -94,7 +92,7 @@ class FluxMixin:
     def calculate_running_std(self, 
                               input_col: str, 
                               output_col: str, 
-                              window_pix: int) -> 'SpectrumV2':
+                              window_pix: int) -> Self:
         """
         Calculate a running RMS on a column and save it as a new column.
 
@@ -148,7 +146,7 @@ class FluxMixin:
         new_history = self.history + [f"Calculated running RMS (window={window_pix}pix) on {input_col}"]
         return self.__class__(data=new_data, history=new_history)
 
-    def smooth(self, sigma_kms: float) -> 'SpectrumV2':
+    def smooth(self, sigma_kms: float) -> Self:
         """
         Apply Gaussian smoothing to the flux (y, dy), the flux auxiliary
         columns (cont, model, cont_pl) and the transmission (telluric_model).
@@ -217,7 +215,7 @@ class FluxMixin:
         new_history = self.history + [f"Smoothed spectrum (sigma={sigma_kms} km/s)"]
         return self.__class__(data=new_data, history=new_history)
 
-    def smooth_column(self, target_col: str, sigma_kms: float, renorm_model: bool = False) -> 'SpectrumV2':
+    def smooth_column(self, target_col: str, sigma_kms: float, renorm_model: bool = False) -> Self:
         """
         Apply Gaussian smoothing to a single target column.
 
@@ -302,7 +300,7 @@ class FluxMixin:
         new_history = self.history + [f"Smoothed column: {target_col} (sigma={sigma_kms} km/s)"]
         return self.__class__(data=new_data_core, history=new_history)
 
-    def calibrate(self, magnitudes: str) -> 'SpectrumV2':
+    def calibrate(self, magnitudes: str) -> Self:
         """
         Calibrate (and warp) the flux to match target photometric magnitudes.
 

@@ -1,6 +1,6 @@
 import numpy as np
 import logging
-from typing import Dict, Any, Optional
+from typing import Collection, Dict, Any, Optional
 from .voigt_fitter import VoigtFitterV2
 
 try:
@@ -204,7 +204,7 @@ class BayesianVoigtFitter:
             
         # Initialize walkers in a small cluster around the best-fit / initial guess
         # We add some noise but stay within bounds
-        pos = []
+        pos: Any = []
         for _ in range(nwalkers):
             p = self.p_initial + 1e-4 * np.random.randn(self.ndim)
             p = np.clip(p, self.lower_bounds + 1e-8, self.upper_bounds - 1e-8)
@@ -349,7 +349,7 @@ class BayesianVoigtFitter:
         # We only update components that were part of the active group
         # This ensures we don't accidentally reset/clear errors for other components
         new_systs = self.systs
-        active_uuids = self.fitter._constraints._active_uuids
+        active_uuids: Optional[Collection[str]] = self.fitter._constraints._active_uuids
         if active_uuids is None:
             # If everything was active (no context), update everything
             active_uuids = [c.uuid for c in self.fitter._constraints._system_list.components]

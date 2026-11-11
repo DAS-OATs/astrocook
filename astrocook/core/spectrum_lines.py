@@ -13,7 +13,7 @@ import json
 import logging
 import numpy as np
 from scipy.ndimage import gaussian_filter1d
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, Any, Dict, Self, List, cast
 
 from astrocook.core.atomic_data import ATOM_DATA, STANDARD_MULTIPLETS, xem_d
 from astrocook.core.spectrum_operations import (
@@ -21,6 +21,7 @@ from astrocook.core.spectrum_operations import (
     rate_doublet_candidate,
 )
 from astrocook.core.structures import DataColumnV2
+from astrocook.core._spectrum_host import HostBase
 
 if TYPE_CHECKING:
     from astrocook.core.spectrum import SpectrumV2
@@ -35,7 +36,7 @@ logger = logging.getLogger(__name__)
 Z_EM_MARGIN_KMS = 3000.0
 
 
-class LinesMixin:
+class LinesMixin(HostBase):
     """Absorbed regions and identification of the lines.
 
     Mixed into ``SpectrumV2``, whose data and methods it uses: ``_data``,
@@ -45,7 +46,7 @@ class LinesMixin:
     (``self.__class__``).
     """
 
-    def detect_absorptions(self, mask_col: str = 'abs_mask', min_pix: int = 3) -> 'SpectrumV2':
+    def detect_absorptions(self, mask_col: str = 'abs_mask', min_pix: int = 3) -> Self:
         """
         Detect absorption regions based on a boolean mask.
 
@@ -110,7 +111,7 @@ class LinesMixin:
                        score_threshold: float = 0.5,
                        bypass_scoring: bool = False,
                        debug_rating: bool = False,
-                       z_em_margin_kms: float = Z_EM_MARGIN_KMS) -> 'SpectrumV2':
+                       z_em_margin_kms: float = Z_EM_MARGIN_KMS) -> Self:
         """
         Identify absorption lines by correlating regions with multiplet templates.
 
@@ -168,7 +169,7 @@ class LinesMixin:
             )
         
         # 2. Get Merged Regions
-        mask_data = spec.get_column(mask_col).value
+        mask_data = cast(au.Quantity, spec.get_column(mask_col)).value
         if mask_data.dtype.kind != 'b':
              mask_data = mask_data.astype(bool)
 
@@ -225,7 +226,7 @@ class LinesMixin:
                 all_candidates.append((rid_1, rid_2, z_test, 'Ly_ab', score_threshold))
 
         # --- Rate Candidates ---
-        reliable_ids = {} 
+        reliable_ids: Dict[Any, Any] = {} 
         # The candidates scored and dropped, for the result of the recipe
         # (F119): which, how well they scored and against what
         rejected = []
@@ -246,7 +247,7 @@ class LinesMixin:
             if not np.any(mask_1) or not np.any(mask_2): continue
             
             r2_score = rate_doublet_candidate(
-                spec, mask_1, mask_2, series_name, z_test, debug_rating=debug_rating
+                cast('SpectrumV2', spec), mask_1, mask_2, series_name, z_test, debug_rating=debug_rating
             )
             
             if not (r2_score > threshold or bypass_scoring) and threshold <= 1.0:

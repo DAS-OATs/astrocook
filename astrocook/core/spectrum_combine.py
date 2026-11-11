@@ -10,10 +10,11 @@ from copy import deepcopy
 from itertools import pairwise
 import logging
 import numpy as np
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Self, cast, Dict, List, Optional
 
 from astrocook.core.spectrum_operations import convert_axis_velocity, rebin_spectrum
 from astrocook.core.structures import DataColumnV2, SpectrumDataV2
+from astrocook.core._spectrum_host import HostBase
 
 if TYPE_CHECKING:
     from astrocook.core.spectrum import SpectrumV2
@@ -21,7 +22,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class CombineMixin:
+class CombineMixin(HostBase):
     """Stitching, rebinning, equalization, co-addition and resampling of
     spectra.
 
@@ -31,7 +32,7 @@ class CombineMixin:
     new instances of the class (``self.__class__``).
     """
 
-    def stitch(self, other_specs: List['SpectrumV2'], sort: bool = True) -> 'SpectrumV2':
+    def stitch(self, other_specs: List['SpectrumV2'], sort: bool = True) -> Self:
         """
         Merge this spectrum with a list of other spectra.
 
@@ -54,7 +55,7 @@ class CombineMixin:
         all_specs = [self] + other_specs
         
         xs, ys, dys = [], [], []
-        aux_map = {k: [] for k in self._data.aux_cols.keys()}
+        aux_map: Dict[str, list] = {k: [] for k in self._data.aux_cols.keys()}
         
         # Target Units
         x_u = self.x.unit
@@ -70,7 +71,7 @@ class CombineMixin:
             for col_name in aux_map:
                 if col_name in s._data.aux_cols:
                     t_unit = self._data.aux_cols[col_name].unit
-                    val = s.get_column(col_name).to(t_unit).value
+                    val = cast(au.Quantity, s.get_column(col_name)).to(t_unit).value
                     aux_map[col_name].append(val)
                 else:
                     # Pad missing columns with NaN
@@ -125,7 +126,7 @@ class CombineMixin:
 
     def rebin(self, xstart: Optional[au.Quantity], xend: Optional[au.Quantity], 
               dx: au.Quantity, kappa: Optional[float], 
-              filling: float) -> 'SpectrumV2':
+              filling: float) -> Self:
         """
         Rebin the spectrum to a new uniform grid.
 
@@ -236,7 +237,7 @@ class CombineMixin:
         new_history = self.history + [f"Rebinned spectrum (dx={dx})"]
         return self.__class__(data=new_data, history=new_history)
     
-    def equalize_to_reference(self, reference_spec: 'SpectrumV2', order: int = 0) -> 'SpectrumV2':
+    def equalize_to_reference(self, reference_spec: 'SpectrumV2', order: int = 0) -> Self:
         """
         Scale this spectrum's flux to match a reference spectrum.
 
@@ -273,7 +274,7 @@ class CombineMixin:
     def coadd(self, others: List['SpectrumV2'], 
               xstart: Optional[au.Quantity], xend: Optional[au.Quantity], 
               dx: au.Quantity, kappa: Optional[float] = 5.0, 
-              equalize_order: int = 0) -> 'SpectrumV2':
+              equalize_order: int = 0) -> Self:
         """
         Co-add this spectrum with a list of other spectra onto a new common grid.
 
@@ -463,7 +464,7 @@ class CombineMixin:
         return self.__class__(final_spec_data)
 
     def resample_on_grid(self, target_grid_spec: 'SpectrumV2', 
-                         fill_value: float = np.nan) -> 'SpectrumV2':
+                         fill_value: float = np.nan) -> Self:
         """
         Resample this spectrum onto the exact wavelength grid of another spectrum.
 
@@ -505,6 +506,7 @@ class CombineMixin:
             else:
                 logger.warning(f"The column '{name}' is not numerical and cannot "
                                "be resampled: it is dropped.")
+        assert y_col_new is not None and dy_col_new is not None
         new_data_core = SpectrumDataV2(
             x=x_col, xmin=xmin_col, xmax=xmax_col, 
             y=y_col_new, 

@@ -115,8 +115,8 @@ class PixelLSF:
         sigma_max = (C_KMS / r_min * FWHM_TO_SIGMA) if (r_min and r_min > 0) else 0.0
         margin = KERNEL_SIGMAS * sigma_max + self.dv
         if self.n_pix:
-            v_start = np.nanmin(self.v_lo) - margin
-            v_end = np.nanmax(self.v_hi) + margin
+            v_start: float = np.nanmin(self.v_lo) - margin
+            v_end: float = np.nanmax(self.v_hi) + margin
         else:
             v_start = v_end = 0.0
         n_fine = int(np.ceil((v_end - v_start) / self.dv)) + 1

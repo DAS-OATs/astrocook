@@ -128,8 +128,8 @@ class VoigtFitterV2:
         # Pixel edges, for the exact convolution with the LSF (#526)
         self._xmin_ang = self._spectrum.xmin.to(au.Angstrom).value
         self._xmax_ang = self._spectrum.xmax.to(au.Angstrom).value
-        self._x_tau = None
-        self._lsf = None
+        self._x_tau: Any = None
+        self._lsf: Any = None
         
         norm_q = self._spectrum.norm
         
@@ -154,7 +154,7 @@ class VoigtFitterV2:
         # 2. Resolution Setup: the 'resol' column of the spectrum, as R
         # (#526; before, five sources and a guess of the unit by value). A
         # flat column takes the scalar path, as a global value did before
-        self._resol_column = None
+        self._resol_column: Any = None
         self._use_variable_resolution = False
         self._global_resol_val = 0.0
         self._global_resol_unit = 'R'
@@ -171,16 +171,16 @@ class VoigtFitterV2:
             logger.debug("VoigtFitter: No resolution found. Fitting unconvolved profiles.")
 
         # Placeholders
-        self._fit_mask = None
+        self._fit_mask: Any = None
         self._sl = slice(None)
-        self._x_calc = None
-        self._y_norm_calc = None
-        self._dy_norm_calc = None
-        self._fit_mask_calc = None
-        self._resol_calc = None
+        self._x_calc: Any = None
+        self._y_norm_calc: Any = None
+        self._dy_norm_calc: Any = None
+        self._fit_mask_calc: Any = None
+        self._resol_calc: Any = None
         
         # Cache is now a dict: { (resol_val, unit_str): tau_array }
-        self._cached_tau_groups = {}
+        self._cached_tau_groups: Dict[Any, Any] = {}
         
         # [OPTIMIZATION] Cache list of active components for the inner loop
         # Stores tuples: (index_in_system_list, component_object)
@@ -222,7 +222,7 @@ class VoigtFitterV2:
         """Fine grid and LSF for the pixels ``sl`` (#526): the optical
         depth is computed on ``self._x_tau``, the model on the pixels.
         Without ``cache``, for a model computed once (see ``PixelLSF``)."""
-        r_values = []
+        r_values: List[Any] = []
         if self._use_variable_resolution and self._resol_column is not None:
             r_values.extend(self._resol_column[sl][np.isfinite(self._resol_column[sl])])
         if self._global_resol_val > 0:
@@ -416,7 +416,7 @@ class VoigtFitterV2:
             p = p0.copy(); p[k] += step
             jac[:, k] = (self._residual_function(p) - r0) / step
         self._active_fit_components = None
-        self._active_lines_data = None
+        self._active_lines_data: Any = None
         try:
             errors, red_chi2, cov = self._scaled_errors(r0, jac)
             linked_errors = self._linked_errors(p0, cov)
@@ -435,7 +435,7 @@ class VoigtFitterV2:
             if active is not None and c.uuid not in active:
                 comps.append(c); continue
             idx = i * 4
-            new = {'chi2': red_chi2}
+            new: Dict[str, Any] = {'chi2': red_chi2}
             for name, j in (('dz', idx), ('dlogN', idx + 1), ('db', idx + 2),
                             ('dbtur', idx + 3)):
                 if is_free_mask[j]:
@@ -522,7 +522,7 @@ class VoigtFitterV2:
             continuum_threshold = 0.95
 
         # 1. Find Center Index
-        idx_center = np.searchsorted(self._x_ang, lambda_obs)
+        idx_center: Any = np.searchsorted(self._x_ang, lambda_obs)
         idx_center = np.clip(idx_center, 0, len(self._x_ang)-1)
 
         # 2. Determine Search Range (Indices)
@@ -786,7 +786,7 @@ class VoigtFitterV2:
 
         self._active_lines_data = {}
         iterator = self._active_fit_components if self._active_fit_components is not None else enumerate(self._system_list.components)
-        grouped_lines = {}
+        grouped_lines: Dict[Any, Any] = {}
         
         for idx, comp in iterator:
             res_key = self._get_component_resolution(comp)
@@ -951,7 +951,7 @@ class VoigtFitterV2:
         # Statistics
         p_free_errors = np.zeros_like(res.x)
         is_free_mask = self._constraints._param_map['is_free']
-        red_chi2 = 0
+        red_chi2: float = 0
         linked_errors = {}
         try:
             p_free_errors, red_chi2, cov = self._scaled_errors(res.fun, res.jac)

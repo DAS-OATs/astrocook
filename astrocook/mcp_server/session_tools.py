@@ -161,7 +161,7 @@ def register_session_tools(server: MCPServer, store: SessionStore) -> None:
             meta = store.meta[session_id]
             state = history.current_state
             spec = spec_of(state)
-            columns = [ColumnInfo(name=c, unit=str(spec.t[c].unit or ""))  # type: ignore[union-attr]  # TableAdapterV2.__getitem__ is typed too loosely (core, PR 4)
+            columns = [ColumnInfo(name=c, unit=str(spec.t[c].unit or ""))
                        for c in spec.t.colnames]
             comps = state.systs.components if state.systs else []
             # The log of the archive it was opened from: read only (F109)
