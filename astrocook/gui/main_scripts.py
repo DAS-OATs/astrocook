@@ -6,6 +6,7 @@ Moved out of ``main_window.py`` in phase 5 (split of the GUI), as a mixin
 of ``MainWindowV2``.
 """
 import logging
+from typing import TYPE_CHECKING, cast
 
 from PySide6.QtCore import QTimer, Qt
 from PySide6.QtWidgets import QApplication, QMessageBox, QProgressDialog
@@ -16,10 +17,14 @@ from .log_scripter_dialog import LogScripterDialog
 from .qt_workers import ScriptWorker
 
 from astrocook.gui.errors import QT_ERRORS
+from astrocook.gui._window_host import HostBase
+
+if TYPE_CHECKING:
+    from astrocook.gui.main_window import MainWindowV2
 logger = logging.getLogger(__name__)
 
 
-class MainScriptsMixin:
+class MainScriptsMixin(HostBase):
     """The scripts of ``MainWindowV2``.
 
     Uses the window's ``active_history``, ``session_histories``, the session
@@ -47,7 +52,7 @@ class MainScriptsMixin:
         dialog = LogScripterDialog(
             log_object_to_view, 
             session_name, 
-            self, 
+            cast('MainWindowV2', self), 
             self.recipe_category_map # Pass the map
         )
         self.log_scripter_dialog = dialog
@@ -119,7 +124,7 @@ class MainScriptsMixin:
         self.progress_dialog.show()
 
         # 4. Set up and run the worker
-        worker = ScriptWorker(script_text, initial_state, self)
+        worker = ScriptWorker(script_text, initial_state, cast('MainWindowV2', self))
         
         # Connect to *different* slots than the recipe worker
         worker.signals.finished.connect(self._on_script_finished)
@@ -152,7 +157,7 @@ class MainScriptsMixin:
         """Slot called when the ScriptWorker succeeds."""
         self._safely_close_progress_dialog()
         
-        QApplication.setOverrideCursor(Qt.WaitCursor)
+        QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
         # Schedule the heavy GUI update
         QTimer.singleShot(10, lambda: self._process_script_result(new_history))
 
@@ -161,7 +166,7 @@ class MainScriptsMixin:
         # 1. Swap the old history with the new one
         try:
             try:
-                old_history_index = self.session_histories.index(self.active_history)
+                old_history_index = self.session_histories.index(cast(SessionHistory, self.active_history))
                 self.session_histories[old_history_index] = new_history
                 self.active_history = new_history
                 self.session_model.setData(self.session_model.index(old_history_index), new_history.display_name)

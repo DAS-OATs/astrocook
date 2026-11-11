@@ -21,6 +21,7 @@ from astrocook.core.atomic_data import STANDARD_MULTIPLETS, trans_parse, xem_d
 if TYPE_CHECKING:
     from astrocook.core.session import SessionV2
 
+from ._plot_host import PlotHostBase
 from .data_inspector import DataInspectorDialog
 from .main_recipes import region_expression
 from .plot_style import SELECTION_STYLE, z_convert_inverse
@@ -29,7 +30,7 @@ from astrocook.gui.errors import DATA_ERRORS, QT_ERRORS
 logger = logging.getLogger(__name__)
 
 
-class PlotMouseMixin:
+class PlotMouseMixin(PlotHostBase):
     """The mouse handlers and the tooltip of ``SpectrumPlotWidget``.
 
     Uses the widget's ``main_window``, ``canvas``, ``toolbar``,
@@ -56,11 +57,11 @@ class PlotMouseMixin:
             self.toolbar.deactivate_tools()
             self._is_selecting_region = True
             logger.debug("Region selection on.")
-            self.setCursor(Qt.CrossCursor)
+            self.setCursor(Qt.CursorShape.CrossCursor)
         else:
             self._is_selecting_region = False
             logger.debug("Region selection off.")
-            self.setCursor(Qt.ArrowCursor)
+            self.setCursor(Qt.CursorShape.ArrowCursor)
             # Clean up any half-drawn selection
             self.canvas.cleanup_selection()
         self.toolbar.sync_select_action()
@@ -95,7 +96,7 @@ class PlotMouseMixin:
         """Helper to get theoretical X positions for cursor lines at a specific Z."""
         positions = []
         spec = session_state.spec
-        main_window = self.main_window # type: MainWindowV2
+        main_window = self.main_window
         if not spec: return []
         try:
             # V1/V2 Fallback Logic for Transitions

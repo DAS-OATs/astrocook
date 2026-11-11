@@ -5,6 +5,8 @@ wraps.
 
 Moved out of ``main_window.py`` in phase 5 (split of the GUI).
 """
+from typing import Any, List
+
 import qtawesome as qta
 from PySide6.QtCore import QEvent, QObject, QPropertyAnimation, QSize, QTimer, Qt, Signal
 from PySide6.QtGui import QIcon
@@ -40,7 +42,7 @@ class CardFader(QObject):
         self.timer.setSingleShot(True)
         self.timer.setInterval(CARD_FADE_DELAY)
         self.timer.timeout.connect(self._fade_if_left)
-        self.handles = []
+        self.handles: List[Any] = []
         card.installEventFilter(self)
 
     def add_handle(self, widget: QWidget):

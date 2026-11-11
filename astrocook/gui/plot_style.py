@@ -9,6 +9,7 @@ follow the theme of the interface, except the selection, shared with it
 """
 import logging
 import re
+from typing import Any
 
 import matplotlib
 import numpy as np
@@ -155,7 +156,7 @@ def get_style_color(key: str, cycle: list):
     if 'color' in PLOT_STYLE[key]:
         return PLOT_STYLE[key]['color']
     else:
-        idx = PLOT_STYLE[key].get('color_idx', 0)
+        idx: Any = PLOT_STYLE[key].get('color_idx', 0)
         return cycle[idx % len(cycle)]
 
 # The x_plot it receives is *always* in the data's native units (nm)

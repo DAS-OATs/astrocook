@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (
     QHeaderView, QAbstractItemView, QMenu, QInputDialog, QDialog, QDialogButtonBox,
     QMessageBox, QLabel, QLineEdit, QCheckBox, QPushButton, QFrame, QSizePolicy, QStatusBar
 )
-from typing import List
+from typing import List, cast
 
 from ..core.structures import ComponentDataV2
 from ..core.atomic_data import STANDARD_MULTIPLETS, ATOM_DATA, is_multiplet, series_lines
@@ -1166,7 +1166,7 @@ class SystemInspector(QWidget):
         the settings; a column not in it follows its default."""
         raw = QSettings("Astrocook", "AstrocookV2").value(HIDDEN_COLUMNS_KEY, "")
         try:
-            return {k: bool(v) for k, v in json.loads(raw).items()} if raw else {}
+            return {k: bool(v) for k, v in json.loads(cast(str, raw)).items()} if raw else {}
         except (TypeError, ValueError):
             return {}
 

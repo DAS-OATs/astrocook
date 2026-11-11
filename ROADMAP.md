@@ -1295,7 +1295,7 @@ its own, except the smallest; the model of each PR proposed by the rule
 | 2 | Aliases of renamed names: one mechanism in the registry for a renamed parameter (the old name accepted by the session logs, the scripts and the MCP tools), reused for the `V2` classes | Opus | half a day |
 | 3 | Type checker, step 1: mypy in CI on `recipes/` and `mcp_server/` | Sonnet | half a day (done, 11 November 2026: see below) |
 | 4 | Type checker, step 2: `core/` and `fitting/` | Sonnet | half a day to a day (done, 11 November 2026: see below) |
-| 4-bis | Type checker, step 3: `gui/` (361 errors, 199 of them `attr-defined` from the mixins of `MainWindowV2` and `SpectrumPlotWidget`: the same cure as PR 4, a host class for the type checker) | Sonnet | half a day |
+| 4-bis | Type checker, step 3: `gui/` (361 errors, 199 of them `attr-defined` from the mixins of `MainWindowV2` and `SpectrumPlotWidget`: the same cure as PR 4, a host class for the type checker) | Sonnet | half a day (done, 11 November 2026: see below) |
 | 5 | `SessionV2` (and `SessionHistory`) out of `core/`, e.g. into `astrocook/session/`, the old import kept as an alias | Sonnet | 2-3 h |
 | 6 | The `V2` suffixes dropped, with the aliases of PR 2 (code, tests, docs) | Sonnet | half a day |
 | 7 | Review of the recipes of file and flux (8 recipes) | Opus | half a day |
@@ -1381,6 +1381,39 @@ its own, except the smallest; the model of each PR proposed by the rule
   `call-overload`; 124 in `main_sessions.py`, 61 in `main_recipes.py`, 32
   in `main_scripts.py`): the same mixin pattern, so a PR of its own (4-bis)
   with the same cure.
+- *Result of PR 4-bis* (type checker, step 3; 11 November 2026): `mypy`
+  gives zero errors on the whole package (`files` adds `astrocook/gui`).
+  The 361 errors of the starting point (re-measured, in 23 files), by
+  cause:
+  - The mixins, 196 errors (`attr-defined` and the `has-type` that came
+    with them): as in PR 4, a host class for the type checker.
+    `gui/_window_host.py` (`WindowHost`, a `QMainWindow` with the
+    attributes and the methods that the seven mixins of `MainWindowV2` use
+    of the window or of each other) and `gui/_plot_host.py` (`PlotHost`,
+    for `PlotMouseMixin`); `HostBase` is `object` at run time, so nothing
+    changes. The methods that other mixins define are declared with a
+    loose signature `(*args, **kwargs) -> Any`: the declarations of
+    attributes carry the types.
+  - Short names of the Qt enums (`Qt.WaitCursor`, `QDialog.Rejected`...,
+    35 `attr-defined`): written with their enum
+    (`Qt.CursorShape.WaitCursor`), the same objects, found with the
+    introspection of PySide6.
+  - `Optional` narrowed with `cast`, not `assert` (the handlers of the GUI
+    must raise the same exception as before): `active_history`,
+    `SessionV2.spec` (about 45 `union-attr` and `arg-type`),
+    `QApplication.instance()`, `QSettings.value` (typed `object`).
+  - Containers annotated (15 `var-annotated`) and `x: T = None` made
+    `Optional[T]` (7 `assignment`).
+  - Five `type: ignore`, each with its reason: the two dialogs that keep
+    their main layout in `self.layout` (it hides the method of QWidget;
+    `layout: Any` on the class), `toolitems` of the toolbar (a `None` marks
+    a separator, as in matplotlib), `RecipeDialog.schema = None` (the
+    dialog stops at `if not self.schema`) and the decimation of
+    `_PlotArrays` (norm and model may be `None`, which the function
+    returns as it is).
+  No change of behaviour; no bug found, so nothing in the findings
+  register. Checks run: `mypy`, `ruff check .`, the fast suite (the GUI
+  tests included); slow tests not run, the corrections are of types.
 - *How a review PR (7-10) works*: the conversation opens with a table of
   the parameters of its recipes, as they are and as proposed (name,
   type, default, unit, description); Guido agrees it, then the change is

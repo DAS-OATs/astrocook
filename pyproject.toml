@@ -137,7 +137,7 @@ filterwarnings = [
 # stubs are not an error, and the modules outside `files` are read for their
 # types but not reported.
 [tool.mypy]
-files = ["astrocook/recipes", "astrocook/mcp_server", "astrocook/core", "astrocook/fitting"]
+files = ["astrocook/recipes", "astrocook/mcp_server", "astrocook/core", "astrocook/fitting", "astrocook/gui"]
 ignore_missing_imports = true
 follow_imports = "silent"
 

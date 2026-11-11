@@ -7,6 +7,7 @@ of ``MainWindowV2``.
 """
 import logging
 import os
+from typing import Any
 
 from PySide6.QtCore import QSettings, QTimer, QUrl, Qt
 from PySide6.QtGui import QAction, QActionGroup, QDesktopServices, QKeySequence
@@ -17,6 +18,7 @@ from .script_dialog import ScriptDialog
 from .system_inspector import SystemInspector
 from .plot_style import PLOT_PALETTE_NAMES, plot_palette_name, set_plot_palette
 from .theme import APPEARANCES, apply_appearance
+from astrocook.gui._window_host import HostBase
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +31,7 @@ GEOMETRY_KEY = "window_geometry"
 PLOT_COLOURS_KEY = "plot_colours"
 
 
-class MainMenusMixin:
+class MainMenusMixin(HostBase):
     """The menus of ``MainWindowV2``.
 
     Uses the window's ``active_history``, the recipe machinery
@@ -79,7 +81,7 @@ class MainMenusMixin:
 
     def _recent_files(self) -> list:
         """The files opened last, most recent first, those that still exist."""
-        value = QSettings("Astrocook", "AstrocookV2").value(RECENT_FILES_KEY, [])
+        value: Any = QSettings("Astrocook", "AstrocookV2").value(RECENT_FILES_KEY, [])
         if isinstance(value, str):  # one entry comes back as a string
             value = [value]
         return [p for p in (value or []) if os.path.exists(p)]

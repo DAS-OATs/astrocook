@@ -54,10 +54,10 @@ class CornerPlotWindow(QMainWindow):
         self.figure = Figure(figsize=(8, 8), dpi=100)
         self.figure.patch.set_facecolor('#ffffff') 
         self.canvas = FigureCanvas(self.figure)
-        self.canvas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.left_stack.addWidget(self.canvas, stretch=1)
         
-        self.scroll_h = QScrollBar(Qt.Horizontal)
+        self.scroll_h = QScrollBar(Qt.Orientation.Horizontal)
         self.scroll_h.valueChanged.connect(self.update_plot)
         self.left_stack.addWidget(self.scroll_h)
         
@@ -70,7 +70,7 @@ class CornerPlotWindow(QMainWindow):
         self.center_hbox.addLayout(self.left_stack, stretch=1)
         
         # Vertical Scrollbar on the right, spanning the whole left stack
-        self.scroll_v = QScrollBar(Qt.Vertical)
+        self.scroll_v = QScrollBar(Qt.Orientation.Vertical)
         self.scroll_v.valueChanged.connect(self.update_plot)
         self.center_hbox.addWidget(self.scroll_v)
         

@@ -10,14 +10,16 @@ of ``MainWindowV2``.
 """
 import logging
 import time
-from typing import Any, Dict
+from typing import Any, Dict, Optional, cast
 
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import (QApplication, QDialog, QFileDialog, QLineEdit,
                                QMessageBox, QProgressDialog)
 
 from astrocook.core.resolution import resolution_summary
+from astrocook.core.session_manager import SessionHistory
 from astrocook.core.structures import HistoryLogV2
+from astrocook.recipes._spectrum import spec_of
 from astrocook.recipes.errors import RecipeError
 from astrocook.recipes.params import resolve_params
 from astrocook.recipes.prerequisites import missing
@@ -29,6 +31,7 @@ from .recipe_progress import (LogSignalBridge, QtLogHandler, RecipeProgressDialo
                               WarningCaptureHandler)
 
 from astrocook.gui.errors import QT_ERRORS
+from astrocook.gui._window_host import HostBase
 logger = logging.getLogger(__name__)
 
 
@@ -51,7 +54,7 @@ def region_expression(xmin: float, xmax: float) -> str:
     return f"(λ > {xmin:.4f}) & (λ < {xmax:.4f})"
 
 
-class MainRecipesMixin:
+class MainRecipesMixin(HostBase):
     """The recipes of ``MainWindowV2``.
 
     Uses the window's ``active_history``, ``session_histories``,
@@ -135,8 +138,8 @@ class MainRecipesMixin:
             'after': after,
         }
 
-    def _launch_recipe_dialog(self, category, name, initial_params: dict = None,
-                              param_docs: dict = None):
+    def _launch_recipe_dialog(self, category, name, initial_params: Optional[dict] = None,
+                              param_docs: Optional[dict] = None):
         if self.active_recipe_dialog:
             self.active_recipe_dialog.activateWindow()
             return
@@ -493,7 +496,7 @@ class MainRecipesMixin:
         # Guido): the components removed and why, those discarded, those not
         # fitted; counted here, said in full in the tooltip and in the log
         result = getattr(self, 'last_recipe_result', None)
-        notes = ()
+        notes: Any = ()
         if result is not None and result.recipe.split('.')[-1] == recipe_name:
             notes = result.notes
             if result.counts:
@@ -518,7 +521,7 @@ class MainRecipesMixin:
 
             # Store the ORIGINAL active history (the parent of these operations)
             # This is critical for "Sibling" branching (A->B, A->C) instead of "Chain" (A->B->C)
-            original_parent_history = self.active_history
+            original_parent_history = cast(SessionHistory, self.active_history)
 
             # The recipes run first to provide what the session lacked (PR 5,
             # Guido): each a state and a log entry of its own, before the
@@ -584,7 +587,7 @@ class MainRecipesMixin:
                 )
 
                 # The branch exists only now: its entry follows its creation
-                branch_history = self.active_history
+                branch_history = cast(SessionHistory, self.active_history)
                 if branching and branch_history is not original_parent_history:
                     _add_log_entry(branch_history, recipe_name, params_to_log)
                     if (self.log_scripter_dialog and self.log_scripter_dialog.isVisible()
@@ -605,7 +608,7 @@ class MainRecipesMixin:
             if recipe_name == 'set_properties' \
                 and 'resol' in params \
                 and str(params['resol']) != '_current_' \
-                and self.active_history.current_state.spec.has_aux_column('model') \
+                and spec_of(cast(SessionHistory, self.active_history).current_state).has_aux_column('model') \
                 and not self._suppress_refit_warning:
                 warn_resolution = True
             elif recipe_name == 'update_component' and 'resol' in params and not self._suppress_refit_warning:
@@ -693,7 +696,7 @@ class MainRecipesMixin:
         """
         # If the user clicked "Cancel" or "X" (result=Rejected) in the dialog
         # of the recipe that the pending one waits for, drop the pending one
-        if (result == QDialog.Rejected and 
+        if (result == QDialog.DialogCode.Rejected and 
             self._pending_recipe is not None and
             self.active_recipe_dialog and 
             self.active_recipe_dialog.recipe_name == self._pending_recipe['after']):
@@ -726,7 +729,7 @@ class MainRecipesMixin:
 
         if (is_cont_target or is_cont_recipe):
             # If it's a cont recipe, check if a model exists
-            if self.active_history.current_state.spec.has_aux_column('model'):
+            if spec_of(cast(SessionHistory, self.active_history).current_state).has_aux_column('model'):
                 ret = self._show_custom_message(
                     title="Re-normalize Model?",
                     header="Update Model normalization?",
@@ -796,7 +799,7 @@ class MainRecipesMixin:
         self._cleanup_progress_ui()
         QApplication.restoreOverrideCursor()
         logger.info("The recipe was stopped: the session is as before it.")
-        self._update_view_for_session(self.active_history.current_state)
+        self._update_view_for_session(cast(SessionHistory, self.active_history).current_state)
 
     def _on_recipe_error(self, error_data: tuple):
         """Slot called when the RecipeWorker fails."""

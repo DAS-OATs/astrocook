@@ -31,7 +31,7 @@ import os
 import time
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, cast
 
 from PySide6.QtCore import QFileSystemWatcher, Qt, QTimer
 from PySide6.QtWidgets import (
@@ -45,6 +45,7 @@ from astrocook.recipes.registry import get_recipe
 
 from .qt_workers import SessionLoadWorker
 from .theme import ACCENT, FOLLOW_BANNER, themed
+from astrocook.gui._window_host import HostBase
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +83,7 @@ def _stamp(path: str) -> Optional[Tuple[int, int]]:
     return (st.st_mtime_ns, st.st_size)
 
 
-class MainFollowMixin:
+class MainFollowMixin(HostBase):
     """The sessions followed by ``MainWindowV2``.
 
     Uses the window's ``session_histories``, ``active_history``, the thread
@@ -345,7 +346,7 @@ class MainFollowMixin:
     def _refuse_if_followed(self, action: str) -> bool:
         """If the active session is followed, say that it is read only and
         offer an editable copy, and return True: the caller does not go on."""
-        history = self.active_history
+        history = cast(SessionHistory, self.active_history)
         if self._followed_of(history) is None:
             return False
         ret = self._show_custom_message(
@@ -384,7 +385,7 @@ class MainFollowMixin:
             return
         log = deepcopy(history.log_manager)
         self._on_duplicate_session(history)
-        copy = self.active_history
+        copy = cast(SessionHistory, self.active_history)
         if copy is history:
             return
         copy.log_manager = log
