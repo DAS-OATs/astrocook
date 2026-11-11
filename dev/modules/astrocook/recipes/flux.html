@@ -478,6 +478,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.errors</span><span class="w"> </span><span class="kn">import</span> <span class="n">InvalidParameter</span><span class="p">,</span> <span class="n">RecipeFailed</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.messages</span><span class="w"> </span><span class="kn">import</span> <span class="n">msg_session_not_found</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes._spectrum</span><span class="w"> </span><span class="kn">import</span> <span class="n">spec_of</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.params</span><span class="w"> </span><span class="kn">import</span> <span class="n">typed_recipe</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
@@ -641,7 +642,7 @@
         <span class="k">if</span> <span class="n">window_pix_i</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="c1"># Ensure it's odd</span>
             <span class="n">window_pix_i</span> <span class="o">+=</span> <span class="mi">1</span>
 
-        <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">calculate_running_std</span><span class="p">(</span>
+        <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="n">spec_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span><span class="o">.</span><span class="n">calculate_running_std</span><span class="p">(</span>
             <span class="n">input_col</span><span class="o">=</span><span class="n">input_col</span><span class="p">,</span>
             <span class="n">output_col</span><span class="o">=</span><span class="n">output_col</span><span class="p">,</span>
             <span class="n">window_pix</span><span class="o">=</span><span class="n">window_pix_i</span>
@@ -670,7 +671,7 @@
 <span class="sd">        SessionV2</span>
 <span class="sd">            A new :class:`~astrocook.core.session.SessionV2` with smoothed columns.</span>
 <span class="sd">        """</span>
-        <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">smooth</span><span class="p">(</span><span class="n">sigma_kms</span><span class="o">=</span><span class="n">sigma_kms</span><span class="p">)</span>
+        <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="n">spec_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span><span class="o">.</span><span class="n">smooth</span><span class="p">(</span><span class="n">sigma_kms</span><span class="o">=</span><span class="n">sigma_kms</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span></div>
 
 
@@ -733,7 +734,7 @@
                            <span class="s2">"plot, or apply_expression with y/cont)."</span><span class="p">)</span>
 
         <span class="c1"># 5. Execute the immutable V2 operation</span>
-        <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">rebin</span><span class="p">(</span>
+        <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="n">spec_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span><span class="o">.</span><span class="n">rebin</span><span class="p">(</span>
             <span class="n">xstart</span><span class="o">=</span><span class="n">xstart_q</span><span class="p">,</span> <span class="n">xend</span><span class="o">=</span><span class="n">xend_q</span><span class="p">,</span> <span class="n">dx</span><span class="o">=</span><span class="n">dx_q</span><span class="p">,</span> <span class="n">kappa</span><span class="o">=</span><span class="n">kappa</span><span class="p">,</span> <span class="n">filling</span><span class="o">=</span><span class="n">filling</span>
         <span class="p">)</span>
         
@@ -767,7 +768,7 @@
         <span class="k">if</span> <span class="n">reference_session</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">'None'</span><span class="p">,</span> <span class="s1">''</span><span class="p">]:</span>
             <span class="k">raise</span> <span class="n">RecipeFailed</span><span class="p">(</span><span class="s2">"No reference session is selected."</span><span class="p">)</span>
         <span class="n">ref_hist</span> <span class="o">=</span> <span class="n">_find_session</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">,</span> <span class="n">reference_session</span><span class="p">)</span>
-        <span class="n">new_spec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">equalize_to_reference</span><span class="p">(</span>
+        <span class="n">new_spec</span> <span class="o">=</span> <span class="n">spec_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span><span class="o">.</span><span class="n">equalize_to_reference</span><span class="p">(</span>
             <span class="n">ref_hist</span><span class="o">.</span><span class="n">current_state</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="n">order</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec</span><span class="p">)</span></div>
@@ -799,7 +800,7 @@
         <span class="n">target_spec</span> <span class="o">=</span> <span class="n">_find_session</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">,</span> <span class="n">target_session</span><span class="p">)</span><span class="o">.</span><span class="n">current_state</span><span class="o">.</span><span class="n">spec</span>
         <span class="k">if</span> <span class="n">target_spec</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">RecipeFailed</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The session '</span><span class="si">{</span><span class="n">target_session</span><span class="si">}</span><span class="s2">' has no spectrum."</span><span class="p">)</span>
-        <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">resample_on_grid</span><span class="p">(</span><span class="n">target_grid_spec</span><span class="o">=</span><span class="n">target_spec</span><span class="p">)</span>
+        <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="n">spec_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span><span class="o">.</span><span class="n">resample_on_grid</span><span class="p">(</span><span class="n">target_grid_spec</span><span class="o">=</span><span class="n">target_spec</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span></div>
 
         
@@ -824,7 +825,7 @@
 <span class="sd">        SessionV2</span>
 <span class="sd">            A new :class:`~astrocook.core.session.SessionV2` with calibrated flux.</span>
 <span class="sd">        """</span>
-        <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">calibrate</span><span class="p">(</span><span class="n">magnitudes</span><span class="p">)</span>
+        <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="n">spec_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span><span class="o">.</span><span class="n">calibrate</span><span class="p">(</span><span class="n">magnitudes</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span></div>
 </div>
 

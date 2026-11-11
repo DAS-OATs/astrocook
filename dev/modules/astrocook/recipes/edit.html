@@ -476,12 +476,13 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemListDataV2</span>  <span class="c1"># &lt;&lt;&lt; *** ADD THIS IMPORT ***</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.system_list</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemListV2</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.errors</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">InvalidParameter</span><span class="p">,</span> <span class="n">RecipeError</span><span class="p">,</span> <span class="n">RecipeFailed</span><span class="p">,</span>
                                       <span class="n">reason_of</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes._spectrum</span><span class="w"> </span><span class="kn">import</span> <span class="n">spec_of</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.params</span><span class="w"> </span><span class="kn">import</span> <span class="n">DATA_ERRORS</span><span class="p">,</span> <span class="n">typed_recipe</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.messages</span><span class="w"> </span><span class="kn">import</span> <span class="n">msg_session_not_found</span>
 
@@ -850,7 +851,7 @@
         
         <span class="k">return</span> <span class="n">processed_str</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_prepare_expression_contexts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expression</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">alias_map</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_prepare_expression_contexts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expression</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">alias_map</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Internal helper to resolve session aliases and delegate parsing to the Core.</span>
 
@@ -905,7 +906,7 @@
                                <span class="o">+</span> <span class="sa">f</span><span class="s2">" The alias '</span><span class="si">{</span><span class="n">alias</span><span class="si">}</span><span class="s2">' is not resolved."</span><span class="p">)</span>
 
         <span class="c1"># 2. Delegate to Core (Business Logic)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">prepare_expression_context</span><span class="p">(</span><span class="n">expression</span><span class="p">,</span> <span class="n">resolved_specs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">spec_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span><span class="o">.</span><span class="n">prepare_expression_context</span><span class="p">(</span><span class="n">expression</span><span class="p">,</span> <span class="n">resolved_specs</span><span class="p">)</span>
     
     <span class="k">def</span><span class="w"> </span><span class="nf">_parse_resolution_string</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">resol_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
@@ -940,7 +941,7 @@
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Estimating the resolution for a FWHM of </span><span class="si">{</span><span class="n">pix_fwhm</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> pixels."</span><span class="p">)</span>
             
             <span class="c1"># 1. Get raw x array</span>
-            <span class="n">x_vals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span>
+            <span class="n">x_vals</span> <span class="o">=</span> <span class="n">spec_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span>
             
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x_vals</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="c1"># 2. Calculate Median Sampling (dx)</span>
@@ -1019,7 +1020,7 @@
         <span class="c1"># 1. Parse numerical inputs (z_em, resol)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">z_em</span><span class="p">)</span> <span class="o">==</span> <span class="s1">'_current_'</span><span class="p">:</span>
-                <span class="n">z_em_f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span>
+                <span class="n">z_em_f</span> <span class="o">=</span> <span class="n">spec_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">z_em_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">z_em</span><span class="p">)</span>
                 
@@ -1039,7 +1040,7 @@
         <span class="n">new_object</span> <span class="o">=</span> <span class="nb">object</span> <span class="k">if</span> <span class="nb">object</span> <span class="o">!=</span> <span class="s1">'_current_'</span> <span class="k">else</span> <span class="kc">None</span>
         
         <span class="c1"># 3. Apply changes via SpectrumV2.with_properties</span>
-        <span class="n">new_spec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">with_properties</span><span class="p">(</span>
+        <span class="n">new_spec</span> <span class="o">=</span> <span class="n">spec_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span><span class="o">.</span><span class="n">with_properties</span><span class="p">(</span>
             <span class="n">z_em</span><span class="o">=</span><span class="n">z_em_f</span><span class="p">,</span> 
             <span class="n">resol</span><span class="o">=</span><span class="n">resol_f</span><span class="p">,</span>
             <span class="n">object_name</span><span class="o">=</span><span class="n">new_object</span><span class="p">,</span>
@@ -1081,7 +1082,7 @@
 <span class="sd">        """</span>
         <span class="c1"># Handle default logic here</span>
         <span class="k">if</span> <span class="n">z_ref</span> <span class="o">==</span> <span class="s1">'_current_'</span><span class="p">:</span>
-            <span class="n">z_ref_float</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span>
+            <span class="n">z_ref_float</span> <span class="o">=</span> <span class="n">spec_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">z_ref_float</span> <span class="o">=</span> <span class="n">z_ref</span>
             
@@ -1091,7 +1092,7 @@
             <span class="k">raise</span> <span class="n">InvalidParameter</span><span class="p">(</span><span class="sa">f</span><span class="s2">"xunit: </span><span class="si">{</span><span class="n">xunit</span><span class="si">!r}</span><span class="s2"> is not a unit"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
 
         <span class="c1"># 1. Get the new SpectrumV2 instance (the immutable operation)</span>
-        <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">x_convert</span><span class="p">(</span><span class="n">z_ref</span><span class="o">=</span><span class="n">z_ref_float</span><span class="p">,</span> <span class="n">xunit</span><span class="o">=</span><span class="n">xunit_obj</span><span class="p">)</span>
+        <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="n">spec_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span><span class="o">.</span><span class="n">x_convert</span><span class="p">(</span><span class="n">z_ref</span><span class="o">=</span><span class="n">z_ref_float</span><span class="p">,</span> <span class="n">xunit</span><span class="o">=</span><span class="n">xunit_obj</span><span class="p">)</span>
         
         <span class="c1"># 2. Return a NEW SessionV2 instance with the updated spectrum</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span> </div>
@@ -1124,7 +1125,7 @@
             <span class="k">raise</span> <span class="n">InvalidParameter</span><span class="p">(</span><span class="sa">f</span><span class="s2">"yunit: </span><span class="si">{</span><span class="n">yunit</span><span class="si">!r}</span><span class="s2"> is not a unit"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
 
         <span class="c1"># 1. Execute the immutable V2 operation</span>
-        <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">y_convert</span><span class="p">(</span><span class="n">yunit</span><span class="o">=</span><span class="n">yunit_obj</span><span class="p">)</span>
+        <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="n">spec_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span><span class="o">.</span><span class="n">y_convert</span><span class="p">(</span><span class="n">yunit</span><span class="o">=</span><span class="n">yunit_obj</span><span class="p">)</span>
         
         <span class="c1"># 2. Return a NEW SessionV2 instance (the new state)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span></div>
@@ -1133,7 +1134,7 @@
 <div class="viewcode-block" id="RecipeEditV2.apply_expression">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.edit.html#astrocook.recipes.edit.RecipeEditV2.apply_expression">[docs]</a>
     <span class="nd">@typed_recipe</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">apply_expression</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">expression</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">alias_map</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_expression</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">expression</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">alias_map</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Apply expression to columns.</span>
 
@@ -1168,7 +1169,7 @@
 
         <span class="c1"># 2. Call the API with the prepared data</span>
         <span class="k">with</span> <span class="n">_expression_errors</span><span class="p">(</span><span class="n">expression</span><span class="p">):</span>
-            <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">apply_expression</span><span class="p">(</span>
+            <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="n">spec_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span><span class="o">.</span><span class="n">apply_expression</span><span class="p">(</span>
                 <span class="n">target_col</span><span class="o">=</span><span class="n">target_col</span><span class="p">,</span>
                 <span class="n">expression</span><span class="o">=</span><span class="n">final_expression</span><span class="p">,</span>
                 <span class="n">extra_vars</span><span class="o">=</span><span class="n">extra_vars</span>
@@ -1178,7 +1179,7 @@
 <div class="viewcode-block" id="RecipeEditV2.mask_expression">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.edit.html#astrocook.recipes.edit.RecipeEditV2.mask_expression">[docs]</a>
     <span class="nd">@typed_recipe</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">mask_expression</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">expression</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">alias_map</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">mask_expression</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">expression</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">alias_map</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Mask column by expression.</span>
 
@@ -1212,7 +1213,7 @@
         
         <span class="c1"># 2. Call the API with the prepared data</span>
         <span class="k">with</span> <span class="n">_expression_errors</span><span class="p">(</span><span class="n">expression</span><span class="p">):</span>
-            <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">mask_expression</span><span class="p">(</span>
+            <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="n">spec_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span><span class="o">.</span><span class="n">mask_expression</span><span class="p">(</span>
                 <span class="n">target_col</span><span class="o">=</span><span class="n">target_col</span><span class="p">,</span>
                 <span class="n">expression</span><span class="o">=</span><span class="n">final_expression</span><span class="p">,</span>
                 <span class="n">extra_vars</span><span class="o">=</span><span class="n">extra_vars</span>
@@ -1248,7 +1249,7 @@
         <span class="c1"># Translate UI symbols back to internal keys</span>
         <span class="n">target_col</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_translate_ui_names</span><span class="p">(</span><span class="n">target_col</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
         <span class="c1"># 1. Call the immutable V2 operation</span>
-        <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">smooth_column</span><span class="p">(</span>
+        <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="n">spec_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span><span class="o">.</span><span class="n">smooth_column</span><span class="p">(</span>
             <span class="n">target_col</span><span class="o">=</span><span class="n">target_col</span><span class="p">,</span>
             <span class="n">sigma_kms</span><span class="o">=</span><span class="n">sigma_kms</span><span class="p">,</span>
             <span class="n">renorm_model</span><span class="o">=</span><span class="n">renorm_model</span>
@@ -1324,10 +1325,10 @@
             <span class="n">base_systs</span> <span class="o">=</span> <span class="n">SystemListV2</span><span class="p">(</span><span class="n">SystemListDataV2</span><span class="p">())</span>
 
         <span class="c1"># 3. Filter Source Components (Delegated to Core)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">spec_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span><span class="o">.</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">xmin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
-                <span class="n">xmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+                <span class="n">xmin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">spec_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+                <span class="n">xmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">spec_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
                 
                 <span class="n">filtered_source_systs</span> <span class="o">=</span> <span class="n">source_systs</span><span class="o">.</span><span class="n">filter_by_range</span><span class="p">(</span><span class="n">xmin</span><span class="p">,</span> <span class="n">xmax</span><span class="p">)</span>
                 
@@ -1489,9 +1490,9 @@
 
         <span class="c1"># 2. Handle Columns via Core API</span>
         <span class="k">if</span> <span class="n">target_list</span><span class="p">:</span>
-            <span class="n">new_spec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">remove_columns</span><span class="p">(</span><span class="n">target_list</span><span class="p">)</span>
+            <span class="n">new_spec</span> <span class="o">=</span> <span class="n">spec_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span><span class="o">.</span><span class="n">remove_columns</span><span class="p">(</span><span class="n">target_list</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">new_spec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span>
+            <span class="n">new_spec</span> <span class="o">=</span> <span class="n">spec_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span>
             
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec</span><span class="p">)</span><span class="o">.</span><span class="n">with_new_system_list</span><span class="p">(</span><span class="n">new_systs</span><span class="p">)</span></div>
 
@@ -1499,7 +1500,7 @@
 <div class="viewcode-block" id="RecipeEditV2.split">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.edit.html#astrocook.recipes.edit.RecipeEditV2.split">[docs]</a>
     <span class="nd">@typed_recipe</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">split</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expression</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">alias_map</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">split</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expression</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">alias_map</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Split spectrum by expression.</span>
 
@@ -1528,7 +1529,7 @@
         
         <span class="c1"># 2. Call the immutable V2 operation</span>
         <span class="k">with</span> <span class="n">_expression_errors</span><span class="p">(</span><span class="n">expression</span><span class="p">):</span>
-            <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">split</span><span class="p">(</span>
+            <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="n">spec_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span>
                 <span class="n">expression</span><span class="o">=</span><span class="n">final_expression</span><span class="p">,</span>
                 <span class="n">extra_vars</span><span class="o">=</span><span class="n">extra_vars</span>
             <span class="p">)</span>
@@ -1585,16 +1586,16 @@
         <span class="k">for</span> <span class="n">reg</span> <span class="ow">in</span> <span class="n">region_list</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="c1"># Calculate bounds</span>
-                <span class="n">obs_min</span><span class="p">,</span> <span class="n">obs_max</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">get_region_bounds</span><span class="p">(</span><span class="n">reg</span><span class="p">)</span>
+                <span class="n">obs_min</span><span class="p">,</span> <span class="n">obs_max</span> <span class="o">=</span> <span class="n">spec_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span><span class="o">.</span><span class="n">get_region_bounds</span><span class="p">(</span><span class="n">reg</span><span class="p">)</span>
                 
                 <span class="c1"># Convert to native units for expression</span>
-                <span class="n">spec_unit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">unit</span>
+                <span class="n">spec_unit</span> <span class="o">=</span> <span class="n">spec_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">unit</span>
                 <span class="n">v_min</span> <span class="o">=</span> <span class="n">obs_min</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">spec_unit</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
                 <span class="n">v_max</span> <span class="o">=</span> <span class="n">obs_max</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">spec_unit</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
                 
                 <span class="c1"># Build expression</span>
                 <span class="n">expression</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"(λ &gt; </span><span class="si">{</span><span class="n">v_min</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">) &amp; (λ &lt; </span><span class="si">{</span><span class="n">v_max</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">)"</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Extracting </span><span class="si">{</span><span class="n">reg</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">expression</span><span class="si">}</span><span class="s2">, z_em = </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">)."</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Extracting </span><span class="si">{</span><span class="n">reg</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">expression</span><span class="si">}</span><span class="s2">, z_em = </span><span class="si">{</span><span class="n">spec_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">)."</span><span class="p">)</span>
                 
                 <span class="c1"># Create the split session</span>
                 <span class="n">new_session</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">expression</span><span class="o">=</span><span class="n">expression</span><span class="p">)</span>
@@ -1678,7 +1679,7 @@
             
         <span class="c1"># 3. Delegate Calculation to Core (SSOT)</span>
         <span class="c1"># The core calculates the physics and returns the boolean expression string</span>
-        <span class="n">split_expression</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">calc_intersection_expression</span><span class="p">(</span>
+        <span class="n">split_expression</span> <span class="o">=</span> <span class="n">spec_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span><span class="o">.</span><span class="n">calc_intersection_expression</span><span class="p">(</span>
             <span class="n">others_specs</span><span class="o">=</span><span class="n">resolved_others_specs</span><span class="p">,</span>
             <span class="n">z_target</span><span class="o">=</span><span class="n">z_f</span><span class="p">,</span>
             <span class="n">trans_self</span><span class="o">=</span><span class="n">trans_self</span><span class="p">,</span>
@@ -1731,7 +1732,7 @@
         
         <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">other_sessions</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">SessionV2</span><span class="p">):</span>
-                <span class="n">resolved_specs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">spec</span><span class="p">)</span>
+                <span class="n">resolved_specs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">spec_of</span><span class="p">(</span><span class="n">item</span><span class="p">))</span>
             <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
                 <span class="c1"># GUI Lookup</span>
                 <span class="n">found</span> <span class="o">=</span> <span class="kc">None</span>
@@ -1741,7 +1742,7 @@
                             <span class="n">found</span> <span class="o">=</span> <span class="n">hist</span><span class="o">.</span><span class="n">current_state</span>
                             <span class="k">break</span>
                 <span class="k">if</span> <span class="n">found</span><span class="p">:</span>
-                    <span class="n">resolved_specs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">found</span><span class="o">.</span><span class="n">spec</span><span class="p">)</span>
+                    <span class="n">resolved_specs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">spec_of</span><span class="p">(</span><span class="n">found</span><span class="p">))</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">msg_session_not_found</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">item</span><span class="p">)</span> <span class="o">+</span> <span class="s2">" It is skipped."</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
@@ -1752,7 +1753,7 @@
             <span class="k">raise</span> <span class="n">RecipeFailed</span><span class="p">(</span><span class="s2">"There are no valid sessions to stitch."</span><span class="p">)</span>
 
         <span class="c1"># 2. Delegate Data Manipulation to Core</span>
-        <span class="n">new_spec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">stitch</span><span class="p">(</span><span class="n">resolved_specs</span><span class="p">,</span> <span class="n">sort</span><span class="o">=</span><span class="n">sort</span><span class="p">)</span>
+        <span class="n">new_spec</span> <span class="o">=</span> <span class="n">spec_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span><span class="o">.</span><span class="n">stitch</span><span class="p">(</span><span class="n">resolved_specs</span><span class="p">,</span> <span class="n">sort</span><span class="o">=</span><span class="n">sort</span><span class="p">)</span>
 
         <span class="c1"># Remove NaNs which break the 'step' plot (causing "scatter" look)</span>
         <span class="c1"># We use the public split API to keep valid data only.</span>
@@ -1875,7 +1876,7 @@
 
         <span class="c1"># --- [FIX] 3. Gather and Sort All Arms (Blue-to-Red) ---</span>
         <span class="c1"># It doesn't matter which arm was right-clicked; we MUST process them from bluest to reddest.</span>
-        <span class="n">all_sessions_info</span> <span class="o">=</span> <span class="p">[(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="p">)]</span>
+        <span class="n">all_sessions_info</span> <span class="o">=</span> <span class="p">[(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">spec_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">))]</span>
         <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">spec</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">others_list</span><span class="p">,</span> <span class="n">resolved_others</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
             <span class="n">all_sessions_info</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">name</span><span class="p">,</span> <span class="n">spec</span><span class="p">))</span>
             
@@ -1955,7 +1956,7 @@
     <span class="nd">@typed_recipe</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">coadd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session_names</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">xstart</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
               <span class="n">xend</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">dx</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">10.0</span><span class="p">,</span> <span class="n">xunit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'km/s'</span><span class="p">,</span>
-              <span class="n">kappa</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">5.0</span><span class="p">,</span> <span class="n">equalize_order</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+              <span class="n">kappa</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">5.0</span><span class="p">,</span> <span class="n">equalize_order</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Co-add multiple sessions.</span>
 
