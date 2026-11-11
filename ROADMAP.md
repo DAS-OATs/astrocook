@@ -1213,6 +1213,25 @@ the plan kept: a thin layer over the package, no tool names a recipe.
   above in its notes; the slow tests and the mock benchmark on the final
   master; `switcher.json` ("preferred") on master before publishing; the macOS
   app build (F110); the Docker image not published.
+- Release 2.6.0 (10 November 2026, PR 9, #751; published by Guido on GitHub
+  with the macOS app, not on PyPI). Checked on the final master (`e4c85a3`):
+  the mock benchmark (`validate_mocks.py --compare`, full grid, 135 mocks,
+  1176 s) identical to the baseline in all 19 rows (it does not run
+  `metals_auto`: the targeted test measures it); the slow tests 5 of 5 (on
+  the branch, before the merge; the CI job repeats them on master); the fast
+  suite green and `ruff check .` clean. The macOS app built with
+  `build_app.sh` (without `scienceplots`, F110) opens from the Finder and
+  from the command line (Guido). The CHANGELOG of 2.6.0 had been missing the
+  entries of PR 7-bis, 7-ter and 7-quater: added in PR 9. Found along the
+  way: the CI test `test_the_read_only_tools_answer_while_a_recipe_runs`
+  was flaky (it assumed the order of two tasks started together, and the
+  recipe's own wait of 30 s ran while the reads of the test ran); fixed in
+  #750, reproduced with 8 busy processes on one core.
+- Seen after the release, not a defect: the banner of a followed session
+  ("Followed session. Updated by an AI agent after every change. Read only.")
+  is right when a server (even a forgotten one, here a 2.5.0) is still
+  running and writes the archive; it does not say which process. Idea for
+  6-quater: pid and version of the marker in the banner.
 
 ### Phase 6-quater – Review of the recipe parameters
 Named after 2.5.0 (November 2026, Guido): the parameters and interfaces
@@ -1228,6 +1247,15 @@ the registry; Guido, phase 6-ter). Plan to be agreed with Guido. Proposed (code 
 to be agreed; see "Code quality" after phase 7): the `V2` suffixes of the
 class names, with the same aliases; the complex functions of the
 recipes reviewed.
+Brought from 6-ter (release 2.6.0, November 2026): ruff `B` first (a PR of
+its own), then the type checker and `SessionV2` out of `core/` with the
+`V2` renaming; the descriptions of the parameters shared by every tool
+shorter, and a paragraph of typical workflows in the instructions of the
+server (the advice of the trials of section 4.3); F107 (the labels of the
+menus from the registry); the names of the columns in one set (F120); the
+banner of a followed session saying which server writes the archive (pid
+and version of the marker). The plan itself is to be written at the start
+of the phase, in a conversation of its own.
 
 ### Phase 7 – Robust components: emission model and identification
 Agreed with Guido at the start of the MCP pilot (October 2026). The goal of section 5, a complete fit of a spectrum in a single
@@ -1858,6 +1886,6 @@ One line per concluded phase; the long rows are in `ROADMAP_HISTORY.md`, "7. Pro
 | 5-bis – GUI look and ergonomics | done (November 2026), PRs #664-#688; release 2.3.0 with phase 5 |
 | 6 – Error handling | done (November 2026), PRs #691-#701; release 2.4.0 |
 | 6-bis – Recipe API | done (November 2026), PRs #705-#723; release 2.5.0 |
-| 6-ter – Full MCP server | done (November 2026), PRs #726-#747 and the closing PR 8; release 2.6.0 prepared (PR 9: version, CHANGELOG, `switcher.json`; tag, GitHub release and macOS app build left); plan of the phase agreed (PR 0, #726); the tools generated from the registry, F106 found (PR 1, #729); F106 fixed (PR 1-bis, #730); the tools of the sessions, undo and redo (PR 2, #731); the tools of inspection (PR 3, #732); progress notifications (PR 4, #733); the agent's decisions in the log (PR 5a); the gaps of the recipes (PR 5b); the log as the text of a methods section (PR 5c); the GUI following a session of the server, F109 found (PR 5-bis); the headless Docker image, F110 found (PR 6, not published); trials with fresh agents, F111-F116 found (PR 7, report in section 4.3); heartbeat and reads during a recipe, F113 in part (PR 7-bis); trial 3, the editing tools, F117-F120 found (PR 7); the outputs of trial 3 (PR 7-ter); F111 and the cancellation, F113 closed, F121 found (PR 7-quater) |
+| 6-ter – Full MCP server | done (November 2026), PRs #726-#747 and the closing PR 8; release 2.6.0 published on GitHub on 10 November 2026 (PR 9, #751: version, CHANGELOG, `switcher.json`); plan of the phase agreed (PR 0, #726); the tools generated from the registry, F106 found (PR 1, #729); F106 fixed (PR 1-bis, #730); the tools of the sessions, undo and redo (PR 2, #731); the tools of inspection (PR 3, #732); progress notifications (PR 4, #733); the agent's decisions in the log (PR 5a); the gaps of the recipes (PR 5b); the log as the text of a methods section (PR 5c); the GUI following a session of the server, F109 found (PR 5-bis); the headless Docker image, F110 found (PR 6, not published); trials with fresh agents, F111-F116 found (PR 7, report in section 4.3); heartbeat and reads during a recipe, F113 in part (PR 7-bis); trial 3, the editing tools, F117-F120 found (PR 7); the outputs of trial 3 (PR 7-ter); F111 and the cancellation, F113 closed, F121 found (PR 7-quater) |
 | 6-quater – Review of the recipe parameters | not started |
 | 7 – Robust components | not started |
