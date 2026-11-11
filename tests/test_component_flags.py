@@ -4,7 +4,7 @@ import dataclasses
 
 import pytest
 
-from astrocook.core.session import SessionV2
+from astrocook.session.session import SessionV2
 from astrocook.core.structures import ComponentDataV2, SystemListDataV2
 from astrocook.core.system_list import SystemListV2
 from astrocook.fitting.voigt_fitter import COMPONENT_FLAGS, VoigtFitterV2

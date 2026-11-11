@@ -4,8 +4,8 @@ import threading
 from PySide6.QtCore import QObject, QRunnable, Signal
 from typing import TYPE_CHECKING, Dict
 
-from astrocook.core.session import SessionV2
-from astrocook.core.session_manager import SessionHistory
+from astrocook.session.session import SessionV2
+from astrocook.session.history import SessionHistory
 from astrocook.core.structures import HistoryLogV2
 from astrocook.gui.log_script import ScriptComments
 from astrocook.recipes.errors import RecipeCancelled, RecipeError

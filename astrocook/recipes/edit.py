@@ -14,7 +14,7 @@ from astrocook.recipes.params import DATA_ERRORS, typed_recipe
 from astrocook.recipes.messages import msg_session_not_found
 
 if TYPE_CHECKING:
-    from astrocook.core.session import SessionV2
+    from astrocook.session.session import SessionV2
 
 logger = logging.getLogger(__name__)
 
@@ -535,7 +535,7 @@ class RecipeEditV2:
         Returns
         -------
         SessionV2
-            A new :class:`~astrocook.core.session.SessionV2` with updated properties.
+            A new :class:`~astrocook.session.session.SessionV2` with updated properties.
         """
         # 1. Parse numerical inputs (z_em, resol)
         try:
@@ -595,7 +595,7 @@ class RecipeEditV2:
         Returns
         -------
         SessionV2
-            A new :class:`~astrocook.core.session.SessionV2` with the converted X-axis.
+            A new :class:`~astrocook.session.session.SessionV2` with the converted X-axis.
         """
         # Handle default logic here
         if z_ref == '_current_':
@@ -630,7 +630,7 @@ class RecipeEditV2:
         Returns
         -------
         SessionV2
-            A new :class:`~astrocook.core.session.SessionV2` with the converted Y-axis.
+            A new :class:`~astrocook.session.session.SessionV2` with the converted Y-axis.
         """
         # C. Parameter Validation and Type Casting
         try:
@@ -665,7 +665,7 @@ class RecipeEditV2:
         Returns
         -------
         SessionV2
-            A new :class:`~astrocook.core.session.SessionV2` with the computed column.
+            A new :class:`~astrocook.session.session.SessionV2` with the computed column.
         """
         # Translate UI symbols back to internal keys
         target_col = self._translate_ui_names(target_col.strip())
@@ -706,7 +706,7 @@ class RecipeEditV2:
         Returns
         -------
         SessionV2
-            A new :class:`~astrocook.core.session.SessionV2` with the masked column.
+            A new :class:`~astrocook.session.session.SessionV2` with the masked column.
         """
         # Translate UI symbols back to internal keys
         target_col = self._translate_ui_names(target_col.strip())
@@ -749,7 +749,7 @@ class RecipeEditV2:
         Returns
         -------
         SessionV2
-            A new :class:`~astrocook.core.session.SessionV2` with the smoothed column.
+            A new :class:`~astrocook.session.session.SessionV2` with the smoothed column.
         """
         # Translate UI symbols back to internal keys
         target_col = self._translate_ui_names(target_col.strip())
@@ -785,7 +785,7 @@ class RecipeEditV2:
         Returns
         -------
         SessionV2
-            A new :class:`~astrocook.core.session.SessionV2` with imported systems.
+            A new :class:`~astrocook.session.session.SessionV2` with imported systems.
         """
 
         do_append = append
@@ -968,7 +968,7 @@ class RecipeEditV2:
         Returns
         -------
         SessionV2
-            A new :class:`~astrocook.core.session.SessionV2` with the elements removed.
+            A new :class:`~astrocook.session.session.SessionV2` with the elements removed.
         """
         targets = self._translate_ui_names(targets)
         target_list = [t.strip() for t in targets.split(',') if t.strip()]
@@ -1011,7 +1011,7 @@ class RecipeEditV2:
         Returns
         -------
         SessionV2
-            A new :class:`~astrocook.core.session.SessionV2` containing the subset of data.
+            A new :class:`~astrocook.session.session.SessionV2` containing the subset of data.
         """
         expression = self._translate_ui_names(expression.strip())
         if not expression:
@@ -1065,7 +1065,7 @@ class RecipeEditV2:
         Returns
         -------
         SessionV2 or List[SessionV2]
-            One or more new :class:`~astrocook.core.session.SessionV2` instances.
+            One or more new :class:`~astrocook.session.session.SessionV2` instances.
         """
         # Parse inputs (split by comma and strip whitespace)
         region_list = [r.strip() for r in region.split(',') if r.strip()]
@@ -1139,7 +1139,7 @@ class RecipeEditV2:
         Returns
         -------
         SessionV2
-            A new :class:`~astrocook.core.session.SessionV2` trimmed to the common coverage.
+            A new :class:`~astrocook.session.session.SessionV2` trimmed to the common coverage.
         """
         # 1. Parse Inputs
         z_f = float(z_target)
@@ -1194,7 +1194,7 @@ class RecipeEditV2:
         Parameters
         ----------
         other_sessions : list
-            A list of :class:`~astrocook.core.session.SessionV2` objects OR strings
+            A list of :class:`~astrocook.session.session.SessionV2` objects OR strings
             (names of sessions loaded in the GUI).
         sort : bool, optional
             If ``True``, sorts the final spectrum by wavelength. Defaults to ``True``.
@@ -1202,10 +1202,10 @@ class RecipeEditV2:
         Returns
         -------
         SessionV2
-            A new :class:`~astrocook.core.session.SessionV2` containing the merged data.
+            A new :class:`~astrocook.session.session.SessionV2` containing the merged data.
         """
         # Delayed import to avoid circular dependency
-        from astrocook.core.session import SessionV2 
+        from astrocook.session.session import SessionV2 
 
         if not other_sessions:
             # (A WARNING and the session unchanged, phase 6)
@@ -1291,7 +1291,7 @@ class RecipeEditV2:
         Returns
         -------
         SessionV2
-            A new :class:`~astrocook.core.session.SessionV2` containing the equalized 
+            A new :class:`~astrocook.session.session.SessionV2` containing the equalized 
             and stitched spectrum.
         """
         
@@ -1465,7 +1465,7 @@ class RecipeEditV2:
         Returns
         -------
         SessionV2
-            A new :class:`~astrocook.core.session.SessionV2` containing the co-added spectrum.
+            A new :class:`~astrocook.session.session.SessionV2` containing the co-added spectrum.
         """
         
         names_list = [n.strip() for n in session_names.split(',') if n.strip()]

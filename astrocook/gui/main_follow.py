@@ -39,7 +39,7 @@ from PySide6.QtWidgets import (
 )
 
 from astrocook import follow
-from astrocook.core.session_manager import SessionHistory
+from astrocook.session.history import SessionHistory
 from astrocook.core.structures import HistoryLogV2
 from astrocook.recipes.registry import get_recipe
 

@@ -18,7 +18,7 @@ pytest.importorskip("mcp")
 
 from mcp import Client, StdioServerParameters  # noqa: E402
 
-from astrocook.core.session import SessionV2, load_session_from_file  # noqa: E402
+from astrocook.session.session import SessionV2, load_session_from_file  # noqa: E402
 from astrocook.mcp_server.schemas import parameters_schema  # noqa: E402
 from astrocook.mcp_server.server import build_server, instructions  # noqa: E402
 from astrocook.mcp_server.tools import (  # noqa: E402

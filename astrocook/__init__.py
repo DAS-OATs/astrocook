@@ -1,7 +1,7 @@
 # astrocook/__init__.py
 
 # Expose the V2 Session as the main entry point
-from .core.session import SessionV2
+from .session.session import SessionV2
 
 __all__ = ["SessionV2"]
 

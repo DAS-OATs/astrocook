@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QIntValidator, QDoubleValidator
 from PySide6.QtCore import Qt, QLocale, Signal, QEvent
 
-from astrocook.core.session import SessionV2
+from astrocook.session.session import SessionV2
 from astrocook.recipes.registry import get_recipe
 from .theme import (ACCENT, BUTTON_BACKGROUND, BUTTON_BORDER, BUTTON_PRESSED, DANGER, FOCUS_BORDER,
                     INPUT_BORDER, WARNING, themed)

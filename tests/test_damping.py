@@ -27,7 +27,7 @@ def test_fit_recovers_the_column_of_a_damped_lya(z):
 
 
 def _dla_session(z=3.0):
-    from astrocook.core.session import SessionV2
+    from astrocook.session.session import SessionV2
     lam = 121.567 * (1 + z)
     spec = generate(MockTruth(
         components=[MockComponent("Ly_a", z, 20.3, 20.0)], lam_min_nm=lam - 6.0,

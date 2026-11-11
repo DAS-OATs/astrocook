@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, cast
 from PySide6.QtCore import QTimer, Qt
 from PySide6.QtWidgets import QApplication, QMessageBox, QProgressDialog
 
-from astrocook.core.session_manager import SessionHistory
+from astrocook.session.history import SessionHistory
 
 from .log_scripter_dialog import LogScripterDialog
 from .qt_workers import ScriptWorker

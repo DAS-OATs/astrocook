@@ -164,7 +164,7 @@ def main():
 
     logger.debug("Importing the modules of the GUI.")
     
-    from astrocook.core.session import load_session_from_file
+    from astrocook.session.session import load_session_from_file
     from astrocook.gui.main_window import MainWindowV2 
     
     elapsed = time.time() - start_time

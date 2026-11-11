@@ -13,7 +13,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from astrocook.core.session import SessionV2
+from astrocook.session.session import SessionV2
 from astrocook.recipes.errors import (InvalidParameter, MissingPrerequisite, RecipeError,
                                       RecipeFailed, reason_of)
 from astrocook.recipes.params import typed_recipe

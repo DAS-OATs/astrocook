@@ -20,7 +20,7 @@ import astropy.units as au
 import pytest
 from astrocook.recipes.errors import InvalidParameter, RecipeError, RecipeFailed  # phase 6-bis, PR 3
 
-from astrocook.core.session import SessionV2
+from astrocook.session.session import SessionV2
 from astrocook.core.spectrum import SpectrumV2
 from astrocook.core.structures import (
     ComponentDataV2, DataColumnV2, SpectrumDataV2, SystemListDataV2,

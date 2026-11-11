@@ -7,8 +7,8 @@ import pytest
 from astropy.table import Table
 
 from astrocook.core.atomic_data import ATOMIC_DATA_PATH
-from astrocook.core.session import SessionV2
-from astrocook.core.session_manager import SessionHistory
+from astrocook.session.session import SessionV2
+from astrocook.session.history import SessionHistory
 from astrocook.core.structures import HistoryLogV2
 from astrocook.methods_text import (
     REFERENCES, MethodsValues, fmt, methods_file_name, methods_text, series_list,

@@ -10,7 +10,7 @@ pytest.importorskip("mcp")
 from mcp import Client  # noqa: E402
 
 from astrocook import gaps  # noqa: E402
-from astrocook.core.session import SessionV2, load_session_from_file  # noqa: E402
+from astrocook.session.session import SessionV2, load_session_from_file  # noqa: E402
 from astrocook.mcp_server.server import build_server  # noqa: E402
 from astrocook.mocks import MockComponent, MockTruth, generate  # noqa: E402
 

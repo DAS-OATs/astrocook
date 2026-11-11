@@ -541,7 +541,7 @@ def test_run_script(ready, monkeypatch, workers, answer):
 
 def test_script_result_replaces_the_history(qtbot, ready):
     window = ready
-    from astrocook.core.session_manager import SessionHistory
+    from astrocook.session.history import SessionHistory
     old = window.active_history
     new = SessionHistory(old.states[0], HistoryLogV2())
     window._process_script_result(new)

@@ -7,7 +7,7 @@ import subprocess
 # Ensure we can import astrocook
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from astrocook.core.session import SessionV2
+from astrocook.session.session import SessionV2
 
 # --- CONFIGURATION ---
 SPECIES_CONFIG = {

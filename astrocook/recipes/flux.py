@@ -9,7 +9,7 @@ from astrocook.recipes._spectrum import spec_of
 from astrocook.recipes.params import typed_recipe
 
 if TYPE_CHECKING:
-    from astrocook.core.session import SessionV2 
+    from astrocook.session.session import SessionV2 
 
 logger = logging.getLogger(__name__)
 
@@ -156,7 +156,7 @@ class RecipeFluxV2:
         Returns
         -------
         SessionV2
-            A new :class:`~astrocook.core.session.SessionV2` with the calculated column added.
+            A new :class:`~astrocook.session.session.SessionV2` with the calculated column added.
         """
         window_pix_i = max(window_pix, 3)
         if window_pix_i % 2 == 0: # Ensure it's odd
@@ -186,7 +186,7 @@ class RecipeFluxV2:
         Returns
         -------
         SessionV2
-            A new :class:`~astrocook.core.session.SessionV2` with smoothed columns.
+            A new :class:`~astrocook.session.session.SessionV2` with smoothed columns.
         """
         new_spec_v2 = spec_of(self._session).smooth(sigma_kms=sigma_kms)
         return self._session.with_new_spectrum(new_spec_v2)
@@ -228,7 +228,7 @@ class RecipeFluxV2:
         Returns
         -------
         SessionV2
-            A new :class:`~astrocook.core.session.SessionV2` with the rebinned spectrum.
+            A new :class:`~astrocook.session.session.SessionV2` with the rebinned spectrum.
         """
 
         xstart_q = au.Quantity(xstart, au.nm) if xstart is not None else None
@@ -301,7 +301,7 @@ class RecipeFluxV2:
         Returns
         -------
         SessionV2
-            A new :class:`~astrocook.core.session.SessionV2` interpolated to the target grid.
+            A new :class:`~astrocook.session.session.SessionV2` interpolated to the target grid.
         """
         if target_session == 'None' or target_session == '':
             raise RecipeFailed("No target session is selected.")
@@ -328,7 +328,7 @@ class RecipeFluxV2:
         Returns
         -------
         SessionV2
-            A new :class:`~astrocook.core.session.SessionV2` with calibrated flux.
+            A new :class:`~astrocook.session.session.SessionV2` with calibrated flux.
         """
         new_spec_v2 = spec_of(self._session).calibrate(magnitudes)
         return self._session.with_new_spectrum(new_spec_v2)

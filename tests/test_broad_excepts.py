@@ -23,7 +23,7 @@ PACKAGE = Path(astrocook.__file__).parent
 #: Broad except clauses per file, as in the inventory of phase 6.
 BROAD_EXCEPTS = {
     "astrocook/_run_astrocook.py": 2,
-    "astrocook/core/session.py": 2,
+    "astrocook/session/session.py": 2,
     "astrocook/gui/main_recipes.py": 1,
     "astrocook/gui/main_sessions.py": 2,
     "astrocook/gui/main_window.py": 1,

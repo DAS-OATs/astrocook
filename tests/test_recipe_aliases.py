@@ -19,7 +19,7 @@ import astropy.units as au
 import numpy as np
 import pytest
 
-from astrocook.core.session import SessionV2, load_session_from_file
+from astrocook.session.session import SessionV2, load_session_from_file
 from astrocook.core.spectrum import SpectrumV2
 from astrocook.core.structures import DataColumnV2, HistoryLogV2, SpectrumDataV2
 from astrocook.recipes.errors import InvalidParameter

@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from astrocook.core.session import SessionV2
+    from astrocook.session.session import SessionV2
     from astrocook.core.spectrum import SpectrumV2
 
 

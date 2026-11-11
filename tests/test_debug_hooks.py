@@ -19,7 +19,7 @@ from astrocook.mocks import MockComponent, MockTruth, generate
 
 
 def test_import_does_not_load_the_gui():
-    code = ("import sys, astrocook, astrocook.core.session, "
+    code = ("import sys, astrocook, astrocook.session.session, "
             "astrocook.core.spectrum_operations, astrocook.recipes.absorbers, "
             "astrocook.fitting.voigt_fitter, astrocook.io.loaders, astrocook.mocks\n"
             "print(sorted(m for m in sys.modules "

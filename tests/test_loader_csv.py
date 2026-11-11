@@ -8,7 +8,7 @@ fewer than 10 lines went to the loader of FITS files (F97).
 import numpy as np
 import pytest
 
-from astrocook.core.session import load_session_from_file
+from astrocook.session.session import load_session_from_file
 from astrocook.io.loaders import load_simple_csv
 
 ROWS = "500.0,1.0,0.1\n501.0,1.5,0.2\n502.0,2.0,0.3\n"

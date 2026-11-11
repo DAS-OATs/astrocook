@@ -15,7 +15,7 @@ from typing import Dict, List, Optional, TYPE_CHECKING
 # --- V2 Imports ---
 from .v1_archive import read_v1_spectrum, read_v1_system_list
 if TYPE_CHECKING:
-    from astrocook.core.session import SessionV2
+    from astrocook.session.session import SessionV2
 from astrocook.core.structures import (
     SessionMetadataV2, DataColumnV2, SpectrumDataV2, 
     SystemListDataV2, ComponentDataV2,

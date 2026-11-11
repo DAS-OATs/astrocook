@@ -9,7 +9,7 @@ import sys
 import numpy as np
 import pytest
 
-from astrocook.core.session import SessionV2
+from astrocook.session.session import SessionV2
 from astrocook.core.structures import ComponentDataV2, SystemListDataV2
 from astrocook.core.system_list import SystemListV2
 from astrocook.mocks import MockComponent, MockTruth, generate

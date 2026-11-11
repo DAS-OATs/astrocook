@@ -46,13 +46,19 @@ Current version: 2.6.0. Python ≥3.12.
 
 ## Architecture (v2)
 - `astrocook/core/` – immutable dataclasses (`structures.py`), `SpectrumV2`,
-  pure functions in `spectrum_operations.py`, session, system list.
+  pure functions in `spectrum_operations.py`, system list. The bottom layer:
+  it does not import `recipes/` or `session/`.
   Methods return new objects: do not mutate state in place. `SpectrumV2`
   (`spectrum.py`) holds the data, columns and conversions; its other
   methods are in mixins by theme (`spectrum_continuum.py`,
   `spectrum_lines.py`, `spectrum_flux.py`, `spectrum_combine.py`,
   `spectrum_expressions.py`, phase 5): a new method goes in the mixin of
   its theme, and builds its result with `self.__class__(...)`.
+- `astrocook/session/` – `SessionV2` (`session.py`) and `SessionHistory`
+  (`history.py`), moved out of `core/` in phase 6-quater, PR 5. The old
+  paths `astrocook.core.session` and `astrocook.core.session_manager` stay
+  as lazy aliases (module `__getattr__`, no warning): new code imports from
+  `astrocook.session`.
 - `astrocook/fitting/` – Voigt fitting (`voigt_fitter.py`), constraints
   (`voigt_model.py`), Bayesian engine (`bayesian_fitter.py`).
 - `astrocook/recipes/` – user-facing operations, with structured parameters.

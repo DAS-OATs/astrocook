@@ -3,7 +3,7 @@ import numpy as np
 import astropy.units as au
 from astropy.io import ascii
 
-from astrocook.core.session import SessionV2
+from astrocook.session.session import SessionV2
 from astrocook.core.spectrum import SpectrumV2
 from astrocook.core.structures import DataColumnV2, SpectrumDataV2
 

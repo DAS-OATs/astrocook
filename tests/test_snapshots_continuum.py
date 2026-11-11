@@ -67,7 +67,7 @@ def test_fit_powerlaw(snapshot, j0103_window):
 def test_estimate_auto_smoothing_is_a_fwhm(j0103_window):
     # F16 (findings register, decided with Guido): the final smoothing is
     # given as a FWHM (default 800 km/s); the deprecated smooth_std is a sigma
-    from astrocook.core.session import SessionV2
+    from astrocook.session.session import SessionV2
     session = SessionV2("w", None, spec=j0103_window)
     default = session.continuum.estimate_auto().spec.get_column("cont").value
     as_sigma = session.continuum.estimate_auto(

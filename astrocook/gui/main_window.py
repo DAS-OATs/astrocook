@@ -27,8 +27,8 @@ from .script_dialog import ScriptDialog
 from .floating_cards import CollapsibleSection
 from .theme import FOCUS_BORDER, status_bar_style
 from astrocook.core.debug_hooks import set_debug_plot_handler
-from astrocook.core.session_manager import SessionHistory
-from astrocook.core.session import SessionV2, LogManager
+from astrocook.session.history import SessionHistory
+from astrocook.session.session import SessionV2, LogManager
 from astrocook.core.spectrum import SpectrumV2
 from astrocook.core.utils import resource_path # Import recipe helpers
 

@@ -12,7 +12,7 @@ from PySide6.QtCore import Qt, QEvent, Signal
 
 # Astrocook Imports
 # Assuming your session and GUI modules are correctly set up on the path
-#from astrocook.core.session import SessionV2, load_session_from_file
+#from astrocook.session.session import SessionV2, load_session_from_file
 #from astrocook.gui.main_window import MainWindowV2 
 #from astrocook.core.utils import resource_path
 
@@ -129,7 +129,7 @@ def main():
     logging.info("Importing heavy modules...")
     
     # --- SPOSTA GLI IMPORT QUI ---
-    from astrocook.core.session import load_session_from_file
+    from astrocook.session.session import load_session_from_file
     from astrocook.gui.main_window import MainWindowV2 
     # -----------------------------
 

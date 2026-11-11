@@ -34,7 +34,7 @@ def test_forest_auto_applies_min_b():
     # F65: forest_auto took min_b and did not use it. A short stretch of
     # forest (the whole mock of the full chain takes minutes with the
     # Lyman series)
-    from astrocook.core.session import SessionV2
+    from astrocook.session.session import SessionV2
     from astrocook.mocks import MockComponent, MockTruth, generate
     z_em = 3.0
     comps = [MockComponent("Ly_ab", z, logN, b) for z, logN, b in (

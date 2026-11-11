@@ -23,7 +23,7 @@ def _run(code):
 
 
 def test_import_does_not_configure_logging():
-    code = ("import logging, astrocook, astrocook.core.session, "
+    code = ("import logging, astrocook, astrocook.session.session, "
             "astrocook.recipes.absorbers, astrocook.io.loaders\n"
             "print(len(logging.getLogger().handlers))")
     assert _run(code) == "0"
@@ -60,7 +60,7 @@ TESTS_DIR = str(Path(__file__).parent)
 NORM_WARNING = "'norm' is ignored"
 
 _REBIN = ("from test_recipes_edit_flux import _spec\n"
-          "from astrocook.core.session import SessionV2\n"
+          "from astrocook.session.session import SessionV2\n"
           "SessionV2('s', None, spec=_spec()).flux.rebin(norm='True')\n")
 
 
@@ -97,7 +97,7 @@ def root_records():
 
 def test_recipe_messages_reach_a_root_handler(root_records):
     from test_recipes_edit_flux import _spec
-    from astrocook.core.session import SessionV2
+    from astrocook.session.session import SessionV2
     SessionV2("s", None, spec=_spec()).flux.rebin(norm="True")
     warnings = [r for r in root_records if r.levelno == logging.WARNING]
     assert [r.module for r in warnings] == ["flux"]
@@ -110,7 +110,7 @@ def test_recipe_messages_reach_a_root_handler(root_records):
 def test_gui_warning_capture_sees_recipe_warnings():
     from astrocook.gui.recipe_progress import WarningCaptureHandler
     from test_recipes_edit_flux import _spec
-    from astrocook.core.session import SessionV2
+    from astrocook.session.session import SessionV2
     handler = WarningCaptureHandler()
     logging.getLogger().addHandler(handler)
     try:
@@ -151,7 +151,7 @@ def test_script_can_configure_logging_after_a_recipe():
 
 def test_records_name_their_module(root_records):
     from test_recipes_edit_flux import _spec
-    from astrocook.core.session import SessionV2
+    from astrocook.session.session import SessionV2
     SessionV2("s", None, spec=_spec()).flux.rebin(norm="True")
     names = {r.name for r in root_records if r.name.startswith("astrocook")}
     assert "astrocook.recipes.flux" in names

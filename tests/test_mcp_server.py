@@ -18,7 +18,7 @@ from mcp import Client, StdioServerParameters  # noqa: E402
 from mcp.server.mcpserver.exceptions import ToolError  # noqa: E402
 
 from astrocook import __version__  # noqa: E402
-from astrocook.core.session import SessionV2, load_session_from_file  # noqa: E402
+from astrocook.session.session import SessionV2, load_session_from_file  # noqa: E402
 from astrocook.mcp_server.errors import run_recipe  # noqa: E402
 from astrocook.core.structures import ComponentDataV2  # noqa: E402
 from astrocook.mcp_server.outputs import (  # noqa: E402

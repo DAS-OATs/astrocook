@@ -128,7 +128,7 @@ class Snapshot:
 @pytest.fixture(scope="session")
 def j0103_session():
     """The J0103-1305 session (spectrum with continuum, and system list)."""
-    from astrocook.core.session import SessionV2
+    from astrocook.session.session import SessionV2
     session = SessionV2.open_new(str(J0103_SESSION), "J0103-1305", None, "auto")
     return session[0] if isinstance(session, (list, tuple)) else session
 

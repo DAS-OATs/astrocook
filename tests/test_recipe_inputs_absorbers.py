@@ -27,7 +27,7 @@ import warnings
 import numpy as np
 import pytest
 
-from astrocook.core.session import SessionV2
+from astrocook.session.session import SessionV2
 from astrocook.mocks import MockComponent, MockTruth, generate
 
 # The outcomes of a failure (phase 6-bis, PR 3): see recipe_outcomes.py
