@@ -1294,7 +1294,8 @@ its own, except the smallest; the model of each PR proposed by the rule
 | 1 | Ruff `B` on, its 33 warnings fixed (with the plan of the phase and the rule of the model in `CLAUDE.md`) | Sonnet | 1-2 h |
 | 2 | Aliases of renamed names: one mechanism in the registry for a renamed parameter (the old name accepted by the session logs, the scripts and the MCP tools), reused for the `V2` classes | Opus | half a day |
 | 3 | Type checker, step 1: mypy in CI on `recipes/` and `mcp_server/` | Sonnet | half a day (done, 11 November 2026: see below) |
-| 4 | Type checker, step 2: `core/` and `fitting/` | Sonnet | half a day to a day |
+| 4 | Type checker, step 2: `core/` and `fitting/` | Sonnet | half a day to a day (done, 11 November 2026: see below) |
+| 4-bis | Type checker, step 3: `gui/` (361 errors, 199 of them `attr-defined` from the mixins of `MainWindowV2` and `SpectrumPlotWidget`: the same cure as PR 4, a host class for the type checker) | Sonnet | half a day |
 | 5 | `SessionV2` (and `SessionHistory`) out of `core/`, e.g. into `astrocook/session/`, the old import kept as an alias | Sonnet | 2-3 h |
 | 6 | The `V2` suffixes dropped, with the aliases of PR 2 (code, tests, docs) | Sonnet | half a day |
 | 7 | Review of the recipes of file and flux (8 recipes) | Opus | half a day |
@@ -1327,6 +1328,59 @@ its own, except the smallest; the model of each PR proposed by the rule
   copied), `SystemListV2.delete_component` (`str = None`) and
   `TableAdapterV2.__getitem__`. Only the fast suite was run (3620 passed):
   the corrections are of types, so the numbers cannot change.
+- *Result of PR 4* (type checker, step 2; 11 November 2026): `mypy` gives
+  zero errors on `recipes/`, `mcp_server/`, `core/` and `fitting/` (`files`
+  of `[tool.mypy]`; options unchanged). The 336 errors of the starting
+  point (re-measured: 336, in 15 files, 262 of them in the five mixins of
+  the spectrum and in `voigt_fitter.py`): 212 `attr-defined`, 33
+  `call-arg`, 25 `return-value`, 20 `assignment`, 15 `arg-type`, 9
+  `union-attr`, 7 `var-annotated`, 4 `operator`, 4 `misc`, 3 `index`, 2
+  `call-overload`, 1 `type-var`, 1 `syntax`. By cause:
+  - Root cause 1, the mixins (`spectrum_*.py`): they used `self._data`,
+    `x`, `y`, `t`, `history`... that `SpectrumV2` defines, so 150 of the
+    `attr-defined` and all 33 `call-arg` (`self.__class__(data=...)`) were
+    about `FluxMixin` and the others. New `core/_spectrum_host.py`: a
+    `SpectrumHost` class with the declarations, seen by the type checker
+    only (`HostBase` is `object` at run time, so nothing changes), and the
+    methods that return a new spectrum annotated `-> Self` (25
+    `return-value`). One mixin method used by another (`scale_flux`,
+    `update_column`...) is declared there too.
+  - Root cause 2, `voigt_fitter.py`: attributes started as `None` and
+    filled by `prepare_fit_context` (`_x_tau`, `_fit_mask`...) are
+    annotated `Any`; `SystemListV2.constraint_model` (created by the
+    next line of `__init__`) is annotated as its class, with one
+    `type: ignore[assignment]` on the `None`: this removed about 60
+    `attr-defined`, `index` and `call-overload` in the fitters.
+  - Wrong annotations corrected: `rebin_spectrum` (it returns 6 values,
+    the last optional), `_find_kinematic_doublet_candidates` (3-tuples),
+    `parsed_constraints` (`Dict[Tuple[str, str], ParameterConstraintV2]`),
+    `load_session_from_file` and `SessionV2.open_new` (they return `0` on
+    failure: `Union[SessionV2, int]`), `_get_ne_contexts` (a tuple written
+    as `(A, B)`), `x: T = None` made `Optional[T]` (`SpectrumV2.__init__`,
+    `extra_vars`, `delete_component`, `fitting_context`,
+    `set_active_components`, which takes any collection, `with_new_spectrum`),
+    `TableAdapterV2.__getitem__` (two `overload`s). The annotations are
+    not read at run time (`dataclasses.fields` only reads names).
+  - The rest: containers annotated (`aux_map`, `reliable_ids`, `tried`,
+    `_clicks`...), a `cast` or an `assert` where a column or a result is
+    known to be there (`get_column`, `y_col_new`, `_active_uuids` after a
+    fit). Three `type: ignore` in the package: `current_state` of
+    `SessionHistory` (returns `None` when there are no states, never
+    reached: the history always holds its initial state), plus the one
+    on `constraint_model` above and the marker of `typed_recipe` (PR 3).
+    The three of PR 3 that waited for this PR are removed.
+  No change of behaviour, and no bug in the findings register. One slip
+  of PR 3 corrected: the comment of a `type: ignore` in
+  `mcp_server/sessions.py` had swallowed the call
+  `.with_new_system_list(state.systs)` of the copy of a session; the call
+  is back as it was (it is redundant, since `with_new_spectrum` already
+  carries the list, so the result was the same). Only the fast suite was
+  run: the corrections are of types, so the numbers cannot change.
+  `gui/` gives 361 errors in 23 files (199 `attr-defined`, 40
+  `union-attr`, 36 `has-type`, 27 `assignment`, 20 `arg-type`, 17
+  `call-overload`; 124 in `main_sessions.py`, 61 in `main_recipes.py`, 32
+  in `main_scripts.py`): the same mixin pattern, so a PR of its own (4-bis)
+  with the same cure.
 - *How a review PR (7-10) works*: the conversation opens with a table of
   the parameters of its recipes, as they are and as proposed (name,
   type, default, unit, description); Guido agrees it, then the change is

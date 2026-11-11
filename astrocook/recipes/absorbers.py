@@ -1691,7 +1691,7 @@ class RecipeAbsorbersV2:
         
         # 1. Delegate to SystemListV2 (which we updated to handle lists)
         # We pass both arguments; SystemListV2 handles the set logic.
-        new_systs = self._session.systs.delete_component(uuid=uuid, uuids=uuids)  # type: ignore[arg-type]  # the core annotates them `str`/`list` with a None default (core/: PR 4)
+        new_systs = self._session.systs.delete_component(uuid=uuid, uuids=uuids)
         kept = {c.uuid for c in new_systs.components}
         report_removed([c.uuid for c in self._session.systs.components if c.uuid not in kept],
                        "deleted")
@@ -2146,6 +2146,7 @@ class RecipeAbsorbersV2:
             }
                 
             active_uuids = constraints._active_uuids
+            assert active_uuids is not None
             for active_uuid in active_uuids:
                 new_meta['bayesian_results'][active_uuid] = group_results
                 

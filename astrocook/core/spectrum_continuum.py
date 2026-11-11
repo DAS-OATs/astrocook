@@ -10,18 +10,16 @@ import dataclasses
 import logging
 import numpy as np
 from scipy.interpolate import PchipInterpolator
-from typing import TYPE_CHECKING, List, Union
+from typing import Self, List, Union, cast
 
 from astrocook.core.spectrum_operations import find_absorbed_regions, fit_powerlaw_to_regions
 from astrocook.core.structures import DataColumnV2
-
-if TYPE_CHECKING:
-    from astrocook.core.spectrum import SpectrumV2
+from astrocook.core._spectrum_host import HostBase
 
 logger = logging.getLogger(__name__)
 
 
-class ContinuumMixin:
+class ContinuumMixin(HostBase):
     """Estimate of the continuum: absorbed regions, interpolated or
     power-law continuum, continuum from manual knots.
 
@@ -32,7 +30,7 @@ class ContinuumMixin:
     """
 
     def find_absorbed(self, smooth_len_lya: au.Quantity, smooth_len_out: au.Quantity, 
-                      kappa: float, template: bool) -> 'SpectrumV2':
+                      kappa: float, template: bool) -> Self:
         """
         Identify absorbed regions using V1 logic.
 
@@ -76,7 +74,7 @@ class ContinuumMixin:
         
     def fit_continuum(self, fudge: Union[float, str], smooth_std_kms: float, 
                       mask_col: str = 'abs_mask', renorm_model: bool = False,
-                      template: bool = False) -> 'SpectrumV2':
+                      template: bool = False) -> Self:
         """
         Fit a continuum to the unabsorbed regions.
 
@@ -227,7 +225,7 @@ class ContinuumMixin:
         return self.__class__(data=new_data, history=self.history + [hist_entry])
     
 
-    def fit_powerlaw(self, regions_str: str, kappa: float = 3.0) -> 'SpectrumV2':
+    def fit_powerlaw(self, regions_str: str, kappa: float = 3.0) -> Self:
         """
         Fit a power-law continuum to specified rest-frame regions.
 
@@ -269,7 +267,7 @@ class ContinuumMixin:
         return self.__class__(data=new_data, history=new_history)
     
     def update_continuum_from_knots(self, knots_x: List[float], knots_y: List[float], 
-                                    renorm_model: bool = True) -> 'SpectrumV2':
+                                    renorm_model: bool = True) -> Self:
         """
         Update the continuum using a Cubic Spline through provided knots.
 
@@ -327,7 +325,7 @@ class ContinuumMixin:
             # We can use the helper we used in smooth_column/fit_continuum
             # Note: We access _data directly inside the class for the helper
             new_model_data_col = self._renormalize_model(
-                old_cont_vals=old_cont_col.value,
+                old_cont_vals=cast(au.Quantity, old_cont_col).value,
                 new_cont_vals=new_cont,
                 old_model_col=self._data.aux_cols['model']
             )

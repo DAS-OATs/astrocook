@@ -35,7 +35,9 @@ class SessionHistory:
             return self.states[self.current_index]
         logger.error(f"The index of the session history ({self.current_index}) is "
                      f"out of range: the last of its {len(self.states)} states is used.")
-        return self.states[-1] if self.states else None # Fallback
+        # With no states at all this returns None; the history always holds
+        # its initial state, so the case is not reached (annotation kept)
+        return self.states[-1] if self.states else None  # type: ignore[return-value]
 
     @property
     def display_name(self) -> str:

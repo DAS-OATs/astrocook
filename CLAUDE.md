@@ -86,10 +86,13 @@ Current version: 2.6.0. Python ≥3.12.
   length by construction, `itertools.pairwise` for consecutive pairs. New
   code must not add warnings.
 - Types: `mypy` (no arguments; config in `[tool.mypy]` of `pyproject.toml`,
-  no strict option). It checks `astrocook/recipes/` and
-  `astrocook/mcp_server/` with zero errors since phase 6-quater, PR 3;
-  `core/`, `fitting/` and `gui/` come in PR 4. New code in those packages
-  must not add errors. To narrow an `Optional` use `spec_of(session)` or
+  no strict option). It checks `astrocook/recipes/`,
+  `astrocook/mcp_server/`, `astrocook/core/` and `astrocook/fitting/` with
+  zero errors since phase 6-quater, PR 4; `gui/` comes in PR 4-bis. New
+  code in those packages must not add errors. A mixin of the spectrum
+  inherits `HostBase` (`core/_spectrum_host.py`): what it uses of
+  `SpectrumV2` is declared there, and the methods that return a new
+  spectrum are annotated `-> Self`. To narrow an `Optional` use `spec_of(session)` or
   `column_of(spec, name)` (`recipes/_spectrum.py`), `assert` or `cast`, no
   new branches; a `# type: ignore[code]` says why, and a real bug found
   goes in the findings register instead of being fixed.

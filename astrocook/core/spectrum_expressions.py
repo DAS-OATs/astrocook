@@ -12,10 +12,11 @@ import logging
 import numexpr as ne
 import numpy as np
 import re
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Self, Dict, List, Optional, Tuple
 
 from astrocook.core.atomic_data import ATOM_DATA
 from astrocook.core.structures import DataColumnV2, SpectrumDataV2
+from astrocook.core._spectrum_host import HostBase
 
 if TYPE_CHECKING:
     from astrocook.core.spectrum import SpectrumV2
@@ -38,7 +39,7 @@ REGION_PRESETS = {
 }
 
 
-class ExpressionsMixin:
+class ExpressionsMixin(HostBase):
     """Expressions on the columns, masks and regions.
 
     Mixed into ``SpectrumV2``, whose data and methods it uses: ``_data``,
@@ -47,7 +48,7 @@ class ExpressionsMixin:
     instances of the class (``self.__class__``).
     """
 
-    def _get_ne_contexts(self) -> (Dict[str, au.Quantity], Dict[str, np.ndarray]):
+    def _get_ne_contexts(self) -> Tuple[Dict[str, au.Quantity], Dict[str, np.ndarray]]:
         """
         Helper to create the contexts for numexpr.
         Returns:
@@ -162,7 +163,7 @@ class ExpressionsMixin:
         return final_expr, extra_vars
 
     def apply_expression(self, target_col: str, expression: str, 
-                         extra_vars: Dict[str, np.ndarray] = None) -> 'SpectrumV2': # <<< MODIFIED
+                         extra_vars: Optional[Dict[str, np.ndarray]] = None) -> Self: # <<< MODIFIED
         """
         Apply a numerical expression to columns and return a new spectrum.
 
@@ -240,7 +241,7 @@ class ExpressionsMixin:
         return self.__class__(data=new_data_core, history=new_history)
 
     def mask_expression(self, target_col: str, expression: str, 
-                        extra_vars: Dict[str, np.ndarray] = None) -> 'SpectrumV2': # <<< MODIFIED
+                        extra_vars: Optional[Dict[str, np.ndarray]] = None) -> Self: # <<< MODIFIED
         """
         Mask a column based on a boolean expression (sets values to NaN).
 
@@ -385,7 +386,7 @@ class ExpressionsMixin:
         
         return f"(x > {l1:.5f}) & (x < {l2:.5f})"
 
-    def split(self, expression: str, extra_vars: Dict[str, np.ndarray] = None) -> 'SpectrumV2':
+    def split(self, expression: str, extra_vars: Optional[Dict[str, np.ndarray]] = None) -> Self:
         """
         Split the spectrum based on a boolean expression.
 
@@ -442,7 +443,7 @@ class ExpressionsMixin:
         return self.__class__(data=new_data_core, history=new_history)
     
     def mask_region(self, mask_col: str, 
-                    obs_min: au.Quantity, obs_max: au.Quantity) -> 'SpectrumV2':
+                    obs_min: au.Quantity, obs_max: au.Quantity) -> Self:
         """
         Update a mask column, setting it to False outside the specified bounds.
 

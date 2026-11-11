@@ -329,7 +329,7 @@ class SessionStore:
         log = deepcopy(parent.log_manager)
         states = []
         for state in parent.states[:parent.current_index + 1]:
-            copy = state.with_new_spectrum(state.spec)  # type: ignore[arg-type]  # a session without spectrum is copied as it is (core annotation, PR 4).with_new_system_list(state.systs)
+            copy = state.with_new_spectrum(state.spec).with_new_system_list(state.systs)
             copy.name = new_id
             copy._gui = self.context
             states.append(copy)

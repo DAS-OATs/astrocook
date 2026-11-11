@@ -4,7 +4,7 @@ import os
 import shutil
 import tarfile 
 import tempfile
-from typing import Any, Optional
+from typing import Any, List, Optional, Union
 
 from astrocook.io.adapter import load_and_migrate_structure, save_archive_v2
 from astrocook.io.v1_archive import V1ArchiveManager
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 # Define the type for the log manager
 LogManager = HistoryLogV2
 
-def load_session_from_file(archive_path: str, name: str, gui_context: Any, format_name: str) -> Optional['SessionV2']:
+def load_session_from_file(archive_path: str, name: str, gui_context: Any, format_name: str) -> Union['SessionV2', int]:
     """
     Orchestrate the loading of a session from a file or archive.
 
@@ -102,9 +102,9 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
             
             # 1. FIND THE ACTUAL FITS FILE
             spec_file_path = None
-            for f in os.listdir(temp_dir):
-                if f.endswith('_spec.fits'):
-                    spec_file_path = os.path.join(temp_dir, f)
+            for fname in os.listdir(temp_dir):
+                if fname.endswith('_spec.fits'):
+                    spec_file_path = os.path.join(temp_dir, fname)
                     break
             
             if not spec_file_path:
@@ -252,7 +252,7 @@ class SessionV2:
         self.cb = self.edit
         self._shade = False 
         self._open_twin = False
-        self._clicks = []  
+        self._clicks: List[Any] = []  
         self._z_sel = 0.0   
         self._series_sel = 'Ly_a' 
         logger.debug(f"SessionV2 '{self.name}' initialized.")
@@ -280,7 +280,7 @@ class SessionV2:
         return self._lines 
 
     @classmethod
-    def open_new(cls, file_path: str, name: str, gui_context: Any, format_name: str) -> 'SessionV2':        
+    def open_new(cls, file_path: str, name: str, gui_context: Any, format_name: str) -> Union['SessionV2', int]:        
         """
         Factory method: Create a new SessionV2 by loading data from a file.
 
@@ -308,7 +308,7 @@ class SessionV2:
             format_name=format_name
         )
 
-    def with_new_spectrum(self, new_spectrum: SpectrumV2) -> 'SessionV2':
+    def with_new_spectrum(self, new_spectrum: Optional[SpectrumV2]) -> 'SessionV2':
         """
         Return a new SessionV2 instance with an updated spectrum.
 
@@ -317,8 +317,9 @@ class SessionV2:
 
         Parameters
         ----------
-        new_spectrum : SpectrumV2
-            The new spectral data object.
+        new_spectrum : SpectrumV2 or None
+            The new spectral data object (``None``: a session without
+            spectrum is copied as it is).
 
         Returns
         -------

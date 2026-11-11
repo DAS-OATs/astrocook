@@ -3,7 +3,7 @@ from astropy import units as au
 import logging
 import numpy as np
 import re
-from typing import TYPE_CHECKING, Dict, Optional, Union, List, Tuple
+from typing import TYPE_CHECKING, Dict, cast, Optional, Union, List, Tuple
 
 from astrocook.core.structures import SystemListDataV2  # <<< *** ADD THIS IMPORT ***
 from astrocook.core.system_list import SystemListV2
@@ -601,7 +601,7 @@ class RecipeEditV2:
         if z_ref == '_current_':
             z_ref_float = spec_of(self._session)._data.z_em
         else:
-            z_ref_float = z_ref
+            z_ref_float = cast(float, z_ref)
             
         try:
             xunit_obj = au.Unit(xunit)

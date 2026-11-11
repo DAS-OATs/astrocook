@@ -5,7 +5,7 @@ import dataclasses
 import logging
 import numpy as np
 import ast
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple
+from typing import TYPE_CHECKING, Any, Collection, cast, Dict, List, Optional, Set, Tuple
 
 from astrocook.fitting.voigt_model import LINK_ERRORS, LINK_FUNCTIONS, VoigtModelConstraintV2
 from astrocook.core.structures import ComponentDataV2, SystemListDataV2, ParameterConstraintV2
@@ -180,7 +180,8 @@ class SystemListV2:
         # (Fixes JSON artifacts and converts dicts -> objects)
         self._ensure_clean_data()
         
-        self.constraint_model = None 
+        # Created by the call below, so that it is never None when used
+        self.constraint_model: VoigtModelConstraintV2 = None  # type: ignore[assignment]
         self._initialize_constraint_model()
 
     def _ensure_clean_data(self):
@@ -375,7 +376,7 @@ class SystemListV2:
         return self.constraint_model._param_map
     
     @property
-    def parsed_constraints(self) -> Dict[Tuple[int, str], Dict[str, Any]]:
+    def parsed_constraints(self) -> Dict[Tuple[str, str], ParameterConstraintV2]:
         return self._data.parsed_constraints
     
     @property
@@ -386,7 +387,7 @@ class SystemListV2:
     
     # --- Context Manager for Safe Fitting ---
     @contextlib.contextmanager
-    def fitting_context(self, active_uuids: List[str] = None, group_depth: int = 2,
+    def fitting_context(self, active_uuids: Optional[List[str]] = None, group_depth: int = 2,
                         spec: Optional['SpectrumV2'] = None):
         """
         Context manager for safe fitting.
@@ -678,7 +679,7 @@ class SystemListV2:
              comp = self.get_component_by_uuid(uuid)
              if comp:
                  legacy_key = (comp.id, param)
-                 existing = current_parsed.get(legacy_key)
+                 existing = current_parsed.get(cast(Any, legacy_key))  # legacy keys use the int id
         
         from astrocook.core.structures import ParameterConstraintV2
         
@@ -734,7 +735,7 @@ class SystemListV2:
         
         return SystemListV2(new_data)
 
-    def delete_component(self, uuid: str = None, uuids: list = None) -> 'SystemListV2':
+    def delete_component(self, uuid: Optional[str] = None, uuids: Optional[list] = None) -> 'SystemListV2':
         """
         Remove component(s) and clean up constraints linking to them.
 
@@ -805,7 +806,7 @@ class SystemListV2:
                                        v2_constraints_map=current_v2_map)
         return SystemListV2(new_data)
 
-    def get_connected_group(self, seed_uuids: List[str], max_depth: int = 2,
+    def get_connected_group(self, seed_uuids: Collection[str], max_depth: int = 2,
                             spec: Optional['SpectrumV2'] = None) -> Set[str]:
         """
         Find a set of components that must be fitted together.
@@ -1029,7 +1030,7 @@ class SystemListV2:
 
         for c in other.components:
             # Prepare the arguments we want to change
-            changes = {'id': next_id}
+            changes: Dict[str, Any] = {'id': next_id}
             
             if not copy_uuids:
                 changes['uuid'] = str(uuid.uuid4())
@@ -1160,7 +1161,7 @@ class SystemListV2:
         logger.debug(f"Optimizing the components of {series_name}.")
         best_aic, best_systs = fit_and_evaluate(current_systs, [uuid_seed])
         logger.info(f"AIC of the starting model: {best_aic:.1f}.")
-        tried = []
+        tried: List[Any] = []
         stopped = f"the {max_components} components allowed were tried"
         if trace is not None:
             trace.update(start_aic=float(best_aic), tried=tried)

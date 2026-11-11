@@ -510,7 +510,7 @@ class HistoryLogV2:
             :class:`LogNoteV2`, and False if it is undone.
         """
         last = len(self.entries) if include_undone else self.current_index + 1
-        items = []
+        items: List[Tuple[Any, bool]] = []
         for i in range(last + 1):
             items += [(n, n.after <= self.current_index + 1) for n in self.notes_at(i)]
             if i < last:
