@@ -279,7 +279,7 @@ class MainRecipesMixin(HostBase):
                 # to overwrite otherwise (F106)
                 saved = self.active_history.current_state.file.export_ascii(
                     targets=raw_targets,
-                    path=folder,
+                    folder=folder,
                     prefix=filename_prefix,
                     overwrite=True
                 )

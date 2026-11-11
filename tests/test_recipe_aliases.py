@@ -107,10 +107,15 @@ def test_the_old_and_the_new_name_together_are_refused(params):
         spec.canonical(params)
 
 
-def test_no_recipe_of_the_package_is_renamed_yet():
-    # When one is, this test goes, and the alias is in the table of the
-    # renamed parameters of ROADMAP.md
-    assert [(s.name, p.name) for s in all_recipes() for p in s.params if p.aliases] == []
+#: The parameters of the package renamed, as in the table of the renamed
+#: parameters of ROADMAP.md: (recipe, new name) -> old names
+RENAMED = {("export_ascii", "folder"): ("path",)}  # phase 6-quater, PR 7
+
+
+def test_the_renamed_parameters_of_the_package():
+    # A renaming adds its row here and in the table of ROADMAP.md
+    assert {(s.name, p.name): p.aliases for s in all_recipes() for p in s.params
+            if p.aliases} == RENAMED
 
 
 def test_the_fixture_renames_one_parameter(renamed_parameter):

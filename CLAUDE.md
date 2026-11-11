@@ -205,8 +205,9 @@ image) is closed and released as 2.6.0: see "Result of the phase" in
 `ROADMAP.md`. In progress: 6-quater (review of the recipe parameters,
 recipe by recipe; done so far: ruff `B`, the aliases of renamed
 parameters, the type checker (mypy on the whole package), `Session` out of
-`core/` and the `V2` suffixes dropped from the class names; next, the
-reviews of the recipes (PRs 7-10); its plan, with the model and the
+`core/`, the `V2` suffixes dropped from the class names and the review of
+file and flux (PR 7; the first renamed parameter, `folder` of
+`export_ascii`); next, the reviews of the other recipes (PRs 8-10); its plan, with the model and the
 estimate of each PR, in `ROADMAP.md`), then
 phase 7 (robust
 components, measured on the benchmark of phase 4; the real analysis of the
