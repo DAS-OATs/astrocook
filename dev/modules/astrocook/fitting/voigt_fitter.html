@@ -29,7 +29,7 @@
 <link href="../../../static/styles/pydata-sphinx-theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../static/pygments.css?v=8f2a1f02" />
-    <link rel="stylesheet" type="text/css" href="../../../static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../static/sphinx-design.min.css?v=6a604523" />
     <link rel="stylesheet" type="text/css" href="../../../static/css/custom.css?v=e8a3a7b7" />
   
   <!-- So that users can add custom icons -->
@@ -41,7 +41,7 @@
     <script src="../../../static/documentation_options.js?v=3ce10a4d"></script>
     <script src="../../../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../static/sphinx_highlight.js?v=6ffebe34"></script>
-    <script src="../../../static/design-tabs.js?v=f930bc37"></script>
+    <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../../../static/design-tabs.js?v=fcb327ea"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'modules/astrocook/fitting/voigt_fitter';</script>
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
@@ -872,7 +872,7 @@
                           <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="o">.</span><span class="n">map_p_free_to_full</span><span class="p">(</span><span class="n">p_minus</span><span class="p">)[</span><span class="n">linked</span><span class="p">])</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">h</span><span class="p">)</span>
         <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s1">'ignore'</span><span class="p">):</span>
             <span class="n">errors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">'ij,jk,ik-&gt;i'</span><span class="p">,</span> <span class="n">grad</span><span class="p">,</span> <span class="n">cov</span><span class="p">,</span> <span class="n">grad</span><span class="p">))</span>
-        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">linked</span><span class="p">,</span> <span class="n">errors</span><span class="p">))</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">linked</span><span class="p">,</span> <span class="n">errors</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
 
 <div class="viewcode-block" id="VoigtFitterV2.evaluate_uncertainties">
 <a class="viewcode-back" href="../../../api/astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitterV2.evaluate_uncertainties">[docs]</a>
@@ -1480,7 +1480,7 @@
             <span class="n">is_spectator</span> <span class="o">=</span> <span class="p">(</span><span class="n">active_uuids</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">old_comp</span><span class="o">.</span><span class="n">uuid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">active_uuids</span><span class="p">)</span>
             
             <span class="c1"># Helper to assign error</span>
-            <span class="k">def</span><span class="w"> </span><span class="nf">resolve_error</span><span class="p">(</span><span class="n">param_idx</span><span class="p">,</span> <span class="n">old_err</span><span class="p">):</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">resolve_error</span><span class="p">(</span><span class="n">param_idx</span><span class="p">,</span> <span class="n">old_err</span><span class="p">,</span> <span class="n">is_spectator</span><span class="o">=</span><span class="n">is_spectator</span><span class="p">):</span>
                 <span class="k">if</span> <span class="n">is_free_mask</span><span class="p">[</span><span class="n">param_idx</span><span class="p">]:</span>
                     <span class="k">return</span> <span class="n">p_full_errors</span><span class="p">[</span><span class="n">param_idx</span><span class="p">]</span> <span class="c1"># New calculated error</span>
                 <span class="k">elif</span> <span class="n">is_spectator</span><span class="p">:</span>
@@ -1532,7 +1532,7 @@
             
         <span class="c1"># Report the components whose uncertainties could not be computed</span>
         <span class="c1"># (findings register F20): the errors stay NaN, which the tables show</span>
-        <span class="n">nan_errors</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span><span class="p">,</span> <span class="n">old</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">new_components</span><span class="p">,</span> <span class="n">old_components</span><span class="p">)</span>
+        <span class="n">nan_errors</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span><span class="p">,</span> <span class="n">old</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">new_components</span><span class="p">,</span> <span class="n">old_components</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                       <span class="k">if</span> <span class="p">(</span><span class="n">active_uuids</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">old</span><span class="o">.</span><span class="n">uuid</span> <span class="ow">in</span> <span class="n">active_uuids</span><span class="p">)</span>
                       <span class="ow">and</span> <span class="nb">any</span><span class="p">(</span><span class="n">e</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
                               <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">dz</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">dlogN</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">db</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">dbtur</span><span class="p">))]</span>

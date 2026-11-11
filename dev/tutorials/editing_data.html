@@ -30,7 +30,7 @@
 <link href="../static/styles/pydata-sphinx-theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../static/pygments.css?v=8f2a1f02" />
-    <link rel="stylesheet" type="text/css" href="../static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../static/sphinx-design.min.css?v=6a604523" />
     <link rel="stylesheet" type="text/css" href="../static/css/custom.css?v=e8a3a7b7" />
   
   <!-- So that users can add custom icons -->
@@ -42,7 +42,7 @@
     <script src="../static/documentation_options.js?v=3ce10a4d"></script>
     <script src="../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../static/sphinx_highlight.js?v=6ffebe34"></script>
-    <script src="../static/design-tabs.js?v=f930bc37"></script>
+    <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../static/design-tabs.js?v=fcb327ea"></script>
     <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/editing_data';</script>
@@ -514,8 +514,8 @@
 <li><p><strong>Redo</strong>: Press <code class="docutils literal notranslate"><span class="pre">Ctrl+Y</span></code> (or <code class="docutils literal notranslate"><span class="pre">Cmd+Shift+Z</span></code>) or select <strong>Edit &gt; Redo</strong>.</p></li>
 </ul>
 </section>
-<section id="setting-session-properties">
-<span id="editing-properties"></span><h2>2. Setting Session Properties<a class="headerlink" href="#setting-session-properties" title="Link to this heading">#</a></h2>
+<section id="editing-properties">
+<span id="setting-session-properties"></span><h2>2. Setting Session Properties<a class="headerlink" href="#editing-properties" title="Link to this heading">#</a></h2>
 <p>Before running complex algorithms, ensure your session metadata is correct. Many Astrocook recipes (like the Ly-<span class="math notranslate nohighlight">\(\alpha\)</span> forest analysis) rely on the emission redshift (<span class="math notranslate nohighlight">\(z_\mathrm{em}\)</span>) to determine rest-frame wavelengths.</p>
 <ol class="arabic">
 <li><p>Select your session in the <strong>Session List</strong> (left sidebar).</p></li>
@@ -532,8 +532,8 @@
 </ol>
 <img alt="The Set Properties dialog" class="align-center" src="../images/editing_set_properties.png" />
 </section>
-<section id="arithmetic-on-columns">
-<span id="editing-arithmetic"></span><h2>3. Arithmetic on Columns<a class="headerlink" href="#arithmetic-on-columns" title="Link to this heading">#</a></h2>
+<section id="editing-arithmetic">
+<span id="arithmetic-on-columns"></span><h2>3. Arithmetic on Columns<a class="headerlink" href="#editing-arithmetic" title="Link to this heading">#</a></h2>
 <p>Astrocook allows you to perform mathematical operations on <strong>any</strong> data column (Flux <code class="docutils literal notranslate"><span class="pre">F</span></code>, Error <code class="docutils literal notranslate"><span class="pre">dF</span></code>, Wavelength <code class="docutils literal notranslate"><span class="pre">λ</span></code>, etc.) using NumPy-style syntax.</p>
 <section id="general-arithmetic">
 <h3>General Arithmetic<a class="headerlink" href="#general-arithmetic" title="Link to this heading">#</a></h3>
@@ -745,8 +745,8 @@ If the stitched spectra <strong>overlap</strong>, the pixels of the overlap regi
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#history-management-undo-redo">1. History Management (Undo/Redo)</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#setting-session-properties">2. Setting Session Properties</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#arithmetic-on-columns">3. Arithmetic on Columns</a><ul class="nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#editing-properties">2. Setting Session Properties</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#editing-arithmetic">3. Arithmetic on Columns</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#general-arithmetic">General Arithmetic</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#creating-new-columns">Creating New Columns</a></li>
 </ul>
