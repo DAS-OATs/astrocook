@@ -170,8 +170,14 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
                          f"{session.saved_with_version or '2.0.3 or earlier'}.")
         if v2_metadata and v2_metadata.get('log_type') == 'v2':
             try:
-                session.log_manager = HistoryLogV2.from_dict(
-                    v2_metadata.get('log_history_json'))
+                log = HistoryLogV2.from_dict(v2_metadata.get('log_history_json'))
+                # The parameters renamed since the archive was saved, by
+                # their new names (phase 6-quater, PR 2); the archive is not
+                # changed
+                from astrocook.recipes.registry import canonical_params
+                for entry in log.entries:
+                    entry.params = canonical_params(entry.recipe_name, entry.params)
+                session.log_manager = log
             except (KeyError, TypeError, AttributeError, ValueError) as e:
                 logger.warning(f"Could not restore the session log ({e}): "
                                "the session is opened with an empty log.")

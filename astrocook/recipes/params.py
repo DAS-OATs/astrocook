@@ -160,11 +160,13 @@ def resolve_params(name: str, params: Mapping[str, Any]) -> Dict[str, Any]:
     passed, converted, and the defaults of the others, in the order of the
     registry; for the session log (#573, item 3). The parameters passed that
     the registry does not declare (e.g. ``alias_map``), and those of a name
-    that is not a recipe, are returned as passed."""
+    that is not a recipe, are returned as passed. A parameter passed by its
+    old name is returned by the new one (phase 6-quater, PR 2)."""
     from astrocook.recipes.registry import find_recipe
     spec = find_recipe(name)
     if spec is None:
         return dict(params)
+    params = spec.canonical(params)
     resolved = {}
     for p in spec.params:
         resolved[p.name] = convert(p, params[p.name]) if p.name in params else p.default
@@ -221,7 +223,9 @@ def typed_recipe(method: Callable) -> Callable:
     logged where it is caught (phase 6-bis, PR 3). Before the method runs,
     the prerequisites that the registry declares for it are filled, or
     their absence raised, as the policy of
-    :mod:`astrocook.recipes.prerequisites` says (PR 5).
+    :mod:`astrocook.recipes.prerequisites` says (PR 5). A parameter
+    passed by its old name (an alias in the registry) is passed to the
+    method by its new name (phase 6-quater, PR 2).
     """
     signature = inspect.signature(method)
 
@@ -237,7 +241,7 @@ def typed_recipe(method: Callable) -> Callable:
             steps.depth += 1
         depth = _DEPTH.set(_DEPTH.get() + 1)
         try:
-            bound = signature.bind(self, *args, **kwargs)
+            bound = signature.bind(self, *args, **spec.canonical(kwargs))
             passed = {k: v for k, v in bound.arguments.items() if k != 'self'}
             converted = convert_params(spec, passed)
             from astrocook.recipes.prerequisites import fill

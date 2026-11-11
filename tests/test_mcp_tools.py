@@ -208,6 +208,38 @@ def test_unknown_parameters_are_refused(mock_archive):
     assert all(p in message for p in params)
 
 
+def test_the_old_name_of_a_parameter_is_taken_not_shown(mock_archive, renamed_parameter,
+                                                        tmp_path):
+    # Phase 6-quater, PR 2: the schema has the new name only, the tool takes
+    # the old one too (silently), and the log records the new one
+    tool = list_tools(build_server())["flux_smooth"]
+    assert "sigma_kms" in tool.input_schema["properties"]
+    assert "sigma_old" not in tool.input_schema["properties"]
+    saved = tmp_path / "renamed.acs2"
+    _, old, both, unknown, _ = calls(
+        build_server(),
+        ("session_open", {"path": str(mock_archive)}),
+        ("flux_smooth", {"session_id": "mock", "sigma_old": 40}),
+        ("flux_smooth", {"session_id": "mock", "sigma_old": 40, "sigma_kms": 40}),
+        ("flux_smooth", {"session_id": "mock", "fwhm": 3}),
+        ("session_save", {"session_id": "mock", "path": str(saved)}))
+    assert not old.is_error and old.structured_content["recipe"] == "flux.smooth"
+    assert "sigma_old is the old name of sigma_kms: give only one" in error_text(both)
+    message = error_text(unknown)
+    assert "Unknown parameters for flux_smooth: fwhm" in message
+    assert "sigma_kms" in message and "sigma_old" not in message
+    (entry,) = load_session_from_file(str(saved), "r", None, "auto").log_manager.entries
+    assert entry.params == {"sigma_kms": 40.0}
+
+
+def test_an_alias_cannot_be_a_parameter_of_the_server(monkeypatch):
+    from astrocook.mcp_server.tools import input_schema
+    spec = build_spec("flux", "r", {"brief": "R.", "params": [
+        {"name": "width", "type": float, "default": 1.0, "aliases": ["reason"]}]})
+    with pytest.raises(ValueError, match="named as those of the server"):
+        input_schema(spec)
+
+
 def test_a_value_out_of_bounds_is_refused_with_the_message_of_the_recipe(mock_archive):
     _, result = calls(build_server(),
                       ("session_open", {"path": str(mock_archive)}),

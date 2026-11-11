@@ -322,6 +322,17 @@ without a change of the numerical results except where Guido decided it
   `raise`), the GUI asks for the continuum as for z_em and the resolution,
   the MCP server says what is missing; a step provided is a state and a
   log entry of its own.
+- Renamed parameters (phase 6-quater, PR 2): a parameter renamed keeps its
+  old names as `aliases` in the registry, silent and permanent; the logs of
+  the archives, the scripts and the MCP tools that use an old name still
+  run; the log, the methods text, the Log Scripter, the dialogs and the
+  schemas show the new name only; the old and the new name together are an
+  error. A renaming adds the old name to `aliases` and a row to the table
+  below (and removes `test_no_recipe_of_the_package_is_renamed_yet`).
+
+  | Recipe | Old name | New name | PR |
+  |---|---|---|---|
+  | (none yet) | | | |
 
 - *Prerequisites of the recipes* (proposed in phase 6, PR 5c, after an
   analysis asked by Guido, November 2026; to be refined with him before
@@ -1304,15 +1315,56 @@ its own, except the smallest; the model of each PR proposed by the rule
   calendar, the bottleneck being one PR at a time and Guido's review of
   the tables of PRs 7-10.
 - *Open decisions*, to be taken in the PR concerned:
-  - an old name (parameter or class): a silent alias, or a
+  - ~~an old name (parameter or class): a silent alias, or a
     `DeprecationWarning` with a version of removal (the tests treat
-    warnings as errors) (PR 2);
+    warnings as errors) (PR 2)~~: decided in PR 2 (Guido, 11 November
+    2026), below;
   - `refit_all` and `clean_negligible`: in the manual fits (PR 10) or in
     phase 7, which rewrites `refit_all`;
   - F101 (the `app.run_recipe` of the script console fails with a
     TypeError): in PR 10, or with the decision on the console;
   - PRs 3-6 before the reviews (the order proposed), or the renaming
     last, so that the reviews do not meet a change of every file.
+- *Decisions of PR 2* (old names; proposed in the conversation of PR 2,
+  agreed with Guido, 11 November 2026):
+  - *A renamed parameter*: its old names are `aliases` of the parameter in
+    the registry (a key of the parameter, `ParamSpec.aliases`). An alias is
+    **silent and permanent**: no warning, no version of removal, because the
+    archives are nodes not changed once saved (F109) and their logs must
+    replay; an alias costs one line. A DEBUG line says the translation.
+  - *One translation*, `RecipeSpec.canonical` (the old names replaced by
+    the new one, in their place), called where the parameters enter a
+    recipe (`typed_recipe`, before the signature is bound: scripts, Run
+    All, the GUI, the MCP tools), where the log records them
+    (`resolve_params`: every log written has the new names), by the MCP
+    server before it refuses the unknown parameters (an old name taken,
+    never listed), and when the log of an archive is read
+    (`canonical_params`, in `load_session_from_file`): the methods text, the
+    Log Scripter and the log of the MCP server show the new names; the
+    archive on disk is not changed (and is never saved again, F109). The
+    dialogs and the schemas of the tools are built from the parameters,
+    and show the new name only.
+  - *The old and the new name together*: `InvalidParameter`, even with the
+    same value; in the log of an archive (only a log written by hand) the
+    entry is kept as read, and the replay says what is wrong.
+  - *Checks*: `build_spec` refuses an alias that is the name or the alias
+    of another parameter; the tests check that no alias is in the
+    signature of the method nor a parameter of the server. The tests rename
+    `sigma_kms` of `flux.smooth` from `sigma_old` (fixture
+    `renamed_parameter`, `tests/conftest.py`), no recipe of the package:
+    the script, Run All, the archive, the methods text, the Log Scripter,
+    the dialog and the MCP tool (`tests/test_recipe_aliases.py`,
+    `test_gui_smoke.py`, `test_mcp_tools.py`).
+  - *The classes without `V2` (PR 6)*: the same principle in a parallel
+    form, since the classes are not in the registry: a mapping old name →
+    new name declared in the module that exported the old name, read by a
+    module `__getattr__` (PEP 562) made by one small helper (e.g.
+    `astrocook/_renamed.py`, `__getattr__ = renamed(__name__, {"SpectrumV2":
+    "Spectrum"})`), which gives the same class (`isinstance` unchanged) with
+    a **`DeprecationWarning`** (Guido): the old names are used by the
+    scripts only, never by the archives (to be checked in PR 6); no version
+    of removal fixed (3.0 at the earliest). The tests use the new names, one
+    test checks each alias with `pytest.warns`. Not written in PR 2.
 
 ### Phase 7 – Robust components: emission model and identification
 Agreed with Guido at the start of the MCP pilot (October 2026). The goal of section 5, a complete fit of a spectrum in a single
@@ -1944,5 +1996,5 @@ One line per concluded phase; the long rows are in `ROADMAP_HISTORY.md`, "7. Pro
 | 6 – Error handling | done (November 2026), PRs #691-#701; release 2.4.0 |
 | 6-bis – Recipe API | done (November 2026), PRs #705-#723; release 2.5.0 |
 | 6-ter – Full MCP server | done (November 2026), PRs #726-#747 and the closing PR 8; release 2.6.0 published on GitHub on 10 November 2026 (PR 9, #751: version, CHANGELOG, `switcher.json`); plan of the phase agreed (PR 0, #726); the tools generated from the registry, F106 found (PR 1, #729); F106 fixed (PR 1-bis, #730); the tools of the sessions, undo and redo (PR 2, #731); the tools of inspection (PR 3, #732); progress notifications (PR 4, #733); the agent's decisions in the log (PR 5a); the gaps of the recipes (PR 5b); the log as the text of a methods section (PR 5c); the GUI following a session of the server, F109 found (PR 5-bis); the headless Docker image, F110 found (PR 6, not published); trials with fresh agents, F111-F116 found (PR 7, report in section 4.3); heartbeat and reads during a recipe, F113 in part (PR 7-bis); trial 3, the editing tools, F117-F120 found (PR 7); the outputs of trial 3 (PR 7-ter); F111 and the cancellation, F113 closed, F121 found (PR 7-quater) |
-| 6-quater – Review of the recipe parameters | in progress (November 2026): plan of the phase agreed (in PR 1, ruff `B`) |
+| 6-quater – Review of the recipe parameters | in progress (November 2026): plan of the phase agreed (in PR 1, ruff `B`); PR 2, the aliases of the renamed parameters |
 | 7 – Robust components | not started |
