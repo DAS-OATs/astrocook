@@ -474,7 +474,7 @@
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Collection</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">.voigt_fitter</span><span class="w"> </span><span class="kn">import</span> <span class="n">VoigtFitterV2</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.voigt_fitter</span><span class="w"> </span><span class="kn">import</span> <span class="n">VoigtFitter</span>
 
 <span class="k">try</span><span class="p">:</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">emcee</span>
@@ -517,15 +517,15 @@
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Bayesian engine for Voigt profile fitting.</span>
 <span class="sd">    </span>
-<span class="sd">    This class wraps a :class:`~astrocook.fitting.voigt_fitter.VoigtFitterV2`</span>
+<span class="sd">    This class wraps a :class:`~astrocook.fitting.voigt_fitter.VoigtFitter`</span>
 <span class="sd">    instance to perform Markov Chain Monte Carlo (MCMC) or Nested Sampling</span>
 <span class="sd">    using the exact same physical model, constraints, and data preparation.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    spec : SpectrumV2</span>
+<span class="sd">    spec : Spectrum</span>
 <span class="sd">        The spectral data to fit.</span>
-<span class="sd">    systs : SystemListV2</span>
+<span class="sd">    systs : SystemList</span>
 <span class="sd">        The system list containing the components to model.</span>
 <span class="sd">    z_window_kms : float, optional</span>
 <span class="sd">        Velocity window (km/s) around component centers to include in the fit mask.</span>
@@ -538,8 +538,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">systs</span> <span class="o">=</span> <span class="n">systs</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">z_window_kms</span> <span class="o">=</span> <span class="n">z_window_kms</span>
         
-        <span class="c1"># We need a VoigtFitterV2 instance to handle the model and constraints</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">fitter</span> <span class="o">=</span> <span class="n">VoigtFitterV2</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">systs</span><span class="p">)</span>
+        <span class="c1"># We need a VoigtFitter instance to handle the model and constraints</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fitter</span> <span class="o">=</span> <span class="n">VoigtFitter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">systs</span><span class="p">)</span>
         
         <span class="c1"># Prepare the data context from the standard fitter</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lower_bounds</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">upper_bounds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fitter</span><span class="o">.</span><span class="n">prepare_fit_context</span><span class="p">(</span><span class="n">z_window_kms</span><span class="o">=</span><span class="n">z_window_kms</span><span class="p">)</span>
@@ -576,7 +576,7 @@
             <span class="n">resid</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="p">[</span><span class="s1">'y'</span><span class="p">][</span><span class="n">mask</span><span class="p">]</span> <span class="o">-</span> <span class="n">model</span><span class="p">[</span><span class="n">mask</span><span class="p">])</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="p">[</span><span class="s1">'dy'</span><span class="p">][</span><span class="n">mask</span><span class="p">]</span>
             
             <span class="c1"># Additional penalty terms from Frequentist fitter (e.g. b-parameter runaway)</span>
-            <span class="c1"># To match the logic of VoigtFitterV2._residual_function</span>
+            <span class="c1"># To match the logic of VoigtFitter._residual_function</span>
             <span class="n">p_full</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fitter</span><span class="o">.</span><span class="n">_constraints</span><span class="o">.</span><span class="n">map_p_free_to_full</span><span class="p">(</span><span class="n">p_free</span><span class="p">)</span>
             <span class="n">is_free_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fitter</span><span class="o">.</span><span class="n">_constraints</span><span class="o">.</span><span class="n">_param_map</span><span class="p">[</span><span class="s1">'is_free'</span><span class="p">]</span>
             <span class="n">num_params</span> <span class="o">=</span> <span class="mi">4</span>
@@ -830,7 +830,7 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        SystemListV2</span>
+<span class="sd">        SystemList</span>
 <span class="sd">            A new system list containing the updated parameters and Bayesian errors.</span>
 <span class="sd">        """</span>
         <span class="n">medians</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="s1">'medians'</span><span class="p">]</span> <span class="k">if</span> <span class="s1">'medians'</span> <span class="ow">in</span> <span class="n">res</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">res</span><span class="p">[</span><span class="s1">'samples'</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>

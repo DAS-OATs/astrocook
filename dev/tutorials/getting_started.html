@@ -714,7 +714,7 @@ A dialog will appear allowing you to select exactly what to export:</p>
 <li><p><strong>Spectrum (spec)</strong>: Saves the Wavelength (<span class="math notranslate nohighlight">\(x\)</span>), Flux (<span class="math notranslate nohighlight">\(y\)</span>), Error (<span class="math notranslate nohighlight">\(dy\)</span>), Continuum (<span class="math notranslate nohighlight">\(cont\)</span>), and any other active spectral columns into a <code class="docutils literal notranslate"><span class="pre">_spec.csv</span></code> file.</p></li>
 <li><p><strong>System List (systems)</strong>: Saves your identified absorption lines (including Redshift, Column Density, Doppler Parameter, etc.) into a <code class="docutils literal notranslate"><span class="pre">_systems.csv</span></code> file.</p></li>
 </ul>
-<p>You can choose to export entire structures or pick individual columns. The suggested filename will automatically adjust based on your selection, and Astrocook will warn you if you are about to overwrite existing files.</p>
+<p>You can choose to export entire structures or pick individual columns. The suggested filename will automatically adjust based on your selection, and Astrocook will warn you if you are about to overwrite existing files. An item that is neither a column nor <code class="docutils literal notranslate"><span class="pre">spec</span></code> or <code class="docutils literal notranslate"><span class="pre">systems</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">cont</span></code> before a continuum is estimated) is skipped, and a warning in the log names it.</p>
 </section>
 <section id="export-log-as-text">
 <h3>Export Log as Text<a class="headerlink" href="#export-log-as-text" title="Link to this heading">#</a></h3>
@@ -739,7 +739,7 @@ so for those steps.</p>
 <h3>Import from ASCII<a class="headerlink" href="#import-from-ascii" title="Link to this heading">#</a></h3>
 <p>If you have manipulated your exported <code class="docutils literal notranslate"><span class="pre">_spec.csv</span></code> data externally, you can bring it back into Astrocook by going to <strong>File &gt; Import from ASCII…</strong>.</p>
 <ul class="simple">
-<li><p>Astrocook will match the column headers in your CSV to the columns in the active session and overwrite them.</p></li>
+<li><p>Astrocook will match the column headers in your CSV to the columns in the active session and overwrite them. A column <code class="docutils literal notranslate"><span class="pre">x</span></code> is not read: the grid of the spectrum is kept.</p></li>
 <li><p><strong>Safety first:</strong> The imported file must have the exact same number of rows (pixels) as your current spectrum. Because this operates through the recipe pipeline, the import is fully undoable via the Log Scripter or <code class="docutils literal notranslate"><span class="pre">Ctrl+Z</span></code> (<code class="docutils literal notranslate"><span class="pre">Cmd+Z</span></code>).</p></li>
 </ul>
 </section>

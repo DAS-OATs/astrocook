@@ -491,7 +491,7 @@
 <span id="astrocook-session-session-module"></span><h1>astrocook.session.session module<a class="headerlink" href="#module-astrocook.session.session" title="Link to this heading">#</a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="astrocook.session.session.load_session_from_file">
-<span class="sig-prename descclassname"><span class="pre">astrocook.session.session.</span></span><span class="sig-name descname"><span class="pre">load_session_from_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">archive_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gui_context</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.session.session.SessionV2" title="astrocook.session.session.SessionV2"><span class="pre">SessionV2</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span></span></span><a class="reference internal" href="../modules/astrocook/session/session.html#load_session_from_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.session.session.load_session_from_file" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">astrocook.session.session.</span></span><span class="sig-name descname"><span class="pre">load_session_from_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">archive_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gui_context</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.session.session.Session" title="astrocook.session.session.Session"><span class="pre">Session</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span></span></span><a class="reference internal" href="../modules/astrocook/session/session.html#load_session_from_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.session.session.load_session_from_file" title="Link to this definition">#</a></dt>
 <dd><p>Orchestrate the loading of a session from a file or archive.</p>
 <p>This function handles various input formats, including legacy Astrocook V1 archives (<code class="docutils literal notranslate"><span class="pre">.acs</span></code>),
 modern V2 archives (<code class="docutils literal notranslate"><span class="pre">.acs2</span></code>), and raw FITS files. It automatically handles
@@ -508,11 +508,11 @@ used to select the appropriate loader for raw files. Use <code class="docutils l
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The loaded <a class="reference internal" href="#astrocook.session.session.SessionV2" title="astrocook.session.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> object if successful.
+<dd class="field-even"><p>The loaded <a class="reference internal" href="#astrocook.session.session.Session" title="astrocook.session.session.Session"><code class="xref py py-class docutils literal notranslate"><span class="pre">Session</span></code></a> object if successful.
 Returns <code class="docutils literal notranslate"><span class="pre">0</span></code> (integer) if the loading process failed.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#astrocook.session.session.SessionV2" title="astrocook.session.session.SessionV2">SessionV2</a> or int</p>
+<dd class="field-odd"><p><a class="reference internal" href="#astrocook.session.session.Session" title="astrocook.session.session.Session">Session</a> or int</p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
@@ -524,8 +524,8 @@ Returns <code class="docutils literal notranslate"><span class="pre">0</span></c
 </dd></dl>
 
 <dl class="py class">
-<dt class="sig sig-object py" id="astrocook.session.session.SessionV2">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">astrocook.session.session.</span></span><span class="sig-name descname"><span class="pre">SessionV2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gui</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">systs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><span class="pre">SystemListV2</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/session/session.html#SessionV2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.session.session.SessionV2" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="astrocook.session.session.Session">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">astrocook.session.session.</span></span><span class="sig-name descname"><span class="pre">Session</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gui</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.Spectrum" title="astrocook.core.spectrum.Spectrum"><span class="pre">Spectrum</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">systs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemList" title="astrocook.core.system_list.SystemList"><span class="pre">SystemList</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/session/session.html#Session"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.session.session.Session" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>The central coordinator for an Astrocook analysis session.</p>
 <p>This class encapsulates the state of a single spectrum and its associated
@@ -533,15 +533,15 @@ models (systems, components). It serves as the primary entry point for
 high-level analysis workflows (“Recipes”).</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p><strong>Immutability Pattern</strong>: In Astrocook V2, the <code class="docutils literal notranslate"><span class="pre">SessionV2</span></code> object is designed
+<p><strong>Immutability Pattern</strong>: In Astrocook V2, the <code class="docutils literal notranslate"><span class="pre">Session</span></code> object is designed
 to be treated as immutable within the undo/redo history stack. Operations that
 modify data (like smoothing flux or fitting a continuum) do not modify the object
-in-place; instead, they return a <em>new</em> <code class="docutils literal notranslate"><span class="pre">SessionV2</span></code> instance containing the
+in-place; instead, they return a <em>new</em> <code class="docutils literal notranslate"><span class="pre">Session</span></code> instance containing the
 updated data structures.</p>
 </div>
 <dl class="py attribute">
-<dt class="sig sig-object py" id="astrocook.session.session.SessionV2.name">
-<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#astrocook.session.session.SessionV2.name" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="astrocook.session.session.Session.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#astrocook.session.session.Session.name" title="Link to this definition">#</a></dt>
 <dd><p>The display name of the session (e.g., filename without extension).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -551,8 +551,8 @@ updated data structures.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="astrocook.session.session.SessionV2.saved_with_version">
-<span class="sig-name descname"><span class="pre">saved_with_version</span></span><a class="headerlink" href="#astrocook.session.session.SessionV2.saved_with_version" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="astrocook.session.session.Session.saved_with_version">
+<span class="sig-name descname"><span class="pre">saved_with_version</span></span><a class="headerlink" href="#astrocook.session.session.Session.saved_with_version" title="Link to this definition">#</a></dt>
 <dd><p>The version of Astrocook that saved the <code class="docutils literal notranslate"><span class="pre">.acs2</span></code> archive this session
 was opened from; <code class="docutils literal notranslate"><span class="pre">None</span></code> if it was not opened from an <code class="docutils literal notranslate"><span class="pre">.acs2</span></code>
 archive, or if the archive does not record it (versions up to 2.0.3).</p>
@@ -564,91 +564,91 @@ archive, or if the archive does not record it (versions up to 2.0.3).</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="astrocook.session.session.SessionV2.systs">
-<span class="sig-name descname"><span class="pre">systs</span></span><a class="headerlink" href="#astrocook.session.session.SessionV2.systs" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="astrocook.session.session.Session.systs">
+<span class="sig-name descname"><span class="pre">systs</span></span><a class="headerlink" href="#astrocook.session.session.Session.systs" title="Link to this definition">#</a></dt>
 <dd><p>The container for identified absorption systems and Voigt profile components.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2">astrocook.core.system_list.SystemListV2</a>, <a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional">optional</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemList" title="astrocook.core.system_list.SystemList">astrocook.core.system_list.SystemList</a>, <a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional">optional</a></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="astrocook.session.session.SessionV2.file">
-<span class="sig-name descname"><span class="pre">file</span></span><a class="headerlink" href="#astrocook.session.session.SessionV2.file" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="astrocook.session.session.Session.file">
+<span class="sig-name descname"><span class="pre">file</span></span><a class="headerlink" href="#astrocook.session.session.Session.file" title="Link to this definition">#</a></dt>
 <dd><p>Access to file import/export recipes (e.g., <code class="docutils literal notranslate"><span class="pre">import_ascii</span></code>, <code class="docutils literal notranslate"><span class="pre">export_ascii</span></code>).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="astrocook.recipes.file.html#astrocook.recipes.file.RecipeFileV2" title="astrocook.recipes.file.RecipeFileV2">astrocook.recipes.file.RecipeFileV2</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.recipes.file.html#astrocook.recipes.file.RecipeFile" title="astrocook.recipes.file.RecipeFile">astrocook.recipes.file.RecipeFile</a></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="astrocook.session.session.SessionV2.edit">
-<span class="sig-name descname"><span class="pre">edit</span></span><a class="headerlink" href="#astrocook.session.session.SessionV2.edit" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="astrocook.session.session.Session.edit">
+<span class="sig-name descname"><span class="pre">edit</span></span><a class="headerlink" href="#astrocook.session.session.Session.edit" title="Link to this definition">#</a></dt>
 <dd><p>Access to editing recipes (e.g., <code class="docutils literal notranslate"><span class="pre">set_properties</span></code>, <code class="docutils literal notranslate"><span class="pre">convert_x_axis</span></code>).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="astrocook.recipes.edit.html#astrocook.recipes.edit.RecipeEditV2" title="astrocook.recipes.edit.RecipeEditV2">astrocook.recipes.edit.RecipeEditV2</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.recipes.edit.html#astrocook.recipes.edit.RecipeEdit" title="astrocook.recipes.edit.RecipeEdit">astrocook.recipes.edit.RecipeEdit</a></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="astrocook.session.session.SessionV2.flux">
-<span class="sig-name descname"><span class="pre">flux</span></span><a class="headerlink" href="#astrocook.session.session.SessionV2.flux" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="astrocook.session.session.Session.flux">
+<span class="sig-name descname"><span class="pre">flux</span></span><a class="headerlink" href="#astrocook.session.session.Session.flux" title="Link to this definition">#</a></dt>
 <dd><p>Access to flux manipulation recipes (e.g., <code class="docutils literal notranslate"><span class="pre">smooth</span></code>, <code class="docutils literal notranslate"><span class="pre">rebin</span></code>).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFluxV2" title="astrocook.recipes.flux.RecipeFluxV2">astrocook.recipes.flux.RecipeFluxV2</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFlux" title="astrocook.recipes.flux.RecipeFlux">astrocook.recipes.flux.RecipeFlux</a></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="astrocook.session.session.SessionV2.continuum">
-<span class="sig-name descname"><span class="pre">continuum</span></span><a class="headerlink" href="#astrocook.session.session.SessionV2.continuum" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="astrocook.session.session.Session.continuum">
+<span class="sig-name descname"><span class="pre">continuum</span></span><a class="headerlink" href="#astrocook.session.session.Session.continuum" title="Link to this definition">#</a></dt>
 <dd><p>Access to continuum estimation and fitting recipes.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="astrocook.recipes.continuum.html#astrocook.recipes.continuum.RecipeContinuumV2" title="astrocook.recipes.continuum.RecipeContinuumV2">astrocook.recipes.continuum.RecipeContinuumV2</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.recipes.continuum.html#astrocook.recipes.continuum.RecipeContinuum" title="astrocook.recipes.continuum.RecipeContinuum">astrocook.recipes.continuum.RecipeContinuum</a></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="astrocook.session.session.SessionV2.absorbers">
-<span class="sig-name descname"><span class="pre">absorbers</span></span><a class="headerlink" href="#astrocook.session.session.SessionV2.absorbers" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="astrocook.session.session.Session.absorbers">
+<span class="sig-name descname"><span class="pre">absorbers</span></span><a class="headerlink" href="#astrocook.session.session.Session.absorbers" title="Link to this definition">#</a></dt>
 <dd><p>Access to line identification and fitting recipes.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbersV2" title="astrocook.recipes.absorbers.RecipeAbsorbersV2">astrocook.recipes.absorbers.RecipeAbsorbersV2</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbers" title="astrocook.recipes.absorbers.RecipeAbsorbers">astrocook.recipes.absorbers.RecipeAbsorbers</a></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="astrocook.session.session.SessionV2.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gui</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">systs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><span class="pre">SystemListV2</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/session/session.html#SessionV2.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.session.session.SessionV2.__init__" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="astrocook.session.session.Session.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gui</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.Spectrum" title="astrocook.core.spectrum.Spectrum"><span class="pre">Spectrum</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">systs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemList" title="astrocook.core.system_list.SystemList"><span class="pre">SystemList</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/session/session.html#Session.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.session.session.Session.__init__" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="astrocook.session.session.SessionV2.spec">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">spec</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#astrocook.session.session.SessionV2.spec" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="astrocook.session.session.Session.spec">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">spec</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.Spectrum" title="astrocook.core.spectrum.Spectrum"><span class="pre">Spectrum</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#astrocook.session.session.Session.spec" title="Link to this definition">#</a></dt>
 <dd><p>The main container for spectral data (flux, wavelength, error, etc.).</p>
 </dd></dl>
 
 <dl class="py property">
-<dt class="sig sig-object py" id="astrocook.session.session.SessionV2.lines">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">lines</span></span><a class="headerlink" href="#astrocook.session.session.SessionV2.lines" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="astrocook.session.session.Session.lines">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">lines</span></span><a class="headerlink" href="#astrocook.session.session.Session.lines" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="astrocook.session.session.SessionV2.open_new">
-<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">open_new</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gui_context</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.session.session.SessionV2" title="astrocook.session.session.SessionV2"><span class="pre">SessionV2</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span></span></span><a class="reference internal" href="../modules/astrocook/session/session.html#SessionV2.open_new"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.session.session.SessionV2.open_new" title="Link to this definition">#</a></dt>
-<dd><p>Factory method: Create a new SessionV2 by loading data from a file.</p>
+<dt class="sig sig-object py" id="astrocook.session.session.Session.open_new">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">open_new</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gui_context</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.session.session.Session" title="astrocook.session.session.Session"><span class="pre">Session</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span></span></span><a class="reference internal" href="../modules/astrocook/session/session.html#Session.open_new"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.session.session.Session.open_new" title="Link to this definition">#</a></dt>
+<dd><p>Factory method: Create a new Session by loading data from a file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -659,54 +659,54 @@ archive, or if the archive does not record it (versions up to 2.0.3).</p>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A new SessionV2 instance, or 0 on failure.</p>
+<dd class="field-even"><p>A new Session instance, or 0 on failure.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#astrocook.session.session.SessionV2" title="astrocook.session.session.SessionV2">SessionV2</a> or int</p>
+<dd class="field-odd"><p><a class="reference internal" href="#astrocook.session.session.Session" title="astrocook.session.session.Session">Session</a> or int</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="astrocook.session.session.SessionV2.with_new_spectrum">
-<span class="sig-name descname"><span class="pre">with_new_spectrum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_spectrum</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><span class="pre">SpectrumV2</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.session.session.SessionV2" title="astrocook.session.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../modules/astrocook/session/session.html#SessionV2.with_new_spectrum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.session.session.SessionV2.with_new_spectrum" title="Link to this definition">#</a></dt>
-<dd><p>Return a new SessionV2 instance with an updated spectrum.</p>
+<dt class="sig sig-object py" id="astrocook.session.session.Session.with_new_spectrum">
+<span class="sig-name descname"><span class="pre">with_new_spectrum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_spectrum</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.Spectrum" title="astrocook.core.spectrum.Spectrum"><span class="pre">Spectrum</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.session.session.Session" title="astrocook.session.session.Session"><span class="pre">Session</span></a></span></span><a class="reference internal" href="../modules/astrocook/session/session.html#Session.with_new_spectrum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.session.session.Session.with_new_spectrum" title="Link to this definition">#</a></dt>
+<dd><p>Return a new Session instance with an updated spectrum.</p>
 <p>This is used by recipes that modify spectral data (e.g., smoothing,
 continuum fitting) to ensure history preservation.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>new_spectrum</strong> (<a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><em>SpectrumV2</em></a><em> or </em><em>None</em>) – The new spectral data object (<code class="docutils literal notranslate"><span class="pre">None</span></code>: a session without
+<dd class="field-odd"><p><strong>new_spectrum</strong> (<a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.Spectrum" title="astrocook.core.spectrum.Spectrum"><em>Spectrum</em></a><em> or </em><em>None</em>) – The new spectral data object (<code class="docutils literal notranslate"><span class="pre">None</span></code>: a session without
 spectrum is copied as it is).</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A shallow copy of the session pointing to the new spectrum.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#astrocook.session.session.SessionV2" title="astrocook.session.session.SessionV2">SessionV2</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="#astrocook.session.session.Session" title="astrocook.session.session.Session">Session</a></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="astrocook.session.session.SessionV2.with_new_system_list">
-<span class="sig-name descname"><span class="pre">with_new_system_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_systs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><span class="pre">SystemListV2</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.session.session.SessionV2" title="astrocook.session.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../modules/astrocook/session/session.html#SessionV2.with_new_system_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.session.session.SessionV2.with_new_system_list" title="Link to this definition">#</a></dt>
-<dd><p>Return a new SessionV2 instance with an updated system list.</p>
+<dt class="sig sig-object py" id="astrocook.session.session.Session.with_new_system_list">
+<span class="sig-name descname"><span class="pre">with_new_system_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_systs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemList" title="astrocook.core.system_list.SystemList"><span class="pre">SystemList</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.session.session.Session" title="astrocook.session.session.Session"><span class="pre">Session</span></a></span></span><a class="reference internal" href="../modules/astrocook/session/session.html#Session.with_new_system_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.session.session.Session.with_new_system_list" title="Link to this definition">#</a></dt>
+<dd><p>Return a new Session instance with an updated system list.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>new_systs</strong> (<a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><em>SystemListV2</em></a>) – The new system list object.</p>
+<dd class="field-odd"><p><strong>new_systs</strong> (<a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemList" title="astrocook.core.system_list.SystemList"><em>SystemList</em></a>) – The new system list object.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A shallow copy of the session pointing to the new system list.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#astrocook.session.session.SessionV2" title="astrocook.session.session.SessionV2">SessionV2</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="#astrocook.session.session.Session" title="astrocook.session.session.Session">Session</a></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="astrocook.session.session.SessionV2.save">
-<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#astrocook.session.session.SessionV2" title="astrocook.session.session.SessionV2"><span class="pre">SessionV2</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">models</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/session/session.html#SessionV2.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.session.session.SessionV2.save" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="astrocook.session.session.Session.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#astrocook.session.session.Session" title="astrocook.session.session.Session"><span class="pre">Session</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">models</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/session/session.html#Session.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.session.session.Session.save" title="Link to this definition">#</a></dt>
 <dd><p>Save the current session state to an <code class="docutils literal notranslate"><span class="pre">.acs2</span></code> archive.</p>
 <p>The archive contains the full session state, metadata, the session
 log and (if <code class="docutils literal notranslate"><span class="pre">initial_session</span></code> is provided) the original data.
@@ -717,7 +717,7 @@ them.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>file_path</strong> (<em>str</em>) – The destination path. <code class="docutils literal notranslate"><span class="pre">.acs2</span></code> is appended if missing.</p></li>
-<li><p><strong>initial_session</strong> (<a class="reference internal" href="#astrocook.session.session.SessionV2" title="astrocook.session.session.SessionV2"><em>SessionV2</em></a><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – The state of the session <em>before</em> any modifications, saved in the
+<li><p><strong>initial_session</strong> (<a class="reference internal" href="#astrocook.session.session.Session" title="astrocook.session.session.Session"><em>Session</em></a><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – The state of the session <em>before</em> any modifications, saved in the
 archive so that it contains the original raw data for
 reproducibility.</p></li>
 <li><p><strong>models</strong> (<em>bool</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Unused; kept for backward compatibility of the signature.</p></li>
@@ -769,22 +769,22 @@ reproducibility.</p></li>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.session.session.load_session_from_file"><code class="docutils literal notranslate"><span class="pre">load_session_from_file()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.session.session.SessionV2"><code class="docutils literal notranslate"><span class="pre">SessionV2</span></code></a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.session.session.SessionV2.name"><code class="docutils literal notranslate"><span class="pre">SessionV2.name</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.session.session.SessionV2.saved_with_version"><code class="docutils literal notranslate"><span class="pre">SessionV2.saved_with_version</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.session.session.SessionV2.systs"><code class="docutils literal notranslate"><span class="pre">SessionV2.systs</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.session.session.SessionV2.file"><code class="docutils literal notranslate"><span class="pre">SessionV2.file</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.session.session.SessionV2.edit"><code class="docutils literal notranslate"><span class="pre">SessionV2.edit</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.session.session.SessionV2.flux"><code class="docutils literal notranslate"><span class="pre">SessionV2.flux</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.session.session.SessionV2.continuum"><code class="docutils literal notranslate"><span class="pre">SessionV2.continuum</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.session.session.SessionV2.absorbers"><code class="docutils literal notranslate"><span class="pre">SessionV2.absorbers</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.session.session.SessionV2.__init__"><code class="docutils literal notranslate"><span class="pre">SessionV2.__init__()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.session.session.SessionV2.spec"><code class="docutils literal notranslate"><span class="pre">SessionV2.spec</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.session.session.SessionV2.lines"><code class="docutils literal notranslate"><span class="pre">SessionV2.lines</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.session.session.SessionV2.open_new"><code class="docutils literal notranslate"><span class="pre">SessionV2.open_new()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.session.session.SessionV2.with_new_spectrum"><code class="docutils literal notranslate"><span class="pre">SessionV2.with_new_spectrum()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.session.session.SessionV2.with_new_system_list"><code class="docutils literal notranslate"><span class="pre">SessionV2.with_new_system_list()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.session.session.SessionV2.save"><code class="docutils literal notranslate"><span class="pre">SessionV2.save()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.session.session.Session"><code class="docutils literal notranslate"><span class="pre">Session</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.session.session.Session.name"><code class="docutils literal notranslate"><span class="pre">Session.name</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.session.session.Session.saved_with_version"><code class="docutils literal notranslate"><span class="pre">Session.saved_with_version</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.session.session.Session.systs"><code class="docutils literal notranslate"><span class="pre">Session.systs</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.session.session.Session.file"><code class="docutils literal notranslate"><span class="pre">Session.file</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.session.session.Session.edit"><code class="docutils literal notranslate"><span class="pre">Session.edit</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.session.session.Session.flux"><code class="docutils literal notranslate"><span class="pre">Session.flux</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.session.session.Session.continuum"><code class="docutils literal notranslate"><span class="pre">Session.continuum</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.session.session.Session.absorbers"><code class="docutils literal notranslate"><span class="pre">Session.absorbers</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.session.session.Session.__init__"><code class="docutils literal notranslate"><span class="pre">Session.__init__()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.session.session.Session.spec"><code class="docutils literal notranslate"><span class="pre">Session.spec</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.session.session.Session.lines"><code class="docutils literal notranslate"><span class="pre">Session.lines</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.session.session.Session.open_new"><code class="docutils literal notranslate"><span class="pre">Session.open_new()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.session.session.Session.with_new_spectrum"><code class="docutils literal notranslate"><span class="pre">Session.with_new_spectrum()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.session.session.Session.with_new_system_list"><code class="docutils literal notranslate"><span class="pre">Session.with_new_system_list()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.session.session.Session.save"><code class="docutils literal notranslate"><span class="pre">Session.save()</span></code></a></li>
 </ul>
 </li>
 </ul>

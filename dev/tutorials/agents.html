@@ -863,8 +863,10 @@ archive is replaced only when it is complete (written to a temporary file
 next to it, then renamed), so the GUI never reads it half written. This
 archive is not your save: save the session with <code class="docutils literal notranslate"><span class="pre">session_save</span></code> as usual.</p>
 <p><em>File &gt; Export to ASCII</em> (<code class="docutils literal notranslate"><span class="pre">file_export_ascii</span></code>) writes the files in the
-folder <code class="docutils literal notranslate"><span class="pre">path</span></code>, named after <code class="docutils literal notranslate"><span class="pre">prefix</span></code>, and does not replace files that exist
-unless asked (<code class="docutils literal notranslate"><span class="pre">overwrite=true</span></code>).</p>
+folder <code class="docutils literal notranslate"><span class="pre">folder</span></code> (called <code class="docutils literal notranslate"><span class="pre">path</span></code> until 2.6.0, a name still accepted), named
+after <code class="docutils literal notranslate"><span class="pre">prefix</span></code>, and does not replace files that exist unless asked
+(<code class="docutils literal notranslate"><span class="pre">overwrite=true</span></code>). The tools that read another session
+(<code class="docutils literal notranslate"><span class="pre">flux_equalize</span></code>, <code class="docutils literal notranslate"><span class="pre">flux_resample</span></code>) require its <code class="docutils literal notranslate"><span class="pre">session_id</span></code>.</p>
 <p>The sessions live in the server while the client is running: save the
 result with <code class="docutils literal notranslate"><span class="pre">session_save</span></code> before closing the client.</p>
 </section>

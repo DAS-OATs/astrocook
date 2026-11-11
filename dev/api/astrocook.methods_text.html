@@ -481,7 +481,7 @@ opening paragraph, one paragraph per recipe of the log, a closing paragraph
 on the fit and the atomic data, and the references.</p>
 <p>A paragraph of a recipe is made of:</p>
 <ul class="simple">
-<li><p>the reason given for the recipe (<code class="docutils literal notranslate"><span class="pre">LogEntryV2.reason</span></code>, e.g. by an agent
+<li><p>the reason given for the recipe (<code class="docutils literal notranslate"><span class="pre">LogEntry.reason</span></code>, e.g. by an agent
 through the MCP server), as written;</p></li>
 <li><p>what the recipe did, from the key <code class="docutils literal notranslate"><span class="pre">methods</span></code> of the registry (a template
 of its parameters, or a function of them), with the menu of the recipe in
@@ -491,7 +491,7 @@ does not quote that differ from their defaults;</p></li>
 after it (<a class="reference internal" href="astrocook.recipes.result.html#astrocook.recipes.result.compare_sessions" title="astrocook.recipes.result.compare_sessions"><code class="xref py py-func docutils literal notranslate"><span class="pre">compare_sessions()</span></code></a>, as
 <code class="docutils literal notranslate"><span class="pre">RecipeResult</span></code> does): the components added, removed and changed, the
 columns, the pixels; and the warnings the fit left on the components;</p></li>
-<li><p>the notes written at its state (<code class="docutils literal notranslate"><span class="pre">LogNoteV2</span></code>: notes and gaps declared,
+<li><p>the notes written at its state (<code class="docutils literal notranslate"><span class="pre">LogNote</span></code>: notes and gaps declared,
 as written; the gaps seen by the MCP server are for the development and
 are left out).</p></li>
 </ul>
@@ -733,7 +733,7 @@ is not a wavelength).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>source</strong> (<em>SessionHistory</em><em> or </em><a class="reference internal" href="astrocook.session.session.html#astrocook.session.session.SessionV2" title="astrocook.session.session.SessionV2"><em>SessionV2</em></a>) – A history (the states and the log, as the GUI and the MCP server
+<li><p><strong>source</strong> (<em>SessionHistory</em><em> or </em><a class="reference internal" href="astrocook.session.session.html#astrocook.session.session.Session" title="astrocook.session.session.Session"><em>Session</em></a>) – A history (the states and the log, as the GUI and the MCP server
 keep them), or a session alone: then only the log is known, not what
 each recipe changed.</p></li>
 <li><p><strong>menus</strong> (<em>bool</em>) – Name the menu of each recipe, in parentheses (for who reruns the

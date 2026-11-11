@@ -554,7 +554,7 @@
 unit says what it is: dimensionless for the resolving power R, <code class="docutils literal notranslate"><span class="pre">km/s</span></code>
 for the FWHM in velocity. A component of a system list can override it
 with its own value (always R).</p>
-<p>Before #526 the resolution could also live in the <code class="docutils literal notranslate"><span class="pre">SpectrumDataV2.resol</span></code>
+<p>Before #526 the resolution could also live in the <code class="docutils literal notranslate"><span class="pre">SpectrumData.resol</span></code>
 attribute and in the meta keys <code class="docutils literal notranslate"><span class="pre">resol</span></code> (R), <code class="docutils literal notranslate"><span class="pre">RESOL</span></code> (R, V1 archives)
 and <code class="docutils literal notranslate"><span class="pre">resol_fwhm</span></code> (km/s), and its unit was guessed from its value (below
 500: FWHM in km/s). These legacy sources are migrated into the column when
@@ -615,7 +615,7 @@ the fitter read them before #526: attribute, meta <code class="docutils literal 
 <dl class="py function">
 <dt class="sig sig-object py" id="astrocook.core.resolution.migrate_resolution">
 <span class="sig-prename descclassname"><span class="pre">astrocook.core.resolution.</span></span><span class="sig-name descname"><span class="pre">migrate_resolution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/core/resolution.html#migrate_resolution"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.resolution.migrate_resolution" title="Link to this definition">#</a></dt>
-<dd><p>Move the resolution of a <code class="docutils literal notranslate"><span class="pre">SpectrumDataV2</span></code> into its <code class="docutils literal notranslate"><span class="pre">resol</span></code> column.</p>
+<dd><p>Move the resolution of a <code class="docutils literal notranslate"><span class="pre">SpectrumData</span></code> into its <code class="docutils literal notranslate"><span class="pre">resol</span></code> column.</p>
 <p>A column with at least one valid value is kept (a dimensionless column
 with median below <code class="docutils literal notranslate"><span class="pre">LEGACY_KMS_THRESHOLD</span></code> was a FWHM in km/s before
 #526, and gets that unit). Otherwise the column is created, flat, from
@@ -627,7 +627,7 @@ the column is deleted).</p>
 <dd class="field-odd"><p>The same object if nothing changes, a new one otherwise.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.SpectrumDataV2" title="astrocook.core.structures.SpectrumDataV2">SpectrumDataV2</a></p>
+<dd class="field-even"><p><a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.SpectrumData" title="astrocook.core.structures.SpectrumData">SpectrumData</a></p>
 </dd>
 </dl>
 </dd></dl>
@@ -653,7 +653,7 @@ other values are kept as deliberate overrides.</p>
 <dd class="field-odd"><p>The same object if nothing changes, a new one otherwise.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2">SystemListV2</a></p>
+<dd class="field-even"><p><a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemList" title="astrocook.core.system_list.SystemList">SystemList</a></p>
 </dd>
 </dl>
 </dd></dl>
