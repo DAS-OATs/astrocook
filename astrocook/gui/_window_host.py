@@ -1,4 +1,4 @@
-"""What the mixins of :class:`~astrocook.gui.main_window.MainWindowV2` use
+"""What the mixins of :class:`~astrocook.gui.main_window.MainWindow` use
 of the window that mixes them in, declared for the type checker (phase
 6-quater, PR 4-bis).
 
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from astrocook.gui.pyside_plot import SpectrumPlotWidget
 
     class WindowHost(QMainWindow):
-        """The part of ``MainWindowV2`` that its mixins use."""
+        """The part of ``MainWindow`` that its mixins use."""
         session_histories: List[SessionHistory]
         active_history: Optional[SessionHistory]
         session_model: SessionListModel

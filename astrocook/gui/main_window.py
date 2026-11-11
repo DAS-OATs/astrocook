@@ -1,3 +1,4 @@
+from astrocook._renamed import renamed
 import logging
 import astropy.units as au
 import numpy as np
@@ -28,8 +29,8 @@ from .floating_cards import CollapsibleSection
 from .theme import FOCUS_BORDER, status_bar_style
 from astrocook.core.debug_hooks import set_debug_plot_handler
 from astrocook.session.history import SessionHistory
-from astrocook.session.session import SessionV2, LogManager
-from astrocook.core.spectrum import SpectrumV2
+from astrocook.session.session import Session, LogManager
+from astrocook.core.spectrum import Spectrum
 from astrocook.core.utils import resource_path # Import recipe helpers
 
 from astrocook.recipes.registry import all_recipes
@@ -54,9 +55,9 @@ class MockV1GUIContext:
         return None
 
 
-class MainWindowV2(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, MainSessionsMixin,
+class MainWindow(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, MainSessionsMixin,
                    MainRecipesMixin, MainScriptsMixin, MainFollowMixin, QMainWindow):
-    def __init__(self, initial_sessions: Union[SessionV2, List[SessionV2], None], initial_log_object: Optional[LogManager]):
+    def __init__(self, initial_sessions: Union[Session, List[Session], None], initial_log_object: Optional[LogManager]):
         super().__init__()
         # Forces the app name to be "Astrocook" instead of "Python"
         app = cast(QApplication, QApplication.instance())
@@ -129,7 +130,7 @@ class MainWindowV2(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, Main
 
         # --- ** Central Stack Views ** ---
         initial_session = initial_sessions[0] if isinstance(initial_sessions, List) and len(initial_sessions) > 0 else initial_sessions
-        valid_session = initial_session if isinstance(initial_session, SessionV2) else None
+        valid_session = initial_session if isinstance(initial_session, Session) else None
         
         self._setup_plot_view(valid_session)
         self._setup_empty_view()
@@ -154,7 +155,7 @@ class MainWindowV2(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, Main
 
         # --- Initial State ---
         # Normalize input to a list
-        if isinstance(initial_sessions, SessionV2):
+        if isinstance(initial_sessions, Session):
             init_list = [initial_sessions]
         elif isinstance(initial_sessions, list):
             init_list = initial_sessions
@@ -166,7 +167,7 @@ class MainWindowV2(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, Main
 
         # Iterate and add all passed sessions
         for session in init_list:
-            if isinstance(session, SessionV2) and session.spec and len(session.spec.x) > 0:
+            if isinstance(session, Session) and session.spec and len(session.spec.x) > 0:
                 
                 log_object = self._log_for_new_session(session)
                 new_history = SessionHistory(session, log_object)
@@ -497,7 +498,7 @@ class MainWindowV2(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, Main
         (cut in deep lines)."""
         if not self.active_history:
             return None
-        spec = cast(SpectrumV2, self.active_history.current_state.spec)
+        spec = cast(Spectrum, self.active_history.current_state.spec)
         try:
             x = spec.x.to_value(au.nm)
         except au.UnitsError:
@@ -619,3 +620,7 @@ class MainWindowV2(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, Main
         # Extract UUIDs for efficient storage
         uuids = {c.uuid for c in components} if components else set()
         self.plot_viewer.set_highlights(uuids)
+
+
+# Old names (phase 6-quater, PR 6): see astrocook/_renamed.py
+__getattr__ = renamed(__name__, {"MainWindowV2": "MainWindow"})

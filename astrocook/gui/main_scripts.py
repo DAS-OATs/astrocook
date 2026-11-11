@@ -3,7 +3,7 @@ edited and run again), and a script run from the original data in place
 of the history of the session.
 
 Moved out of ``main_window.py`` in phase 5 (split of the GUI), as a mixin
-of ``MainWindowV2``.
+of ``MainWindow``.
 """
 import logging
 from typing import TYPE_CHECKING, cast
@@ -20,12 +20,12 @@ from astrocook.gui.errors import QT_ERRORS
 from astrocook.gui._window_host import HostBase
 
 if TYPE_CHECKING:
-    from astrocook.gui.main_window import MainWindowV2
+    from astrocook.gui.main_window import MainWindow
 logger = logging.getLogger(__name__)
 
 
 class MainScriptsMixin(HostBase):
-    """The scripts of ``MainWindowV2``.
+    """The scripts of ``MainWindow``.
 
     Uses the window's ``active_history``, ``session_histories``, the session
     list's model, ``thread_pool``, ``progress_dialog``,
@@ -52,7 +52,7 @@ class MainScriptsMixin(HostBase):
         dialog = LogScripterDialog(
             log_object_to_view, 
             session_name, 
-            cast('MainWindowV2', self), 
+            cast('MainWindow', self), 
             self.recipe_category_map # Pass the map
         )
         self.log_scripter_dialog = dialog
@@ -124,7 +124,7 @@ class MainScriptsMixin(HostBase):
         self.progress_dialog.show()
 
         # 4. Set up and run the worker
-        worker = ScriptWorker(script_text, initial_state, cast('MainWindowV2', self))
+        worker = ScriptWorker(script_text, initial_state, cast('MainWindow', self))
         
         # Connect to *different* slots than the recipe worker
         worker.signals.finished.connect(self._on_script_finished)

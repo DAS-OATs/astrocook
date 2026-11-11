@@ -11,7 +11,7 @@ import astropy.units as au
 import numpy as np
 from pydantic import BaseModel, Field
 
-from astrocook.session.session import SessionV2
+from astrocook.session.session import Session
 from astrocook.recipes._spectrum import column_of, spec_of
 
 
@@ -76,7 +76,7 @@ def _median_resolution(spec) -> float:
     return float(np.median(r)) if r.size else 0.0
 
 
-def spectrum_summary(session: SessionV2) -> SpectrumSummary:
+def spectrum_summary(session: Session) -> SpectrumSummary:
     """Summarize the spectrum and the components of a session."""
     spec = spec_of(session)
     x = spec.x
@@ -117,7 +117,7 @@ class ContinuumInfo(SessionInfo):
     continuum: ContinuumSummary
 
 
-def _lya_split(session: SessionV2) -> Optional[np.ndarray]:
+def _lya_split(session: Session) -> Optional[np.ndarray]:
     """True for the pixels bluewards of the Lyman-alpha emission, or None
     if z_em is not set or the x axis is not a wavelength."""
     spec = spec_of(session)
@@ -135,7 +135,7 @@ def _fraction(mask: np.ndarray) -> Optional[float]:
     return float(np.mean(mask)) if mask.size else None
 
 
-def continuum_summary(session: SessionV2) -> ContinuumSummary:
+def continuum_summary(session: Session) -> ContinuumSummary:
     """Summarize the continuum and the absorbed mask of a session."""
     spec = spec_of(session)
     absorbed = column_of(spec, "abs_mask").value.astype(bool)
@@ -208,7 +208,7 @@ def _json_meta(meta: dict, key: str) -> dict:
     return json.loads(value) if isinstance(value, str) else dict(value)
 
 
-def identification_summary(session: SessionV2, max_listed: int
+def identification_summary(session: Session, max_listed: int
                            ) -> IdentificationSummary:
     """Summarize the output of identify_lines, which lives in the
     ``abs_ids`` column and in JSON strings in the metadata."""
@@ -303,7 +303,7 @@ def _optional(value) -> Optional[float]:
     return None if value is None else float(value)
 
 
-def fit_summary(before: SessionV2, after: SessionV2, max_listed: int) -> FitSummary:
+def fit_summary(before: Session, after: Session, max_listed: int) -> FitSummary:
     """Compare the components before and after a fitting recipe."""
     old = {c.uuid for c in before.systs.components} if before.systs else set()
     comps = after.systs.components if after.systs else []
@@ -472,7 +472,7 @@ def _value(value):
     return _jsonable(value)
 
 
-def summaries(result, before: SessionV2, after: SessionV2, provides,
+def summaries(result, before: Session, after: Session, provides,
               max_listed: int) -> dict:
     """The summaries of the pilot that fit what the recipe did: the
     continuum when it provides one or changed it, the identification when

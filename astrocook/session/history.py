@@ -2,24 +2,24 @@ import logging
 from typing import List, Optional
 
 # --- V2 Imports ---
-from astrocook.session.session import SessionV2
-from astrocook.core.structures import HistoryLogV2
+from astrocook.session.session import Session
+from astrocook.core.structures import HistoryLog
 
 logger = logging.getLogger(__name__)
 
 # Define the type for the log manager
-LogManager = HistoryLogV2
+LogManager = HistoryLog
 
 class SessionHistory:
     """Manages the list of states and current index for one session lineage."""
     
-    def __init__(self, initial_state: SessionV2, log_object: LogManager):
-        if not isinstance(initial_state, SessionV2):
-            raise TypeError("SessionHistory must be initialized with a SessionV2 object.")
-        if not isinstance(log_object, HistoryLogV2):
+    def __init__(self, initial_state: Session, log_object: LogManager):
+        if not isinstance(initial_state, Session):
+            raise TypeError("SessionHistory must be initialized with a Session object.")
+        if not isinstance(log_object, HistoryLog):
              raise TypeError(f"SessionHistory initialized with invalid log object: {type(log_object)}")
         
-        self.states: List[SessionV2] = [initial_state]
+        self.states: List[Session] = [initial_state]
         self.current_index: int = 0 # Points to the active state
         self.log_manager: LogManager = log_object
         self._display_name: str = self.states[0].name if self.states else "Unnamed Session"
@@ -29,8 +29,8 @@ class SessionHistory:
         initial_state.log_manager = self.log_manager
 
     @property
-    def current_state(self) -> SessionV2:
-        """Returns the currently active SessionV2 state."""
+    def current_state(self) -> Session:
+        """Returns the currently active Session state."""
         if 0 <= self.current_index < len(self.states):
             return self.states[self.current_index]
         logger.error(f"The index of the session history ({self.current_index}) is "
@@ -51,7 +51,7 @@ class SessionHistory:
         self._display_name = new_name
         # --- END FIX ---
 
-    def add_state(self, new_state: SessionV2):
+    def add_state(self, new_state: Session):
         """
         Adds a new state, truncating redo history.
         NOTE: This method assumes the log entry has *already* been added
@@ -83,26 +83,26 @@ class SessionHistory:
     def can_redo(self) -> bool:
         return self.current_index < len(self.states) - 1
 
-    def undo(self) -> Optional[SessionV2]:
+    def undo(self) -> Optional[Session]:
         """Moves index back and returns the previous state."""
         if self.can_undo():
             self.current_index -= 1
             
             # --- Sync with V2 Log ---
-            if isinstance(self.log_manager, HistoryLogV2):
+            if isinstance(self.log_manager, HistoryLog):
                 self.log_manager.undo()
             # ------------------------
                 
             return self.current_state
         return None
 
-    def redo(self) -> Optional[SessionV2]:
+    def redo(self) -> Optional[Session]:
         """Moves index forward and returns the next state."""
         if self.can_redo():
             self.current_index += 1
 
             # --- Sync with V2 Log ---
-            if isinstance(self.log_manager, HistoryLogV2):
+            if isinstance(self.log_manager, HistoryLog):
                 self.log_manager.redo()
             # ------------------------
 

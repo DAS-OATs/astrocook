@@ -2,7 +2,7 @@ import dataclasses
 
 import numpy as np
 from astropy import units as au
-from astrocook.core.structures import SpectrumDataV2, DataColumnV2
+from astrocook.core.structures import SpectrumData, DataColumn
 from astrocook.core.spectrum_operations import rebin_spectrum
 
 # --- GOLDEN STANDARD CASE 1: Weighted Average and Error Propagation ---
@@ -21,12 +21,12 @@ def get_mock_input_case1():
     xmin_in_val = x_in_val - 0.025
     xmax_in_val = x_in_val + 0.025
     
-    spec_data = SpectrumDataV2(
-        x=DataColumnV2(x_in_val, x_unit),
-        xmin=DataColumnV2(xmin_in_val, x_unit),
-        xmax=DataColumnV2(xmax_in_val, x_unit),
-        y=DataColumnV2(y_in_val, y_unit),
-        dy=DataColumnV2(dy_in_val, y_unit),
+    spec_data = SpectrumData(
+        x=DataColumn(x_in_val, x_unit),
+        xmin=DataColumn(xmin_in_val, x_unit),
+        xmax=DataColumn(xmax_in_val, x_unit),
+        y=DataColumn(y_in_val, y_unit),
+        dy=DataColumn(dy_in_val, y_unit),
     )
     
     # Rebinning Parameters
@@ -80,8 +80,8 @@ def test_rebin_clipping_with_big_endian_input():
     spec_data, params, _, _ = get_mock_input_case1()
     big = dataclasses.replace(
         spec_data,
-        y=DataColumnV2(spec_data.y.values.astype(">f8"), spec_data.y.unit),
-        dy=DataColumnV2(spec_data.dy.values.astype(">f8"), spec_data.dy.unit))
+        y=DataColumn(spec_data.y.values.astype(">f8"), spec_data.y.unit),
+        dy=DataColumn(spec_data.dy.values.astype(">f8"), spec_data.dy.unit))
     params = dict(params, kappa=3.0)
     _, _, _, y_out, _, _ = rebin_spectrum(
         big.x.quantity, big.xmin.quantity, big.xmax.quantity, big,

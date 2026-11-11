@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (
 )
 from typing import List, cast
 
-from ..core.structures import ComponentDataV2
+from ..core.structures import ComponentData
 from ..core.atomic_data import STANDARD_MULTIPLETS, ATOM_DATA, is_multiplet, series_lines
 from ..core.resolution import resolution_at
 from ..fitting import bayesian_fitter
@@ -629,7 +629,7 @@ class SystemInspector(QWidget):
         if comps:
             self._delete_list(comps)
 
-    def _get_selected_components(self) -> List[ComponentDataV2]:
+    def _get_selected_components(self) -> List[ComponentData]:
         rows = self.table_view.selectionModel().selectedRows()
         comps = []
         for idx in rows:
@@ -1121,7 +1121,7 @@ class SystemInspector(QWidget):
                 "absorbers", "refit_all", self.fit_window_params(), {}
             )
     
-    def _update_group_definition(self, selected_comps: List[ComponentDataV2]):
+    def _update_group_definition(self, selected_comps: List[ComponentData]):
         if not selected_comps or not self.current_session:
             # Clear Highlights
             self.table_model.set_highlighted_uuids(set(), set())
@@ -1239,7 +1239,7 @@ class SystemInspector(QWidget):
     def event(self, event):
         """The system switched between light and dark: the colours that
         come from the palette are applied again (Qt sends the change to the
-        windows only, see MainWindowV2.event)."""
+        windows only, see MainWindow.event)."""
         if event.type() == QEvent.Type.ApplicationPaletteChange and hasattr(self, 'trans_in'):
             self._apply_field_styles()
             self.table_model.refresh_colours()

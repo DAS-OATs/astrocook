@@ -17,7 +17,7 @@ import tarfile
 import pytest
 
 import astrocook.io.adapter as adapter
-from astrocook.session.session import SessionV2
+from astrocook.session.session import Session
 
 from test_recipes_absorbers import _systs
 from test_recipes_edit_flux import _spec
@@ -25,7 +25,7 @@ from test_recipes_edit_flux import _spec
 
 @pytest.fixture
 def session():
-    return SessionV2("s", None, spec=_spec(),
+    return Session("s", None, spec=_spec(),
                      systs=_systs(("CIV", 2.97, 13.6, 12.0)))
 
 

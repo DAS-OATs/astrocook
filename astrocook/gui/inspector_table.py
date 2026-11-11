@@ -10,7 +10,7 @@ from PySide6.QtGui import QBrush, QColor, QFont, QPalette
 from PySide6.QtWidgets import QStyledItemDelegate
 from typing import Any, Dict, List, Optional, Set
 
-from ..core.structures import ComponentDataV2
+from ..core.structures import ComponentData
 from .plot_style import plot_colour
 from .theme import FLAG_BOUND_COLOR, FLAG_NAN_COLOR, FROZEN_TEXT, link_colours  # noqa: F401 (re-exported)
 
@@ -125,7 +125,7 @@ class LinkColorDelegate(QStyledItemDelegate):
 class SystemTableModel(QAbstractTableModel):
     data_changed_request = Signal(str, dict)
 
-    def __init__(self, components: Optional[List[ComponentDataV2]] = None):
+    def __init__(self, components: Optional[List[ComponentData]] = None):
         super().__init__()
         self._components = components if components else []
         self._primary_uuids: Set[Any] = set()
@@ -138,7 +138,7 @@ class SystemTableModel(QAbstractTableModel):
         # when the palette switches between light and dark
         self._link_color_map: Dict[Any, Any] = {}
 
-    def update_data(self, components: List[ComponentDataV2], constraints_map: Optional[dict] = None):
+    def update_data(self, components: List[ComponentData], constraints_map: Optional[dict] = None):
         """
         Updates the model with new components and constraint data.
         """

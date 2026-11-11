@@ -30,8 +30,8 @@ def window(qtbot, monkeypatch, tmp_path):
                             staticmethod(lambda *a, **k: QMessageBox.StandardButton.Ok))
     # Sections start from their defaults, whatever an earlier test stored
     QSettings("Astrocook", "AstrocookV2").remove("plot_controls")
-    from astrocook.gui.main_window import MainWindowV2
-    win = MainWindowV2(None, None)
+    from astrocook.gui.main_window import MainWindow
+    win = MainWindow(None, None)
     qtbot.addWidget(win)
     win.resize(1400, 850)
     win.show()
@@ -125,8 +125,8 @@ def test_sections_default_and_remembered_state(qtbot, window):
     sections["View Controls"].setExpanded(False)
     assert not sections["View Controls"].content.isVisible()
 
-    from astrocook.gui.main_window import MainWindowV2
-    other = MainWindowV2(None, None)
+    from astrocook.gui.main_window import MainWindow
+    other = MainWindow(None, None)
     qtbot.addWidget(other)
     assert not _sections(other)["View Controls"].isExpanded()
     assert _sections(other)["Axis Limits"].isExpanded()

@@ -18,16 +18,16 @@ from mcp import Client, StdioServerParameters  # noqa: E402
 from mcp.server.mcpserver.exceptions import ToolError  # noqa: E402
 
 from astrocook import __version__  # noqa: E402
-from astrocook.session.session import SessionV2, load_session_from_file  # noqa: E402
+from astrocook.session.session import Session, load_session_from_file  # noqa: E402
 from astrocook.mcp_server.errors import run_recipe  # noqa: E402
-from astrocook.core.structures import ComponentDataV2  # noqa: E402
+from astrocook.core.structures import ComponentData  # noqa: E402
 from astrocook.mcp_server.outputs import (  # noqa: E402
     component_flags, identification_summary)
 from astrocook.mcp_server import server as server_module  # noqa: E402
 from astrocook.mcp_server.server import build_server  # noqa: E402
 from astrocook.mcp_server.tools import EXCLUDED  # noqa: E402
 from astrocook.recipes.registry import all_recipes, get_recipe  # noqa: E402
-from astrocook.core.spectrum import SpectrumV2  # noqa: E402
+from astrocook.core.spectrum import Spectrum  # noqa: E402
 from astrocook.mocks import MockComponent, MockTruth, generate  # noqa: E402
 
 from conftest import J0103_SESSION, J0103_Z_EM  # noqa: E402
@@ -82,7 +82,7 @@ def mock_archive(tmp_path_factory):
                       lam_min_nm=440.0, lam_max_nm=460.0, dv_kms=2.5,
                       resol=45000.0, snr=50.0, z_em=2.0, seed=1)
     path = tmp_path_factory.mktemp("mock") / "mock.acs2"
-    SessionV2("mock", None, spec=generate(truth)).save(str(path))
+    Session("mock", None, spec=generate(truth)).save(str(path))
     return path
 
 
@@ -556,7 +556,7 @@ def test_doublets_auto_without_a_mask_stores_the_whole_new_one(forest_archive):
     cont = session.continuum.estimate_auto()
     spec = cont.spec
     aux = {k: v for k, v in spec._data.aux_cols.items() if k != "abs_mask"}
-    no_mask = cont.with_new_spectrum(SpectrumV2(
+    no_mask = cont.with_new_spectrum(Spectrum(
         data=dataclasses.replace(spec._data, aux_cols=aux), history=spec.history))
     assert not no_mask.spec.has_aux_column("abs_mask")
     fitted = no_mask.absorbers.doublets_auto()
@@ -568,7 +568,7 @@ def test_doublets_auto_without_a_mask_stores_the_whole_new_one(forest_archive):
 @pytest.mark.parametrize("flags", [(), ("b_at_upper_bound", "nan_errors")])
 def test_component_flags(flags):
     # The flags left by the fit on the component (#517)
-    comp = ComponentDataV2(id=1, z=2.0, dz=1e-5, logN=13.5, dlogN=0.1, b=10.0,
+    comp = ComponentData(id=1, z=2.0, dz=1e-5, logN=13.5, dlogN=0.1, b=10.0,
                            db=1.0, flags=flags)
     assert component_flags(comp) == list(flags)
 
@@ -640,9 +640,9 @@ def test_run_recipe_returns_the_warnings_of_a_recipe():
     # The collector is on the root logger; the warning is logged by
     # recipes/flux.py (characterization for the loggers per module, phase 6)
     from test_recipes_edit_flux import _spec
-    session = SessionV2("s", None, spec=_spec())
+    session = Session("s", None, spec=_spec())
     result, warnings = run_recipe("rebin", session.flux.rebin, norm="True")
-    assert isinstance(result, SessionV2)
+    assert isinstance(result, Session)
     assert len(warnings) == 1 and "'norm' is ignored" in warnings[0]
 
 
@@ -665,7 +665,7 @@ def test_doublets_auto_with_the_mask_of_the_session(forest_archive):
         cont.absorbers.doublets_auto(mask="old")
     spec = cont.spec
     aux = {k: v for k, v in spec._data.aux_cols.items() if k != "abs_mask"}
-    no_mask = cont.with_new_spectrum(SpectrumV2(
+    no_mask = cont.with_new_spectrum(Spectrum(
         data=dataclasses.replace(spec._data, aux_cols=aux), history=spec.history))
     with pytest.raises(MissingPrerequisite, match="no mask 'abs_mask'"):
         no_mask.absorbers.doublets_auto(mask="session")
@@ -677,18 +677,18 @@ def test_doublets_auto_with_the_mask_of_the_session(forest_archive):
 def physical_archive(tmp_path_factory):
     """The small mock in physical units: a spectrum without a continuum."""
     import astropy.units as au
-    from astrocook.core.structures import DataColumnV2, SpectrumDataV2
+    from astrocook.core.structures import DataColumn, SpectrumData
     truth = MockTruth(components=[MockComponent("CIV", 1.9, 13.8, 10.0)],
                       lam_min_nm=440.0, lam_max_nm=460.0, dv_kms=2.5,
                       resol=45000.0, snr=50.0, z_em=2.0, seed=1)
     mock = generate(truth, truth_columns=False)
     d, k = mock._data, 1e-16 * (mock.x.value / 450.0) ** -1.5
     flux = au.erg / au.cm**2 / au.s / au.nm
-    spec = SpectrumV2(SpectrumDataV2(
-        x=d.x, xmin=d.xmin, xmax=d.xmax, y=DataColumnV2(mock.y.value * k, flux),
-        dy=DataColumnV2(mock.dy.value * k, flux), aux_cols=dict(d.aux_cols), z_em=d.z_em))
+    spec = Spectrum(SpectrumData(
+        x=d.x, xmin=d.xmin, xmax=d.xmax, y=DataColumn(mock.y.value * k, flux),
+        dy=DataColumn(mock.dy.value * k, flux), aux_cols=dict(d.aux_cols), z_em=d.z_em))
     path = tmp_path_factory.mktemp("physical") / "physical.acs2"
-    SessionV2("physical", None, spec=spec).save(str(path))
+    Session("physical", None, spec=spec).save(str(path))
     return path
 
 

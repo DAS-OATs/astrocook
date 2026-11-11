@@ -8,12 +8,12 @@ import numpy as np
 import astropy.units as au
 
 from astrocook.core.atomic_data import ATOM_DATA
-from astrocook.core.spectrum import SpectrumV2
+from astrocook.core.spectrum import Spectrum
 from astrocook.core.structures import (
-    ComponentDataV2, DataColumnV2, SpectrumDataV2, SystemListDataV2,
+    ComponentData, DataColumn, SpectrumData, SystemListData,
 )
-from astrocook.core.system_list import SystemListV2
-from astrocook.fitting.voigt_fitter import VoigtFitterV2
+from astrocook.core.system_list import SystemList
+from astrocook.fitting.voigt_fitter import VoigtFitter
 
 C_KMS = 299792.458
 Z_ALII = 2.0
@@ -24,18 +24,18 @@ Z_CIV = _W_BLEND / ATOM_DATA["CIV_1550"]["wave"] * (1 + 5.0 / C_KMS) - 1
 
 def _components(civ_logN=13.5):
     return [
-        ComponentDataV2(id=1, z=Z_ALII, dz=None, logN=12.8, dlogN=None, b=8.0,
+        ComponentData(id=1, z=Z_ALII, dz=None, logN=12.8, dlogN=None, b=8.0,
                         db=None, series="AlII_1670"),
-        ComponentDataV2(id=2, z=Z_CIV, dz=None, logN=civ_logN, dlogN=None,
+        ComponentData(id=2, z=Z_CIV, dz=None, logN=civ_logN, dlogN=None,
                         b=10.0, db=None, series="CIV"),
         # Unrelated line far away: must stay out of the group
-        ComponentDataV2(id=3, z=3.5, dz=None, logN=13.0, dlogN=None, b=20.0,
+        ComponentData(id=3, z=3.5, dz=None, logN=13.0, dlogN=None, b=20.0,
                         db=None, series="Ly_a"),
     ]
 
 
 def _systs(civ_logN=13.5):
-    return SystemListV2(SystemListDataV2(components=_components(civ_logN)))
+    return SystemList(SystemListData(components=_components(civ_logN)))
 
 
 def test_blended_components_are_grouped():
@@ -60,21 +60,21 @@ def test_fitting_alii_also_fits_blended_civ():
     one = np.ones_like(x)
 
     def spectrum(y):
-        return SpectrumV2(SpectrumDataV2(
-            x=DataColumnV2(x, au.nm), xmin=DataColumnV2(x - 0.002, au.nm),
-            xmax=DataColumnV2(x + 0.002, au.nm),
-            y=DataColumnV2(y, au.dimensionless_unscaled),
-            dy=DataColumnV2(0.01 * one, au.dimensionless_unscaled),
-            aux_cols={"cont": DataColumnV2(one, au.dimensionless_unscaled)},
+        return Spectrum(SpectrumData(
+            x=DataColumn(x, au.nm), xmin=DataColumn(x - 0.002, au.nm),
+            xmax=DataColumn(x + 0.002, au.nm),
+            y=DataColumn(y, au.dimensionless_unscaled),
+            dy=DataColumn(0.01 * one, au.dimensionless_unscaled),
+            aux_cols={"cont": DataColumn(one, au.dimensionless_unscaled)},
             z_em=4.0, resol=45000.0))
 
-    _, true_model = VoigtFitterV2(spectrum(one), _systs()).compute_model_flux()
+    _, true_model = VoigtFitter(spectrum(one), _systs()).compute_model_flux()
     data = spectrum(true_model + np.random.default_rng(1).normal(0, 0.01, len(x)))
 
     systs = _systs(civ_logN=13.0)  # true value 13.5
     alii = systs.components[0]
     with systs.fitting_context([alii.uuid]):
-        fitted, _, result = VoigtFitterV2(data, systs).fit(max_nfev=2000)
+        fitted, _, result = VoigtFitter(data, systs).fit(max_nfev=2000)
 
     assert result.success
     civ_fit = fitted.components[1]
@@ -106,23 +106,23 @@ def test_inspector_highlights_blended_component(qapp):
 def _pair_at(dv_kms):
     """AlII 1670 and CIV 1550 (b = 8 and 10 km/s) separated by dv_kms."""
     z_civ = _W_BLEND / ATOM_DATA["CIV_1550"]["wave"] * (1 + dv_kms / C_KMS) - 1
-    comps = [ComponentDataV2(id=1, z=Z_ALII, dz=None, logN=13.5, dlogN=None,
+    comps = [ComponentData(id=1, z=Z_ALII, dz=None, logN=13.5, dlogN=None,
                              b=8.0, db=None, series="AlII_1670"),
-             ComponentDataV2(id=2, z=z_civ, dz=None, logN=14.0, dlogN=None,
+             ComponentData(id=2, z=z_civ, dz=None, logN=14.0, dlogN=None,
                              b=10.0, db=None, series="CIV")]
-    return SystemListV2(SystemListDataV2(components=comps))
+    return SystemList(SystemListData(components=comps))
 
 
 def _flat_spectrum(resol, unit=au.dimensionless_unscaled):
     """Flat spectrum over both CIV lines, with a flat resol column."""
     x = np.arange(4990.0, 5025.0, 0.04) / 10.0  # nm
     one = np.ones_like(x)
-    return SpectrumV2(SpectrumDataV2(
-        x=DataColumnV2(x, au.nm), xmin=DataColumnV2(x - 0.002, au.nm),
-        xmax=DataColumnV2(x + 0.002, au.nm),
-        y=DataColumnV2(one, au.dimensionless_unscaled),
-        dy=DataColumnV2(0.01 * one, au.dimensionless_unscaled),
-        aux_cols={"resol": DataColumnV2(np.full_like(x, resol), unit)}))
+    return Spectrum(SpectrumData(
+        x=DataColumn(x, au.nm), xmin=DataColumn(x - 0.002, au.nm),
+        xmax=DataColumn(x + 0.002, au.nm),
+        y=DataColumn(one, au.dimensionless_unscaled),
+        dy=DataColumn(0.01 * one, au.dimensionless_unscaled),
+        aux_cols={"resol": DataColumn(np.full_like(x, resol), unit)}))
 
 
 def test_blend_threshold_without_resolution():
@@ -179,18 +179,18 @@ def test_blend_threshold_component_resolution_override():
 
 def test_blend_threshold_same_series_follows_resolution():
     # Kinematic proximity of the same species uses the same threshold
-    comps = [ComponentDataV2(id=i, z=2.0 + dz, dz=None, logN=13.0, dlogN=None,
+    comps = [ComponentData(id=i, z=2.0 + dz, dz=None, logN=13.0, dlogN=None,
                              b=8.0, db=None, series="Ly_a")
              for i, dz in [(1, 0.0), (2, 3.0 * 50.0 / C_KMS)]]
-    systs = SystemListV2(SystemListDataV2(components=comps))
+    systs = SystemList(SystemListData(components=comps))
     a, b = systs.components
     x = np.linspace(3600.0, 3660.0, 2000) / 10.0
     one = np.ones_like(x)
-    spec = SpectrumV2(SpectrumDataV2(
-        x=DataColumnV2(x, au.nm), xmin=DataColumnV2(x, au.nm),
-        xmax=DataColumnV2(x, au.nm), y=DataColumnV2(one, au.dimensionless_unscaled),
-        dy=DataColumnV2(one, au.dimensionless_unscaled),
-        aux_cols={"resol": DataColumnV2(np.full_like(x, 5000.0),
+    spec = Spectrum(SpectrumData(
+        x=DataColumn(x, au.nm), xmin=DataColumn(x, au.nm),
+        xmax=DataColumn(x, au.nm), y=DataColumn(one, au.dimensionless_unscaled),
+        dy=DataColumn(one, au.dimensionless_unscaled),
+        aux_cols={"resol": DataColumn(np.full_like(x, 5000.0),
                                         au.dimensionless_unscaled)}))
     assert b.uuid not in systs.get_connected_group([a.uuid])
     assert b.uuid in systs.get_connected_group([a.uuid], spec=spec)
@@ -206,17 +206,17 @@ def test_fit_includes_component_blended_at_low_resolution():
     one = np.ones_like(x)
 
     def spectrum(y):
-        return SpectrumV2(SpectrumDataV2(
-            x=DataColumnV2(x, au.nm), xmin=DataColumnV2(x - 0.002, au.nm),
-            xmax=DataColumnV2(x + 0.002, au.nm),
-            y=DataColumnV2(y, au.dimensionless_unscaled),
-            dy=DataColumnV2(0.01 * one, au.dimensionless_unscaled),
-            aux_cols={"cont": DataColumnV2(one, au.dimensionless_unscaled),
-                      "resol": DataColumnV2(np.full_like(x, 5000.0),
+        return Spectrum(SpectrumData(
+            x=DataColumn(x, au.nm), xmin=DataColumn(x - 0.002, au.nm),
+            xmax=DataColumn(x + 0.002, au.nm),
+            y=DataColumn(y, au.dimensionless_unscaled),
+            dy=DataColumn(0.01 * one, au.dimensionless_unscaled),
+            aux_cols={"cont": DataColumn(one, au.dimensionless_unscaled),
+                      "resol": DataColumn(np.full_like(x, 5000.0),
                                             au.dimensionless_unscaled)},
             z_em=4.0))
 
-    _, true_model = VoigtFitterV2(spectrum(one), _pair_at(50.0)).compute_model_flux()
+    _, true_model = VoigtFitter(spectrum(one), _pair_at(50.0)).compute_model_flux()
     data = spectrum(true_model + np.random.default_rng(1).normal(0, 0.01, len(x)))
 
     for spec, civ_fitted in [(None, False), (data, True)]:
@@ -224,6 +224,6 @@ def test_fit_includes_component_blended_at_low_resolution():
         alii, civ = systs.components
         systs = systs.update_component(civ.uuid, logN=13.5)  # true value 14.0
         with systs.fitting_context([alii.uuid], spec=spec):
-            fitted, _, result = VoigtFitterV2(data, systs).fit(max_nfev=2000)
+            fitted, _, result = VoigtFitter(data, systs).fit(max_nfev=2000)
         assert result.success
         assert bool(abs(fitted.components[1].logN - 13.5) > 0.1) is civ_fitted

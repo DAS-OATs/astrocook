@@ -10,14 +10,14 @@ import astropy.units as au
 import pytest
 
 from astrocook.core.atomic_data import ATOM_DATA, STANDARD_MULTIPLETS
-from astrocook.session.session import SessionV2
-from astrocook.core.spectrum import SpectrumV2
+from astrocook.session.session import Session
+from astrocook.core.spectrum import Spectrum
 from astrocook.core.structures import (
-    ComponentDataV2, DataColumnV2, SpectrumDataV2, SystemListDataV2,
+    ComponentData, DataColumn, SpectrumData, SystemListData,
 )
-from astrocook.core.system_list import SystemListV2
-from astrocook.fitting.voigt_fitter import VoigtFitterV2
-from astrocook.recipes.absorbers import RecipeAbsorbersV2
+from astrocook.core.system_list import SystemList
+from astrocook.fitting.voigt_fitter import VoigtFitter
+from astrocook.recipes.absorbers import RecipeAbsorbers
 
 Z = 1.0
 SUBSET = "FeII_2344,FeII_2382"
@@ -25,12 +25,12 @@ SUBSET = "FeII_2344,FeII_2382"
 
 def _spectrum(x_nm, y):
     one = np.ones_like(x_nm)
-    return SpectrumV2(SpectrumDataV2(
-        x=DataColumnV2(x_nm, au.nm), xmin=DataColumnV2(x_nm - 0.0015, au.nm),
-        xmax=DataColumnV2(x_nm + 0.0015, au.nm),
-        y=DataColumnV2(y, au.dimensionless_unscaled),
-        dy=DataColumnV2(0.01 * one, au.dimensionless_unscaled),
-        aux_cols={"cont": DataColumnV2(one, au.dimensionless_unscaled)},
+    return Spectrum(SpectrumData(
+        x=DataColumn(x_nm, au.nm), xmin=DataColumn(x_nm - 0.0015, au.nm),
+        xmax=DataColumn(x_nm + 0.0015, au.nm),
+        y=DataColumn(y, au.dimensionless_unscaled),
+        dy=DataColumn(0.01 * one, au.dimensionless_unscaled),
+        aux_cols={"cont": DataColumn(one, au.dimensionless_unscaled)},
         z_em=2.0, resol=45000.0))
 
 
@@ -51,16 +51,16 @@ def test_add_subset_component_models_and_fits_only_selected_lines():
     # restored it): its transitions are in its name
     saved = dict(STANDARD_MULTIPLETS)
     x = np.arange(466.0, 522.0, 0.003)  # FeII 2344-2600 at z = 1
-    true = ComponentDataV2(id=1, z=Z, dz=None, logN=13.8, dlogN=None, b=8.0,
+    true = ComponentData(id=1, z=Z, dz=None, logN=13.8, dlogN=None, b=8.0,
                            db=None, series=SUBSET)
-    _, model = VoigtFitterV2(
+    _, model = VoigtFitter(
         _spectrum(x, np.ones_like(x)),
-        SystemListV2(SystemListDataV2(components=[true]))).compute_model_flux()
+        SystemList(SystemListData(components=[true]))).compute_model_flux()
     data = model + np.random.default_rng(3).normal(0, 0.01, len(x))
-    session = SessionV2(name="feii", gui=None, spec=_spectrum(x, data))
+    session = Session(name="feii", gui=None, spec=_spectrum(x, data))
 
     # Start from a wrong logN, as a user clicking on the plot would
-    result = RecipeAbsorbersV2(session).add_component(
+    result = RecipeAbsorbers(session).add_component(
         series=SUBSET, z=f"{Z}", logN="13.3", b="10.0")
     assert result != 0
 

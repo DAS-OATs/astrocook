@@ -15,7 +15,7 @@ import pytest
 from PySide6.QtWidgets import QMessageBox
 
 from astrocook.gui import plot_style, pyside_plot
-from astrocook.gui.main_window import MainWindowV2
+from astrocook.gui.main_window import MainWindow
 
 from test_gui_smoke import SESSION_FILE
 from test_recipes_edit_flux import _spec
@@ -29,7 +29,7 @@ def window(qtbot, monkeypatch, tmp_path):
     for kind in ("warning", "critical", "information", "question"):
         monkeypatch.setattr(QMessageBox, kind, staticmethod(
             lambda *a, **k: QMessageBox.StandardButton.Ok))
-    win = MainWindowV2(None, None)
+    win = MainWindow(None, None)
     qtbot.addWidget(win)
     monkeypatch.setattr(win, "_show_custom_message", lambda *a, **k: None)
     win.show()

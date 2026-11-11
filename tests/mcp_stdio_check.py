@@ -25,7 +25,7 @@ from pathlib import Path
 
 from mcp import Client, StdioServerParameters
 
-from astrocook.session.session import SessionV2
+from astrocook.session.session import Session
 from astrocook.mocks import MockComponent, MockTruth, generate
 
 
@@ -35,7 +35,7 @@ def make_mock(folder: Path) -> Path:
                       lam_min_nm=440.0, lam_max_nm=460.0, dv_kms=2.5,
                       resol=45000.0, snr=50.0, z_em=2.0, seed=1)
     path = folder / "mock.acs2"
-    SessionV2("mock", None, spec=generate(truth)).save(str(path))
+    Session("mock", None, spec=generate(truth)).save(str(path))
     return path
 
 

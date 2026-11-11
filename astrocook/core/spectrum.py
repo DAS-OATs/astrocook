@@ -1,4 +1,5 @@
 
+from astrocook._renamed import renamed
 import astropy.units as au
 from copy import deepcopy
 import dataclasses
@@ -7,7 +8,7 @@ import numpy as np
 from typing import Any, Dict, List, Optional, Union, overload
 
 from astrocook.core.spectrum_operations import convert_x_axis, convert_y_axis
-from astrocook.core.structures import SpectrumDataV2, DataColumnV2
+from astrocook.core.structures import SpectrumData, DataColumn
 from astrocook.core.resolution import column_to_resolving_power, migrate_resolution
 from astrocook.core.spectrum_combine import CombineMixin
 from astrocook.core.spectrum_continuum import ContinuumMixin
@@ -42,7 +43,7 @@ def _block_means(values: np.ndarray, n: int, error: bool = False) -> np.ndarray:
 logger = logging.getLogger(__name__)
 
 
-class TableAdapterV2(object):
+class TableAdapter(object):
     """Adapter to wrap the V2 .t dictionary and expose Astropy Table-like properties."""
     def __init__(self, data_dict):
         self._data_dict = data_dict
@@ -68,8 +69,8 @@ class TableAdapterV2(object):
     @overload
     def __getitem__(self, key: str) -> au.Quantity: ...
     @overload
-    def __getitem__(self, key: slice) -> 'TableAdapterV2': ...
-    def __getitem__(self, key: Union[str, slice]) -> Union[au.Quantity, 'TableAdapterV2']:
+    def __getitem__(self, key: slice) -> 'TableAdapter': ...
+    def __getitem__(self, key: Union[str, slice]) -> Union[au.Quantity, 'TableAdapter']:
         """
         Handles access via column name (string) OR slicing (slice object).
         """
@@ -97,19 +98,19 @@ class TableAdapterV2(object):
                     # Handle non-Quantity items (like metadata lists if any)
                     new_data_dict[col_name] = quantity[key]
                     
-            # Return a NEW TableAdapterV2 instance containing the sliced data
-            return TableAdapterV2(new_data_dict)
+            # Return a NEW TableAdapter instance containing the sliced data
+            return TableAdapter(new_data_dict)
         
         elif isinstance(key, list):
-            # Selection of multiple columns: return a new TableAdapterV2
+            # Selection of multiple columns: return a new TableAdapter
             # with only the requested subset of the dictionary.
             new_data_dict = {col: self._data_dict[col] for col in key if col in self._data_dict}
-            return TableAdapterV2(new_data_dict)
+            return TableAdapter(new_data_dict)
         
         else:
             raise KeyError(f"Invalid key type: {type(key)}. Expected string or slice.")
 
-def _edges_with_unit(data: SpectrumDataV2) -> SpectrumDataV2:
+def _edges_with_unit(data: SpectrumData) -> SpectrumData:
     """Pixel edges (``xmin``, ``xmax``) without a unit, from sessions saved
     by earlier versions, take the unit of ``x`` (#623: the fit converts the
     edges to Angstrom since #526, and failed with "'' (dimensionless) and
@@ -144,27 +145,27 @@ def _edges_with_unit(data: SpectrumDataV2) -> SpectrumDataV2:
             xmin, xmax = x.copy(), x.copy()
     return dataclasses.replace(
         data,
-        xmin=DataColumnV2(xmin, x_unit, getattr(data.xmin, 'description', '')),
-        xmax=DataColumnV2(xmax, x_unit, getattr(data.xmax, 'description', '')))
+        xmin=DataColumn(xmin, x_unit, getattr(data.xmin, 'description', '')),
+        xmax=DataColumn(xmax, x_unit, getattr(data.xmax, 'description', '')))
 
 
-class SpectrumV2(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, LinesMixin):
+class Spectrum(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, LinesMixin):
     """
     Composite container for spectral data and operations.
 
     This class wraps the raw data (flux, wavelength, error) and provides
-    immutable operations that return new ``SpectrumV2`` instances. It serves as
+    immutable operations that return new ``Spectrum`` instances. It serves as
     the primary data structure passed between Recipes and the GUI.
 
     Parameters
     ----------
-    data : SpectrumDataV2
+    data : SpectrumData
         The core data container holding the Astropy Quantities.
     history : list, optional
         A list of strings describing the modification history of this spectrum.
     """
     
-    def __init__(self, data: SpectrumDataV2, history: Optional[list] = None):
+    def __init__(self, data: SpectrumData, history: Optional[list] = None):
         # The resolution lives in the 'resol' column only: legacy sources
         # (attribute, meta keys) are migrated into it here (#526)
         self._data = migrate_resolution(_edges_with_unit(data))
@@ -279,10 +280,10 @@ class SpectrumV2(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, Line
         return deepcopy(self._data.meta) # Restituisce una copia per prevenire modifiche esterne
 
     @property
-    def t(self) -> TableAdapterV2:
+    def t(self) -> TableAdapter:
         """
         Adapter: Replaces the raw table/dictionary access.
-        Returns a TableAdapterV2 instance to simulate an Astropy Table (V1)
+        Returns a TableAdapter instance to simulate an Astropy Table (V1)
         for compatibility with GUI/V1 logic (like gui_table.py).
         """
         # 1. Build the raw data dictionary (Integration of existing logic)
@@ -299,7 +300,7 @@ class SpectrumV2(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, Line
             output[name] = col_data.quantity
             
         # 3. Return the Adapter Instance (Replacement)
-        return TableAdapterV2(output)
+        return TableAdapter(output)
 
     @property
     def _z_em(self) -> float:
@@ -331,7 +332,7 @@ class SpectrumV2(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, Line
         Adapter SETTER per l'attributo V1 '_xunit'.
         Ignora silenziosamente la modifica (immutabilità V2).
         """
-        pass # L'unità X dovrebbe essere aggiornata solo creando un nuovo SpectrumV2
+        pass # L'unità X dovrebbe essere aggiornata solo creando un nuovo Spectrum
     
     @property
     def _xunit_old(self) -> au.Unit:
@@ -486,9 +487,9 @@ class SpectrumV2(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, Line
 
     def with_properties(self, z_em: float, resol: float = 0.0, 
                         object_name: Optional[str] = None,
-                        overwrite_resol_col: bool = False) -> 'SpectrumV2':
+                        overwrite_resol_col: bool = False) -> 'Spectrum':
         """
-        Return a NEW SpectrumV2 instance with updated properties.
+        Return a NEW Spectrum instance with updated properties.
 
         Parameters
         ----------
@@ -507,7 +508,7 @@ class SpectrumV2(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, Line
 
         Returns
         -------
-        SpectrumV2
+        Spectrum
             A new instance with updated metadata.
         """
         new_meta = deepcopy(self._data.meta)
@@ -530,7 +531,7 @@ class SpectrumV2(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, Line
         new_data = dataclasses.replace(self._data, z_em=z_em, meta=new_meta)
         
         new_history = self.history + [f"Set properties ({', '.join(history_entries)})"]
-        spec = SpectrumV2(data=new_data, history=new_history)
+        spec = Spectrum(data=new_data, history=new_history)
 
         if resol > 0:
             current = self.resolution()
@@ -551,7 +552,7 @@ class SpectrumV2(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, Line
     def _renormalize_model(self, 
                            old_cont_vals: np.ndarray, 
                            new_cont_vals: np.ndarray, 
-                           old_model_col: DataColumnV2) -> Optional[DataColumnV2]:
+                           old_model_col: DataColumn) -> Optional[DataColumn]:
         """
         Private helper to re-normalize an old model to a new continuum
         by applying the *old* normalized profile to the *new* continuum.
@@ -572,13 +573,13 @@ class SpectrumV2(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, Line
         # 2. Recalculate model against *new* continuum
         new_model_values = new_cont_vals * normalized_model
         logger.info("Model renormalized to the new continuum.")
-        return DataColumnV2(
+        return DataColumn(
             values=new_model_values,
             unit=old_model_col.unit, # Use old model's unit
             description=old_model_col.description
         )
     
-    def sanitize_legacy_tellurics(self) -> 'SpectrumV2':
+    def sanitize_legacy_tellurics(self) -> 'Spectrum':
         """
         Patches legacy spectra where 'cont' included tellurics and 'cont_no_telluric' 
         stored the intrinsic continuum.
@@ -588,7 +589,7 @@ class SpectrumV2(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, Line
         1. If 'cont_no_telluric' exists:
            - Overwrite 'cont' with 'cont_no_telluric' (Intrinsic).
            - Remove 'cont_no_telluric'.
-        2. Returns a new SpectrumV2 instance (or self if no changes needed).
+        2. Returns a new Spectrum instance (or self if no changes needed).
         """
         # Check if the legacy column exists
         if 'cont_no_telluric' not in self._data.aux_cols:
@@ -611,13 +612,13 @@ class SpectrumV2(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, Line
         new_data = dataclasses.replace(self._data, aux_cols=new_aux_cols)
         
         # Note: We add a history entry so the user knows this happened
-        return SpectrumV2(data=new_data, history=self.history + ["Sanitized legacy telluric columns"])
+        return Spectrum(data=new_data, history=self.history + ["Sanitized legacy telluric columns"])
     
     def update_column(self, name: str, values: np.ndarray, 
                       unit: Optional[au.Unit] = None,
-                      description: str = "") -> 'SpectrumV2':
+                      description: str = "") -> 'Spectrum':
         """
-        Return a NEW SpectrumV2 instance with the specified column updated or added.
+        Return a NEW Spectrum instance with the specified column updated or added.
 
         Handles both core columns (y, dy) and auxiliary columns (cont, model, etc.).
 
@@ -634,7 +635,7 @@ class SpectrumV2(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, Line
 
         Returns
         -------
-        SpectrumV2
+        Spectrum
             A new instance with the updated column data.
         """
         name = name.strip() # --- Enforce clean column names ---
@@ -650,9 +651,9 @@ class SpectrumV2(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, Line
                 # Default fallback: match Flux unit
                 target_unit = self._data.y.unit
         
-        # 2. Create the DataColumnV2 object
-        # (DataColumnV2 is already imported in your spectrum.py)
-        new_col = DataColumnV2(values, target_unit, description)
+        # 2. Create the DataColumn object
+        # (DataColumn is already imported in your spectrum.py)
+        new_col = DataColumn(values, target_unit, description)
         
         # 3. Prepare new data structure (Immutable Pattern)
         new_data = None
@@ -669,15 +670,15 @@ class SpectrumV2(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, Line
             new_aux[name] = new_col
             new_data = dataclasses.replace(self._data, aux_cols=new_aux)
             
-        # 4. Return new SpectrumV2
+        # 4. Return new Spectrum
         new_history = self.history + [f"Updated column '{name}'"]
-        return SpectrumV2(data=new_data, history=new_history)
+        return Spectrum(data=new_data, history=new_history)
 
-    def remove_meta_keys(self, keys: List[str]) -> 'SpectrumV2':
+    def remove_meta_keys(self, keys: List[str]) -> 'Spectrum':
         """
         Remove specified keys from the metadata dictionary.
 
-        Returns a new SpectrumV2 instance with the specified metadata keys removed.
+        Returns a new Spectrum instance with the specified metadata keys removed.
         This is commonly used to clean up temporary large objects (like JSON
         mapping dictionaries) before saving the session to disk.
 
@@ -688,7 +689,7 @@ class SpectrumV2(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, Line
 
         Returns
         -------
-        SpectrumV2
+        Spectrum
             A new instance with the cleaned metadata.
         """
         new_meta = deepcopy(self._data.meta)
@@ -697,11 +698,11 @@ class SpectrumV2(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, Line
                 del new_meta[k]
         
         new_data = dataclasses.replace(self._data, meta=new_meta)
-        return SpectrumV2(data=new_data, history=self.history)
+        return Spectrum(data=new_data, history=self.history)
 
-    def remove_columns(self, col_names: List[str]) -> 'SpectrumV2':
+    def remove_columns(self, col_names: List[str]) -> 'Spectrum':
         """
-        Return a NEW SpectrumV2 with specified auxiliary columns removed.
+        Return a NEW Spectrum with specified auxiliary columns removed.
 
         Parameters
         ----------
@@ -710,7 +711,7 @@ class SpectrumV2(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, Line
 
         Returns
         -------
-        SpectrumV2
+        Spectrum
             A new instance with the columns removed.
         """
         new_aux_cols = deepcopy(self._data.aux_cols)
@@ -738,9 +739,9 @@ class SpectrumV2(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, Line
 
         new_data = dataclasses.replace(self._data, aux_cols=new_aux_cols)
         new_history = self.history + [f"Deleted columns: {removed}"]
-        return SpectrumV2(data=new_data, history=new_history)
+        return Spectrum(data=new_data, history=new_history)
 
-    def merge_column(self, col_name: str, other_values: np.ndarray) -> 'SpectrumV2':
+    def merge_column(self, col_name: str, other_values: np.ndarray) -> 'Spectrum':
         """
         Merge new values into an existing column.
 
@@ -755,7 +756,7 @@ class SpectrumV2(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, Line
 
         Returns
         -------
-        SpectrumV2
+        Spectrum
             A new instance with merged data.
         """
         old_col = self.get_column(col_name)
@@ -770,7 +771,7 @@ class SpectrumV2(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, Line
         
         return self.update_column(col_name, merged)
     
-    def update_model(self, model_flux: np.ndarray) -> 'SpectrumV2':
+    def update_model(self, model_flux: np.ndarray) -> 'Spectrum':
         """
         Update the 'model' auxiliary column with new flux values.
 
@@ -781,11 +782,11 @@ class SpectrumV2(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, Line
 
         Returns
         -------
-        SpectrumV2
+        Spectrum
             A new instance with the updated model.
         """
-        # Create DataColumnV2 (inheriting unit from flux)
-        new_col = DataColumnV2(
+        # Create DataColumn (inheriting unit from flux)
+        new_col = DataColumn(
             values=model_flux,
             unit=self._data.y.unit,
             description="Voigt Fit Model"
@@ -798,11 +799,11 @@ class SpectrumV2(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, Line
         
         # We don't necessarily add a history entry for every model update 
         # as it happens very frequently during interactive fitting.
-        return SpectrumV2(data=new_data, history=self.history)
+        return Spectrum(data=new_data, history=self.history)
     
-    def x_convert(self, z_ref: float, xunit: au.Unit) -> 'SpectrumV2':
+    def x_convert(self, z_ref: float, xunit: au.Unit) -> 'Spectrum':
         """
-        Convert the X-axis units and return a NEW SpectrumV2 instance.
+        Convert the X-axis units and return a NEW Spectrum instance.
 
         Parameters
         ----------
@@ -813,18 +814,18 @@ class SpectrumV2(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, Line
 
         Returns
         -------
-        SpectrumV2
+        Spectrum
             A new instance with the converted X-axis.
         """
         
         # 1. Execute pure conversion logic
         x_new, xmin_new, xmax_new = convert_x_axis(self._data, z_ref, xunit)
         
-        # 2. Build new SpectrumDataV2, preserving the core vertical data
-        new_data = SpectrumDataV2(
-            x=DataColumnV2(x_new.value, xunit),
-            xmin=DataColumnV2(xmin_new.value, xunit),
-            xmax=DataColumnV2(xmax_new.value, xunit),
+        # 2. Build new SpectrumData, preserving the core vertical data
+        new_data = SpectrumData(
+            x=DataColumn(x_new.value, xunit),
+            xmin=DataColumn(xmin_new.value, xunit),
+            xmax=DataColumn(xmax_new.value, xunit),
             y=self._data.y, 
             dy=self._data.dy,
             aux_cols=self._data.aux_cols,
@@ -832,13 +833,13 @@ class SpectrumV2(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, Line
             z_em=self._data.z_em   # Propagate
         )
         
-        # 3. Return a NEW SpectrumV2 instance
+        # 3. Return a NEW Spectrum instance
         new_history = self.history + [f"X-axis converted to {xunit} at z_ref={z_ref}"]
-        return SpectrumV2(data=new_data, history=new_history)
+        return Spectrum(data=new_data, history=new_history)
 
-    def y_convert(self, yunit: au.Unit) -> 'SpectrumV2':
+    def y_convert(self, yunit: au.Unit) -> 'Spectrum':
         """
-        Convert the Y-axis units and return a NEW SpectrumV2 instance.
+        Convert the Y-axis units and return a NEW Spectrum instance.
 
         Parameters
         ----------
@@ -847,15 +848,15 @@ class SpectrumV2(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, Line
 
         Returns
         -------
-        SpectrumV2
+        Spectrum
             A new instance with converted Y-axis and error.
         """
         
         # 1. Execute pure conversion logic
         new_y, new_dy, new_aux_cols = convert_y_axis(self._data, yunit)
         
-        # 2. Build new SpectrumDataV2, preserving the X-axis and metadata
-        new_data = SpectrumDataV2(
+        # 2. Build new SpectrumData, preserving the X-axis and metadata
+        new_data = SpectrumData(
             x=self._data.x, 
             xmin=self._data.xmin,
             xmax=self._data.xmax,
@@ -866,6 +867,9 @@ class SpectrumV2(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, Line
             z_em=self._data.z_em   # Propagate
         )
         
-        # 3. Return a NEW SpectrumV2 instance
+        # 3. Return a NEW Spectrum instance
         new_history = self.history + [f"Y-axis converted to {yunit}"]
-        return SpectrumV2(data=new_data, history=new_history)
+        return Spectrum(data=new_data, history=new_history)
+
+# Old names (phase 6-quater, PR 6): see astrocook/_renamed.py
+__getattr__ = renamed(__name__, {"TableAdapterV2": "TableAdapter", "SpectrumV2": "Spectrum"})

@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QIntValidator, QDoubleValidator
 from PySide6.QtCore import Qt, QLocale, Signal, QEvent
 
-from astrocook.session.session import SessionV2
+from astrocook.session.session import Session
 from astrocook.recipes.registry import get_recipe
 from .theme import (ACCENT, BUTTON_BACKGROUND, BUTTON_BORDER, BUTTON_PRESSED, DANGER, FOCUS_BORDER,
                     INPUT_BORDER, WARNING, themed)
@@ -29,7 +29,7 @@ class RecipeDialog(QDialog):
     recipe_requested = Signal(str, str, dict, dict)
 
     def __init__(self, recipe_category: str, recipe_name: str,
-                 session: SessionV2, parent=None, param_docs: Optional[dict] = None):
+                 session: Session, parent=None, param_docs: Optional[dict] = None):
         """``param_docs`` replaces the descriptions of some parameters in
         this dialog only (e.g. the number of values that Equalize and
         Stitch expects); the registry is not changed (F79)."""
@@ -305,7 +305,7 @@ class RecipeDialog(QDialog):
             btn_syst_all.clicked.connect(lambda: self._insert_text_into_expression("systems"))
             syst_grid.addWidget(btn_syst_all, 0, 0)
 
-            # Extract colnames from the SystemListV2 table
+            # Extract colnames from the SystemList table
             if self.session.systs:
                 syst_available = self.session.systs.t.colnames
                 # Exclude internal/contextual columns already handled by 'systems (all)'

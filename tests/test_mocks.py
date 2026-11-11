@@ -119,16 +119,16 @@ def test_truth_json_round_trip(tmp_path):
 def test_agrees_with_v2_model_for_resolved_lines():
     # Cross-check with the V2 fitting code for well-sampled lines (b well
     # above the pixel size); the two implementations are independent
-    from astrocook.core.structures import ComponentDataV2, SystemListDataV2
-    from astrocook.core.system_list import SystemListV2
-    from astrocook.fitting.voigt_fitter import VoigtFitterV2
+    from astrocook.core.structures import ComponentData, SystemListData
+    from astrocook.core.system_list import SystemList
+    from astrocook.fitting.voigt_fitter import VoigtFitter
 
     truth = _truth([MockComponent("CIV", Z, 13.6, 12.0)], oversample=10)
     spec = generate(truth)
-    comp = ComponentDataV2(id=1, z=Z, dz=None, logN=13.6, dlogN=None, b=12.0,
+    comp = ComponentData(id=1, z=Z, dz=None, logN=13.6, dlogN=None, b=12.0,
                            db=None, series="CIV")
-    _, v2 = VoigtFitterV2(
-        spec, SystemListV2(SystemListDataV2(components=[comp]))).compute_model_flux()
+    _, v2 = VoigtFitter(
+        spec, SystemList(SystemListData(components=[comp]))).compute_model_flux()
     np.testing.assert_allclose(v2, normalized_flux(truth)[1], atol=3e-3)
 
 

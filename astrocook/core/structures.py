@@ -1,3 +1,4 @@
+from astrocook._renamed import renamed
 from dataclasses import dataclass, field
 from astropy import units as au
 import logging
@@ -9,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
-class SessionMetadataV2:
+class SessionMetadata:
     """
     Core immutable structure for holding constraints, configuration, and history.
 
@@ -58,7 +59,7 @@ class SessionMetadataV2:
     astrocook_version: Optional[str] = None
 
 @dataclass(frozen=True)
-class DataColumnV2:
+class DataColumn:
     """
     Immutable container for a single column of data with physical units.
 
@@ -103,26 +104,26 @@ class DataColumnV2:
         return self.values
 
 @dataclass(frozen=True)
-class SpectrumDataV2:
+class SpectrumData:
     r"""
     Immutable core container for all spectral data.
 
     This class holds the "heavy" numerical arrays (flux, wavelength, error)
-    and auxiliary columns. It is the data payload for :class:`~astrocook.core.spectrum.SpectrumV2`.
+    and auxiliary columns. It is the data payload for :class:`~astrocook.core.spectrum.Spectrum`.
 
     Parameters
     ----------
-    x : DataColumnV2
+    x : DataColumn
         The independent variable (wavelength or velocity).
-    xmin : DataColumnV2
+    xmin : DataColumn
         Lower bound of the x-bins.
-    xmax : DataColumnV2
+    xmax : DataColumn
         Upper bound of the x-bins.
-    y : DataColumnV2
+    y : DataColumn
         The dependent variable (flux density).
-    dy : DataColumnV2
+    dy : DataColumn
         The 1-sigma uncertainty on ``y``.
-    aux_cols : dict of DataColumnV2
+    aux_cols : dict of DataColumn
         Additional columns (e.g. ``'cont'``, ``'model'``, ``'abs_mask'``).
     meta : dict
         Header keywords and other metadata.
@@ -133,17 +134,17 @@ class SpectrumDataV2:
     """
     
     # Dati Spaziali (Assi X e Binning)
-    x: DataColumnV2    # Lunghezza d'onda / Velocità
-    xmin: DataColumnV2 # Limite inferiore del bin
-    xmax: DataColumnV2 # Limite superiore del bin
+    x: DataColumn    # Lunghezza d'onda / Velocità
+    xmin: DataColumn # Limite inferiore del bin
+    xmax: DataColumn # Limite superiore del bin
     
     # Dati Verticali (Flusso e Errore)
-    y: DataColumnV2    # Flusso / Densità di flusso
-    dy: DataColumnV2   # Errore sul Flusso
+    y: DataColumn    # Flusso / Densità di flusso
+    dy: DataColumn   # Errore sul Flusso
 
     # Colonne Aggiuntive (Cont, Resol, Model, ecc.)
-    # Vengono gestite come un dizionario di DataColumnV2
-    aux_cols: Dict[str, DataColumnV2] = field(default_factory=dict)
+    # Vengono gestite come un dizionario di DataColumn
+    aux_cols: Dict[str, DataColumn] = field(default_factory=dict)
     
     # Metadata di Alto Livello
     meta: Dict[str, Any] = field(default_factory=dict)
@@ -162,9 +163,9 @@ class SpectrumDataV2:
                        aux_data: Optional[Dict[str, tuple]] = None, # {'col_name': (values, unit, desc)}
                        meta: Optional[Dict[str, Any]] = None,
                        z_em: float = 0.0,
-                       resol: float = 0.0) -> 'SpectrumDataV2':
+                       resol: float = 0.0) -> 'SpectrumData':
         """
-        Factory method to create a SpectrumDataV2 from raw NumPy arrays.
+        Factory method to create a SpectrumData from raw NumPy arrays.
 
         Parameters
         ----------
@@ -191,7 +192,7 @@ class SpectrumDataV2:
 
         Returns
         -------
-        SpectrumDataV2
+        SpectrumData
             The initialized data object.
         """
 
@@ -200,17 +201,17 @@ class SpectrumDataV2:
         if xmax_values is None: xmax_values = x_values
 
         # Costruire le colonne principali
-        x_col = DataColumnV2(x_values, x_unit)
-        y_col = DataColumnV2(y_values, y_unit)
-        dy_col = DataColumnV2(dy_values, y_unit) # dy usa la stessa unità di y
-        xmin_col = DataColumnV2(xmin_values, x_unit)
-        xmax_col = DataColumnV2(xmax_values, x_unit)
+        x_col = DataColumn(x_values, x_unit)
+        y_col = DataColumn(y_values, y_unit)
+        dy_col = DataColumn(dy_values, y_unit) # dy usa la stessa unità di y
+        xmin_col = DataColumn(xmin_values, x_unit)
+        xmax_col = DataColumn(xmax_values, x_unit)
         
         # Costruire le colonne ausiliarie
         aux_cols = {}
         if aux_data:
             for name, (vals, unit, desc) in aux_data.items():
-                 aux_cols[name] = DataColumnV2(vals, unit, desc)
+                 aux_cols[name] = DataColumn(vals, unit, desc)
         
         return cls(x=x_col, xmin=xmin_col, xmax=xmax_col, 
                    y=y_col, dy=dy_col, 
@@ -220,7 +221,7 @@ class SpectrumDataV2:
                    resol=resol)
     
 @dataclass(frozen=True)
-class ComponentDataV2:
+class ComponentData:
     """
     Immutable data structure for a single absorption component (Voigt profile).
     """
@@ -273,7 +274,7 @@ class ComponentDataV2:
     """ A globally unique, stable identifier for V2 constraints and linking. """
 
 @dataclass(frozen=True)
-class ParameterConstraintV2:
+class ParameterConstraint:
     """
     Immutable structure defining a constraint for a single parameter.
 
@@ -297,7 +298,7 @@ class ParameterConstraintV2:
     """ Legacy ID of the target component (for debugging/reconstruction only). """
 
 @dataclass(frozen=True)
-class SystemListDataV2:
+class SystemListData:
     """
     Immutable container for system components and constraints.
 
@@ -305,17 +306,17 @@ class SystemListDataV2:
     of components and the maps defining their relationships.
     """
     
-    components: List[ComponentDataV2] = field(default_factory=list)
+    components: List[ComponentData] = field(default_factory=list)
     """ The list of absorption components. """
     v1_header_constraints: Dict[str, Any] = field(default_factory=dict)
     """ Legacy constraints from V1 file headers. """
     
-    # Stores a dictionary mapping (Component UUID, Parameter Name) -> ConstraintDataV2
-    parsed_constraints: Dict[Tuple[str, str], ParameterConstraintV2] = field(default_factory=dict)
-    """ Map of (Component UUID, Parameter Name) -> ConstraintDataV2. """
+    # Stores a dictionary mapping (Component UUID, Parameter Name) -> ParameterConstraint
+    parsed_constraints: Dict[Tuple[str, str], ParameterConstraint] = field(default_factory=dict)
+    """ Map of (Component UUID, Parameter Name) -> ParameterConstraint. """
 
     # V2-style constraints: {UUID: {ParamName: {...}}}
-    v2_constraints_map: Dict[str, Dict[str, ParameterConstraintV2]] = field(default_factory=dict)
+    v2_constraints_map: Dict[str, Dict[str, ParameterConstraint]] = field(default_factory=dict)
     """ Nested map {UUID: {ParamName: Constraint}}. """
     
     # Add the missing field
@@ -328,7 +329,7 @@ class SystemListDataV2:
     """ Metadata for the system list. """
 
 @dataclass
-class LogEntryV2:
+class LogEntry:
     """
     A single entry in the V2 analysis log.
     
@@ -341,7 +342,7 @@ class LogEntryV2:
     reason: Optional[str] = None
 
 
-#: The kinds of the notes of a log that :meth:`HistoryLogV2.add_note` takes:
+#: The kinds of the notes of a log that :meth:`HistoryLog.add_note` takes:
 #: ``note`` (what was done or decided outside the recipes), ``gap`` (what the
 #: analysis needed and no recipe provided, declared by the agent) and
 #: ``gap_seen`` (a gap seen by the MCP server); phase 6-ter, PR 5b
@@ -349,7 +350,7 @@ NOTE_KINDS = ("note", "gap", "gap_seen")
 
 
 @dataclass
-class LogNoteV2:
+class LogNote:
     """
     A note in the V2 analysis log: text that is not a state change (e.g. what
     an agent did outside the recipes), skipped by the replay.
@@ -368,31 +369,31 @@ class LogNoteV2:
     kind: str = "note"
 
 @dataclass
-class HistoryLogV2:
+class HistoryLog:
     """
     Manages the linear history of operations (Log V2).
 
-    This class maintains a list of :class:`LogEntryV2` objects matching the
+    This class maintains a list of :class:`LogEntry` objects matching the
     stack of immutable states in the session manager. It supports truncation
     to handle branching history (undo/redo logic).
     """
     # The attributes are documented by the #: comments below and not in an
     # "Attributes" section, which Sphinx would describe twice
     def __init__(self):
-        #: The list of operations performed (list of :class:`LogEntryV2`).
-        self.entries: List[LogEntryV2] = []
+        #: The list of operations performed (list of :class:`LogEntry`).
+        self.entries: List[LogEntry] = []
         #: Pointer to the currently active log entry (state), i.e. the last
         #: valid entry.
         self.current_index: int = -1
-        #: The notes (list of :class:`LogNoteV2`), in the order they were
+        #: The notes (list of :class:`LogNote`), in the order they were
         #: written; those written after an entry undone are undone with it.
-        self.notes: List[LogNoteV2] = []
+        self.notes: List[LogNote] = []
         #: The log of the archive the session was opened from (a
-        #: :class:`HistoryLogV2`), or None: read only, shown while the
+        #: :class:`HistoryLog`), or None: read only, shown while the
         #: session is open, never replayed nor saved again (F109: each saved
         #: archive is a node, its log goes from its original data to its
         #: state; see :meth:`opened_from`).
-        self.previous: Optional['HistoryLogV2'] = None
+        self.previous: Optional['HistoryLog'] = None
 
     @property
     def is_v2_log(self) -> bool:
@@ -400,7 +401,7 @@ class HistoryLogV2:
         return True
 
     @classmethod
-    def opened_from(cls, archive_log: Optional['HistoryLogV2']) -> 'HistoryLogV2':
+    def opened_from(cls, archive_log: Optional['HistoryLog']) -> 'HistoryLog':
         """The log of a session opened from an archive: empty, with the log
         of the archive as :attr:`previous`.
 
@@ -412,7 +413,7 @@ class HistoryLogV2:
         the earlier nodes are in their archives.
         """
         log = cls()
-        if isinstance(archive_log, HistoryLogV2) and (archive_log.entries or archive_log.notes):
+        if isinstance(archive_log, HistoryLog) and (archive_log.entries or archive_log.notes):
             previous = cls()
             previous.entries = list(archive_log.entries[:archive_log.current_index + 1])
             previous.current_index = len(previous.entries) - 1
@@ -444,7 +445,7 @@ class HistoryLogV2:
         # 2. Add the new entry
         if not (isinstance(reason, str) and reason.strip()):
             reason = None
-        entry = LogEntryV2(recipe_name=recipe_name, params=params,
+        entry = LogEntry(recipe_name=recipe_name, params=params,
                            reason=reason.strip() if reason else None)
         self.entries.append(entry)
         
@@ -452,7 +453,7 @@ class HistoryLogV2:
         self.current_index = len(self.entries) - 1
         logger.debug(f"Added log entry: {recipe_name}. Index is now {self.current_index}.")
 
-    def add_note(self, text: str, kind: str = "note") -> LogNoteV2:
+    def add_note(self, text: str, kind: str = "note") -> LogNote:
         """
         Add a note at the current entry, without a state.
 
@@ -469,7 +470,7 @@ class HistoryLogV2:
 
         Returns
         -------
-        LogNoteV2
+        LogNote
             The note added.
 
         Raises
@@ -482,14 +483,14 @@ class HistoryLogV2:
         if kind not in NOTE_KINDS:
             raise ValueError(f"Unknown kind of note '{kind}': one of "
                              f"{', '.join(NOTE_KINDS)}.")
-        note = LogNoteV2(text=text.strip(), after=self.current_index + 1, kind=kind)
+        note = LogNote(text=text.strip(), after=self.current_index + 1, kind=kind)
         # After the notes of the same entry or earlier ones, before those of
         # the entries undone
         i = sum(1 for n in self.notes if n.after <= note.after)
         self.notes.insert(i, note)
         return note
 
-    def notes_at(self, after: int) -> List[LogNoteV2]:
+    def notes_at(self, after: int) -> List[LogNote]:
         """The notes written after ``after`` entries (at the state made by
         the entry ``after - 1``), in the order they were written."""
         return [n for n in self.notes if n.after == after]
@@ -506,8 +507,8 @@ class HistoryLogV2:
         Returns
         -------
         list of tuple
-            ``(item, active)``: a :class:`LogEntryV2` or a
-            :class:`LogNoteV2`, and False if it is undone.
+            ``(item, active)``: a :class:`LogEntry` or a
+            :class:`LogNote`, and False if it is undone.
         """
         last = len(self.entries) if include_undone else self.current_index + 1
         items: List[Tuple[Any, bool]] = []
@@ -579,7 +580,7 @@ class HistoryLogV2:
         return out
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'HistoryLogV2':
+    def from_dict(cls, data: Dict[str, Any]) -> 'HistoryLog':
         """
         Rebuild a log from the output of :meth:`to_dict`.
 
@@ -590,20 +591,24 @@ class HistoryLogV2:
 
         Returns
         -------
-        HistoryLogV2
+        HistoryLog
             The log, pointing at its last entry.
         """
         log = cls()
         for e in (data or {}).get('entries', []) or []:
-            log.entries.append(LogEntryV2(recipe_name=e['recipe_name'],
+            log.entries.append(LogEntry(recipe_name=e['recipe_name'],
                                           params=dict(e.get('params') or {}),
                                           reason=e.get('reason') or None))
         log.current_index = len(log.entries) - 1
         for n in (data or {}).get('notes', []) or []:
             after = min(max(int(n.get('after', len(log.entries))), 0), len(log.entries))
-            log.notes.append(LogNoteV2(text=str(n['text']), after=after,
+            log.notes.append(LogNote(text=str(n['text']), after=after,
                                        kind=str(n.get('kind') or 'note')))
         log.notes.sort(key=lambda n: n.after)  # stable: the order of writing
         return log
 
 # --- V1 Compatibility Wrapper ---
+
+
+# Old names (phase 6-quater, PR 6): see astrocook/_renamed.py
+__getattr__ = renamed(__name__, {"SessionMetadataV2": "SessionMetadata", "DataColumnV2": "DataColumn", "SpectrumDataV2": "SpectrumData", "ComponentDataV2": "ComponentData", "ParameterConstraintV2": "ParameterConstraint", "SystemListDataV2": "SystemListData", "LogEntryV2": "LogEntry", "LogNoteV2": "LogNote", "HistoryLogV2": "HistoryLog"})

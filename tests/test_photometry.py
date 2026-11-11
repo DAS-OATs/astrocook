@@ -1,5 +1,5 @@
 """Synthetic photometry and flux calibration (``core/photometry.py``,
-``SpectrumV2.calibrate``, *Flux > Calibrate*).
+``Spectrum.calibrate``, *Flux > Calibrate*).
 
 No test reached this code until phase 5, when ``np.trapz`` was found to be
 gone from recent NumPy: the calibration failed at every call.
@@ -11,8 +11,8 @@ import numpy as np
 import pytest
 
 from astrocook.core.photometry import calculate_synthetic_ab_mag, generate_calibration_curve
-from astrocook.core.spectrum import SpectrumV2
-from astrocook.core.structures import DataColumnV2, SpectrumDataV2
+from astrocook.core.spectrum import Spectrum
+from astrocook.core.structures import DataColumn, SpectrumData
 
 FLAM = au.erg / (au.cm**2 * au.s * au.Angstrom)
 FLUX_NM = au.erg / au.cm**2 / au.s / au.nm
@@ -90,12 +90,12 @@ def test_invalid_magnitudes(magnitudes, error):
 
 def test_spectrum_calibrate():
     x, y = _flat_fnu()
-    data = SpectrumDataV2(
-        x=DataColumnV2(x.value, au.nm), xmin=DataColumnV2(x.value - 0.05, au.nm),
-        xmax=DataColumnV2(x.value + 0.05, au.nm), y=DataColumnV2(y.value, FLUX_NM),
-        dy=DataColumnV2(0.01 * y.value, FLUX_NM),
-        aux_cols={"cont": DataColumnV2(y.value, FLUX_NM)}, z_em=3.0)
-    spec = SpectrumV2(data)
+    data = SpectrumData(
+        x=DataColumn(x.value, au.nm), xmin=DataColumn(x.value - 0.05, au.nm),
+        xmax=DataColumn(x.value + 0.05, au.nm), y=DataColumn(y.value, FLUX_NM),
+        dy=DataColumn(0.01 * y.value, FLUX_NM),
+        aux_cols={"cont": DataColumn(y.value, FLUX_NM)}, z_em=3.0)
+    spec = Spectrum(data)
     new = spec.calibrate("SDSS_g=17.5")
     assert new.y.unit == FLAM and new.get_column("cont").unit == FLAM
     # The values are multiplied by the curve; the unit is relabelled

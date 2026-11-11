@@ -81,7 +81,7 @@ DETECTION_SIGMA = 3.0
 #: Metal systems per mock on the red side, and their species
 METAL_SYSTEMS = {"CIV": 4, "SiIV": 2, "MgII": 2}
 METALS = tuple(METAL_SYSTEMS)
-#: Bounds of the fits, for the flags (VoigtModelConstraintV2.DEFAULT_BOUNDS
+#: Bounds of the fits, for the flags (VoigtModelConstraint.DEFAULT_BOUNDS
 #: and the max_b and max_logN of doublets_auto; the upper bound on logN was
 #: 23 before F62)
 LOGN_BOUNDS = (10.0, 19.0)
@@ -196,8 +196,8 @@ def schema_params(menu, recipe):
 def run_chain(spec):
     """Continuum, identification and doublet fit on a mock spectrum, as a
     user of the GUI would run them."""
-    from astrocook.core.session import SessionV2
-    session = SessionV2("mock", None, spec=spec)
+    from astrocook.core.session import Session
+    session = Session("mock", None, spec=spec)
     t0 = time.time()
     cont = session.continuum.estimate_auto(**schema_params("continuum", "estimate_auto"))
     t1 = time.time()

@@ -1,7 +1,7 @@
 import numpy as np
 import logging
 from typing import Collection, Dict, Any, Optional
-from .voigt_fitter import VoigtFitterV2
+from .voigt_fitter import VoigtFitter
 
 try:
     import emcee
@@ -39,15 +39,15 @@ class BayesianVoigtFitter:
     """
     Bayesian engine for Voigt profile fitting.
     
-    This class wraps a :class:`~astrocook.fitting.voigt_fitter.VoigtFitterV2`
+    This class wraps a :class:`~astrocook.fitting.voigt_fitter.VoigtFitter`
     instance to perform Markov Chain Monte Carlo (MCMC) or Nested Sampling
     using the exact same physical model, constraints, and data preparation.
 
     Parameters
     ----------
-    spec : SpectrumV2
+    spec : Spectrum
         The spectral data to fit.
-    systs : SystemListV2
+    systs : SystemList
         The system list containing the components to model.
     z_window_kms : float, optional
         Velocity window (km/s) around component centers to include in the fit mask.
@@ -58,8 +58,8 @@ class BayesianVoigtFitter:
         self.systs = systs
         self.z_window_kms = z_window_kms
         
-        # We need a VoigtFitterV2 instance to handle the model and constraints
-        self.fitter = VoigtFitterV2(self.spec, self.systs)
+        # We need a VoigtFitter instance to handle the model and constraints
+        self.fitter = VoigtFitter(self.spec, self.systs)
         
         # Prepare the data context from the standard fitter
         self.lower_bounds, self.upper_bounds = self.fitter.prepare_fit_context(z_window_kms=z_window_kms)
@@ -93,7 +93,7 @@ class BayesianVoigtFitter:
             resid = (self.ctx['y'][mask] - model[mask]) / self.ctx['dy'][mask]
             
             # Additional penalty terms from Frequentist fitter (e.g. b-parameter runaway)
-            # To match the logic of VoigtFitterV2._residual_function
+            # To match the logic of VoigtFitter._residual_function
             p_full = self.fitter._constraints.map_p_free_to_full(p_free)
             is_free_mask = self.fitter._constraints._param_map['is_free']
             num_params = 4
@@ -332,7 +332,7 @@ class BayesianVoigtFitter:
 
         Returns
         -------
-        SystemListV2
+        SystemList
             A new system list containing the updated parameters and Bayesian errors.
         """
         medians = res['medians'] if 'medians' in res else np.median(res['samples'], axis=0)

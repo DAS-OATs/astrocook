@@ -3,12 +3,12 @@ import numpy as np
 import pytest
 import astropy.units as au
 
-from astrocook.core.spectrum import SpectrumV2
+from astrocook.core.spectrum import Spectrum
 from astrocook.core.structures import (
-    ComponentDataV2, DataColumnV2, SpectrumDataV2, SystemListDataV2
+    ComponentData, DataColumn, SpectrumData, SystemListData
 )
-from astrocook.core.system_list import SystemListV2
-from astrocook.fitting.voigt_fitter import NoPixelsToFit, VoigtFitterV2
+from astrocook.core.system_list import SystemList
+from astrocook.fitting.voigt_fitter import NoPixelsToFit, VoigtFitter
 
 
 def test_prepare_fit_context_with_no_valid_pixels():
@@ -18,17 +18,17 @@ def test_prepare_fit_context_with_no_valid_pixels():
     # (phase 6-ter, PR 7-quater) the fit is refused with a clear message.
     x = np.linspace(4630.0, 4660.0, 300)
     one = np.ones_like(x)
-    spec = SpectrumV2(SpectrumDataV2(
-        x=DataColumnV2(x, au.Angstrom),
-        xmin=DataColumnV2(x - 0.05, au.Angstrom),
-        xmax=DataColumnV2(x + 0.05, au.Angstrom),
-        y=DataColumnV2(np.full_like(x, np.nan), au.dimensionless_unscaled),
-        dy=DataColumnV2(0.1 * one, au.dimensionless_unscaled),
-        aux_cols={'cont': DataColumnV2(one, au.dimensionless_unscaled)},
+    spec = Spectrum(SpectrumData(
+        x=DataColumn(x, au.Angstrom),
+        xmin=DataColumn(x - 0.05, au.Angstrom),
+        xmax=DataColumn(x + 0.05, au.Angstrom),
+        y=DataColumn(np.full_like(x, np.nan), au.dimensionless_unscaled),
+        dy=DataColumn(0.1 * one, au.dimensionless_unscaled),
+        aux_cols={'cont': DataColumn(one, au.dimensionless_unscaled)},
     ))
-    comp = ComponentDataV2(id=1, z=2.0, dz=None, logN=13.5, dlogN=None,
+    comp = ComponentData(id=1, z=2.0, dz=None, logN=13.5, dlogN=None,
                            b=20.0, db=None, series='CIV')
-    fitter = VoigtFitterV2(spec, SystemListV2(SystemListDataV2(components=[comp])))
+    fitter = VoigtFitter(spec, SystemList(SystemListData(components=[comp])))
 
     with pytest.raises(NoPixelsToFit, match=r"\(CIV at z = 2\.0000\): .* or on pixels "
                                              "that cannot be used"):

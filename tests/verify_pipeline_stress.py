@@ -8,10 +8,10 @@ import matplotlib.pyplot as plt
 # Ensure import path is correct
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from astrocook.core.structures import SpectrumDataV2, DataColumnV2, SystemListDataV2
-from astrocook.core.spectrum import SpectrumV2
-from astrocook.core.system_list import SystemListV2
-from astrocook.fitting.voigt_fitter import VoigtFitterV2
+from astrocook.core.structures import SpectrumData, DataColumn, SystemListData
+from astrocook.core.spectrum import Spectrum
+from astrocook.core.system_list import SystemList
+from astrocook.fitting.voigt_fitter import VoigtFitter
 from astrocook.core.atomic_data import ATOM_DATA
 
 # Keep logs quiet so we can see the report
@@ -43,23 +43,23 @@ def make_stress_spectrum():
     ]
     for t in truth: t['series'] = 'CIV'
 
-    systs_data = SystemListDataV2()
-    gt_systs = SystemListV2(systs_data)
+    systs_data = SystemListData()
+    gt_systs = SystemList(systs_data)
     for c in truth:
         gt_systs = gt_systs.add_component(**c)
 
     # Note: R=50000 -> FWHM ~ 6 km/s
-    mock_spec_data = SpectrumDataV2(
-        x=DataColumnV2(x, au.nm),
-        xmin=DataColumnV2(x, au.nm), xmax=DataColumnV2(x, au.nm),
-        y=DataColumnV2(cont, au.dimensionless_unscaled),
-        dy=DataColumnV2(np.ones_like(x)*0.1, au.dimensionless_unscaled),
-        aux_cols={'cont': DataColumnV2(cont, au.dimensionless_unscaled)},
+    mock_spec_data = SpectrumData(
+        x=DataColumn(x, au.nm),
+        xmin=DataColumn(x, au.nm), xmax=DataColumn(x, au.nm),
+        y=DataColumn(cont, au.dimensionless_unscaled),
+        dy=DataColumn(np.ones_like(x)*0.1, au.dimensionless_unscaled),
+        aux_cols={'cont': DataColumn(cont, au.dimensionless_unscaled)},
         z_em=0.1, z_rf=0.0, resol=50000.0, meta={}
     )
-    mock_spec = SpectrumV2(mock_spec_data)
+    mock_spec = Spectrum(mock_spec_data)
     
-    fitter = VoigtFitterV2(mock_spec, gt_systs)
+    fitter = VoigtFitter(mock_spec, gt_systs)
     _, flux_true = fitter.compute_model_flux()
     
     rng = np.random.default_rng(999) 
@@ -67,21 +67,21 @@ def make_stress_spectrum():
     flux_noisy = flux_true + noise
     dy = np.ones_like(x) / snr
     
-    real_spec_data = SpectrumDataV2(
-        x=DataColumnV2(x, au.nm),
-        xmin=DataColumnV2(x, au.nm), xmax=DataColumnV2(x, au.nm),
-        y=DataColumnV2(flux_noisy, au.dimensionless_unscaled),
-        dy=DataColumnV2(dy, au.dimensionless_unscaled),
-        aux_cols={'cont': DataColumnV2(cont, au.dimensionless_unscaled)},
+    real_spec_data = SpectrumData(
+        x=DataColumn(x, au.nm),
+        xmin=DataColumn(x, au.nm), xmax=DataColumn(x, au.nm),
+        y=DataColumn(flux_noisy, au.dimensionless_unscaled),
+        dy=DataColumn(dy, au.dimensionless_unscaled),
+        aux_cols={'cont': DataColumn(cont, au.dimensionless_unscaled)},
         z_em=0.1, z_rf=0.0, resol=50000.0, meta={}
     )
-    return SpectrumV2(real_spec_data), truth
+    return Spectrum(real_spec_data), truth
 
 def run_stress_test():
     spec, truth_list = make_stress_spectrum()
     
     print("\n--- INITIALIZING FIT ---")
-    systs = SystemListV2(SystemListDataV2())
+    systs = SystemList(SystemListData())
     systs = systs.add_component(series='CIV', z=0.0, logN=14.0, b=20.0) 
     seed_uuid = systs.components[0].uuid
     
@@ -148,7 +148,7 @@ def run_stress_test():
 
     # --- PLOTTING ---
     print("\nLaunching Plotter...")
-    fitter = VoigtFitterV2(spec, final_systs)
+    fitter = VoigtFitter(spec, final_systs)
     _, model_flux = fitter.compute_model_flux()
     
     x = spec.x.to(au.nm).value

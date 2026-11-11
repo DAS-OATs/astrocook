@@ -19,9 +19,9 @@ from PySide6.QtWidgets import QMessageBox
 
 from astrocook.session.session import load_session_from_file
 from astrocook.session.history import SessionHistory
-from astrocook.core.structures import HistoryLogV2
+from astrocook.core.structures import HistoryLog
 from astrocook.gui.log_script import log_to_script
-from astrocook.gui.main_window import MainWindowV2
+from astrocook.gui.main_window import MainWindow
 from astrocook.methods_text import methods_text
 
 from test_gui_smoke import SESSION_FILE, _run_recipe
@@ -32,7 +32,7 @@ def node(tmp_path):
     """An archive saved after one recipe that is not idempotent: A is the
     spectrum of the tests, B has its flux doubled, the log has the recipe."""
     a = load_session_from_file(str(SESSION_FILE), "node", None, "auto")
-    history = SessionHistory(a, HistoryLogV2())
+    history = SessionHistory(a, HistoryLog())
     params = {"target_col": "y", "expression": "y * 2"}
     history.log_manager.add_entry("apply_expression", params, reason="To double it.")
     b = a.edit.apply_expression(**params)
@@ -64,7 +64,7 @@ def window(qtbot, monkeypatch, tmp_path):
     for kind in ("warning", "critical", "information", "question"):
         monkeypatch.setattr(QMessageBox, kind, staticmethod(
             lambda *a, **k: QMessageBox.StandardButton.Ok))
-    win = MainWindowV2(None, None)
+    win = MainWindow(None, None)
     qtbot.addWidget(win)
     monkeypatch.setattr(win, "_show_custom_message",
                         lambda *a, **k: QMessageBox.StandardButton.Yes)
@@ -194,19 +194,19 @@ def test_the_previous_log_follows_copies_and_branches(qtbot, window, node, monke
 
 
 def test_opened_from_keeps_only_the_entries_done():
-    log = HistoryLogV2()
+    log = HistoryLog()
     log.add_entry("a", {})
     log.add_note("after a")
     log.add_entry("b", {})
     log.add_note("after b")
     log.undo()
-    log.previous = HistoryLogV2.opened_from(HistoryLogV2())  # not carried over
-    new = HistoryLogV2.opened_from(log)
+    log.previous = HistoryLog.opened_from(HistoryLog())  # not carried over
+    new = HistoryLog.opened_from(log)
     assert new.entries == [] and new.current_index == -1 and new.notes == []
     assert [e.recipe_name for e in new.previous.entries] == ["a"]
     assert [n.text for n in new.previous.notes] == ["after a"]
     assert new.previous.previous is None
-    assert HistoryLogV2.opened_from(HistoryLogV2()).previous is None
-    assert HistoryLogV2.opened_from(None).previous is None
+    assert HistoryLog.opened_from(HistoryLog()).previous is None
+    assert HistoryLog.opened_from(None).previous is None
     # Never saved
     assert "previous" not in new.to_dict()

@@ -12,12 +12,12 @@ import numpy as np
 import astropy.units as au
 import pytest
 
-from astrocook.core.spectrum import SpectrumV2
+from astrocook.core.spectrum import Spectrum
 from astrocook.core.structures import (
-    ComponentDataV2, DataColumnV2, SpectrumDataV2, SystemListDataV2,
+    ComponentData, DataColumn, SpectrumData, SystemListData,
 )
-from astrocook.core.system_list import SystemListV2
-from astrocook.fitting.voigt_fitter import VoigtFitterV2
+from astrocook.core.system_list import SystemList
+from astrocook.fitting.voigt_fitter import VoigtFitter
 
 R_SYNTH = 45000.0
 # CIV doublet (two blended components) and an unrelated Ly-alpha line
@@ -29,14 +29,14 @@ TRUE_COMPONENTS = [
 
 
 def _components(params, resol=None):
-    return [ComponentDataV2(id=i + 1, z=p["z"], dz=None, logN=p["logN"],
+    return [ComponentData(id=i + 1, z=p["z"], dz=None, logN=p["logN"],
                             dlogN=None, b=p["b"], db=None, series=p["series"],
                             resol=resol[i] if resol else None)
             for i, p in enumerate(params)]
 
 
 def _system_list(params, resol=None):
-    return SystemListV2(SystemListDataV2(components=_components(params, resol)))
+    return SystemList(SystemListData(components=_components(params, resol)))
 
 
 def _synthetic_spectrum(y=None, resol=0.0, resol_col=None, seed=None):
@@ -45,19 +45,19 @@ def _synthetic_spectrum(y=None, resol=0.0, resol_col=None, seed=None):
     n = len(x)
     if y is None:
         y = np.ones(n)
-    aux = {"cont": DataColumnV2(np.ones(n), au.dimensionless_unscaled)}
+    aux = {"cont": DataColumn(np.ones(n), au.dimensionless_unscaled)}
     if resol_col is not None:
-        aux["resol"] = DataColumnV2(resol_col, au.dimensionless_unscaled)
-    return SpectrumV2(SpectrumDataV2(
-        x=DataColumnV2(x, au.nm), xmin=DataColumnV2(x - 0.0025, au.nm),
-        xmax=DataColumnV2(x + 0.0025, au.nm),
-        y=DataColumnV2(y, au.dimensionless_unscaled),
-        dy=DataColumnV2(np.full(n, 0.02), au.dimensionless_unscaled),
+        aux["resol"] = DataColumn(resol_col, au.dimensionless_unscaled)
+    return Spectrum(SpectrumData(
+        x=DataColumn(x, au.nm), xmin=DataColumn(x - 0.0025, au.nm),
+        xmax=DataColumn(x + 0.0025, au.nm),
+        y=DataColumn(y, au.dimensionless_unscaled),
+        dy=DataColumn(np.full(n, 0.02), au.dimensionless_unscaled),
         aux_cols=aux, z_em=4.1, resol=resol))
 
 
 def _model(spec, systs):
-    _, flux = VoigtFitterV2(spec, systs).compute_model_flux()
+    _, flux = VoigtFitter(spec, systs).compute_model_flux()
     return flux
 
 
@@ -158,7 +158,7 @@ def test_fit_synthetic(snapshot):
     # Start from a guess inside the default z window (20 km/s)
     guess = [dict(p, z=p["z"] + 5e-5, logN=p["logN"] - 0.3, b=p["b"] * 1.3)
              for p in TRUE_COMPONENTS]
-    systs, _, result = VoigtFitterV2(data, _system_list(guess)).fit(
+    systs, _, result = VoigtFitter(data, _system_list(guess)).fit(
         max_nfev=2000, z_window_kms=20.0)
 
     assert result.success
@@ -187,7 +187,7 @@ def test_fit_j0103_civ(snapshot, j0103_window_for_fit, j0103_systs):
                  key=lambda c: abs(c.z - J0103_CIV_Z) if c.series == "CIV" else np.inf)
     assert abs(target.z - J0103_CIV_Z) < 1e-4
     with j0103_systs.fitting_context([target.uuid], group_depth=1):
-        fitter = VoigtFitterV2(j0103_window_for_fit, j0103_systs)
+        fitter = VoigtFitter(j0103_window_for_fit, j0103_systs)
         active = set(fitter._constraints._active_uuids)
         systs, _, result = fitter.fit(max_nfev=2000, z_window_kms=20.0)
     assert result.success

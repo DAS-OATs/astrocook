@@ -11,9 +11,9 @@ import dataclasses
 import numpy as np
 import pytest
 
-from astrocook.core.structures import ComponentDataV2, SystemListDataV2
-from astrocook.core.system_list import SystemListV2
-from astrocook.fitting.voigt_fitter import VoigtFitterV2
+from astrocook.core.structures import ComponentData, SystemListData
+from astrocook.core.system_list import SystemList
+from astrocook.fitting.voigt_fitter import VoigtFitter
 from astrocook.mocks import MockComponent, MockTruth, generate
 
 Z = 2.0
@@ -31,11 +31,11 @@ def spec():
 
 
 def _linked_systs(b_expr="{}"):
-    comps = [ComponentDataV2(id=1, z=Z + 2e-5, dz=None, logN=13.3, dlogN=None,
+    comps = [ComponentData(id=1, z=Z + 2e-5, dz=None, logN=13.3, dlogN=None,
                              b=17.0, db=None, series="CIV"),
-             ComponentDataV2(id=2, z=Z - 2e-5, dz=None, logN=12.8, dlogN=None,
+             ComponentData(id=2, z=Z - 2e-5, dz=None, logN=12.8, dlogN=None,
                              b=8.0, db=None, series="SiIV")]
-    systs = SystemListV2(SystemListDataV2(components=comps))
+    systs = SystemList(SystemListData(components=comps))
     civ, siiv = (c.uuid for c in systs.components)
     target = f"p['{civ}']"
     return (systs
@@ -48,7 +48,7 @@ def _linked_systs(b_expr="{}"):
 
 def test_linked_parameters_carry_the_error_of_their_target(spec):
     systs = _linked_systs(b_expr="{}*" + str(RATIO))
-    fitted, _, _ = VoigtFitterV2(spec, systs).fit(max_nfev=2000, z_window_kms=20.0)
+    fitted, _, _ = VoigtFitter(spec, systs).fit(max_nfev=2000, z_window_kms=20.0)
     civ, siiv = fitted.components
     # The links hold...
     assert siiv.z == civ.z
@@ -70,7 +70,7 @@ def test_linked_parameters_carry_the_error_of_their_target(spec):
 def test_nonlinear_link(spec):
     # A link that is not linear: the gradient of the expression, sqrt here
     systs = _linked_systs(b_expr="np.sqrt({})*2.5")
-    fitted, _, _ = VoigtFitterV2(spec, systs).fit(max_nfev=2000, z_window_kms=20.0)
+    fitted, _, _ = VoigtFitter(spec, systs).fit(max_nfev=2000, z_window_kms=20.0)
     civ, siiv = fitted.components
     assert siiv.b == pytest.approx(2.5 * np.sqrt(civ.b), rel=1e-10)
     assert siiv.db == pytest.approx(civ.db * 1.25 / np.sqrt(civ.b), rel=1e-5)
@@ -80,7 +80,7 @@ def test_a_parameter_linked_to_a_frozen_one_has_no_error(spec):
     systs = _linked_systs()
     civ_uuid = systs.components[0].uuid
     systs = systs.update_constraint(civ_uuid, "b", is_free=False)
-    fitted, _, _ = VoigtFitterV2(spec, systs).fit(max_nfev=2000, z_window_kms=20.0)
+    fitted, _, _ = VoigtFitter(spec, systs).fit(max_nfev=2000, z_window_kms=20.0)
     civ, siiv = fitted.components
     assert civ.db == 0.0 and siiv.db == 0.0
     assert siiv.dz == pytest.approx(civ.dz, rel=1e-6)
@@ -89,10 +89,10 @@ def test_a_parameter_linked_to_a_frozen_one_has_no_error(spec):
 def test_evaluate_uncertainties_also_gives_the_linked_errors(spec):
     # The errors recomputed at the end of the automatic pipelines (#534)
     systs = _linked_systs(b_expr="{}*" + str(RATIO))
-    fitted, _, _ = VoigtFitterV2(spec, systs).fit(max_nfev=2000, z_window_kms=20.0)
-    zeroed = SystemListV2(dataclasses.replace(
+    fitted, _, _ = VoigtFitter(spec, systs).fit(max_nfev=2000, z_window_kms=20.0)
+    zeroed = SystemList(dataclasses.replace(
         fitted._data, components=[dataclasses.replace(c, dz=0.0, db=0.0)
                                   for c in fitted.components]))
-    civ, siiv = VoigtFitterV2(spec, zeroed).evaluate_uncertainties().components
+    civ, siiv = VoigtFitter(spec, zeroed).evaluate_uncertainties().components
     assert siiv.dz == pytest.approx(civ.dz, rel=1e-6) and siiv.dz > 0
     assert siiv.db == pytest.approx(civ.db * RATIO, rel=1e-6)

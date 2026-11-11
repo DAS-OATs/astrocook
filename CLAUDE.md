@@ -45,25 +45,33 @@ scriptable API. Author and maintainer: Guido Cupani (INAF–OATs).
 Current version: 2.6.0. Python ≥3.12.
 
 ## Architecture (v2)
-- `astrocook/core/` – immutable dataclasses (`structures.py`), `SpectrumV2`,
+- `astrocook/core/` – immutable dataclasses (`structures.py`), `Spectrum`,
   pure functions in `spectrum_operations.py`, system list. The bottom layer:
   it does not import `recipes/` or `session/`.
-  Methods return new objects: do not mutate state in place. `SpectrumV2`
+  Methods return new objects: do not mutate state in place. `Spectrum`
   (`spectrum.py`) holds the data, columns and conversions; its other
   methods are in mixins by theme (`spectrum_continuum.py`,
   `spectrum_lines.py`, `spectrum_flux.py`, `spectrum_combine.py`,
   `spectrum_expressions.py`, phase 5): a new method goes in the mixin of
   its theme, and builds its result with `self.__class__(...)`.
-- `astrocook/session/` – `SessionV2` (`session.py`) and `SessionHistory`
+- `astrocook/session/` – `Session` (`session.py`) and `SessionHistory`
   (`history.py`), moved out of `core/` in phase 6-quater, PR 5. The old
   paths `astrocook.core.session` and `astrocook.core.session_manager` stay
   as lazy aliases (module `__getattr__`, no warning): new code imports from
   `astrocook.session`.
+- Class names: no `V2` suffix since phase 6-quater, PR 6 (`Spectrum`,
+  `Session`, `DataColumn`, `RecipeAbsorbers`, `MainWindow`, ...). The old
+  names (`SpectrumV2`, ...) are served by a module `__getattr__` made by
+  `astrocook/_renamed.py` (`renamed(__name__, {old: new})`): the same class,
+  with a `DeprecationWarning`, for scripts only (archives and logs hold no
+  class names). A class renamed later gets its entry in the module that
+  defines it. The `"AstrocookV2"` of `QSettings` stays (the key of the
+  user's saved settings).
 - `astrocook/fitting/` – Voigt fitting (`voigt_fitter.py`), constraints
   (`voigt_model.py`), Bayesian engine (`bayesian_fitter.py`).
 - `astrocook/recipes/` – user-facing operations, with structured parameters.
 - `astrocook/gui/` – PySide6 interface. Split in phase 5, as the spectrum:
-  `MainWindowV2` (`main_window.py`) inherits its mixins by theme
+  `MainWindow` (`main_window.py`) inherits its mixins by theme
   (`main_menus.py`, `main_panels.py`, `continuum_controls.py`,
   `main_sessions.py`, `main_recipes.py`, `main_scripts.py`), the main plot
   `SpectrumPlotWidget` (`pyside_plot.py`) those of the continuum editor and
@@ -195,9 +203,11 @@ recipe registry, sessions with undo and redo, inspection, notes, gaps, the
 log as text, cancellation, the GUI following a session, a headless Docker
 image) is closed and released as 2.6.0: see "Result of the phase" in
 `ROADMAP.md`. In progress: 6-quater (review of the recipe parameters,
-recipe by recipe; it starts with ruff `B`, then the type checker and
-`SessionV2` out of `core/` with the renaming of the `V2` suffixes; its
-plan, with the model and the estimate of each PR, in `ROADMAP.md`), then
+recipe by recipe; done so far: ruff `B`, the aliases of renamed
+parameters, the type checker (mypy on the whole package), `Session` out of
+`core/` and the `V2` suffixes dropped from the class names; next, the
+reviews of the recipes (PRs 7-10); its plan, with the model and the
+estimate of each PR, in `ROADMAP.md`), then
 phase 7 (robust
 components, measured on the benchmark of phase 4; the real analysis of the
 MCP server goes there).

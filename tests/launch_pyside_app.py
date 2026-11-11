@@ -12,8 +12,8 @@ from PySide6.QtCore import Qt, QEvent, Signal
 
 # Astrocook Imports
 # Assuming your session and GUI modules are correctly set up on the path
-#from astrocook.session.session import SessionV2, load_session_from_file
-#from astrocook.gui.main_window import MainWindowV2 
+#from astrocook.session.session import Session, load_session_from_file
+#from astrocook.gui.main_window import MainWindow 
 #from astrocook.core.utils import resource_path
 
 def resource_path(relative_path):
@@ -130,7 +130,7 @@ def main():
     
     # --- SPOSTA GLI IMPORT QUI ---
     from astrocook.session.session import load_session_from_file
-    from astrocook.gui.main_window import MainWindowV2 
+    from astrocook.gui.main_window import MainWindow 
     # -----------------------------
 
     # Parsing Argomenti
@@ -176,7 +176,7 @@ def main():
         splash.showMessage("Initializing Interface...", Qt.AlignBottom | Qt.AlignCenter, Qt.black)
         app.processEvents()
 
-    main_window = MainWindowV2(initial_session, None)
+    main_window = MainWindow(initial_session, None)
 
     # Connecting the signal to open files when requested by macOS
     app.file_open_requested.connect(lambda path: main_window.open_session_from_path(path))

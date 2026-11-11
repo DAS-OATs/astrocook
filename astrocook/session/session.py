@@ -1,3 +1,4 @@
+from astrocook._renamed import renamed
 import json
 import logging
 import os
@@ -8,23 +9,23 @@ from typing import Any, List, Optional, Union
 
 from astrocook.io.adapter import load_and_migrate_structure, save_archive_v2
 from astrocook.io.v1_archive import V1ArchiveManager
-from astrocook.recipes.continuum import RecipeContinuumV2
-from astrocook.recipes.absorbers import RecipeAbsorbersV2
-from astrocook.recipes.edit import RecipeEditV2
-from astrocook.recipes.file import RecipeFileV2
-from astrocook.recipes.flux import RecipeFluxV2
-from astrocook.core.spectrum import SpectrumV2
+from astrocook.recipes.continuum import RecipeContinuum
+from astrocook.recipes.absorbers import RecipeAbsorbers
+from astrocook.recipes.edit import RecipeEdit
+from astrocook.recipes.file import RecipeFile
+from astrocook.recipes.flux import RecipeFlux
+from astrocook.core.spectrum import Spectrum
 from astrocook.core.structures import (
-    SystemListDataV2, HistoryLogV2
+    SystemListData, HistoryLog
 )
-from astrocook.core.system_list import SystemListV2
+from astrocook.core.system_list import SystemList
 
 logger = logging.getLogger(__name__)
 
 # Define the type for the log manager
-LogManager = HistoryLogV2
+LogManager = HistoryLog
 
-def load_session_from_file(archive_path: str, name: str, gui_context: Any, format_name: str) -> Union['SessionV2', int]:
+def load_session_from_file(archive_path: str, name: str, gui_context: Any, format_name: str) -> Union['Session', int]:
     """
     Orchestrate the loading of a session from a file or archive.
 
@@ -47,8 +48,8 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
 
     Returns
     -------
-    SessionV2 or int
-        The loaded :class:`~astrocook.session.session.SessionV2` object if successful.
+    Session or int
+        The loaded :class:`~astrocook.session.session.Session` object if successful.
         Returns ``0`` (integer) if the loading process failed.
 
     Raises
@@ -84,7 +85,7 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
         if v2_loader:
             try:
                 spec_data = v2_loader(archive_path)
-                return SessionV2(name=name, gui=gui_context, spec=SpectrumV2(data=spec_data))
+                return Session(name=name, gui=gui_context, spec=Spectrum(data=spec_data))
             except Exception as e:
                 logger.error(f"Could not read {os.path.basename(archive_path)} "
                              f"as {format_name}: {e}", exc_info=True)
@@ -162,7 +163,7 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
         # legacy FWHM converted to R
         from astrocook.core.resolution import migrate_component_resolutions
         system_list_v2 = migrate_component_resolutions(system_list_v2, spectrum_v2)
-        session = SessionV2(name=name, gui=gui_context, spec=spectrum_v2, systs=system_list_v2)
+        session = Session(name=name, gui=gui_context, spec=spectrum_v2, systs=system_list_v2)
         if v2_metadata:
             # Not recorded before 2.1 (F45)
             session.saved_with_version = v2_metadata.get('astrocook_version')
@@ -170,7 +171,7 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
                          f"{session.saved_with_version or '2.0.3 or earlier'}.")
         if v2_metadata and v2_metadata.get('log_type') == 'v2':
             try:
-                log = HistoryLogV2.from_dict(v2_metadata.get('log_history_json'))
+                log = HistoryLog.from_dict(v2_metadata.get('log_history_json'))
                 # The parameters renamed since the archive was saved, by
                 # their new names (phase 6-quater, PR 2); the archive is not
                 # changed
@@ -193,7 +194,7 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
         if temp_dir and os.path.exists(temp_dir): shutil.rmtree(temp_dir)
             
 
-class SessionV2:
+class Session:
     """
     The central coordinator for an Astrocook analysis session.
 
@@ -202,10 +203,10 @@ class SessionV2:
     high-level analysis workflows ("Recipes").
 
     .. note::
-       **Immutability Pattern**: In Astrocook V2, the ``SessionV2`` object is designed
+       **Immutability Pattern**: In Astrocook V2, the ``Session`` object is designed
        to be treated as immutable within the undo/redo history stack. Operations that
        modify data (like smoothing flux or fitting a continuum) do not modify the object
-       in-place; instead, they return a *new* ``SessionV2`` instance containing the
+       in-place; instead, they return a *new* ``Session`` instance containing the
        updated data structures.
 
     Attributes
@@ -216,24 +217,24 @@ class SessionV2:
         The version of Astrocook that saved the ``.acs2`` archive this session
         was opened from; ``None`` if it was not opened from an ``.acs2``
         archive, or if the archive does not record it (versions up to 2.0.3).
-    systs : astrocook.core.system_list.SystemListV2, optional
+    systs : astrocook.core.system_list.SystemList, optional
         The container for identified absorption systems and Voigt profile components.
-    file : astrocook.recipes.file.RecipeFileV2
+    file : astrocook.recipes.file.RecipeFile
         Access to file import/export recipes (e.g., ``import_ascii``, ``export_ascii``).
-    edit : astrocook.recipes.edit.RecipeEditV2
+    edit : astrocook.recipes.edit.RecipeEdit
         Access to editing recipes (e.g., ``set_properties``, ``convert_x_axis``).
-    flux : astrocook.recipes.flux.RecipeFluxV2
+    flux : astrocook.recipes.flux.RecipeFlux
         Access to flux manipulation recipes (e.g., ``smooth``, ``rebin``).
-    continuum : astrocook.recipes.continuum.RecipeContinuumV2
+    continuum : astrocook.recipes.continuum.RecipeContinuum
         Access to continuum estimation and fitting recipes.
-    absorbers : astrocook.recipes.absorbers.RecipeAbsorbersV2
+    absorbers : astrocook.recipes.absorbers.RecipeAbsorbers
         Access to line identification and fitting recipes.
     """
     def __init__(self,
                  name: str,
                  gui: Any, 
-                 spec: Optional[SpectrumV2] = None, 
-                 systs: Optional[SystemListV2] = None):
+                 spec: Optional[Spectrum] = None, 
+                 systs: Optional[SystemList] = None):
 
         self._gui = gui
         self.name = name
@@ -241,13 +242,13 @@ class SessionV2:
         # Documented in "Attributes" above (F45)
         self.saved_with_version: Optional[str] = None
         self._current_spectrum = spec
-        self.systs = systs if systs is not None else SystemListV2(data=SystemListDataV2())
+        self.systs = systs if systs is not None else SystemList(data=SystemListData())
         
-        self.file = RecipeFileV2(self)
-        self.edit = RecipeEditV2(self)
-        self.flux = RecipeFluxV2(self)
-        self.continuum = RecipeContinuumV2(self)
-        self.absorbers = RecipeAbsorbersV2(self)
+        self.file = RecipeFile(self)
+        self.edit = RecipeEdit(self)
+        self.flux = RecipeFlux(self)
+        self.continuum = RecipeContinuum(self)
+        self.absorbers = RecipeAbsorbers(self)
 
         self.cb = self.edit
         self._shade = False 
@@ -255,7 +256,7 @@ class SessionV2:
         self._clicks: List[Any] = []  
         self._z_sel = 0.0   
         self._series_sel = 'Ly_a' 
-        logger.debug(f"SessionV2 '{self.name}' initialized.")
+        logger.debug(f"Session '{self.name}' initialized.")
 
     def __getattr__(self, name):
         if hasattr(self.flux, name):
@@ -269,7 +270,7 @@ class SessionV2:
         raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
 
     @property
-    def spec(self) -> Optional[SpectrumV2]: 
+    def spec(self) -> Optional[Spectrum]: 
         """
         The main container for spectral data (flux, wavelength, error, etc.).
         """
@@ -280,9 +281,9 @@ class SessionV2:
         return self._lines 
 
     @classmethod
-    def open_new(cls, file_path: str, name: str, gui_context: Any, format_name: str) -> Union['SessionV2', int]:        
+    def open_new(cls, file_path: str, name: str, gui_context: Any, format_name: str) -> Union['Session', int]:        
         """
-        Factory method: Create a new SessionV2 by loading data from a file.
+        Factory method: Create a new Session by loading data from a file.
 
         Parameters
         ----------
@@ -297,8 +298,8 @@ class SessionV2:
 
         Returns
         -------
-        SessionV2 or int
-            A new SessionV2 instance, or 0 on failure.
+        Session or int
+            A new Session instance, or 0 on failure.
         """
         # load_session_from_file reports its own failures and returns 0
         return load_session_from_file(
@@ -308,22 +309,22 @@ class SessionV2:
             format_name=format_name
         )
 
-    def with_new_spectrum(self, new_spectrum: Optional[SpectrumV2]) -> 'SessionV2':
+    def with_new_spectrum(self, new_spectrum: Optional[Spectrum]) -> 'Session':
         """
-        Return a new SessionV2 instance with an updated spectrum.
+        Return a new Session instance with an updated spectrum.
 
         This is used by recipes that modify spectral data (e.g., smoothing,
         continuum fitting) to ensure history preservation.
 
         Parameters
         ----------
-        new_spectrum : SpectrumV2 or None
+        new_spectrum : Spectrum or None
             The new spectral data object (``None``: a session without
             spectrum is copied as it is).
 
         Returns
         -------
-        SessionV2
+        Session
             A shallow copy of the session pointing to the new spectrum.
         """
         constructor_args = {
@@ -332,23 +333,23 @@ class SessionV2:
             'spec': new_spectrum,
             'systs': self.systs,
         }
-        new_session = SessionV2(**constructor_args)
+        new_session = Session(**constructor_args)
         new_session.log_manager = self.log_manager 
         new_session.saved_with_version = self.saved_with_version
         return new_session
 
-    def with_new_system_list(self, new_systs: SystemListV2) -> 'SessionV2':
+    def with_new_system_list(self, new_systs: SystemList) -> 'Session':
         """
-        Return a new SessionV2 instance with an updated system list.
+        Return a new Session instance with an updated system list.
 
         Parameters
         ----------
-        new_systs : SystemListV2
+        new_systs : SystemList
             The new system list object.
 
         Returns
         -------
-        SessionV2
+        Session
             A shallow copy of the session pointing to the new system list.
         """
         constructor_args = {
@@ -357,13 +358,13 @@ class SessionV2:
             'spec': self.spec,
             'systs': new_systs,
         }
-        new_session = SessionV2(**constructor_args)
+        new_session = Session(**constructor_args)
         new_session.log_manager = self.log_manager
         new_session.saved_with_version = self.saved_with_version
         return new_session
     
     def save(self, file_path: str, 
-             initial_session: Optional['SessionV2'] = None, 
+             initial_session: Optional['Session'] = None, 
              models: bool = False):
         """
         Save the current session state to an ``.acs2`` archive.
@@ -378,7 +379,7 @@ class SessionV2:
         ----------
         file_path : str
             The destination path. ``.acs2`` is appended if missing.
-        initial_session : SessionV2, optional
+        initial_session : Session, optional
             The state of the session *before* any modifications, saved in the
             archive so that it contains the original raw data for
             reproducibility.
@@ -409,3 +410,6 @@ class SessionV2:
         )
         logger.info(f"Session saved to {file_path}.")
         return 0
+
+# Old names (phase 6-quater, PR 6): see astrocook/_renamed.py
+__getattr__ = renamed(__name__, {"SessionV2": "Session"})

@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "benchmarks"))
 
 import validate_mocks as vm  # noqa: E402
 
-from astrocook.session.session import SessionV2  # noqa: E402
+from astrocook.session.session import Session  # noqa: E402
 from astrocook.core.spectrum_operations import _masked_window_mean  # noqa: E402
 from astrocook.mocks import generate  # noqa: E402
 
@@ -25,7 +25,7 @@ def _continuum_ratio(snr, resol, n_spikes_fraction=0.0, amplitude=30.0, seed=2):
     truth = dataclasses.replace(truth, n_spikes=int(n_spikes_fraction * n),
                                 spike_amplitude=amplitude)
     spec = generate(truth, truth_columns=False)
-    cont = SessionV2("m", None, spec=spec).continuum.estimate_auto(
+    cont = Session("m", None, spec=spec).continuum.estimate_auto(
         **vm.schema_params("continuum", "estimate_auto"))
     metrics = vm.continuum_metrics(truth, cont.spec)
     return metrics["red"]["median"], metrics["forest"]["median"]

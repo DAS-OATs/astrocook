@@ -25,7 +25,7 @@ import numpy as np
 from astropy.io import fits
 
 from astrocook.core.structures import (
-    ComponentDataV2, DataColumnV2, SpectrumDataV2, SystemListDataV2,
+    ComponentData, DataColumn, SpectrumData, SystemListData,
 )
 
 logger = logging.getLogger(__name__)
@@ -98,7 +98,7 @@ def _v1_meta(hdr: fits.Header) -> fits.Header:
     return meta
 
 
-def read_v1_spectrum(path: str) -> SpectrumDataV2:
+def read_v1_spectrum(path: str) -> SpectrumData:
     """
     Read the spectrum table of a V1 archive (``<name>_spec.fits``).
 
@@ -109,7 +109,7 @@ def read_v1_spectrum(path: str) -> SpectrumDataV2:
 
     Returns
     -------
-    SpectrumDataV2
+    SpectrumData
         x, xmin, xmax in nm; y, dy, cont, conv, model and deabs in
         erg/(cm2 s Angstrom), the other columns without units; ``z_em`` 0
         (V1 did not store it in the table). If the table has no ``resol``
@@ -122,7 +122,7 @@ def read_v1_spectrum(path: str) -> SpectrumDataV2:
         names = list(data.columns.names)
 
         def core(name, unit, description):
-            return DataColumnV2(np.array(data[name], dtype=float), unit,
+            return DataColumn(np.array(data[name], dtype=float), unit,
                                 description=description)
 
         x = core('x', au.nm, "Channels")
@@ -136,22 +136,22 @@ def read_v1_spectrum(path: str) -> SpectrumDataV2:
                   if c not in _SPEC_CORE + ['dx'] and c not in order]
         aux_cols = {}
         if 'resol' not in names:
-            aux_cols['resol'] = DataColumnV2(
+            aux_cols['resol'] = DataColumn(
                 np.full(len(x.values), np.nan), au.dimensionless_unscaled,
                 description="Spectral Resolution")
         for name in order:
             unit = (_V1_FLUX_UNIT if name in _SPEC_FLUX_COLS
                     else au.dimensionless_unscaled)
-            aux_cols[name] = DataColumnV2(
+            aux_cols[name] = DataColumn(
                 np.array(data[name]), unit,
                 description=f"Auxiliary column: {name}")
         meta = _v1_meta(hdr)
 
-    return SpectrumDataV2(x=x, xmin=xmin, xmax=xmax, y=y, dy=dy,
+    return SpectrumData(x=x, xmin=xmin, xmax=xmax, y=y, dy=dy,
                           aux_cols=aux_cols, meta=meta, z_em=0.0)
 
 
-def read_v1_system_list(path: str) -> SystemListDataV2:
+def read_v1_system_list(path: str) -> SystemListData:
     """
     Read the system table of a V1 archive (``<name>_systs.fits``).
 
@@ -162,7 +162,7 @@ def read_v1_system_list(path: str) -> SystemListDataV2:
 
     Returns
     -------
-    SystemListDataV2
+    SystemListData
         One component per row, in order of V1 id, with the constraints of
         the ``AC CONSTR`` header keywords. ``chi2`` is the reduced chi2 of
         V1 (``chi2r``); without the ``btur`` and ``dbtur`` columns (early
@@ -183,7 +183,7 @@ def read_v1_system_list(path: str) -> SystemListDataV2:
         id_to_uuid = {}
         for v1_id, i in rows.items():
             row = data[i]
-            comp = ComponentDataV2(
+            comp = ComponentData(
                 id=np.int64(v1_id),
                 z=float(row['z']), dz=float(row['dz']),
                 logN=float(row['logN']), dlogN=float(row['dlogN']),
@@ -197,7 +197,7 @@ def read_v1_system_list(path: str) -> SystemListDataV2:
             id_to_uuid[comp.id] = comp.uuid
             components.append(comp)
 
-    return SystemListDataV2(
+    return SystemListData(
         components=components,
         meta={},
         v1_header_constraints=hdr,
@@ -213,12 +213,12 @@ def _translate_v1_links(parsed: Dict[Tuple[int, str], Dict[str, Any]],
     Turn the V1 constraints into V2 ones (findings register F43).
 
     The keys become ``(uuid, parameter)``, as for the constraints made in
-    V2: ``SystemListV2`` then puts them in its V2 map, which the grouping
+    V2: ``SystemList`` then puts them in its V2 map, which the grouping
     of the fits and the ``.acs2`` archives use (with V1 ids as keys the
     linked components were fitted in separate groups). The links are
     translated into the V2 syntax: V1 stores them as expressions on the
     parameters of its lmfit model, e.g. ``lines_voigt_14_b*0.654``; V2
-    evaluates ``p['<uuid>'].b*0.654`` (``VoigtModelConstraintV2``), and the
+    evaluates ``p['<uuid>'].b*0.654`` (``VoigtModelConstraint``), and the
     target is the first component named by the expression.
 
     A constraint on a component that is not in the list keeps its V1 key;

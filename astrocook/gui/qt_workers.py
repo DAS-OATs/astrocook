@@ -4,9 +4,9 @@ import threading
 from PySide6.QtCore import QObject, QRunnable, Signal
 from typing import TYPE_CHECKING, Dict
 
-from astrocook.session.session import SessionV2
+from astrocook.session.session import Session
 from astrocook.session.history import SessionHistory
-from astrocook.core.structures import HistoryLogV2
+from astrocook.core.structures import HistoryLog
 from astrocook.gui.log_script import ScriptComments
 from astrocook.recipes.errors import RecipeCancelled, RecipeError
 from astrocook.recipes.params import resolve_params
@@ -16,7 +16,7 @@ from astrocook.recipes.registry import find_recipe
 from astrocook.recipes.result import run
 
 if TYPE_CHECKING:
-    from .main_window import MainWindowV2
+    from .main_window import MainWindow
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +44,7 @@ class RecipeWorker(QRunnable):
     Worker thread for running a single recipe.
     """
     def __init__(self, 
-                 session: SessionV2,
+                 session: Session,
                  category: str,
                  recipe_name: str,
                  params: dict,
@@ -160,8 +160,8 @@ class ScriptWorker(QRunnable):
     """
     def __init__(self, 
                  script_text: str, 
-                 initial_session_state: SessionV2, 
-                 main_window: 'MainWindowV2'):
+                 initial_session_state: Session, 
+                 main_window: 'MainWindow'):
         super().__init__()
         
         self.signals = WorkerSignals()
@@ -189,7 +189,7 @@ class ScriptWorker(QRunnable):
 
             # 1. Create a new history to build into; the log of the archive
             # the session was opened from stays read only (F109)
-            new_log = HistoryLogV2()
+            new_log = HistoryLog()
             new_log.previous = getattr(getattr(self.initial_state, 'log_manager', None),
                                        'previous', None)
             # We must create a true copy of the initial state

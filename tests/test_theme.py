@@ -100,12 +100,12 @@ def test_dark_palette_links_and_placeholders():
 
 @pytest.fixture
 def window(qtbot, monkeypatch, tmp_path):
-    from astrocook.gui.main_window import MainWindowV2
+    from astrocook.gui.main_window import MainWindow
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
     for kind in ("warning", "critical", "information", "question"):
         monkeypatch.setattr(QMessageBox, kind, staticmethod(
             lambda *a, **k: QMessageBox.StandardButton.Ok))
-    win = MainWindowV2(None, None)
+    win = MainWindow(None, None)
     qtbot.addWidget(win)
     monkeypatch.setattr(win, "_show_custom_message", lambda *a, **k: None)
     win.show()
@@ -145,11 +145,11 @@ def test_the_interface_switches_with_the_palette(qtbot, window, qapp):
 
 def test_link_colours_follow_the_palette(qapp):
     from PySide6.QtCore import Qt
-    from astrocook.core.structures import ComponentDataV2, ParameterConstraintV2
+    from astrocook.core.structures import ComponentData, ParameterConstraint
     from astrocook.gui.system_inspector import COLUMNS, SystemTableModel
-    comps = [ComponentDataV2(id=i, z=2.0 + 1e-4 * i, dz=None, logN=13.0, dlogN=None,
+    comps = [ComponentData(id=i, z=2.0 + 1e-4 * i, dz=None, logN=13.0, dlogN=None,
                              b=10.0, db=None, series="CIV") for i in (1, 2)]
-    links = {comps[1].uuid: {"b": ParameterConstraintV2(
+    links = {comps[1].uuid: {"b": ParameterConstraint(
         is_free=False, target_uuid=comps[0].uuid, expression=f"p['{comps[0].uuid}'].b")}}
     model = SystemTableModel()
     model.update_data(comps, links)
@@ -194,8 +194,8 @@ def test_appearance_menu(qtbot, window, qapp):
         from PySide6.QtCore import QSettings
         assert QSettings("Astrocook", "AstrocookV2").value("appearance") == "dark"
         # A new window starts as the user left it
-        from astrocook.gui.main_window import MainWindowV2
-        other = MainWindowV2(None, None)
+        from astrocook.gui.main_window import MainWindow
+        other = MainWindow(None, None)
         qtbot.addWidget(other)
         assert other.appearance_actions["dark"].isChecked() and theme.is_dark()
         actions["light"].trigger()
@@ -212,8 +212,8 @@ def test_show_toolbar(qtbot, window):
     window.show_toolbar_action.trigger()
     assert not toolbar.isVisible()
     assert QSettings("Astrocook", "AstrocookV2").value("show_toolbar") in (False, "false")
-    from astrocook.gui.main_window import MainWindowV2
-    other = MainWindowV2(None, None)
+    from astrocook.gui.main_window import MainWindow
+    other = MainWindow(None, None)
     qtbot.addWidget(other)
     assert not other.show_toolbar_action.isChecked()
     window.show_toolbar_action.trigger()

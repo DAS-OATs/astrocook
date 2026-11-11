@@ -11,10 +11,10 @@ import numpy as np
 import astropy.units as au
 import pytest
 
-from astrocook.session.session import SessionV2
-from astrocook.core.spectrum import SpectrumV2
-from astrocook.core.structures import DataColumnV2, SpectrumDataV2
-from astrocook.recipes.edit import RecipeEditV2
+from astrocook.session.session import Session
+from astrocook.core.spectrum import Spectrum
+from astrocook.core.structures import DataColumn, SpectrumData
+from astrocook.recipes.edit import RecipeEdit
 from astrocook.recipes.errors import InvalidParameter
 
 CUT_NM = 1000.0
@@ -30,10 +30,10 @@ def _arm(x, scale, seed):
     rng = np.random.default_rng(seed)
     dx = x[1] - x[0]
     y = scale * _true_flux(x) * (1 + 0.005 * rng.standard_normal(len(x)))
-    return SpectrumV2(SpectrumDataV2(
-        x=DataColumnV2(x, au.nm), xmin=DataColumnV2(x - dx / 2, au.nm),
-        xmax=DataColumnV2(x + dx / 2, au.nm), y=DataColumnV2(y, FLUX_UNIT),
-        dy=DataColumnV2(0.005 * np.abs(y), FLUX_UNIT)))
+    return Spectrum(SpectrumData(
+        x=DataColumn(x, au.nm), xmin=DataColumn(x - dx / 2, au.nm),
+        xmax=DataColumn(x + dx / 2, au.nm), y=DataColumn(y, FLUX_UNIT),
+        dy=DataColumn(0.005 * np.abs(y), FLUX_UNIT)))
 
 
 @pytest.fixture
@@ -45,7 +45,7 @@ def arms():
     gui = SimpleNamespace(session_histories=[
         SimpleNamespace(display_name="NIR",
                         current_state=SimpleNamespace(spec=nir))])
-    session = SessionV2(name="VIS", gui=gui, spec=vis)
+    session = Session(name="VIS", gui=gui, spec=vis)
     return session, vis, nir
 
 
@@ -56,7 +56,7 @@ def arms():
 ])
 def test_two_arms_one_cut(arms, kwargs):
     session, vis, nir = arms
-    result = RecipeEditV2(session).equalize_and_stitch(
+    result = RecipeEdit(session).equalize_and_stitch(
         other_sessions="NIR", stitch_wavelengths=f"{CUT_NM}", **kwargs)
     assert result != 0
 
@@ -79,7 +79,7 @@ def test_two_arms_two_cuts_is_rejected(arms):
     session, _, _ = arms
     with pytest.raises(InvalidParameter, match="stitch_wavelengths: give 1, one per other "
                                                "session \\(2 given\\)"):
-        RecipeEditV2(session).equalize_and_stitch(
+        RecipeEdit(session).equalize_and_stitch(
             other_sessions="NIR", stitch_wavelengths="1000, 1010")
 
 
@@ -87,16 +87,16 @@ def test_gui_dialog_asks_for_one_cut_with_two_arms(qtbot, monkeypatch, tmp_path)
     # GUI side of #477: with two arms the dialog must ask for one value and
     # pass the other session itself (the field is hidden from the user)
     from astrocook.session.history import SessionHistory
-    from astrocook.core.structures import HistoryLogV2
+    from astrocook.core.structures import HistoryLog
     from astrocook.recipes.registry import get_recipe
 
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
-    from astrocook.gui.main_window import MainWindowV2  # needs the QApplication
-    window = MainWindowV2(None, None)
+    from astrocook.gui.main_window import MainWindow  # needs the QApplication
+    window = MainWindow(None, None)
     qtbot.addWidget(window)
 
     vis = _arm(np.arange(900.0, 1020.0, 0.02), 1.0, seed=1)
-    history = SessionHistory(SessionV2(name="VIS", gui=None, spec=vis), HistoryLogV2())
+    history = SessionHistory(Session(name="VIS", gui=None, spec=vis), HistoryLog())
     window.session_histories.append(history)
     monkeypatch.setattr(window, "_update_view_for_session", lambda *a, **k: None)
 

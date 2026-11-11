@@ -8,8 +8,8 @@ import astropy.units as au
 import numpy as np
 import pytest
 
-from astrocook.session.session import SessionV2
-from astrocook.core.structures import DataColumnV2
+from astrocook.session.session import Session
+from astrocook.core.structures import DataColumn
 from astrocook.mocks import MockComponent, MockTruth, generate
 
 
@@ -20,11 +20,11 @@ def _session(resol_col=None):
     spec = spec.with_properties(z_em=3.2, object_name="QSO J1234")
     if resol_col is not None:
         import dataclasses
-        from astrocook.core.spectrum import SpectrumV2
+        from astrocook.core.spectrum import Spectrum
         aux = dict(spec._data.aux_cols)
-        aux["resol"] = DataColumnV2(resol_col(len(spec.x)), au.dimensionless_unscaled)
-        spec = SpectrumV2(dataclasses.replace(spec._data, aux_cols=aux))
-    return SessionV2("my session", None, spec=spec)
+        aux["resol"] = DataColumn(resol_col(len(spec.x)), au.dimensionless_unscaled)
+        spec = Spectrum(dataclasses.replace(spec._data, aux_cols=aux))
+    return Session("my session", None, spec=spec)
 
 
 def _run(session, category, name):

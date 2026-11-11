@@ -8,13 +8,13 @@ import numpy as np
 import pytest
 from scipy.special import erf
 
-from astrocook.core.spectrum import SpectrumV2
+from astrocook.core.spectrum import Spectrum
 from astrocook.core.structures import (
-    ComponentDataV2, DataColumnV2, SpectrumDataV2, SystemListDataV2,
+    ComponentData, DataColumn, SpectrumData, SystemListData,
 )
-from astrocook.core.system_list import SystemListV2
+from astrocook.core.system_list import SystemList
 from astrocook.fitting.lsf import C_KMS, FWHM_TO_SIGMA, PixelLSF
-from astrocook.fitting.voigt_fitter import VoigtFitterV2
+from astrocook.fitting.voigt_fitter import VoigtFitter
 from astrocook.mocks import MockComponent
 from astrocook.mocks.physics import convolve_velocity, optical_depth
 
@@ -88,21 +88,21 @@ def _mock(resol_at, dv_kms, k=20, lam_min=600.0, lam_max=640.0):
     flux = flux.reshape(n, k).mean(axis=1)
     one = np.ones(n)
     unit = au.dimensionless_unscaled
-    spec = SpectrumV2(SpectrumDataV2(
-        x=DataColumnV2(x, au.nm), xmin=DataColumnV2(xmin, au.nm),
-        xmax=DataColumnV2(xmax, au.nm), y=DataColumnV2(flux, unit),
-        dy=DataColumnV2(0.01 * one, unit),
-        aux_cols={"cont": DataColumnV2(one, unit), "resol": DataColumnV2(resol, unit)},
+    spec = Spectrum(SpectrumData(
+        x=DataColumn(x, au.nm), xmin=DataColumn(xmin, au.nm),
+        xmax=DataColumn(xmax, au.nm), y=DataColumn(flux, unit),
+        dy=DataColumn(0.01 * one, unit),
+        aux_cols={"cont": DataColumn(one, unit), "resol": DataColumn(resol, unit)},
         z_em=4.2))
     return spec, flux
 
 
 def _model(spec):
-    systs = SystemListV2(SystemListDataV2(components=[
-        ComponentDataV2(id=i + 1, z=c.z, dz=None, logN=c.logN, dlogN=None, b=c.b,
+    systs = SystemList(SystemListData(components=[
+        ComponentData(id=i + 1, z=c.z, dz=None, logN=c.logN, dlogN=None, b=c.b,
                         db=None, series=c.series)
         for i, c in enumerate(COMPONENTS)]))
-    return VoigtFitterV2(spec, systs).compute_model_flux()[1]
+    return VoigtFitter(spec, systs).compute_model_flux()[1]
 
 
 # Before #526 the model of these mocks was off by up to 5.9e-3 (R 45000)
@@ -131,11 +131,11 @@ def test_system_inspector_profile_is_the_fitter_model(resol):
                     lam_min=613.0, lam_max=616.0)
     if resol is None:
         aux = {k: v for k, v in spec._data.aux_cols.items() if k != "resol"}
-        spec = SpectrumV2(dataclasses.replace(spec._data, aux_cols=aux))
-    systs = SystemListV2(SystemListDataV2(components=[ComponentDataV2(
+        spec = Spectrum(dataclasses.replace(spec._data, aux_cols=aux))
+    systs = SystemList(SystemListData(components=[ComponentData(
         id=1, z=comp.z, dz=None, logN=comp.logN, dlogN=None, b=comp.b, db=None,
         series="CIV_1548")]))
-    model = VoigtFitterV2(spec, systs).compute_model_flux()[1]
+    model = VoigtFitter(spec, systs).compute_model_flux()[1]
     atom = ATOM_DATA["CIV_1548"]
     x = spec.x.to(au.Angstrom).value
     profile = calc_voigt_profile(

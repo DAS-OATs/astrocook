@@ -19,9 +19,9 @@ import astropy.units as au
 import numpy as np
 import pytest
 
-from astrocook.session.session import SessionV2, load_session_from_file
-from astrocook.core.spectrum import SpectrumV2
-from astrocook.core.structures import DataColumnV2, HistoryLogV2, SpectrumDataV2
+from astrocook.session.session import Session, load_session_from_file
+from astrocook.core.spectrum import Spectrum
+from astrocook.core.structures import DataColumn, HistoryLog, SpectrumData
 from astrocook.recipes.errors import InvalidParameter
 from astrocook.recipes.params import resolve_params
 from astrocook.recipes.registry import all_recipes, build_spec, canonical_params, get_recipe
@@ -36,11 +36,11 @@ def _session(name="main"):
     x = np.arange(400.0, 440.0, 0.01)
     cont = (x / 420.0) ** -1.5
     y = cont + 0.02 * cont * rng.standard_normal(len(x))
-    spec = SpectrumV2(SpectrumDataV2(
-        x=DataColumnV2(x, au.nm), xmin=DataColumnV2(x - 0.005, au.nm),
-        xmax=DataColumnV2(x + 0.005, au.nm), y=DataColumnV2(y, FLUX),
-        dy=DataColumnV2(0.02 * cont, FLUX), aux_cols={}, z_em=2.5))
-    return SessionV2(name=name, gui=None, spec=spec)
+    spec = Spectrum(SpectrumData(
+        x=DataColumn(x, au.nm), xmin=DataColumn(x - 0.005, au.nm),
+        xmax=DataColumn(x + 0.005, au.nm), y=DataColumn(y, FLUX),
+        dy=DataColumn(0.02 * cont, FLUX), aux_cols={}, z_em=2.5))
+    return Session(name=name, gui=None, spec=spec)
 
 
 def _same(a, b):
@@ -155,8 +155,8 @@ def test_the_result_and_the_log_have_the_new_name(renamed_parameter):
 
 
 def test_the_signature_and_the_help_have_the_new_name(renamed_parameter):
-    from astrocook.recipes.flux import RecipeFluxV2
-    names = inspect.signature(RecipeFluxV2.smooth).parameters
+    from astrocook.recipes.flux import RecipeFlux
+    names = inspect.signature(RecipeFlux.smooth).parameters
     assert "sigma_kms" in names and "sigma_old" not in names
 
 
@@ -166,7 +166,7 @@ def _archive_with_old_names(tmp_path):
     """An archive saved with the old name in its log (as by the version
     before the renaming)."""
     session = _session().flux.smooth(sigma_kms=50.0)
-    log = HistoryLogV2()
+    log = HistoryLog()
     log.add_entry("smooth", {"sigma_old": 50.0}, reason="Too noisy.")
     log.add_entry("not_a_recipe", {"sigma_old": 1.0})
     session.log_manager = log

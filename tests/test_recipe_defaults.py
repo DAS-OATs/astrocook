@@ -19,15 +19,15 @@ import math
 
 import pytest
 
-from astrocook.recipes.absorbers import RecipeAbsorbersV2
-from astrocook.recipes.continuum import RecipeContinuumV2
-from astrocook.recipes.edit import RecipeEditV2
-from astrocook.recipes.file import RecipeFileV2
-from astrocook.recipes.flux import RecipeFluxV2
+from astrocook.recipes.absorbers import RecipeAbsorbers
+from astrocook.recipes.continuum import RecipeContinuum
+from astrocook.recipes.edit import RecipeEdit
+from astrocook.recipes.file import RecipeFile
+from astrocook.recipes.flux import RecipeFlux
 from astrocook.recipes.registry import RECIPES
 
-CLASSES = {"absorbers": RecipeAbsorbersV2, "continuum": RecipeContinuumV2,
-           "edit": RecipeEditV2, "file": RecipeFileV2, "flux": RecipeFluxV2}
+CLASSES = {"absorbers": RecipeAbsorbers, "continuum": RecipeContinuum,
+           "edit": RecipeEdit, "file": RecipeFile, "flux": RecipeFlux}
 
 #: (menu, recipe, parameter): schema default, signature default, as found
 #: in phase 3 (issue #573). To be decided by Guido, one by one.

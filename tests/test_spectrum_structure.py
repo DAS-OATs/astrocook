@@ -1,14 +1,14 @@
-"""The interface of SpectrumV2 across the split of ``spectrum.py``.
+"""The interface of Spectrum across the split of ``spectrum.py``.
 
-Phase 5 moves the methods of SpectrumV2 into thematic mixin classes
-(``spectrum_continuum.py``...), which SpectrumV2 inherits. The interface
+Phase 5 moves the methods of Spectrum into thematic mixin classes
+(``spectrum_continuum.py``...), which Spectrum inherits. The interface
 must stay the same: the same methods and properties as before the split,
 and no name defined twice (with multiple inheritance, the first class
 would win without a word).
 """
-from astrocook.core.spectrum import SpectrumV2
+from astrocook.core.spectrum import Spectrum
 
-#: Methods and properties of SpectrumV2 before the split (2.2.0), and those
+#: Methods and properties of Spectrum before the split (2.2.0), and those
 #: added since: columns_in_range (phase 6-ter, PR 3)
 INTERFACE = {
     '_get_ne_contexts', '_renormalize_model', '_safe', '_xunit', '_xunit_old',
@@ -32,12 +32,12 @@ def _own_names(cls):
 
 
 def test_the_interface_is_unchanged():
-    assert {n for n in dir(SpectrumV2) if not n.startswith('__')} == INTERFACE
+    assert {n for n in dir(Spectrum) if not n.startswith('__')} == INTERFACE
 
 
 def test_no_name_is_defined_twice():
-    classes = [c for c in SpectrumV2.__mro__ if c is not object]
-    assert len(classes) > 1  # SpectrumV2 and its mixins
+    classes = [c for c in Spectrum.__mro__ if c is not object]
+    assert len(classes) > 1  # Spectrum and its mixins
     seen = {}
     for cls in classes:
         for name in _own_names(cls):

@@ -10,7 +10,7 @@ pytest.importorskip("mcp")
 from mcp import Client  # noqa: E402
 
 from astrocook import gaps  # noqa: E402
-from astrocook.session.session import SessionV2, load_session_from_file  # noqa: E402
+from astrocook.session.session import Session, load_session_from_file  # noqa: E402
 from astrocook.mcp_server.server import build_server  # noqa: E402
 from astrocook.mocks import MockComponent, MockTruth, generate  # noqa: E402
 
@@ -40,7 +40,7 @@ def mock_archive(tmp_path_factory):
                       lam_min_nm=440.0, lam_max_nm=460.0, dv_kms=2.5,
                       resol=45000.0, snr=50.0, z_em=2.0, seed=1)
     path = tmp_path_factory.mktemp("mock") / "mock.acs2"
-    SessionV2("mock", None, spec=generate(truth)).save(str(path))
+    Session("mock", None, spec=generate(truth)).save(str(path))
     return path
 
 
@@ -165,19 +165,19 @@ def physical_archive(tmp_path_factory):
     """The small mock in physical units: a spectrum without a continuum."""
     import astropy.units as au
 
-    from astrocook.core.structures import DataColumnV2, SpectrumDataV2
-    from astrocook.core.spectrum import SpectrumV2
+    from astrocook.core.structures import DataColumn, SpectrumData
+    from astrocook.core.spectrum import Spectrum
     truth = MockTruth(components=[MockComponent("CIV", 1.9, 13.8, 10.0)],
                       lam_min_nm=440.0, lam_max_nm=460.0, dv_kms=2.5,
                       resol=45000.0, snr=50.0, z_em=2.0, seed=1)
     mock = generate(truth, truth_columns=False)
     d, k = mock._data, 1e-16 * (mock.x.value / 450.0) ** -1.5
     flux = au.erg / au.cm**2 / au.s / au.nm
-    spec = SpectrumV2(SpectrumDataV2(
-        x=d.x, xmin=d.xmin, xmax=d.xmax, y=DataColumnV2(mock.y.value * k, flux),
-        dy=DataColumnV2(mock.dy.value * k, flux), aux_cols=dict(d.aux_cols), z_em=d.z_em))
+    spec = Spectrum(SpectrumData(
+        x=d.x, xmin=d.xmin, xmax=d.xmax, y=DataColumn(mock.y.value * k, flux),
+        dy=DataColumn(mock.dy.value * k, flux), aux_cols=dict(d.aux_cols), z_em=d.z_em))
     path = tmp_path_factory.mktemp("physical") / "physical.acs2"
-    SessionV2("physical", None, spec=spec).save(str(path))
+    Session("physical", None, spec=spec).save(str(path))
     return path
 
 

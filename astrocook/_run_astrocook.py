@@ -165,7 +165,7 @@ def main():
     logger.debug("Importing the modules of the GUI.")
     
     from astrocook.session.session import load_session_from_file
-    from astrocook.gui.main_window import MainWindowV2 
+    from astrocook.gui.main_window import MainWindow 
     
     elapsed = time.time() - start_time
     if elapsed < min_splash_duration:
@@ -228,7 +228,7 @@ def main():
         app.processEvents()
 
     # Pass the LIST of sessions to the main window
-    main_window = MainWindowV2(loaded_sessions, None)
+    main_window = MainWindow(loaded_sessions, None)
 
     # Connecting the signal to open files when requested by macOS
     app.file_open_requested.connect(lambda path: main_window.open_session_from_path(path))

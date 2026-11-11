@@ -5,11 +5,11 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from PySide6.QtWidgets import QWidget
 
-    from astrocook.gui.main_window import MainWindowV2
+    from astrocook.gui.main_window import MainWindow
 
     class PlotHost(QWidget):
         """The part of ``SpectrumPlotWidget`` that the mouse mixin uses."""
-        main_window: MainWindowV2
+        main_window: MainWindow
         canvas: Any
         toolbar: Any
         _is_selecting_region: bool

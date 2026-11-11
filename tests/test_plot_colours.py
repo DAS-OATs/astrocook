@@ -8,7 +8,7 @@ from PySide6.QtWidgets import QMessageBox
 
 from astrocook.gui import plot_style
 from astrocook.gui.inspector_table import flag_cue
-from astrocook.gui.main_window import MainWindowV2
+from astrocook.gui.main_window import MainWindow
 
 from test_gui_smoke import SESSION_FILE
 from test_inspector_flags import _cell, _inspector
@@ -24,7 +24,7 @@ def window(qtbot, monkeypatch, tmp_path):
     for kind in ("warning", "critical", "information", "question"):
         monkeypatch.setattr(QMessageBox, kind, staticmethod(
             lambda *a, **k: QMessageBox.StandardButton.Ok))
-    win = MainWindowV2(None, None)
+    win = MainWindow(None, None)
     qtbot.addWidget(win)
     monkeypatch.setattr(win, "_show_custom_message", lambda *a, **k: None)
     win.show()
@@ -84,7 +84,7 @@ def test_menu_switches_the_main_plot_and_is_saved(window):
         assert _hex(model.get_color()) == palette["model"]
         assert model.get_linewidth() == palette["model_lw"]
     # A new window starts with the palette the user chose
-    other = MainWindowV2(None, None)
+    other = MainWindow(None, None)
     try:
         assert other.plot_colours_actions["colorblind"].isChecked()
     finally:

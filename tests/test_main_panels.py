@@ -13,7 +13,7 @@ import pytest
 from PySide6.QtWidgets import QLabel, QMessageBox
 
 from astrocook.gui.main_panels import LEFT_SIDEBAR_WIDTH, RIGHT_SIDEBAR_WIDTH
-from astrocook.gui.main_window import MainWindowV2
+from astrocook.gui.main_window import MainWindow
 
 from test_gui_smoke import SESSION_FILE, _run_recipe
 
@@ -23,7 +23,7 @@ def _new_window(qtbot, monkeypatch, tmp_path):
     for kind in ("warning", "critical", "information", "question"):
         monkeypatch.setattr(QMessageBox, kind, staticmethod(
             lambda *a, **k: QMessageBox.StandardButton.Ok))
-    win = MainWindowV2(None, None)
+    win = MainWindow(None, None)
     qtbot.addWidget(win)
     monkeypatch.setattr(win, "_show_custom_message",
                         lambda *a, **k: QMessageBox.StandardButton.Ok)
@@ -345,10 +345,10 @@ def test_recent_files(empty, tmp_path):
 
 def test_window_geometry_remembered(qtbot, empty):
     # The size and position of the window, as the user left them
-    from astrocook.gui.main_window import MainWindowV2
+    from astrocook.gui.main_window import MainWindow
     empty.resize(700, 500)  # within the screen of the tests
     empty.close()
-    other = MainWindowV2(None, None)
+    other = MainWindow(None, None)
     qtbot.addWidget(other)
     assert (other.width(), other.height()) == (700, 500)
 

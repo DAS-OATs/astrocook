@@ -11,7 +11,7 @@ replay does not lose them.
 import re
 from typing import List, Optional, Tuple
 
-from astrocook.core.structures import NOTE_KINDS, HistoryLogV2, LogEntryV2
+from astrocook.core.structures import NOTE_KINDS, HistoryLog, LogEntry
 
 #: The tags of the comments that hold a reason or a note
 TAGS = ("reason", *NOTE_KINDS)
@@ -25,7 +25,7 @@ def _tagged(tag: str, text: str) -> List[str]:
     return [head + lines[0]] + ["#" + " " * (len(head) - 1) + line for line in lines[1:]]
 
 
-def _call(entry: LogEntryV2) -> str:
+def _call(entry: LogEntry) -> str:
     params = ", ".join(f"{k}='{v}'" if isinstance(v, str) else f"{k}={v}"
                        for k, v in entry.params.items())
     return f"{entry.recipe_name}({params})"
@@ -38,7 +38,7 @@ PREVIOUS_HEADER = ("## The log of the archive this session was opened from: read
                    "not run by Run All, not saved again.")
 
 
-def log_to_script(log: HistoryLogV2) -> List[str]:
+def log_to_script(log: HistoryLog) -> List[str]:
     """The lines of the Log Scripter for ``log``, the entries undone and
     their notes commented out; first, the log of the archive the session
     was opened from, if any, as ``##`` comments."""
@@ -47,7 +47,7 @@ def log_to_script(log: HistoryLogV2) -> List[str]:
     if previous is not None:
         out += [PREVIOUS_HEADER] + [f"## {line}" for line in log_to_script(previous)] + [""]
     for item, active in log.timeline(include_undone=True):
-        if isinstance(item, LogEntryV2):
+        if isinstance(item, LogEntry):
             lines = (_tagged("reason", item.reason) if item.reason else []) + [_call(item)]
         else:
             lines = _tagged(item.kind, item.text)

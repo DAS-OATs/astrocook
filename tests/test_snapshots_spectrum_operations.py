@@ -11,7 +11,7 @@ from astrocook.core.spectrum_operations import (
     compute_flux_scaling, convert_x_axis, convert_y_axis, rebin_spectrum,
     running_mean, running_std, smooth_spectrum,
 )
-from astrocook.core.structures import DataColumnV2, SpectrumDataV2
+from astrocook.core.structures import DataColumn, SpectrumData
 
 FLUX_UNIT = au.erg / (au.cm**2 * au.s * au.nm)
 
@@ -29,12 +29,12 @@ def _synthetic_spectrum(seed=0, n=2000, z_em=0.0):
     dy = 0.02 * cont
     y = cont * absorption + rng.normal(0.0, 1.0, n) * dy
     y[[500, 1500]] += 1.0  # spikes, to exercise sigma clipping
-    return SpectrumDataV2(
-        x=DataColumnV2(x, au.nm),
-        xmin=DataColumnV2(x - dx / 2, au.nm),
-        xmax=DataColumnV2(x + dx / 2, au.nm),
-        y=DataColumnV2(y, FLUX_UNIT),
-        dy=DataColumnV2(dy, FLUX_UNIT),
+    return SpectrumData(
+        x=DataColumn(x, au.nm),
+        xmin=DataColumn(x - dx / 2, au.nm),
+        xmax=DataColumn(x + dx / 2, au.nm),
+        y=DataColumn(y, FLUX_UNIT),
+        dy=DataColumn(dy, FLUX_UNIT),
         z_em=z_em,
     )
 
@@ -91,8 +91,8 @@ def test_convert_x_axis(snapshot, label, z_ref, xunit):
 def test_convert_y_axis(snapshot):
     spec = _synthetic_spectrum()
     # One flux-like auxiliary column (converted) and one that is not (copied)
-    spec.aux_cols["cont"] = DataColumnV2(np.full(len(spec.x.value), 1.5), FLUX_UNIT)
-    spec.aux_cols["resol"] = DataColumnV2(np.full(len(spec.x.value), 4.5e4),
+    spec.aux_cols["cont"] = DataColumn(np.full(len(spec.x.value), 1.5), FLUX_UNIT)
+    spec.aux_cols["resol"] = DataColumn(np.full(len(spec.x.value), 4.5e4),
                                           au.dimensionless_unscaled)
     y, dy, aux = convert_y_axis(spec, au.erg / (au.cm**2 * au.s * au.Angstrom))
     snapshot.check("convert_y_axis", {

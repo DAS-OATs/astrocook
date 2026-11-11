@@ -12,15 +12,15 @@ import inspect
 import pytest
 
 from astrocook.recipes import registry
-from astrocook.recipes.absorbers import RecipeAbsorbersV2
-from astrocook.recipes.continuum import RecipeContinuumV2
-from astrocook.recipes.edit import RecipeEditV2
-from astrocook.recipes.file import RecipeFileV2
-from astrocook.recipes.flux import RecipeFluxV2
+from astrocook.recipes.absorbers import RecipeAbsorbers
+from astrocook.recipes.continuum import RecipeContinuum
+from astrocook.recipes.edit import RecipeEdit
+from astrocook.recipes.file import RecipeFile
+from astrocook.recipes.flux import RecipeFlux
 from astrocook.recipes.registry import RECIPES, build_spec, find_recipe, get_recipe
 
-CLASSES = {"absorbers": RecipeAbsorbersV2, "continuum": RecipeContinuumV2,
-           "edit": RecipeEditV2, "file": RecipeFileV2, "flux": RecipeFluxV2}
+CLASSES = {"absorbers": RecipeAbsorbers, "continuum": RecipeContinuum,
+           "edit": RecipeEdit, "file": RecipeFile, "flux": RecipeFlux}
 
 #: Public methods of the recipe classes that are not recipes
 NOT_RECIPES = {("file", "export_ascii_outputs")}  # helper of the GUI export (F82)
@@ -28,11 +28,11 @@ NOT_RECIPES = {("file", "export_ascii_outputs")}  # helper of the GUI export (F8
 #: As in ``BRANCHING_RECIPES`` (core/utils.py) before the registry
 BRANCHING = {"split", "stitch", "equalize_and_stitch", "extract_preset", "coadd",
              "resample", "identify_lines"}
-#: As in ``MainWindowV2._RECIPES_REQUIRING_Z_EM`` before the registry
+#: As in ``MainWindow._RECIPES_REQUIRING_Z_EM`` before the registry
 REQUIRING_Z_EM = {"fit_powerlaw", "estimate_auto", "find_absorbed", "extract_preset",
                   "doublets_auto", "lya_auto", "forest_auto", "metals_auto",
                   "identify_lines"}
-#: As in ``MainWindowV2._RECIPES_REQUIRING_RESOL`` before the registry
+#: As in ``MainWindow._RECIPES_REQUIRING_RESOL`` before the registry
 REQUIRING_RESOLUTION = {"fit_component", "add_component", "doublets_auto", "lya_auto",
                         "forest_auto", "metals_auto", "identify_lines"}
 

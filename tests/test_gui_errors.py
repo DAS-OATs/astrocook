@@ -12,7 +12,7 @@ import pytest
 from astrocook.recipes.errors import RecipeFailed
 from PySide6.QtWidgets import QMessageBox
 
-from astrocook.core.structures import HistoryLogV2
+from astrocook.core.structures import HistoryLog
 from astrocook.gui import errors
 from astrocook.gui import main_recipes
 
@@ -86,7 +86,7 @@ class _History:
 
 
 def test_log_entry_written():
-    history = _History(HistoryLogV2())
+    history = _History(HistoryLog())
     main_recipes._add_log_entry(history, "smooth", {"sigma_kms": "10.0"})
     assert [e.recipe_name for e in history.log_manager.entries] == ["smooth"]
 

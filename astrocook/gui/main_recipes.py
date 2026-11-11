@@ -6,7 +6,7 @@ dialog and the worker, the result (log, warnings, cancellation), errors
 and Stop.
 
 Moved out of ``main_window.py`` in phase 5 (split of the GUI), as a mixin
-of ``MainWindowV2``.
+of ``MainWindow``.
 """
 import logging
 import time
@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (QApplication, QDialog, QFileDialog, QLineEdit,
 
 from astrocook.core.resolution import resolution_summary
 from astrocook.session.history import SessionHistory
-from astrocook.core.structures import HistoryLogV2
+from astrocook.core.structures import HistoryLog
 from astrocook.recipes._spectrum import spec_of
 from astrocook.recipes.errors import RecipeError
 from astrocook.recipes.params import resolve_params
@@ -38,11 +38,11 @@ logger = logging.getLogger(__name__)
 def _add_log_entry(history, recipe_name: str, params: dict) -> None:
     """Record a recipe in the log of a session history (phase 6).
 
-    A log manager that is not a ``HistoryLogV2`` cannot happen today: it is an
+    A log manager that is not a ``HistoryLog`` cannot happen today: it is an
     ERROR, instead of the silent skip of before. The entry holds the values
     the recipe used, defaults included (phase 6-bis, #573 item 3).
     """
-    if isinstance(history.log_manager, HistoryLogV2):
+    if isinstance(history.log_manager, HistoryLog):
         history.log_manager.add_entry(recipe_name, resolve_params(recipe_name, params))
     else:
         logger.error(f"The log of the session has an unknown type "
@@ -55,7 +55,7 @@ def region_expression(xmin: float, xmax: float) -> str:
 
 
 class MainRecipesMixin(HostBase):
-    """The recipes of ``MainWindowV2``.
+    """The recipes of ``MainWindow``.
 
     Uses the window's ``active_history``, ``session_histories``,
     ``thread_pool``, ``progress_dialog``, ``active_recipe_dialog``, the

@@ -1,7 +1,7 @@
 """What the tools of inspection of the MCP server compute, in the package
 for scripts too (phase 6-ter, PR 3): the fit groups of Refit All
-(``SystemListV2.fit_groups``), the reading of a range
-(``SpectrumV2.columns_in_range``), the plots without the GUI
+(``SystemList.fit_groups``), the reading of a range
+(``Spectrum.columns_in_range``), the plots without the GUI
 (``astrocook.plotting``)."""
 import subprocess
 import sys
@@ -9,21 +9,21 @@ import sys
 import numpy as np
 import pytest
 
-from astrocook.session.session import SessionV2
-from astrocook.core.structures import ComponentDataV2, SystemListDataV2
-from astrocook.core.system_list import SystemListV2
+from astrocook.session.session import Session
+from astrocook.core.structures import ComponentData, SystemListData
+from astrocook.core.system_list import SystemList
 from astrocook.mocks import MockComponent, MockTruth, generate
 
 C_KMS = 299792.458
 
 
 def _comp(i, z, series="CIV"):
-    return ComponentDataV2(id=i, z=z, dz=None, logN=13.0, dlogN=None, b=10.0, db=None,
+    return ComponentData(id=i, z=z, dz=None, logN=13.0, dlogN=None, b=10.0, db=None,
                            series=series, uuid=f"u{i}")
 
 
 def _systs(*zs):
-    return SystemListV2(SystemListDataV2(
+    return SystemList(SystemListData(
         components=[_comp(i, z) for i, z in enumerate(zs)]))
 
 
@@ -53,17 +53,17 @@ def test_refit_all_fits_the_groups_of_fit_groups(monkeypatch):
     truth = MockTruth(components=[MockComponent("CIV", 1.9, 13.8, 10.0)],
                       lam_min_nm=440.0, lam_max_nm=460.0, dv_kms=2.5,
                       resol=45000.0, snr=50.0, z_em=2.0, seed=1)
-    session = SessionV2("mock", None, spec=generate(truth))
+    session = Session("mock", None, spec=generate(truth))
     session = session.absorbers.add_component(series="CIV", z=1.9)
     seen = []
-    original = SystemListV2.fit_groups
+    original = SystemList.fit_groups
 
     def spy(self, *args, **kwargs):
         out = original(self, *args, **kwargs)
         seen.append(out)
         return out
 
-    monkeypatch.setattr(SystemListV2, "fit_groups", spy)
+    monkeypatch.setattr(SystemList, "fit_groups", spy)
     session.absorbers.refit_all()
     assert seen and seen[0] == [[session.systs.components[0].uuid]]
 
@@ -106,7 +106,7 @@ def test_columns_in_range_errors(spec):
 
 def test_plot_spectrum(spec):
     from astrocook.plotting import figure_png, plot_spectrum
-    session = SessionV2("mock", None, spec=spec).absorbers.add_component(series="CIV", z=1.9)
+    session = Session("mock", None, spec=spec).absorbers.add_component(series="CIV", z=1.9)
     fig = plot_spectrum(session, 445, 452, normalized=True, palette="colorblind")
     labels = [t.get_text() for t in fig.axes[0].get_legend().get_texts()]
     assert labels == ["flux", "error", "continuum", "model"]

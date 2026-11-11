@@ -1,8 +1,8 @@
-"""Methods of :class:`~astrocook.core.spectrum.SpectrumV2` that combine or
+"""Methods of :class:`~astrocook.core.spectrum.Spectrum` that combine or
 regrid spectra: stitch, rebin, equalization, co-addition, resampling.
 
 Part of the split of ``spectrum.py`` into thematic modules (phase 5): the
-methods are defined here, in a mixin class that ``SpectrumV2`` inherits, and
+methods are defined here, in a mixin class that ``Spectrum`` inherits, and
 are used as before (``spec.rebin(...)``).
 """
 import astropy.units as au
@@ -13,11 +13,11 @@ import numpy as np
 from typing import TYPE_CHECKING, Self, cast, Dict, List, Optional
 
 from astrocook.core.spectrum_operations import convert_axis_velocity, rebin_spectrum
-from astrocook.core.structures import DataColumnV2, SpectrumDataV2
+from astrocook.core.structures import DataColumn, SpectrumData
 from astrocook.core._spectrum_host import HostBase
 
 if TYPE_CHECKING:
-    from astrocook.core.spectrum import SpectrumV2
+    from astrocook.core.spectrum import Spectrum
 
 logger = logging.getLogger(__name__)
 
@@ -26,13 +26,13 @@ class CombineMixin(HostBase):
     """Stitching, rebinning, equalization, co-addition and resampling of
     spectra.
 
-    Mixed into ``SpectrumV2``, whose data and methods it uses: ``_data``,
+    Mixed into ``Spectrum``, whose data and methods it uses: ``_data``,
     ``history``, ``meta``, ``x``, ``y``, ``dy``, ``t``, ``resolution``,
     ``get_column`` and ``scale_flux`` (of ``FluxMixin``). The results are
     new instances of the class (``self.__class__``).
     """
 
-    def stitch(self, other_specs: List['SpectrumV2'], sort: bool = True) -> Self:
+    def stitch(self, other_specs: List['Spectrum'], sort: bool = True) -> Self:
         """
         Merge this spectrum with a list of other spectra.
 
@@ -40,14 +40,14 @@ class CombineMixin(HostBase):
 
         Parameters
         ----------
-        other_specs : list of SpectrumV2
+        other_specs : list of Spectrum
             List of other spectrum objects to stitch.
         sort : bool, optional
             If True, sorts the final arrays by wavelength. Defaults to ``True``.
 
         Returns
         -------
-        SpectrumV2
+        Spectrum
             A new merged spectrum.
         """
         from copy import deepcopy
@@ -91,14 +91,14 @@ class CombineMixin(HostBase):
             idx = np.arange(len(x_final))
 
         # Build Aux Columns
-        from astrocook.core.structures import DataColumnV2
+        from astrocook.core.structures import DataColumn
         new_aux = {}
         for col_name, arrays in aux_map.items():
             arr = np.concatenate(arrays)
             if sort: arr = arr[idx]
             # Copy metadata from self
             orig_col = self._data.aux_cols[col_name]
-            new_aux[col_name] = DataColumnV2(arr, orig_col.unit, orig_col.description)
+            new_aux[col_name] = DataColumn(arr, orig_col.unit, orig_col.description)
 
         # Build New Object
         from ..io.loaders import _auto_limits
@@ -112,11 +112,11 @@ class CombineMixin(HostBase):
         if any(lo < prev_hi for (_, prev_hi), (lo, _) in pairwise(ranges)):
             new_meta['plot_style'] = 'scatter'
         
-        new_data = SpectrumDataV2(
-            x=DataColumnV2(x_final, x_u),
+        new_data = SpectrumData(
+            x=DataColumn(x_final, x_u),
             xmin=xmin, xmax=xmax,
-            y=DataColumnV2(y_final, y_u),
-            dy=DataColumnV2(dy_final, y_u),
+            y=DataColumn(y_final, y_u),
+            dy=DataColumn(dy_final, y_u),
             aux_cols=new_aux,
             meta=new_meta,
             z_em=self._data.z_em
@@ -145,7 +145,7 @@ class CombineMixin(HostBase):
 
         Returns
         -------
-        SpectrumV2
+        Spectrum
             A new instance with the rebinned data.
         """
         
@@ -182,7 +182,7 @@ class CombineMixin(HostBase):
             # --- Bypass interpolation if it's the carefully drizzled resolution ---
             if name == 'resol' and resol_new is not None:
                 # rebin_spectrum returns R (#526)
-                new_aux_cols['resol'] = DataColumnV2(resol_new, au.dimensionless_unscaled,
+                new_aux_cols['resol'] = DataColumn(resol_new, au.dimensionless_unscaled,
                                                      description="Resolving power (rebinned)")
                 continue
 
@@ -202,7 +202,7 @@ class CombineMixin(HostBase):
                     
                     # --- *** FIX 2: Check if interpolation returned None (e.g., for string) *** ---
                     if interp_values is not None:
-                        new_aux_cols[name] = DataColumnV2(interp_values, col_data.unit)
+                        new_aux_cols[name] = DataColumn(interp_values, col_data.unit)
                     # (If it is None, get_resampled_column already warned us, so we just drop it)
                     # --- *** END FIX 2 *** ---
 
@@ -221,23 +221,23 @@ class CombineMixin(HostBase):
         if 'plot_style' in new_meta:
             del new_meta['plot_style']
 
-        # 4. Build new SpectrumDataV2
-        new_data = SpectrumDataV2(
-            x=DataColumnV2(x_final.value, x_final.unit),
-            xmin=DataColumnV2(xmin_final.value, xmin_final.unit),
-            xmax=DataColumnV2(xmax_final.value, xmax_final.unit),
-            y=DataColumnV2(y_new.value, y_new.unit),
-            dy=DataColumnV2(dy_new.value, dy_new.unit),
+        # 4. Build new SpectrumData
+        new_data = SpectrumData(
+            x=DataColumn(x_final.value, x_final.unit),
+            xmin=DataColumn(xmin_final.value, xmin_final.unit),
+            xmax=DataColumn(xmax_final.value, xmax_final.unit),
+            y=DataColumn(y_new.value, y_new.unit),
+            dy=DataColumn(dy_new.value, dy_new.unit),
             aux_cols=new_aux_cols, 
             meta=new_meta, 
             z_em=self._data.z_em   # Propagate
         )
         
-        # 5. Return a NEW SpectrumV2 instance
+        # 5. Return a NEW Spectrum instance
         new_history = self.history + [f"Rebinned spectrum (dx={dx})"]
         return self.__class__(data=new_data, history=new_history)
     
-    def equalize_to_reference(self, reference_spec: 'SpectrumV2', order: int = 0) -> Self:
+    def equalize_to_reference(self, reference_spec: 'Spectrum', order: int = 0) -> Self:
         """
         Scale this spectrum's flux to match a reference spectrum.
 
@@ -247,7 +247,7 @@ class CombineMixin(HostBase):
 
         Parameters
         ----------
-        reference_spec : SpectrumV2
+        reference_spec : Spectrum
             The reference spectrum object to match.
         order : int, optional
             Polynomial order for the scaling model. ``0`` applies a constant
@@ -256,7 +256,7 @@ class CombineMixin(HostBase):
 
         Returns
         -------
-        SpectrumV2
+        Spectrum
             A new instance with scaled flux.
         """
         from astrocook.core.spectrum_operations import compute_flux_scaling
@@ -271,7 +271,7 @@ class CombineMixin(HostBase):
         # Use the existing scale_flux method to apply it
         return self.scale_flux(scale_model)
     
-    def coadd(self, others: List['SpectrumV2'], 
+    def coadd(self, others: List['Spectrum'], 
               xstart: Optional[au.Quantity], xend: Optional[au.Quantity], 
               dx: au.Quantity, kappa: Optional[float] = 5.0, 
               equalize_order: int = 0) -> Self:
@@ -283,7 +283,7 @@ class CombineMixin(HostBase):
 
         Parameters
         ----------
-        others : list of SpectrumV2
+        others : list of Spectrum
             List of spectra to add.
         xstart, xend : Quantity, optional
             Bounds of the new grid.
@@ -296,7 +296,7 @@ class CombineMixin(HostBase):
 
         Returns
         -------
-        SpectrumV2
+        Spectrum
             The resulting co-added spectrum.
         """
         from astrocook.core.spectrum_operations import (
@@ -304,7 +304,7 @@ class CombineMixin(HostBase):
             rebin_spectrum, 
             convert_axis_velocity
         )
-        from astrocook.core.structures import SpectrumDataV2, DataColumnV2
+        from astrocook.core.structures import SpectrumData, DataColumn
 
         # 1. Setup Reference and List
         all_specs = [self] + others
@@ -399,14 +399,14 @@ class CombineMixin(HostBase):
         # --- Pack the resolution column for the drizzler ---
         temp_aux = {}
         if track_resolution:
-            temp_aux['resol'] = DataColumnV2(flat_resol, au.dimensionless_unscaled)
+            temp_aux['resol'] = DataColumn(flat_resol, au.dimensionless_unscaled)
 
-        temp_data = SpectrumDataV2(
-            x=DataColumnV2(flat_x, calc_unit),
-            xmin=DataColumnV2(flat_xmin, calc_unit),
-            xmax=DataColumnV2(flat_xmax, calc_unit),
-            y=DataColumnV2(flat_y, self.y.unit),
-            dy=DataColumnV2(flat_dy, self.dy.unit),
+        temp_data = SpectrumData(
+            x=DataColumn(flat_x, calc_unit),
+            xmin=DataColumn(flat_xmin, calc_unit),
+            xmax=DataColumn(flat_xmax, calc_unit),
+            y=DataColumn(flat_y, self.y.unit),
+            dy=DataColumn(flat_dy, self.dy.unit),
             aux_cols=temp_aux,
             meta=self.meta
         )
@@ -447,15 +447,15 @@ class CombineMixin(HostBase):
         new_aux_cols = {}
         
         if reb_resol is not None:
-            new_aux_cols['resol'] = DataColumnV2(reb_resol, au.dimensionless_unscaled, description="Co-added IVW resolution")
+            new_aux_cols['resol'] = DataColumn(reb_resol, au.dimensionless_unscaled, description="Co-added IVW resolution")
 
         # 8. Wrap in Logic Class
-        final_spec_data = SpectrumDataV2(
-            x=DataColumnV2(final_x.value, final_x.unit), 
-            xmin=DataColumnV2(final_xmin.value, final_xmin.unit), 
-            xmax=DataColumnV2(final_xmax.value, final_xmax.unit),
-            y=DataColumnV2(reb_y.value, reb_y.unit), 
-            dy=DataColumnV2(reb_dy.value, reb_dy.unit),
+        final_spec_data = SpectrumData(
+            x=DataColumn(final_x.value, final_x.unit), 
+            xmin=DataColumn(final_xmin.value, final_xmin.unit), 
+            xmax=DataColumn(final_xmax.value, final_xmax.unit),
+            y=DataColumn(reb_y.value, reb_y.unit), 
+            dy=DataColumn(reb_dy.value, reb_dy.unit),
             aux_cols=new_aux_cols,
             meta=new_meta, 
             z_em=self._data.z_em
@@ -463,29 +463,29 @@ class CombineMixin(HostBase):
         
         return self.__class__(final_spec_data)
 
-    def resample_on_grid(self, target_grid_spec: 'SpectrumV2', 
+    def resample_on_grid(self, target_grid_spec: 'Spectrum', 
                          fill_value: float = np.nan) -> Self:
         """
         Resample this spectrum onto the exact wavelength grid of another spectrum.
 
         Parameters
         ----------
-        target_grid_spec : SpectrumV2
+        target_grid_spec : Spectrum
             The spectrum whose grid defines the target wavelengths.
         fill_value : float, optional
             Value to fill outside the interpolation range (default: NaN).
 
         Returns
         -------
-        SpectrumV2
+        Spectrum
             A new instance interpolated to the target grid.
         """
         x_old = self.x.to_value(au.nm)
         x_new = target_grid_spec.x.to_value(au.nm)
         all_cols_old = self.t._data_dict
-        x_col = DataColumnV2(x_new, target_grid_spec.x.unit)
-        xmin_col = DataColumnV2(target_grid_spec.xmin.value, target_grid_spec.xmin.unit)
-        xmax_col = DataColumnV2(target_grid_spec.xmax.value, target_grid_spec.xmax.unit)
+        x_col = DataColumn(x_new, target_grid_spec.x.unit)
+        xmin_col = DataColumn(target_grid_spec.xmin.value, target_grid_spec.xmin.unit)
+        xmax_col = DataColumn(target_grid_spec.xmax.value, target_grid_spec.xmax.unit)
         y_col_new = None
         dy_col_new = None
         aux_cols_new = {}
@@ -496,7 +496,7 @@ class CombineMixin(HostBase):
                 logger.debug(f"Resampling column '{name}'...")
                 y_interp = np.interp(x_new, x_old, col_q.value,
                                      left=fill_value, right=fill_value)
-                new_data_col = DataColumnV2(y_interp, col_q.unit)
+                new_data_col = DataColumn(y_interp, col_q.unit)
                 if name == 'y':
                     y_col_new = new_data_col
                 elif name == 'dy':
@@ -507,7 +507,7 @@ class CombineMixin(HostBase):
                 logger.warning(f"The column '{name}' is not numerical and cannot "
                                "be resampled: it is dropped.")
         assert y_col_new is not None and dy_col_new is not None
-        new_data_core = SpectrumDataV2(
+        new_data_core = SpectrumData(
             x=x_col, xmin=xmin_col, xmax=xmax_col, 
             y=y_col_new, 
             dy=dy_col_new, 

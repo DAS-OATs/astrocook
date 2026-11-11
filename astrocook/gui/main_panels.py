@@ -6,7 +6,7 @@ buttons of the continuum editor); the welcome view; the state of the
 window with and without a session.
 
 Moved out of ``main_window.py`` in phase 5 (split of the GUI), as a mixin
-of ``MainWindowV2``.
+of ``MainWindow``.
 """
 import logging
 import os
@@ -21,7 +21,7 @@ from PySide6.QtWidgets import (QAbstractItemView, QApplication, QCheckBox, QComb
                                QListView, QMessageBox, QPushButton, QSizePolicy, QSlider,
                                QStyle, QVBoxLayout, QWidget)
 
-from astrocook.session.session import SessionV2
+from astrocook.session.session import Session
 from astrocook.core.utils import resource_path
 
 from .floating_cards import CARD_WIDTH, CardFader, CollapsibleSection, WrappedLabel
@@ -52,7 +52,7 @@ SWATCH_SIZE = QSize(24, 12)
 
 
 class MainPanelsMixin(HostBase):
-    """The panels of ``MainWindowV2``.
+    """The panels of ``MainWindow``.
 
     Uses the window's ``active_history``, ``plot_viewer``,
     ``central_stack``, the animation groups of the sidebars, the menu
@@ -147,7 +147,7 @@ class MainPanelsMixin(HostBase):
         self.session_collapse_button.raise_()
         self.plot_controls_collapse_button.raise_()
 
-    def _setup_plot_view(self, session_for_plot: Optional[SessionV2]):
+    def _setup_plot_view(self, session_for_plot: Optional[Session]):
         self.plot_viewer = SpectrumPlotWidget(session_for_plot, self)
         self.central_stack.addWidget(self.plot_viewer)
         self._setup_status_bar()

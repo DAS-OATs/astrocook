@@ -13,7 +13,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from astrocook.session.session import SessionV2
+from astrocook.session.session import Session
 from astrocook.recipes.errors import (InvalidParameter, MissingPrerequisite, RecipeError,
                                       RecipeFailed, reason_of)
 from astrocook.recipes.params import typed_recipe
@@ -57,11 +57,11 @@ def test_errors_of_the_core_become_recipe_failed():
 
 
 def test_a_bug_goes_on_with_a_note(monkeypatch):
-    from astrocook.core.spectrum import SpectrumV2
+    from astrocook.core.spectrum import Spectrum
 
     def broken(self, sigma_kms):
         raise AttributeError("a bug")
-    monkeypatch.setattr(SpectrumV2, "smooth", broken)
+    monkeypatch.setattr(Spectrum, "smooth", broken)
     with pytest.raises(AttributeError) as info:
         _session().flux.smooth(sigma_kms=10.0)
     assert info.value.__notes__ == ["In the recipe flux.smooth (Smooth spectrum)."]
@@ -74,9 +74,9 @@ def test_a_pipeline_names_its_step(monkeypatch):
     @typed_recipe
     def estimate_auto(self):
         raise RecipeFailed("no unabsorbed pixels")
-    monkeypatch.setattr(continuum.RecipeContinuumV2, "estimate_auto", estimate_auto)
+    monkeypatch.setattr(continuum.RecipeContinuum, "estimate_auto", estimate_auto)
     spec = _spec(scale=100.0).remove_columns(["cont", "model"])
-    session = SessionV2(name="s", gui=None, spec=spec)
+    session = Session(name="s", gui=None, spec=spec)
     with pytest.raises(RecipeFailed) as info:
         session.absorbers.populate_from_identification(
             series_map_json='{"1": "CIV"}', z_map_json='{"1": 2.97}')
@@ -89,7 +89,7 @@ def test_a_missing_prerequisite():
     spec = _spec(z_em=0.0)
     with pytest.raises(MissingPrerequisite, match="^Fit power-law continuum: The emission "
                                                    "redshift"):
-        SessionV2(name="s", gui=None, spec=spec).continuum.fit_powerlaw()
+        Session(name="s", gui=None, spec=spec).continuum.fit_powerlaw()
 
 
 def test_the_recipe_logs_nothing(caplog):
@@ -163,11 +163,11 @@ def test_a_pipeline_whose_fit_fails_fails(monkeypatch):
     @typed_recipe
     def refit_all(self, **kwargs):
         raise RecipeFailed("the fit did not converge")
-    monkeypatch.setattr(absorbers.RecipeAbsorbersV2, "refit_all", refit_all)
+    monkeypatch.setattr(absorbers.RecipeAbsorbers, "refit_all", refit_all)
     truth = MockTruth(components=[MockComponent("CIV", 1.93, 13.8, 10.0)],
                       lam_min_nm=440.0, lam_max_nm=460.0, dv_kms=2.5, resol=45000.0,
                       snr=50.0, z_em=2.7, seed=1)
-    session = SessionV2("mock", None, spec=generate(truth, truth_columns=False))
+    session = Session("mock", None, spec=generate(truth, truth_columns=False))
     with pytest.raises(RecipeFailed) as info:
         session.continuum.estimate_auto().absorbers.doublets_auto()
     assert str(info.value) == ("Auto-fit metal doublets (Red Side) → Auto-detect and fit "

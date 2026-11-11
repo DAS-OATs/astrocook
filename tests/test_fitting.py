@@ -5,11 +5,11 @@ import matplotlib.pyplot as plt
 
 # Import V2 Core
 from astrocook.core.structures import (
-    SpectrumDataV2, DataColumnV2, ComponentDataV2, SystemListDataV2
+    SpectrumData, DataColumn, ComponentData, SystemListData
 )
-from astrocook.core.spectrum import SpectrumV2
-from astrocook.core.system_list import SystemListV2
-from astrocook.fitting.voigt_fitter import VoigtFitterV2
+from astrocook.core.spectrum import Spectrum
+from astrocook.core.system_list import SystemList
+from astrocook.fitting.voigt_fitter import VoigtFitter
 
 # Configure Logging
 logging.basicConfig(level=logging.INFO)
@@ -29,29 +29,29 @@ def create_synthetic_spectrum():
     # 2. Create True Model (Physics)
     # We cheat and use the Fitter's own physics engine to generate the truth
     # True Params: z=2.0, logN=14.0, b=25.0
-    true_comp = ComponentDataV2(
+    true_comp = ComponentData(
         id=0, z=z_true, dz=0, logN=14.0, dlogN=0, b=25.0, db=0, 
         series='CIV' # This triggers both 1548 and 1550
     )
     
     # Create a dummy system list for generation
-    dummy_list_data = SystemListDataV2(components=[true_comp])
-    dummy_sys = SystemListV2(dummy_list_data)
+    dummy_list_data = SystemListData(components=[true_comp])
+    dummy_sys = SystemList(dummy_list_data)
     
     # Create a dummy spectrum container
-    x_col = DataColumnV2(x_arr, au.Angstrom)
-    y_dummy = DataColumnV2(np.ones_like(x_arr), au.dimensionless_unscaled)
-    dy_dummy = DataColumnV2(np.ones_like(x_arr)*0.1, au.dimensionless_unscaled)
-    spec_data = SpectrumDataV2(x=x_col, xmin=x_col, xmax=x_col, y=y_dummy, dy=dy_dummy)
-    spec_v2 = SpectrumV2(spec_data)
+    x_col = DataColumn(x_arr, au.Angstrom)
+    y_dummy = DataColumn(np.ones_like(x_arr), au.dimensionless_unscaled)
+    dy_dummy = DataColumn(np.ones_like(x_arr)*0.1, au.dimensionless_unscaled)
+    spec_data = SpectrumData(x=x_col, xmin=x_col, xmax=x_col, y=y_dummy, dy=dy_dummy)
+    spec_v2 = Spectrum(spec_data)
     
     # Use Fitter to generate true flux
-    fitter = VoigtFitterV2(spec_v2, dummy_sys)
+    fitter = VoigtFitter(spec_v2, dummy_sys)
     # We need to hack the constraint model to give us the P vector for the true component
     # Since we are just generating, we can calculate manually or use the internal method if accessible
     # Let's trust the fitter logic:
     # We create a fitter, but we need to generate the model from the *parameters*, not fit.
-    # VoigtFitterV2._compute_model uses the constraints vector.
+    # VoigtFitter._compute_model uses the constraints vector.
     
     _, true_flux = fitter.compute_model_flux()
     
@@ -62,17 +62,17 @@ def create_synthetic_spectrum():
     y_obs = true_flux + noise
     dy_obs = np.ones_like(y_obs) * noise_level
     
-    # 4. Return SpectrumV2 Object
-    y_col = DataColumnV2(y_obs, au.dimensionless_unscaled)
-    dy_col = DataColumnV2(dy_obs, au.dimensionless_unscaled)
+    # 4. Return Spectrum Object
+    y_col = DataColumn(y_obs, au.dimensionless_unscaled)
+    dy_col = DataColumn(dy_obs, au.dimensionless_unscaled)
     
     # Add a continuum column (all ones)
-    aux = {'cont': DataColumnV2(np.ones_like(x_arr), au.dimensionless_unscaled)}
+    aux = {'cont': DataColumn(np.ones_like(x_arr), au.dimensionless_unscaled)}
     
-    final_data = SpectrumDataV2(
+    final_data = SpectrumData(
         x=x_col, xmin=x_col, xmax=x_col, y=y_col, dy=dy_col, aux_cols=aux
     )
-    return SpectrumV2(final_data)
+    return Spectrum(final_data)
 
 def _run_fit():
     
@@ -83,7 +83,7 @@ def _run_fit():
     # True was z=2.0, logN=14.0, b=25.0
     # Guess is z=2.0001, logN=13.5, b=40.0
     print("\n--- Initializing System List with Guess ---")
-    guess_comp = ComponentDataV2(
+    guess_comp = ComponentData(
         id=1, 
         z=2.0001,  # Slightly shifted (within the default z window of 20 km/s)
         dz=None,
@@ -94,13 +94,13 @@ def _run_fit():
         series='CIV'
     )
     
-    syst_list = SystemListV2(SystemListDataV2(components=[guess_comp]))
+    syst_list = SystemList(SystemListData(components=[guess_comp]))
     
     print(f"Guess: z={guess_comp.z:.5f}, logN={guess_comp.logN:.2f}, b={guess_comp.b:.2f}")
     
     # 3. Initialize Fitter
     print("\n--- Initializing Fitter ---")
-    fitter = VoigtFitterV2(spectrum, syst_list)
+    fitter = VoigtFitter(spectrum, syst_list)
     
     # 4. Run Fit
     print("--- Running Fit (Levenberg-Marquardt) ---")
@@ -133,7 +133,7 @@ def _plot_fit(spectrum, fitter, new_syst_list, result):
         # (Fitter.compute_model_flux uses the *current* constraints, but the fitter returns a *new* list)
         
         # To plot the result, we make a new fitter with the new list (statelessness check)
-        fitter_final = VoigtFitterV2(spectrum, new_syst_list)
+        fitter_final = VoigtFitter(spectrum, new_syst_list)
         x_plot, y_final = fitter_final.compute_model_flux()
         
         plt.figure(figsize=(10, 6))

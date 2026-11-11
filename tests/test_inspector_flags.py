@@ -6,8 +6,8 @@ from types import SimpleNamespace
 
 from PySide6.QtCore import Qt
 
-from astrocook.core.structures import ComponentDataV2, SystemListDataV2
-from astrocook.core.system_list import SystemListV2
+from astrocook.core.structures import ComponentData, SystemListData
+from astrocook.core.system_list import SystemList
 import astrocook.gui.system_inspector as gui
 from astrocook.gui.inspector_table import FLAG_BOUND_COLOR, FLAG_NAN_COLOR, flag_cue
 
@@ -17,13 +17,13 @@ def _gui():
 
 
 def _systs():
-    comps = [ComponentDataV2(id=1, z=3.0, dz=1e-5, logN=13.5, dlogN=0.05, b=50.0,
+    comps = [ComponentData(id=1, z=3.0, dz=1e-5, logN=13.5, dlogN=0.05, b=50.0,
                              db=1.0, series="Ly_a", flags=("b_at_upper_bound",)),
-             ComponentDataV2(id=2, z=3.01, dz=None, logN=13.0, dlogN=None, b=20.0,
+             ComponentData(id=2, z=3.01, dz=None, logN=13.0, dlogN=None, b=20.0,
                              db=None, series="Ly_a", flags=("nan_errors",)),
-             ComponentDataV2(id=3, z=3.02, dz=1e-5, logN=13.2, dlogN=0.05, b=25.0,
+             ComponentData(id=3, z=3.02, dz=1e-5, logN=13.2, dlogN=0.05, b=25.0,
                              db=1.0, series="Ly_a")]
-    return SystemListV2(SystemListDataV2(components=comps))
+    return SystemList(SystemListData(components=comps))
 
 
 def _inspector(with_spectrum=False):
@@ -31,12 +31,12 @@ def _inspector(with_spectrum=False):
     inspector = _gui().SystemInspector(None)
     if with_spectrum:
         # Selecting rows draws the velocity plot
-        from astrocook.session.session import SessionV2
+        from astrocook.session.session import Session
         from astrocook.mocks import MockComponent, MockTruth, generate
         spec = generate(MockTruth(
             components=[MockComponent("Ly_a", 3.01, 13.0, 20.0)], lam_min_nm=484.0,
             lam_max_nm=490.0, dv_kms=2.5, resol=45000.0, snr=30.0, z_em=3.5, seed=1))
-        inspector.current_session = SessionV2("s", None, spec=spec, systs=systs)
+        inspector.current_session = Session("s", None, spec=spec, systs=systs)
     else:
         inspector.current_session = SimpleNamespace(systs=systs)
     inspector.table_model.update_data(systs.components, {})

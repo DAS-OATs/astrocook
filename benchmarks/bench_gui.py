@@ -108,13 +108,13 @@ class Bench:
     def new_window(self):
         # Imported after the QApplication exists: the GUI selects the QtAgg
         # matplotlib backend at import time (F7)
-        from astrocook.gui.main_window import MainWindowV2
+        from astrocook.gui.main_window import MainWindow
         if self.window is not None:
             self.window.close()
             self.window.deleteLater()
             _flush(self.app)
         from PySide6.QtWidgets import QMessageBox
-        win = MainWindowV2(None, None)
+        win = MainWindow(None, None)
 
         def answer(*args, header="", **kwargs):
             # The first refit asks for the continuum (phase 6-bis, PR 5b):

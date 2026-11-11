@@ -5,7 +5,7 @@ branch, duplicating, stitching and co-adding, the session inspector,
 saving and closing.
 
 Moved out of ``main_window.py`` in phase 5 (split of the GUI), as a mixin
-of ``MainWindowV2``.
+of ``MainWindow``.
 """
 import logging
 import os
@@ -22,12 +22,12 @@ from PySide6.QtWidgets import (QApplication, QDialog, QDialogButtonBox, QFileDia
                                QProgressDialog, QSizePolicy, QVBoxLayout)
 
 from astrocook.core.resolution import resolution_summary
-from astrocook.session.session import SessionV2, load_session_from_file
+from astrocook.session.session import Session, load_session_from_file
 from astrocook.session.history import SessionHistory
-from astrocook.core.structures import HistoryLogV2
+from astrocook.core.structures import HistoryLog
 
 if TYPE_CHECKING:
-    from astrocook.core.spectrum import SpectrumV2
+    from astrocook.core.spectrum import Spectrum
 
 from .qt_workers import SessionLoadWorker
 from .theme import FOCUS_BORDER, palette_hex
@@ -68,7 +68,7 @@ class SessionListModel(QStringListModel):
 
 
 class MainSessionsMixin(HostBase):
-    """The sessions of ``MainWindowV2``.
+    """The sessions of ``MainWindow``.
 
     Uses the window's ``session_histories``, ``active_history``, the
     session list and its model, ``plot_viewer``, the plot controls (the
@@ -77,14 +77,14 @@ class MainSessionsMixin(HostBase):
     scripter and the identification viewer, and ``_update_ui_state``.
     """
 
-    def update_gui_session_state(self, new_session: SessionV2, original_session_index: int, # original_index no longer needed
+    def update_gui_session_state(self, new_session: Session, original_session_index: int, # original_index no longer needed
                                  is_branching: bool, auto_show_aux: Optional[str] = None,
                                  force_autoscale: bool = False):
         """
         Updates the GUI state AND history after a recipe returns a new session.
         Operates on the currently active SessionHistory.
         """
-        if not isinstance(new_session, SessionV2):
+        if not isinstance(new_session, Session):
             logger.error("The new state of the session is not valid: the view is not updated.")
             return
             
@@ -100,7 +100,7 @@ class MainSessionsMixin(HostBase):
 
         if is_branching:
             logger.debug("Branching: Creating new SessionHistory from current state.")
-            # 1. Get the source log and copy it (HistoryLogV2 is safe to deepcopy)
+            # 1. Get the source log and copy it (HistoryLog is safe to deepcopy)
             source_log_manager = target_history.log_manager
             try:
                 new_log_copy = deepcopy(source_log_manager)
@@ -234,10 +234,10 @@ class MainSessionsMixin(HostBase):
         """
         log = getattr(session, 'log_manager', None)
         histories = getattr(self, 'session_histories', [])
-        if isinstance(log, HistoryLogV2) and not any(
+        if isinstance(log, HistoryLog) and not any(
                 h.log_manager is log for h in histories):
-            return HistoryLogV2.opened_from(log)
-        return HistoryLogV2()
+            return HistoryLog.opened_from(log)
+        return HistoryLog()
 
     def _add_session_internal(self, new_session, is_initial=False):
         """Creates and adds a new SessionHistory manager."""
@@ -259,7 +259,7 @@ class MainSessionsMixin(HostBase):
         # followed (phase 6-ter, PR 5-bis); the path is set by _load_session
         self._follow_if_marked(new_history, new_session.__dict__.pop('_source_path', None))
 
-    def add_session(self, new_session: SessionV2, initial_load=False):
+    def add_session(self, new_session: Session, initial_load=False):
         """Adds a new session history and updates view."""
 
         # The log_object parameter has been removed
@@ -269,7 +269,7 @@ class MainSessionsMixin(HostBase):
             self._update_view_for_session(self.active_history.current_state, set_current_list_item=True, target_list_index=new_list_index, force_autoscale=True)
         self._update_undo_redo_actions()
 
-    def _update_view_for_session(self, session_state_to_show: Optional[SessionV2],
+    def _update_view_for_session(self, session_state_to_show: Optional[Session],
                                  set_current_list_item=False, target_list_index=None, is_startup=False,
                                  force_autoscale: bool = False, auto_show_aux: Optional[str] = None):
         
@@ -305,7 +305,7 @@ class MainSessionsMixin(HostBase):
             self.aux_col_combo.addItem("None")
             
             if is_valid:
-                all_cols = list(cast('SpectrumV2', cast(SessionV2, session_state_to_show).spec).t._data_dict.keys())
+                all_cols = list(cast('Spectrum', cast(Session, session_state_to_show).spec).t._data_dict.keys())
                 core_cols = {'x', 'xmin', 'xmax', 'y', 'dy'}
                 aux_col_names = sorted([c for c in all_cols if c not in core_cols])
                 if aux_col_names:
@@ -754,7 +754,7 @@ class MainSessionsMixin(HostBase):
         if not history_item: return
         
         state = history_item.current_state
-        spec = cast('SpectrumV2', state.spec)
+        spec = cast('Spectrum', state.spec)
         systs = state.systs
         meta = spec.meta if spec else {}
 
@@ -1022,7 +1022,7 @@ class MainSessionsMixin(HostBase):
             if self.active_history != history_item:
                 self.active_history = history_item
 
-            # C. Trigger recipe to sync the internal SessionV2 state and Log.
+            # C. Trigger recipe to sync the internal Session state and Log.
             params = {
                 'name': new_name,
                 'object': '_current_',

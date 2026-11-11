@@ -14,9 +14,9 @@ import astropy.units as au
 import numpy as np
 import pytest
 
-from astrocook.session.session import SessionV2
-from astrocook.core.spectrum import SpectrumV2
-from astrocook.core.structures import DataColumnV2, SpectrumDataV2
+from astrocook.session.session import Session
+from astrocook.core.spectrum import Spectrum
+from astrocook.core.structures import DataColumn, SpectrumData
 from astrocook.mocks import MockComponent, MockTruth, generate
 from astrocook.recipes import prerequisites
 from astrocook.recipes.errors import MissingPrerequisite
@@ -35,14 +35,14 @@ def _physical(mock):
     continuum (the mock itself is normalized, so its continuum is 1)."""
     d = mock._data
     k = 1e-16 * (mock.x.value / 450.0) ** -1.5
-    return SpectrumV2(SpectrumDataV2(
-        x=d.x, xmin=d.xmin, xmax=d.xmax, y=DataColumnV2(mock.y.value * k, FLUX),
-        dy=DataColumnV2(mock.dy.value * k, FLUX), aux_cols=dict(d.aux_cols), z_em=d.z_em))
+    return Spectrum(SpectrumData(
+        x=d.x, xmin=d.xmin, xmax=d.xmax, y=DataColumn(mock.y.value * k, FLUX),
+        dy=DataColumn(mock.dy.value * k, FLUX), aux_cols=dict(d.aux_cols), z_em=d.z_em))
 
 
 @pytest.fixture(scope="module")
 def raw():
-    return SessionV2("raw", None, spec=_physical(generate(TRUTH, truth_columns=False)))
+    return Session("raw", None, spec=_physical(generate(TRUTH, truth_columns=False)))
 
 
 def _components(session):
@@ -97,8 +97,8 @@ def test_missing_says_what_and_who(raw):
 
 
 def test_a_normalized_spectrum_has_its_continuum():
-    # A spectrum with a flux of ~1 has a continuum of 1 (SpectrumV2.norm)
-    session = SessionV2("norm", None, spec=generate(TRUTH, truth_columns=False))
+    # A spectrum with a flux of ~1 has a continuum of 1 (Spectrum.norm)
+    session = Session("norm", None, spec=generate(TRUTH, truth_columns=False))
     assert missing(session, find_recipe("refit_all")) == ()
 
 

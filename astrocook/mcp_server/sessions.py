@@ -41,9 +41,9 @@ from typing import Any, Iterator, Optional
 from mcp.server.mcpserver.exceptions import ToolError
 
 from astrocook import follow, gaps
-from astrocook.session.session import SessionV2
+from astrocook.session.session import Session
 from astrocook.session.history import SessionHistory
-from astrocook.core.structures import HistoryLogV2
+from astrocook.core.structures import HistoryLog
 from astrocook.recipes.params import resolve_params
 
 logger = logging.getLogger(__name__)
@@ -76,10 +76,10 @@ class SessionMeta:
     #: archive opened is no longer continued (F109)
     first_entry: int = 0
     #: The state last saved or opened; None if never saved
-    saved_state: Optional[SessionV2] = None
+    saved_state: Optional[Session] = None
     #: Where it was last saved
     saved_path: Optional[str] = None
-    #: The log as last saved or opened (``HistoryLogV2.to_dict``): a note
+    #: The log as last saved or opened (``HistoryLog.to_dict``): a note
     #: changes the log, not the state (phase 6-ter, PR 5a)
     saved_log: Optional[dict] = None
     #: The indices of the log entries of the steps provided before a
@@ -174,7 +174,7 @@ class SessionStore:
             n += 1
         return f"{parent}-{n}"
 
-    def add(self, session: SessionV2, path: str) -> str:
+    def add(self, session: Session, path: str) -> str:
         """Store a newly opened session and return its identifier.
 
         The identifier is the file name without extension, with a suffix
@@ -184,7 +184,7 @@ class SessionStore:
         never replayed nor saved again (F109).
         """
         session_id = self._new_id(Path(path).stem or "session")
-        log = HistoryLogV2.opened_from(session.log_manager)
+        log = HistoryLog.opened_from(session.log_manager)
         session._gui = self.context
         history = SessionHistory(session, log)
         history.display_name = session_id
@@ -239,7 +239,7 @@ class SessionStore:
         return None
 
     def notes_of(self, session_id: str, state_index: int) -> list:
-        """The notes written at the state ``state_index`` (``LogNoteV2``);
+        """The notes written at the state ``state_index`` (``LogNote``);
         those of a state undone are kept, as the state is, for a redo."""
         log = self.get(session_id).log_manager
         notes = log.notes_at(self.meta[session_id].first_entry + state_index)
@@ -306,8 +306,8 @@ class SessionStore:
             step.session.log_manager = history.log_manager
             history.add_state(step.session)
 
-    def apply(self, session_id: str, new_state: SessionV2, recipe_name: str,
-              params: dict[str, Any], provided=(), reason: Optional[str] = None) -> SessionV2:
+    def apply(self, session_id: str, new_state: Session, recipe_name: str,
+              params: dict[str, Any], provided=(), reason: Optional[str] = None) -> Session:
         """Record a recipe in the log, with the reason given for it, and make
         its result the current state."""
         history = self.get(session_id)

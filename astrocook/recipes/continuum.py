@@ -1,3 +1,4 @@
+from astrocook._renamed import renamed
 import astropy.units as au
 import logging
 from typing import TYPE_CHECKING, Optional
@@ -8,7 +9,7 @@ from astrocook.recipes._spectrum import spec_of
 from astrocook.recipes.params import typed_recipe
 
 if TYPE_CHECKING:
-    from astrocook.session.session import SessionV2
+    from astrocook.session.session import Session
 
 logger = logging.getLogger(__name__)
 
@@ -154,14 +155,14 @@ def _smoothing_sigma(smooth_fwhm, smooth_std):
     return float(smooth_fwhm) * FWHM_TO_SIGMA
 
 
-class RecipeContinuumV2:
+class RecipeContinuum:
     """
     Recipes for estimating and fitting the quasar continuum.
 
     These methods are accessed via the ``session.continuum`` attribute and delegate
-    heavy logic to :class:`~astrocook.core.spectrum.SpectrumV2`.
+    heavy logic to :class:`~astrocook.core.spectrum.Spectrum`.
     """
-    def __init__(self, session_v2: 'SessionV2'):
+    def __init__(self, session_v2: 'Session'):
         self._session = session_v2
         self._tag = 'cont' # V1 tag for this menu
 
@@ -169,7 +170,7 @@ class RecipeContinuumV2:
     def estimate_auto(self, smooth_len_lya: float = 5000.0, smooth_len_out: float = 400.0,
                       kappa: float = 2.0, fudge: str = 'auto',
                       smooth_fwhm: float = 800.0, template: bool = False, renorm_model: bool = True,
-                      smooth_std: Optional[str] = None) -> 'SessionV2':
+                      smooth_std: Optional[str] = None) -> 'Session':
         """
         Auto-estimate continuum (single-click).
 
@@ -208,8 +209,8 @@ class RecipeContinuumV2:
 
         Returns
         -------
-        SessionV2
-            A new :class:`~astrocook.session.session.SessionV2` with updated continuum
+        Session
+            A new :class:`~astrocook.session.session.Session` with updated continuum
             and absorption mask.
 
         Raises
@@ -248,13 +249,13 @@ class RecipeContinuumV2:
 
     @typed_recipe
     def find_absorbed(self, smooth_len_lya: float = 5000.0, smooth_len_out: float = 400.0,
-                      kappa: float = 2.0, template: bool = False) -> 'SessionV2':
+                      kappa: float = 2.0, template: bool = False) -> 'Session':
         """
         Find absorbed regions (V1 logic).
 
         Runs the V1 'clip_flux' kappa-sigma algorithm (with Ly-alpha forest split)
         to create a boolean mask (``abs_mask``) where True indicates absorption.
-        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.find_absorbed`.
+        Delegates to :meth:`astrocook.core.spectrum.Spectrum.find_absorbed`.
 
         Parameters
         ----------
@@ -272,8 +273,8 @@ class RecipeContinuumV2:
 
         Returns
         -------
-        SessionV2
-            A new :class:`~astrocook.session.session.SessionV2` with the ``abs_mask``
+        Session
+            A new :class:`~astrocook.session.session.Session` with the ``abs_mask``
             column added/updated.
 
         Raises
@@ -301,13 +302,13 @@ class RecipeContinuumV2:
     @typed_recipe
     def fit_continuum(self, fudge: str = 'auto', smooth_fwhm: float = 800.0,
                       mask_col: str = 'abs_mask', renorm_model: bool = True, template: str = 'False',
-                      smooth_std: Optional[str] = None) -> 'SessionV2':
+                      smooth_std: Optional[str] = None) -> 'Session':
         """
         Fit continuum to mask (V1 logic).
 
         Interpolates unabsorbed regions from a mask, optionally applies an auto-fudge
         factor to center residuals, and smooths the result.
-        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.fit_continuum`.
+        Delegates to :meth:`astrocook.core.spectrum.Spectrum.fit_continuum`.
 
         Parameters
         ----------
@@ -328,8 +329,8 @@ class RecipeContinuumV2:
 
         Returns
         -------
-        SessionV2
-            A new :class:`~astrocook.session.session.SessionV2` with the ``cont``
+        Session
+            A new :class:`~astrocook.session.session.Session` with the ``cont``
             column added/updated.
 
         Raises
@@ -351,13 +352,13 @@ class RecipeContinuumV2:
         
     @typed_recipe
     def fit_powerlaw(self, regions: str = '128.0-129.0, 131.5-132.5, 134.5-136.0',
-                     kappa: float = 3.0) -> 'SessionV2':
+                     kappa: float = 3.0) -> 'Session':
         """
         Fit power-law continuum.
 
         Fits a power-law (linear in log-log space) to user-defined, unabsorbed
         rest-frame regions. Creates the ``cont_pl`` column.
-        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.fit_powerlaw`.
+        Delegates to :meth:`astrocook.core.spectrum.Spectrum.fit_powerlaw`.
 
         Parameters
         ----------
@@ -370,8 +371,8 @@ class RecipeContinuumV2:
 
         Returns
         -------
-        SessionV2
-            A new :class:`~astrocook.session.session.SessionV2` with the ``cont_pl``
+        Session
+            A new :class:`~astrocook.session.session.Session` with the ``cont_pl``
             column added/updated.
 
         Raises
@@ -389,13 +390,13 @@ class RecipeContinuumV2:
         return self._session.with_new_spectrum(new_spec_v2)
     
     @typed_recipe
-    def update_from_knots(self, knots_x: list, knots_y: list, renorm_model: bool = True) -> 'SessionV2':
+    def update_from_knots(self, knots_x: list, knots_y: list, renorm_model: bool = True) -> 'Session':
         """
         Update continuum from manual knots.
 
         Interpolates a Cubic Spline through manually placed knots and updates the
         continuum.
-        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.update_continuum_from_knots`.
+        Delegates to :meth:`astrocook.core.spectrum.Spectrum.update_continuum_from_knots`.
 
         Parameters
         ----------
@@ -409,8 +410,8 @@ class RecipeContinuumV2:
 
         Returns
         -------
-        SessionV2
-            A new :class:`~astrocook.session.session.SessionV2` with the updated continuum.
+        Session
+            A new :class:`~astrocook.session.session.Session` with the updated continuum.
         """
         # 1. Delegate Business Logic to Core
         new_spec = spec_of(self._session).update_continuum_from_knots(
@@ -428,3 +429,6 @@ class RecipeContinuumV2:
 
         # 3. Return new session
         return self._session.with_new_spectrum(new_spec)
+
+# Old names (phase 6-quater, PR 6): see astrocook/_renamed.py
+__getattr__ = renamed(__name__, {"RecipeContinuumV2": "RecipeContinuum"})

@@ -13,7 +13,7 @@ import pytest
 
 from astrocook.recipes.errors import RecipeFailed
 
-from astrocook.session.session import SessionV2, load_session_from_file
+from astrocook.session.session import Session, load_session_from_file
 from astrocook.io.loaders import detect_file_format
 
 from test_recipes_edit_flux import _spec
@@ -37,7 +37,7 @@ def test_open_new_returns_0_for_an_unreadable_file(tmp_path, caplog):
     bad = tmp_path / "bad.fits"
     bad.write_bytes(b"not a FITS file")
     with caplog.at_level(logging.ERROR):
-        assert SessionV2.open_new(str(bad), "bad", None, "astrocook_fits") == 0
+        assert Session.open_new(str(bad), "bad", None, "astrocook_fits") == 0
     assert len(_errors(caplog)) == 1
 
 
@@ -64,7 +64,7 @@ def test_short_csv_is_read_as_csv(tmp_path):
 
 
 def test_failed_expression_is_logged_once_with_the_expression(caplog):
-    session = SessionV2("s", None, spec=_spec())
+    session = Session("s", None, spec=_spec())
     # Since phase 6-bis (PR 3) an exception with the expression, logged
     # where it is caught (here, nowhere)
     with caplog.at_level(logging.ERROR), pytest.raises(RecipeFailed) as info:
@@ -94,8 +94,8 @@ import numpy as np  # noqa: E402
 
 import astrocook.core.spectrum_operations as ops  # noqa: E402
 import astrocook.core.system_list as system_list_module  # noqa: E402
-from astrocook.core.structures import ParameterConstraintV2  # noqa: E402
-from astrocook.core.system_list import SystemListV2  # noqa: E402
+from astrocook.core.structures import ParameterConstraint  # noqa: E402
+from astrocook.core.system_list import SystemList  # noqa: E402
 
 from conftest import DATA_DIR  # noqa: E402
 from test_recipes_absorbers import _systs  # noqa: E402
@@ -158,7 +158,7 @@ def test_no_fallback_constraint_model(monkeypatch):
     # parameters; with None it crashed
     def broken(systs):
         raise RuntimeError("constraint model")
-    monkeypatch.setattr(system_list_module, "VoigtModelConstraintV2", broken)
+    monkeypatch.setattr(system_list_module, "VoigtModelConstraint", broken)
     with pytest.raises(RuntimeError, match="constraint model"):
         _systs(("CIV", 2.0, 13.0, 10.0))
 
@@ -214,10 +214,10 @@ def _with_link(expression):
     """A system list with a link written directly, as read from an archive
     (``{a}`` in the expression: the UUID of the first component)."""
     systs, (a, b) = _two()
-    link = ParameterConstraintV2(is_free=False, expression=expression.format(a=a),
+    link = ParameterConstraint(is_free=False, expression=expression.format(a=a),
                                  target_uuid=a)
     data = dataclasses.replace(systs._data, v2_constraints_map={b: {"z": link}})
-    return SystemListV2(data), a, b
+    return SystemList(data), a, b
 
 
 def test_a_wrong_link_from_an_archive_is_kept_frozen(caplog):

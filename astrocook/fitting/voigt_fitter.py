@@ -1,3 +1,4 @@
+from astrocook._renamed import renamed
 import astropy.units as au
 from scipy.ndimage import gaussian_filter1d
 from scipy.optimize import least_squares
@@ -10,9 +11,9 @@ from typing import List, Tuple, Dict, Any, Optional
 
 from astrocook.core.atomic_data import ATOM_DATA, STANDARD_MULTIPLETS, is_multiplet, series_lines
 from astrocook.fitting.lsf import PixelLSF
-from astrocook.core.spectrum import SpectrumV2
-from astrocook.core.structures import ComponentDataV2
-from astrocook.core.system_list import SystemListV2
+from astrocook.core.spectrum import Spectrum
+from astrocook.core.structures import ComponentData
+from astrocook.core.system_list import SystemList
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +21,7 @@ logger = logging.getLogger(__name__)
 TAU_CUT = 1e-6
 
 #: Flags that a fit leaves on the components it fits (#517), in
-#: ComponentDataV2.flags: a free parameter ended at a bound of the fit
+#: ComponentData.flags: a free parameter ended at a bound of the fit
 #: (within AT_BOUND_RTOL of the width of its range), or the uncertainties
 #: could not be computed. The upper bounds of the fit are those of the
 #: constraint model (logN 23, b 300 km/s) or the tighter max_logN and max_b
@@ -98,7 +99,7 @@ class NoPixelsToFit(ValueError):
     that could not be done."""
 
 
-class VoigtFitterV2:
+class VoigtFitter:
     """
     Engine for fitting Voigt profiles to spectral data.
 
@@ -111,12 +112,12 @@ class VoigtFitterV2:
 
     Parameters
     ----------
-    spectrum : SpectrumV2
+    spectrum : Spectrum
         The spectral data to fit. Must have a valid normalization (continuum) or be pre-normalized.
-    system_list : SystemListV2
+    system_list : SystemList
         The list of absorption components to model.
     """
-    def __init__(self, spectrum: SpectrumV2, system_list: SystemListV2, check_stop=None):
+    def __init__(self, spectrum: Spectrum, system_list: SystemList, check_stop=None):
         self._spectrum = spectrum
         self._system_list = system_list
         self._constraints = system_list.constraint_model
@@ -184,10 +185,10 @@ class VoigtFitterV2:
         
         # [OPTIMIZATION] Cache list of active components for the inner loop
         # Stores tuples: (index_in_system_list, component_object)
-        self._active_fit_components: Optional[List[Tuple[int, ComponentDataV2]]] = None
+        self._active_fit_components: Optional[List[Tuple[int, ComponentData]]] = None
 
 
-    def _compute_tau_component(self, comp: ComponentDataV2, z: float, logN: float, b: float, btur: float) -> np.ndarray:
+    def _compute_tau_component(self, comp: ComponentData, z: float, logN: float, b: float, btur: float) -> np.ndarray:
         atoms = [ATOM_DATA[t] for t in _transitions(comp.series)]
         if not atoms:
             return np.zeros_like(self._x_tau)
@@ -198,7 +199,7 @@ class VoigtFitterV2:
             np.array([at['gamma'] for at in atoms]), np.full(n, float(z)),
             np.full(n, 10**logN), np.full(n, np.sqrt(b**2 + btur**2)))
 
-    def _get_component_resolution(self, comp: ComponentDataV2) -> Tuple[float, str]:
+    def _get_component_resolution(self, comp: ComponentData) -> Tuple[float, str]:
         """
         Determines the resolution (val, unit) for a specific component.
         Priority: Variable Column > Component Attribute > Global Default
@@ -390,7 +391,7 @@ class VoigtFitterV2:
             errors = np.sqrt(np.einsum('ij,jk,ik->i', grad, cov, grad))
         return dict(zip(linked, errors, strict=True))
 
-    def evaluate_uncertainties(self, z_window_kms: float = 20.0) -> SystemListV2:
+    def evaluate_uncertainties(self, z_window_kms: float = 20.0) -> SystemList:
         """
         Recompute the uncertainties of the active components at their current
         values, without fitting.
@@ -402,7 +403,7 @@ class VoigtFitterV2:
 
         Returns
         -------
-        SystemListV2
+        SystemList
             A new system list with ``dz``, ``dlogN``, ``db``, ``dbtur`` (of the
             free parameters) and ``chi2`` of the active components updated.
         """
@@ -443,7 +444,7 @@ class VoigtFitterV2:
                 elif j in linked_errors:
                     new[name] = linked_errors[j]
             comps.append(dataclasses.replace(c, **new))
-        return SystemListV2(dataclasses.replace(self._system_list._data, components=comps))
+        return SystemList(dataclasses.replace(self._system_list._data, components=comps))
 
     def _cap_upper(self, bounds: Tuple[np.ndarray, np.ndarray], offset: int,
                    cap: float) -> Tuple[np.ndarray, np.ndarray]:
@@ -864,7 +865,7 @@ class VoigtFitterV2:
     def fit(self, max_nfev: int = 2000, method: str = 'trf', 
             z_window_kms: float = 20.0, verbose: int = 0,
             b_max: Optional[float] = None,
-            logN_max: Optional[float] = None) -> Tuple[SystemListV2, np.ndarray, Any]:
+            logN_max: Optional[float] = None) -> Tuple[SystemList, np.ndarray, Any]:
         """
         Execute the Voigt profile optimization.
 
@@ -903,7 +904,7 @@ class VoigtFitterV2:
         tuple
             A tuple containing:
             
-            1. **new_system_list** (:class:`~astrocook.core.system_list.SystemListV2`):
+            1. **new_system_list** (:class:`~astrocook.core.system_list.SystemList`):
                A new system list containing the optimized parameter values and errors.
             2. **final_model_flux** (*np.ndarray*):
                The full model flux array (physical units), evaluated on the entire grid.
@@ -927,7 +928,7 @@ class VoigtFitterV2:
         for i, comp in enumerate(old_systs.components):
             idx = i * 4
             new_comps.append(replace(comp, z=p_full_refined[idx], logN=p_full_refined[idx+1], b=p_full_refined[idx+2], btur=p_full_refined[idx+3]))
-        self._system_list = SystemListV2(replace(old_systs._data, components=new_comps))
+        self._system_list = SystemList(replace(old_systs._data, components=new_comps))
 
         bounds = self.prepare_fit_context(z_window_kms=z_window_kms)
         if b_max is not None:
@@ -1050,7 +1051,7 @@ class VoigtFitterV2:
                 f"Their errors are NaN; consider refitting or freezing parameters.")
 
         new_data_core = dataclasses.replace(self._system_list._data, components=new_components)
-        new_system_list = SystemListV2(new_data_core)
+        new_system_list = SystemList(new_data_core)
         
         # 4. Final Flux Model (Un-sliced)
         self._cached_tau_groups = {} # Clear cache
@@ -1128,3 +1129,6 @@ class VoigtFitterV2:
         
         y_model_phys = y_model_norm * self._norm
         return self._x_ang, y_model_phys
+
+# Old names (phase 6-quater, PR 6): see astrocook/_renamed.py
+__getattr__ = renamed(__name__, {"VoigtFitterV2": "VoigtFitter"})

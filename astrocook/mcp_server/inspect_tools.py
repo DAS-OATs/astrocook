@@ -6,9 +6,9 @@ and worked around the server to do it (Python on the FITS file: section
 4.2 of ``ROADMAP_HISTORY.md``). These tools read the current state of a session;
 they change nothing and log nothing. What they compute is in the package,
 for scripts too (phase 6-ter, PR 3, Guido): the fit groups in
-:meth:`~astrocook.core.system_list.SystemListV2.fit_groups` (those of
+:meth:`~astrocook.core.system_list.SystemList.fit_groups` (those of
 Refit All), the reading of a range in
-:meth:`~astrocook.core.spectrum.SpectrumV2.columns_in_range`, the plot in
+:meth:`~astrocook.core.spectrum.Spectrum.columns_in_range`, the plot in
 :mod:`astrocook.plotting`.
 """
 from typing import Annotated, Optional
@@ -69,7 +69,7 @@ class ComponentList(BaseModel):
 
 def fit_groups(session) -> dict[str, int]:
     """The fit group of each component: the groups of Refit All before it
-    splits the large ones (:meth:`SystemListV2.fit_groups` at the depth of
+    splits the large ones (:meth:`SystemList.fit_groups` at the depth of
     the fits). A component pulled in by two groups gets the first."""
     systs = session.systs
     if not systs or not systs.components:

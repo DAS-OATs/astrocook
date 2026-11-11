@@ -27,10 +27,10 @@ import pytest
 from astrocook.recipes.errors import InvalidParameter, RecipeFailed  # phase 6-bis, PR 3
 
 from astrocook.core.atomic_data import STANDARD_MULTIPLETS
-from astrocook.session.session import SessionV2
-from astrocook.core.structures import ComponentDataV2, SystemListDataV2
-from astrocook.core.system_list import SystemListV2
-from astrocook.fitting.voigt_fitter import VoigtFitterV2
+from astrocook.session.session import Session
+from astrocook.core.structures import ComponentData, SystemListData
+from astrocook.core.system_list import SystemList
+from astrocook.fitting.voigt_fitter import VoigtFitter
 
 from test_snapshots_voigt import (
     R_SYNTH, TRUE_COMPONENTS, _model, _synthetic_spectrum, _system_list,
@@ -51,15 +51,15 @@ def data():
 
 
 def _session(spec, systs=None):
-    return SessionV2(name="synth", gui=None, spec=spec, systs=systs)
+    return Session(name="synth", gui=None, spec=spec, systs=systs)
 
 
 def _systs(*params):
     """System list from (series, z, logN, b) tuples."""
-    comps = [ComponentDataV2(id=i + 1, z=z, dz=None, logN=logN, dlogN=None,
+    comps = [ComponentData(id=i + 1, z=z, dz=None, logN=logN, dlogN=None,
                              b=b, db=None, series=series)
              for i, (series, z, logN, b) in enumerate(params)]
-    return SystemListV2(SystemListDataV2(components=comps))
+    return SystemList(SystemListData(components=comps))
 
 
 @pytest.fixture(scope="module")
@@ -135,7 +135,7 @@ def test_delete_component_recomputes_model(data):
     civ, lya = session.systs.components
     out = session.absorbers.delete_component(uuid=civ.uuid)
     assert [c.uuid for c in out.systs.components] == [lya.uuid]
-    _, expected = VoigtFitterV2(data, out.systs).compute_model_flux()
+    _, expected = VoigtFitter(data, out.systs).compute_model_flux()
     np.testing.assert_allclose(out.spec.get_column("model").value, expected)
     both = session.absorbers.delete_component(uuids=[civ.uuid, lya.uuid])
     assert both.systs.components == []
@@ -298,7 +298,7 @@ def test_refit_all_does_not_depend_on_the_uuids(data):
         rng = np.random.default_rng(labels)
         comps = [dataclasses.replace(c, uuid=f"{rng.integers(1 << 62):x}")
                  for c in _systs(*params).components]
-        systs = SystemListV2(SystemListDataV2(components=comps))
+        systs = SystemList(SystemListData(components=comps))
         out = _session(data, systs).absorbers.refit_all(
             max_nfev="30", group_depth="1", max_group_size="3")
         results.append(sorted((c.z, c.logN, c.b) for c in out.systs.components))
@@ -347,15 +347,15 @@ def test_refit_all_errors_come_from_the_final_model(data):
     # their initial values; the errors and chi2 are recomputed on the final
     # model, so they match an evaluation at the final parameters
     import dataclasses
-    from astrocook.fitting.voigt_fitter import VoigtFitterV2
+    from astrocook.fitting.voigt_fitter import VoigtFitter
     from astrocook.recipes.absorbers import FIT_EXPANSION_DEPTH
     out = _session(data, _lya_chain()).absorbers.refit_all(
         max_nfev="50", group_depth="1", max_group_size="3")
     systs = out.systs
     target = systs.components[3]
-    local = SystemListV2(dataclasses.replace(systs._data, components=list(systs.components)))
+    local = SystemList(dataclasses.replace(systs._data, components=list(systs.components)))
     with local.fitting_context([target.uuid], group_depth=FIT_EXPANSION_DEPTH):
-        evaluated = VoigtFitterV2(out.spec, local).evaluate_uncertainties(100.0)
+        evaluated = VoigtFitter(out.spec, local).evaluate_uncertainties(100.0)
     again = next(c for c in evaluated.components if c.uuid == target.uuid)
     assert again.chi2 == pytest.approx(target.chi2, rel=0.2)
     assert again.dlogN == pytest.approx(target.dlogN, rel=0.2)
@@ -372,16 +372,16 @@ def test_refit_all_max_b(one_civ):
 
 def test_pipelines_bound_b_and_manual_fits_do_not():
     import inspect
-    from astrocook.recipes.absorbers import RecipeAbsorbersV2
+    from astrocook.recipes.absorbers import RecipeAbsorbers
     from astrocook.recipes.registry import get_recipe
     for name in ("components_auto", "doublets_auto", "lya_auto", "forest_auto",
                  "metals_auto"):
-        sig = inspect.signature(getattr(RecipeAbsorbersV2, name))
+        sig = inspect.signature(getattr(RecipeAbsorbers, name))
         assert sig.parameters["max_b"].default == 50.0, name  # typed (6-bis)
         assert get_recipe("absorbers", name).param("max_b").default == 50.0, name
-    sig = inspect.signature(RecipeAbsorbersV2.refit_all)
+    sig = inspect.signature(RecipeAbsorbers.refit_all)
     assert sig.parameters["max_b"].default == 300.0
-    assert "max_b" not in inspect.signature(RecipeAbsorbersV2.fit_component).parameters
+    assert "max_b" not in inspect.signature(RecipeAbsorbers.fit_component).parameters
 
 
 # --- Bayesian, anchor -----------------------------------------------------

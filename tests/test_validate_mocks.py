@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "benchmarks"))
 import validate_mocks as vm  # noqa: E402
 
 from astrocook.core.atomic_data import ATOM_DATA, STANDARD_MULTIPLETS  # noqa: E402
-from astrocook.core.structures import ComponentDataV2  # noqa: E402
+from astrocook.core.structures import ComponentData  # noqa: E402
 from astrocook.mocks import LYMAN_SERIES, MockComponent, generate  # noqa: E402
 from astrocook.mocks.physics import C_KMS  # noqa: E402
 
@@ -125,7 +125,7 @@ def test_identification_metrics():
 
 
 def _comp(series, z, logN, b, dz=1e-5, dlogN=0.05, db=0.5, chi2=1.0):
-    return ComponentDataV2(id=1, z=z, dz=dz, logN=logN, dlogN=dlogN, b=b,
+    return ComponentData(id=1, z=z, dz=dz, logN=logN, dlogN=dlogN, b=b,
                            db=db, series=series, chi2=chi2)
 
 

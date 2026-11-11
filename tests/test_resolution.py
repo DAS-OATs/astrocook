@@ -10,12 +10,12 @@ import pytest
 from astrocook.core.resolution import (
     C_KMS, column_to_resolving_power, migrate_component_resolutions,
 )
-from astrocook.core.spectrum import SpectrumV2
+from astrocook.core.spectrum import Spectrum
 from astrocook.core.structures import (
-    ComponentDataV2, DataColumnV2, SpectrumDataV2, SystemListDataV2,
+    ComponentData, DataColumn, SpectrumData, SystemListData,
 )
-from astrocook.core.system_list import SystemListV2
-from astrocook.fitting.voigt_fitter import VoigtFitterV2
+from astrocook.core.system_list import SystemList
+from astrocook.fitting.voigt_fitter import VoigtFitter
 
 
 def _spectrum(resol=0.0, meta=None, resol_col=None, resol_unit=au.dimensionless_unscaled,
@@ -24,14 +24,14 @@ def _spectrum(resol=0.0, meta=None, resol_col=None, resol_unit=au.dimensionless_
     x = np.arange(612.0, 620.0, 0.005)
     n = len(x)
     unit = au.dimensionless_unscaled
-    aux = {"cont": DataColumnV2(np.ones(n), unit)}
+    aux = {"cont": DataColumn(np.ones(n), unit)}
     if resol_col is not None:
-        aux["resol"] = DataColumnV2(np.asarray(resol_col, dtype=float), resol_unit)
-    return SpectrumV2(SpectrumDataV2(
-        x=DataColumnV2(x, au.nm), xmin=DataColumnV2(x - 0.0025, au.nm),
-        xmax=DataColumnV2(x + 0.0025, au.nm),
-        y=DataColumnV2(np.ones(n) if y is None else y, unit),
-        dy=DataColumnV2(np.full(n, 0.02), unit), aux_cols=aux,
+        aux["resol"] = DataColumn(np.asarray(resol_col, dtype=float), resol_unit)
+    return Spectrum(SpectrumData(
+        x=DataColumn(x, au.nm), xmin=DataColumn(x - 0.0025, au.nm),
+        xmax=DataColumn(x + 0.0025, au.nm),
+        y=DataColumn(np.ones(n) if y is None else y, unit),
+        dy=DataColumn(np.full(n, 0.02), unit), aux_cols=aux,
         meta=dict(meta or {}), z_em=4.1, resol=resol))
 
 
@@ -116,9 +116,9 @@ def test_with_properties_without_resolution_leaves_it():
 
 def test_set_properties_current_keeps_a_variable_column():
     # Before #526 '_current_' wrote the attribute into a flat column
-    from astrocook.session.session import SessionV2
+    from astrocook.session.session import Session
     variable = np.linspace(40000.0, 50000.0, N)
-    session = SessionV2("s", None, spec=_spectrum(resol=45000.0, resol_col=variable))
+    session = Session("s", None, spec=_spectrum(resol=45000.0, resol_col=variable))
     out = session.edit.set_properties(z_em="3.0")
     assert out.spec.resolution() == pytest.approx(variable)
 
@@ -126,10 +126,10 @@ def test_set_properties_current_keeps_a_variable_column():
 # --- Component overrides -----------------------------------------------------------
 
 def _systs(*resols):
-    comps = [ComponentDataV2(id=i + 1, z=2.97 + 0.001 * i, dz=None, logN=13.5,
+    comps = [ComponentData(id=i + 1, z=2.97 + 0.001 * i, dz=None, logN=13.5,
                              dlogN=None, b=10.0, db=None, series="CIV", resol=r)
              for i, r in enumerate(resols)]
-    return SystemListV2(SystemListDataV2(components=comps))
+    return SystemList(SystemListData(components=comps))
 
 
 def test_stamped_component_resolutions_are_cleared():
@@ -157,7 +157,7 @@ def test_the_fitter_does_not_stamp_the_components():
     for lam in (154.8204 * 3.97, 155.0781 * 3.97):
         y -= 0.5 * np.exp(-0.5 * ((x - lam) / 0.01) ** 2)
     spec = _spectrum(resol=45000.0, y=y)
-    fitter = VoigtFitterV2(spec, _systs(None, 30000.0))
+    fitter = VoigtFitter(spec, _systs(None, 30000.0))
     systs, *_ = fitter.fit(max_nfev=20)
     assert [c.resol for c in systs.components] == [None, 30000.0]
 
@@ -187,7 +187,7 @@ def test_operations_keep_the_resolution(op):
 def test_dataclass_replace_keeps_the_column():
     spec = _spectrum(resol=45000.0)
     data = dataclasses.replace(spec._data, resol=0.0)
-    assert SpectrumV2(data).resolution() == pytest.approx(np.full(N, 45000.0))
+    assert Spectrum(data).resolution() == pytest.approx(np.full(N, 45000.0))
 
 
 # --- GUI on the same resolver (PR 2) ------------------------------------------------
@@ -207,9 +207,9 @@ def test_resolution_summary():
 def test_system_inspector_reads_the_column_by_its_unit(qtbot, col, unit, expected):
     # Before #526 the inspector always read the column as km/s
     from types import SimpleNamespace
-    from astrocook.session.session import SessionV2
+    from astrocook.session.session import Session
     from astrocook.gui.system_inspector import VelocityPlotWidget
-    holder = SimpleNamespace(_current_session=SessionV2(
+    holder = SimpleNamespace(_current_session=Session(
         "s", None, spec=_spectrum(resol_col=col, resol_unit=unit)))
     r, unit_out = VelocityPlotWidget._get_resolution_at(holder, 616.0)
     assert unit_out == 'R' and r == pytest.approx(expected)

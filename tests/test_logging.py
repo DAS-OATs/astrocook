@@ -60,8 +60,8 @@ TESTS_DIR = str(Path(__file__).parent)
 NORM_WARNING = "'norm' is ignored"
 
 _REBIN = ("from test_recipes_edit_flux import _spec\n"
-          "from astrocook.session.session import SessionV2\n"
-          "SessionV2('s', None, spec=_spec()).flux.rebin(norm='True')\n")
+          "from astrocook.session.session import Session\n"
+          "Session('s', None, spec=_spec()).flux.rebin(norm='True')\n")
 
 
 def _run_stderr(code):
@@ -97,8 +97,8 @@ def root_records():
 
 def test_recipe_messages_reach_a_root_handler(root_records):
     from test_recipes_edit_flux import _spec
-    from astrocook.session.session import SessionV2
-    SessionV2("s", None, spec=_spec()).flux.rebin(norm="True")
+    from astrocook.session.session import Session
+    Session("s", None, spec=_spec()).flux.rebin(norm="True")
     warnings = [r for r in root_records if r.levelno == logging.WARNING]
     assert [r.module for r in warnings] == ["flux"]
     assert NORM_WARNING in warnings[0].getMessage()
@@ -110,11 +110,11 @@ def test_recipe_messages_reach_a_root_handler(root_records):
 def test_gui_warning_capture_sees_recipe_warnings():
     from astrocook.gui.recipe_progress import WarningCaptureHandler
     from test_recipes_edit_flux import _spec
-    from astrocook.session.session import SessionV2
+    from astrocook.session.session import Session
     handler = WarningCaptureHandler()
     logging.getLogger().addHandler(handler)
     try:
-        SessionV2("s", None, spec=_spec()).flux.rebin(norm="True")
+        Session("s", None, spec=_spec()).flux.rebin(norm="True")
     finally:
         logging.getLogger().removeHandler(handler)
     assert len(handler.warnings) == 1 and NORM_WARNING in handler.warnings[0]
@@ -151,8 +151,8 @@ def test_script_can_configure_logging_after_a_recipe():
 
 def test_records_name_their_module(root_records):
     from test_recipes_edit_flux import _spec
-    from astrocook.session.session import SessionV2
-    SessionV2("s", None, spec=_spec()).flux.rebin(norm="True")
+    from astrocook.session.session import Session
+    Session("s", None, spec=_spec()).flux.rebin(norm="True")
     names = {r.name for r in root_records if r.name.startswith("astrocook")}
     assert "astrocook.recipes.flux" in names
     assert "astrocook.core.spectrum_combine" in names

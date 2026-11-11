@@ -1,3 +1,4 @@
+from astrocook._renamed import renamed
 from astropy.table import Table, Column
 import astropy.units as au
 import contextlib
@@ -7,12 +8,12 @@ import numpy as np
 import ast
 from typing import TYPE_CHECKING, Any, Collection, cast, Dict, List, Optional, Set, Tuple
 
-from astrocook.fitting.voigt_model import LINK_ERRORS, LINK_FUNCTIONS, VoigtModelConstraintV2
-from astrocook.core.structures import ComponentDataV2, SystemListDataV2, ParameterConstraintV2
+from astrocook.fitting.voigt_model import LINK_ERRORS, LINK_FUNCTIONS, VoigtModelConstraint
+from astrocook.core.structures import ComponentData, SystemListData, ParameterConstraint
 from astrocook.core.atomic_data import ATOM_DATA, is_multiplet, series_lines
 
 if TYPE_CHECKING:
-    from astrocook.core.spectrum import SpectrumV2
+    from astrocook.core.spectrum import Spectrum
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +54,7 @@ def get_all_w_rest(series_name: str) -> List[float]:
 FWHM_BLEND_FACTOR = 1.0
 
 
-def instrumental_fwhm(spec: Optional['SpectrumV2']):
+def instrumental_fwhm(spec: Optional['Spectrum']):
     """Instrumental FWHM (km/s) of a spectrum as a function of the observed
     wavelength in Angstrom, from its ``resol`` column (#526).
 
@@ -80,7 +81,7 @@ def instrumental_fwhm(spec: Optional['SpectrumV2']):
     return fwhm_at
 
 
-def _component_fwhm(comp: ComponentDataV2, w_obs_ang: float, fwhm_at) -> float:
+def _component_fwhm(comp: ComponentData, w_obs_ang: float, fwhm_at) -> float:
     """FWHM (km/s) for a line of a component: its own resolution if set
     (an override, always R; the same priority as the fitter), otherwise the
     spectrum's at the line; NaN if unknown."""
@@ -91,7 +92,7 @@ def _component_fwhm(comp: ComponentDataV2, w_obs_ang: float, fwhm_at) -> float:
     return float(fwhm_at(w_obs_ang))
 
 
-def are_overlapping(c1: ComponentDataV2, c2: ComponentDataV2, constraints_map: dict,
+def are_overlapping(c1: ComponentData, c2: ComponentData, constraints_map: dict,
                     fwhm_at=None) -> bool:
     """
     Checks if two components should be grouped together for fitting.
@@ -159,21 +160,21 @@ def _valid_changes(comp, changes: dict) -> dict:
     return out
 
 
-class SystemListV2:
+class SystemList:
     """
     API layer for managing component lists, constraints, and fitting.
 
-    This class wraps the immutable :class:`~astrocook.core.structures.SystemListDataV2`
+    This class wraps the immutable :class:`~astrocook.core.structures.SystemListData`
     and provides methods to add, update, delete, and group components. It also
     initializes the constraint model used by the fitting engine.
 
     Parameters
     ----------
-    data : SystemListDataV2
+    data : SystemListData
         The core data container holding the list of components and constraint maps.
     """
     
-    def __init__(self, data: SystemListDataV2):
+    def __init__(self, data: SystemListData):
         self._data = data
         
         # 1. Sanitize & Hydrate data immediately
@@ -181,14 +182,14 @@ class SystemListV2:
         self._ensure_clean_data()
         
         # Created by the call below, so that it is never None when used
-        self.constraint_model: VoigtModelConstraintV2 = None  # type: ignore[assignment]
+        self.constraint_model: VoigtModelConstraint = None  # type: ignore[assignment]
         self._initialize_constraint_model()
 
     def _ensure_clean_data(self):
         """
         Robustly initializes data core.
         1. Sanitize artifacts in ID map.
-        2. HYDRATE 'v2_constraints_map' (Dict -> ParameterConstraintV2).
+        2. HYDRATE 'v2_constraints_map' (Dict -> ParameterConstraint).
         3. Recover parsed constraints from the clean map if present.
         """
         dirty = False
@@ -216,7 +217,7 @@ class SystemListV2:
                 for p, c in p_map.items():
                     if isinstance(c, dict):
                         # Convert Dict -> Dataclass
-                        hydrated_v2_map[u][p] = ParameterConstraintV2(
+                        hydrated_v2_map[u][p] = ParameterConstraint(
                             is_free=c.get('is_free', True),
                             target_uuid=c.get('target_uuid'),
                             expression=c.get('expression'),
@@ -236,7 +237,7 @@ class SystemListV2:
             # Use the clean rebuilt map
             clean_parsed = new_parsed
             constraints_dirty = True
-            logger.debug("SystemListV2: Hydrated constraints from clean JSON map.")
+            logger.debug("SystemList: Hydrated constraints from clean JSON map.")
         
         # 3. Legacy Fallback: If V2 map empty, Sanitize Parsed Map & Populate V2
         elif clean_parsed:
@@ -271,7 +272,7 @@ class SystemListV2:
                         if p_name == 'btur':
                             default_free = False
 
-                    val_obj = ParameterConstraintV2(
+                    val_obj = ParameterConstraint(
                         is_free=v.get('is_free', default_free),
                         target_uuid=v.get('target_uuid'),
                         expression=v.get('expression')
@@ -300,10 +301,10 @@ class SystemListV2:
         # A failure reaches the caller: an empty fallback model lost the
         # links and the frozen parameters at the next save (the archive
         # reads them from here), and None made the save crash (phase 6)
-        self.constraint_model = VoigtModelConstraintV2(self)
+        self.constraint_model = VoigtModelConstraint(self)
 
     @property
-    def components(self) -> List[ComponentDataV2]:
+    def components(self) -> List[ComponentData]:
         """List of all component data objects."""
         return self._data.components
 
@@ -376,7 +377,7 @@ class SystemListV2:
         return self.constraint_model._param_map
     
     @property
-    def parsed_constraints(self) -> Dict[Tuple[str, str], ParameterConstraintV2]:
+    def parsed_constraints(self) -> Dict[Tuple[str, str], ParameterConstraint]:
         return self._data.parsed_constraints
     
     @property
@@ -388,7 +389,7 @@ class SystemListV2:
     # --- Context Manager for Safe Fitting ---
     @contextlib.contextmanager
     def fitting_context(self, active_uuids: Optional[List[str]] = None, group_depth: int = 2,
-                        spec: Optional['SpectrumV2'] = None):
+                        spec: Optional['Spectrum'] = None):
         """
         Context manager for safe fitting.
 
@@ -401,7 +402,7 @@ class SystemListV2:
             List of UUIDs to set as active.
         group_depth : int, optional
             Grouping depth for finding connected components. Defaults to ``2``.
-        spec : SpectrumV2, optional
+        spec : Spectrum, optional
             The spectrum to be fitted: its resolution sets the blend
             threshold of the grouping (see :meth:`get_connected_group`).
         """
@@ -435,14 +436,14 @@ class SystemListV2:
                     # Last resort: direct attribute clear
                     self.constraint_model._active_uuids = None
 
-    def add_components_from_regions(self, spec: 'SpectrumV2', region_id_col: str,
-                                  series_map: Dict[int, str], z_map: Dict[int, float]) -> 'SystemListV2':
+    def add_components_from_regions(self, spec: 'Spectrum', region_id_col: str,
+                                  series_map: Dict[int, str], z_map: Dict[int, float]) -> 'SystemList':
         """
         Populate the list with initial components based on identified regions.
 
         Parameters
         ----------
-        spec : SpectrumV2
+        spec : Spectrum
             The spectrum containing the region definitions.
         region_id_col : str
             Name of the column containing region IDs (e.g., ``'abs_ids'``).
@@ -453,7 +454,7 @@ class SystemListV2:
 
         Returns
         -------
-        SystemListV2
+        SystemList
             A new instance populated with the identified components.
         """
         if not spec.has_aux_column(region_id_col):
@@ -470,7 +471,7 @@ class SystemListV2:
         for rid, series in series_map.items():
             if rid not in z_map: continue
             z_region = z_map[rid]
-            new_comp = ComponentDataV2(
+            new_comp = ComponentData(
                 id=next_id,
                 z=z_region, 
                 dz=0.001,
@@ -487,10 +488,10 @@ class SystemListV2:
             next_id += 1
 
         new_data = dataclasses.replace(self._data, components=new_components)
-        return SystemListV2(data=new_data)
+        return SystemList(data=new_data)
     
     def add_component(self, series: str, z: float, logN: float = 13.5, 
-                      b: float = 10.0, btur: float = 0.0) -> 'SystemListV2':
+                      b: float = 10.0, btur: float = 0.0) -> 'SystemList':
         """
         Return a new SystemList with properties of a specific component updated.
 
@@ -503,17 +504,17 @@ class SystemListV2:
 
         Returns
         -------
-        SystemListV2
+        SystemList
             A new instance with the updated component.
         """
-        from astrocook.core.structures import ComponentDataV2
+        from astrocook.core.structures import ComponentData
 
         current_components = self._data.components
         next_id = 1
         if current_components:
             next_id = max(c.id for c in current_components) + 1
             
-        new_comp = ComponentDataV2(
+        new_comp = ComponentData(
             id=next_id,
             z=z, dz=None,
             logN=logN, dlogN=None,
@@ -533,9 +534,9 @@ class SystemListV2:
             components=new_component_list,
             v1_id_to_uuid_map=new_id_map
         )
-        return SystemListV2(new_data_core)
+        return SystemList(new_data_core)
     
-    def get_component_by_uuid(self, uuid: str) -> Optional[ComponentDataV2]:
+    def get_component_by_uuid(self, uuid: str) -> Optional[ComponentData]:
         """
         Retrieve a component object by its UUID.
 
@@ -546,14 +547,14 @@ class SystemListV2:
 
         Returns
         -------
-        ComponentDataV2 or None
+        ComponentData or None
             The component object, or None if not found.
         """
         for c in self.components:
             if c.uuid == uuid: return c
         return None
 
-    def update_component(self, uuid: str, **changes) -> 'SystemListV2':
+    def update_component(self, uuid: str, **changes) -> 'SystemList':
         """
         Return a new SystemList with properties of a specific component updated.
 
@@ -566,7 +567,7 @@ class SystemListV2:
 
         Returns
         -------
-        SystemListV2
+        SystemList
             A new instance with the updated component.
         """
         new_components = []
@@ -584,10 +585,10 @@ class SystemListV2:
             return self
 
         new_data = dataclasses.replace(self._data, components=new_components)
-        return SystemListV2(new_data)
+        return SystemList(new_data)
 
 
-    def update_components(self, uuids: List[str], **changes) -> 'SystemListV2':
+    def update_components(self, uuids: List[str], **changes) -> 'SystemList':
         """
         Batch update parameters for multiple components in a single pass.
 
@@ -605,7 +606,7 @@ class SystemListV2:
 
         Returns
         -------
-        SystemListV2
+        SystemList
             A new instance with the components updated.
         """
         # Convert list to set for O(1) lookups
@@ -622,14 +623,14 @@ class SystemListV2:
                 new_components.append(c)
 
         new_data = dataclasses.replace(self._data, components=new_components)
-        return SystemListV2(new_data)
+        return SystemList(new_data)
     
 
     def _check_link(self, uuid: str, param: str, expression: str) -> None:
         """Raise ``ValueError`` if the expression of a link cannot be evaluated.
 
         It is evaluated with the current values of the components, as the
-        fit evaluates it (``VoigtModelConstraintV2.map_p_free_to_full``).
+        fit evaluates it (``VoigtModelConstraint.map_p_free_to_full``).
         """
         class _Params:
             __slots__ = ('z', 'logN', 'b', 'btur')
@@ -648,7 +649,7 @@ class SystemListV2:
     def update_constraint(self, uuid: str, param: str, 
                           is_free: Optional[bool] = None,
                           expression: Optional[str] = None,
-                          target_uuid: Optional[str] = None) -> 'SystemListV2':
+                          target_uuid: Optional[str] = None) -> 'SystemList':
         """
         Update the constraint for a specific component parameter.
 
@@ -667,7 +668,7 @@ class SystemListV2:
 
         Returns
         -------
-        SystemListV2
+        SystemList
             A new instance with the updated constraints.
         """
         current_parsed = dict(self._data.parsed_constraints)
@@ -681,12 +682,12 @@ class SystemListV2:
                  legacy_key = (comp.id, param)
                  existing = current_parsed.get(cast(Any, legacy_key))  # legacy keys use the int id
         
-        from astrocook.core.structures import ParameterConstraintV2
+        from astrocook.core.structures import ParameterConstraint
         
         # 2. Determine Base
         if existing:
             if isinstance(existing, dict):
-                 base_constraint = ParameterConstraintV2(
+                 base_constraint = ParameterConstraint(
                      is_free=existing.get('is_free', True), 
                      expression=existing.get('expression'),
                      target_uuid=existing.get('target_uuid')
@@ -696,7 +697,7 @@ class SystemListV2:
         else:
             # Default btur to Frozen, others to Free
             default_free = False if param == 'btur' else True
-            base_constraint = ParameterConstraintV2(is_free=default_free)
+            base_constraint = ParameterConstraint(is_free=default_free)
 
         # 3. Apply Changes
         # [FIX] Logic for Unlinking: If we explicitly set is_free=True, 
@@ -733,9 +734,9 @@ class SystemListV2:
                                        parsed_constraints=current_parsed,
                                        v2_constraints_map=current_v2_map)
         
-        return SystemListV2(new_data)
+        return SystemList(new_data)
 
-    def delete_component(self, uuid: Optional[str] = None, uuids: Optional[list] = None) -> 'SystemListV2':
+    def delete_component(self, uuid: Optional[str] = None, uuids: Optional[list] = None) -> 'SystemList':
         """
         Remove component(s) and clean up constraints linking to them.
 
@@ -748,11 +749,11 @@ class SystemListV2:
 
         Returns
         -------
-        SystemListV2
+        SystemList
             A new instance with components removed and constraints cleaned.
         """
         import dataclasses
-        from astrocook.core.structures import ParameterConstraintV2
+        from astrocook.core.structures import ParameterConstraint
 
         # 1. Normalize input to a Set of targets
         targets = set()
@@ -791,7 +792,7 @@ class SystemListV2:
             logger.info(f"The link of {p_name} of component {u_src} pointed to a "
                         "deleted component: the parameter is now free.")
             # Reset to Free
-            clean_constr = ParameterConstraintV2(is_free=True, expression=None, target_uuid=None)
+            clean_constr = ParameterConstraint(is_free=True, expression=None, target_uuid=None)
             
             # Update Nested Map
             current_v2_map[u_src][p_name] = clean_constr
@@ -804,10 +805,10 @@ class SystemListV2:
                                        components=new_components,
                                        parsed_constraints=current_parsed,
                                        v2_constraints_map=current_v2_map)
-        return SystemListV2(new_data)
+        return SystemList(new_data)
 
     def get_connected_group(self, seed_uuids: Collection[str], max_depth: int = 2,
-                            spec: Optional['SpectrumV2'] = None) -> Set[str]:
+                            spec: Optional['Spectrum'] = None) -> Set[str]:
         """
         Find a set of components that must be fitted together.
 
@@ -820,7 +821,7 @@ class SystemListV2:
             The UUIDs of the components initially selected for fitting.
         max_depth : int, optional
             How many degrees of separation to traverse. Defaults to ``2``.
-        spec : SpectrumV2, optional
+        spec : Spectrum, optional
             The spectrum the components are fitted to. Lines closer than its
             instrumental FWHM are blended (findings register F14, see
             :func:`are_overlapping`); without it, only ``max(4 b, 30 km/s)``.
@@ -907,7 +908,7 @@ class SystemListV2:
 
         return group_uuids
 
-    def fit_groups(self, seed_uuids, max_depth: int, spec: Optional['SpectrumV2'] = None,
+    def fit_groups(self, seed_uuids, max_depth: int, spec: Optional['Spectrum'] = None,
                    max_size: Optional[int] = None) -> List[List[str]]:
         """
         The groups of components that are fitted together, as *Refit All*
@@ -927,7 +928,7 @@ class SystemListV2:
         max_depth : int
             Depth of the friends-of-friends expansion
             (:meth:`get_connected_group`).
-        spec : SpectrumV2, optional
+        spec : Spectrum, optional
             The spectrum the components are fitted to (its resolution sets
             which lines are blended).
         max_size : int, optional
@@ -967,7 +968,7 @@ class SystemListV2:
             todo.difference_update(group)
         return groups
 
-    def _sanitize_after_fit(self, systs: 'SystemListV2') -> 'SystemListV2':
+    def _sanitize_after_fit(self, systs: 'SystemList') -> 'SystemList':
         """
         Removes the 'active_components' mask from a system list.
         This ensures that when we generate models from it, ALL components are included.
@@ -977,7 +978,7 @@ class SystemListV2:
         return systs
 
     # --- HELPER 3: Compute Fixed AIC ---
-    def _compute_fixed_aic(self, spec: 'SpectrumV2', systs: 'SystemListV2', 
+    def _compute_fixed_aic(self, spec: 'Spectrum', systs: 'SystemList', 
                            static_mask: np.ndarray, k_free: int) -> float:
         """
         Calculates AIC on a FIXED set of pixels (static_mask).
@@ -985,10 +986,10 @@ class SystemListV2:
         AIC = Chi2 + 2*k
         Chi2 = Sum( (Flux - Model)^2 / Error^2 ) masked
         """
-        from astrocook.fitting.voigt_fitter import VoigtFitterV2
+        from astrocook.fitting.voigt_fitter import VoigtFitter
         
         # 1. Generate Full Model (No masking allowed here!)
-        eval_fitter = VoigtFitterV2(spec, systs)
+        eval_fitter = VoigtFitter(spec, systs)
         _, model_flux = eval_fitter.compute_model_flux()
         
         # 2. Calculate Chi2 on the static mask
@@ -1002,13 +1003,13 @@ class SystemListV2:
         aic = chi2_static + 2 * k_free
         return aic
     
-    def merge(self, other: 'SystemListV2', copy_uuids: bool = False) -> 'SystemListV2':
+    def merge(self, other: 'SystemList', copy_uuids: bool = False) -> 'SystemList':
         """
         Merge components from another system list into this one.
 
         Parameters
         ----------
-        other : SystemListV2
+        other : SystemList
             The source list to copy from.
         copy_uuids : bool, optional
             If True, keeps original UUIDs (risky if merging into self).
@@ -1016,7 +1017,7 @@ class SystemListV2:
 
         Returns
         -------
-        SystemListV2
+        SystemList
             A new merged system list.
         """
         import uuid
@@ -1044,14 +1045,14 @@ class SystemListV2:
         # Create new data core
         new_data = dataclasses.replace(self._data, components=current_comps)
         
-        return SystemListV2(new_data)
+        return SystemList(new_data)
     
-    def optimize_hierarchy(self, spec: 'SpectrumV2', uuid_seed: str, 
+    def optimize_hierarchy(self, spec: 'Spectrum', uuid_seed: str, 
                            max_components: int = 5, threshold_sigma: float = 2.5,
                            aic_penalty: float = 0.0, z_window_kms: float = 100.0,
                            min_dv: float = 10.0,  # <--- NEW PARAMETER
                            group_depth: int = 2, patience: int = 2,
-                           trace: Optional[dict] = None) -> 'SystemListV2':
+                           trace: Optional[dict] = None) -> 'SystemList':
         """
         Iteratively adds components to a system to minimize residuals using the
         Akaike Information Criterion (AIC).
@@ -1068,7 +1069,7 @@ class SystemListV2:
 
         Parameters
         ----------
-        spec : SpectrumV2
+        spec : Spectrum
             The spectrum data used for fitting and residual calculation.
         uuid_seed : str
             UUID of the seed component. This defines the series (e.g. CIV) and the center of the 
@@ -1098,10 +1099,10 @@ class SystemListV2:
 
         Returns
         -------
-        SystemListV2
+        SystemList
             A new system list containing the optimized components.
         """
-        from astrocook.fitting.voigt_fitter import VoigtFitterV2
+        from astrocook.fitting.voigt_fitter import VoigtFitter
         from astrocook.core.atomic_data import ATOM_DATA
 
         # 1. Setup Static Window
@@ -1133,7 +1134,7 @@ class SystemListV2:
         # 2. Local Fit Orchestrator
         def fit_and_evaluate(systs_obj, target_uuids):
             with systs_obj.fitting_context(target_uuids, group_depth=group_depth, spec=spec):
-                fitter = VoigtFitterV2(spec, systs_obj)
+                fitter = VoigtFitter(spec, systs_obj)
                 new_systs, _, res = fitter.fit(max_nfev=1000, z_window_kms=z_window_kms, verbose=0)
                 
                 # Cleanup
@@ -1144,7 +1145,7 @@ class SystemListV2:
                     return float('inf'), systs_obj 
 
                 # Fixed AIC
-                eval_fitter = VoigtFitterV2(spec, new_systs)
+                eval_fitter = VoigtFitter(spec, new_systs)
                 _, model_flux = eval_fitter.compute_model_flux()
                 
                 y_win = spec.y.value[static_mask]
@@ -1172,7 +1173,7 @@ class SystemListV2:
         # 4. Iteration Loop
         for i in range(max_components):
             # A. Calculate Residuals
-            eval_fitter = VoigtFitterV2(spec, best_systs)
+            eval_fitter = VoigtFitter(spec, best_systs)
             _, model_phys = eval_fitter.compute_model_flux()
             
             with np.errstate(divide='ignore', invalid='ignore'):
@@ -1259,7 +1260,7 @@ class SystemListV2:
             trace['stopped'] = stopped
         return best_systs
     
-    def remove_in_region(self, obs_min: au.Quantity, obs_max: au.Quantity) -> 'SystemListV2':
+    def remove_in_region(self, obs_min: au.Quantity, obs_max: au.Quantity) -> 'SystemList':
         """
         Remove components whose center falls within the observed wavelength range.
 
@@ -1270,7 +1271,7 @@ class SystemListV2:
 
         Returns
         -------
-        SystemListV2
+        SystemList
             A new instance with components removed.
         """
         surviving_comps = []
@@ -1305,9 +1306,9 @@ class SystemListV2:
         logger.info(f"{deleted_count} components removed between {obs_min:.1f} "
                     f"and {obs_max:.1f}.")
         new_data = dataclasses.replace(self._data, components=surviving_comps)
-        return SystemListV2(new_data)
+        return SystemList(new_data)
 
-    def filter_by_criteria(self, condition_func) -> 'SystemListV2':
+    def filter_by_criteria(self, condition_func) -> 'SystemList':
         """
         Remove components whose center falls within the observed wavelength range.
 
@@ -1318,7 +1319,7 @@ class SystemListV2:
 
         Returns
         -------
-        SystemListV2
+        SystemList
             A new instance with components removed.
         """
         valid_comps = []
@@ -1335,11 +1336,11 @@ class SystemListV2:
             
         logger.info(f"{deleted_count} components removed.")
         new_data = dataclasses.replace(self._data, components=valid_comps)
-        return SystemListV2(new_data)
+        return SystemList(new_data)
     
-    def filter_by_range(self, xmin_nm: float, xmax_nm: float) -> 'SystemListV2':
+    def filter_by_range(self, xmin_nm: float, xmax_nm: float) -> 'SystemList':
         """
-        Return a new SystemListV2 containing only components within the range.
+        Return a new SystemList containing only components within the range.
 
         Parameters
         ----------
@@ -1348,7 +1349,7 @@ class SystemListV2:
 
         Returns
         -------
-        SystemListV2
+        SystemList
             A new instance with filtered components.
         """
         import numpy as np
@@ -1403,4 +1404,7 @@ class SystemListV2:
 
         # Return new instance with filtered data
         new_data = dataclasses.replace(self._data, components=valid_components)
-        return SystemListV2(new_data)
+        return SystemList(new_data)
+
+# Old names (phase 6-quater, PR 6): see astrocook/_renamed.py
+__getattr__ = renamed(__name__, {"SystemListV2": "SystemList"})

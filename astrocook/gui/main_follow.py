@@ -40,7 +40,7 @@ from PySide6.QtWidgets import (
 
 from astrocook import follow
 from astrocook.session.history import SessionHistory
-from astrocook.core.structures import HistoryLogV2
+from astrocook.core.structures import HistoryLog
 from astrocook.recipes.registry import get_recipe
 
 from .qt_workers import SessionLoadWorker
@@ -84,7 +84,7 @@ def _stamp(path: str) -> Optional[Tuple[int, int]]:
 
 
 class MainFollowMixin(HostBase):
-    """The sessions followed by ``MainWindowV2``.
+    """The sessions followed by ``MainWindow``.
 
     Uses the window's ``session_histories``, ``active_history``, the thread
     pool, ``_load_session``, ``_update_view_for_session``,
@@ -289,7 +289,7 @@ class MainFollowMixin(HostBase):
         session has one state: its history is in its log), with the log of
         the archive; the view is kept."""
         # The log of the agent, read only (F109: the state read is the start)
-        log = HistoryLogV2.opened_from(session.log_manager)
+        log = HistoryLog.opened_from(session.log_manager)
         session.__dict__.pop('_source_path', None)
         session._gui = self
         session.name = history.current_state.name
