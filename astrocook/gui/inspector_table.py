@@ -8,7 +8,7 @@ import numpy as np
 from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, Signal, QSortFilterProxyModel
 from PySide6.QtGui import QBrush, QColor, QFont, QPalette
 from PySide6.QtWidgets import QStyledItemDelegate
-from typing import List
+from typing import Any, Dict, List, Optional, Set
 
 from ..core.structures import ComponentDataV2
 from .plot_style import plot_colour
@@ -67,7 +67,7 @@ _NOT_FITTED_MESSAGE = ("The fit of its group failed (Refit All): the values are 
                        "before the fit; refit it, e.g. with Refit Selected.")
 
 
-def flag_cue(comp, attr: str = None):
+def flag_cue(comp, attr: Optional[str] = None):
     """Colour and message of the flags of ``comp`` (#517): for a parameter
     ``attr``, its bound flag; without, all its flags. ``(None, [])`` if
     there is none."""
@@ -100,13 +100,13 @@ ERR_MAP = {
 # The Qt enums used by the table, read once: through the Qt namespace each
 # access costs ~4 us with PySide6, and the model is called tens of thousands
 # of times when the table is drawn, sorted or its columns fitted
-_DISPLAY, _EDIT, _TOOLTIP, _FONT = (Qt.DisplayRole, Qt.EditRole, Qt.ToolTipRole,
-                                    Qt.FontRole)
-_FOREGROUND, _BACKGROUND, _ALIGNMENT, _USER = (Qt.ForegroundRole, Qt.BackgroundRole,
-                                               Qt.TextAlignmentRole, Qt.UserRole)
-_ALIGN_CENTER, _HORIZONTAL = Qt.AlignCenter, Qt.Horizontal
-_ITEM_IS_EDITABLE, _NO_ITEM_FLAGS = Qt.ItemIsEditable, Qt.NoItemFlags
-_HIGHLIGHTED_TEXT = QPalette.HighlightedText
+_DISPLAY, _EDIT, _TOOLTIP, _FONT = (Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole, Qt.ItemDataRole.ToolTipRole,
+                                    Qt.ItemDataRole.FontRole)
+_FOREGROUND, _BACKGROUND, _ALIGNMENT, _USER = (Qt.ItemDataRole.ForegroundRole, Qt.ItemDataRole.BackgroundRole,
+                                               Qt.ItemDataRole.TextAlignmentRole, Qt.ItemDataRole.UserRole)
+_ALIGN_CENTER, _HORIZONTAL = Qt.AlignmentFlag.AlignCenter, Qt.Orientation.Horizontal
+_ITEM_IS_EDITABLE, _NO_ITEM_FLAGS = Qt.ItemFlag.ItemIsEditable, Qt.ItemFlag.NoItemFlags
+_HIGHLIGHTED_TEXT = QPalette.ColorRole.HighlightedText
 
 #: The roles for which the table model has data; Qt asks for many others for
 #: each cell (decoration, check state, size hint...), answered at once
@@ -125,20 +125,20 @@ class LinkColorDelegate(QStyledItemDelegate):
 class SystemTableModel(QAbstractTableModel):
     data_changed_request = Signal(str, dict)
 
-    def __init__(self, components: List[ComponentDataV2] = None):
+    def __init__(self, components: Optional[List[ComponentDataV2]] = None):
         super().__init__()
         self._components = components if components else []
-        self._primary_uuids = set()
-        self._secondary_uuids = set()
+        self._primary_uuids: Set[Any] = set()
+        self._secondary_uuids: Set[Any] = set()
 
         # Store constraints: {uuid: {param: ConstraintObj}}
-        self._constraints_map = {} 
+        self._constraints_map: Dict[Any, Any] = {} 
         # Link colours of the selected group: {(target_uuid, param): index
         # in the link colours}; the index, so that a link keeps its colour
         # when the palette switches between light and dark
-        self._link_color_map = {}
+        self._link_color_map: Dict[Any, Any] = {}
 
-    def update_data(self, components: List[ComponentDataV2], constraints_map: dict = None):
+    def update_data(self, components: List[ComponentDataV2], constraints_map: Optional[dict] = None):
         """
         Updates the model with new components and constraint data.
         """

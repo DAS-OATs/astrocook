@@ -10,7 +10,7 @@ of ``MainWindowV2``.
 """
 import logging
 import os
-from typing import Optional
+from typing import Optional, cast
 
 import qtawesome as qta
 from PySide6.QtCore import (QEasingCurve, QLocale, QParallelAnimationGroup, QPoint,
@@ -29,6 +29,7 @@ from .pyside_plot import SpectrumPlotWidget
 from .theme import HINT_TEXT
 
 from astrocook.gui.errors import DATA_ERRORS, QT_ERRORS
+from astrocook.gui._window_host import HostBase
 logger = logging.getLogger(__name__)
 
 # --- Constants for Sidebar Widths ---
@@ -50,7 +51,7 @@ CARD_TAB_OFFSET = 0    # Collapse tab, from the top of its card (px)
 SWATCH_SIZE = QSize(24, 12)
 
 
-class MainPanelsMixin:
+class MainPanelsMixin(HostBase):
     """The panels of ``MainWindowV2``.
 
     Uses the window's ``active_history``, ``plot_viewer``,
@@ -69,7 +70,7 @@ class MainPanelsMixin:
         """A collapsible section of the plot controls; its state is remembered."""
         key = f"plot_controls/expanded/{title}"
         settings = QSettings("Astrocook", "AstrocookV2")
-        section = CollapsibleSection(title, settings.value(key, expanded, type=bool))
+        section = CollapsibleSection(title, cast(bool, settings.value(key, expanded, type=bool)))
         section.toggled.connect(
             lambda state: QSettings("Astrocook", "AstrocookV2").setValue(key, state))
         return section
@@ -146,7 +147,7 @@ class MainPanelsMixin:
         self.session_collapse_button.raise_()
         self.plot_controls_collapse_button.raise_()
 
-    def _setup_plot_view(self, session_for_plot: SessionV2):
+    def _setup_plot_view(self, session_for_plot: Optional[SessionV2]):
         self.plot_viewer = SpectrumPlotWidget(session_for_plot, self)
         self.central_stack.addWidget(self.plot_viewer)
         self._setup_status_bar()
@@ -920,7 +921,7 @@ class MainPanelsMixin:
         ratio = self.devicePixelRatioF()
         pix = QPixmap(SWATCH_SIZE * ratio)
         pix.setDevicePixelRatio(ratio)
-        pix.fill(Qt.transparent)
+        pix.fill(Qt.GlobalColor.transparent)
         return pix
 
     def _swatch(self, artists) -> QPixmap:
@@ -928,7 +929,7 @@ class MainPanelsMixin:
         from matplotlib.colors import to_rgba
         pix = self._blank_swatch()
         painter = QPainter(pix)
-        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         w, h = SWATCH_SIZE.width(), SWATCH_SIZE.height()
         n = len(artists)
         for i, artist in enumerate(artists):
@@ -941,7 +942,7 @@ class MainPanelsMixin:
                 # opaque than in the plot to read at this size
                 rgba = to_rgba(artist.get_facecolor()[0])
                 color = QColor.fromRgbF(rgba[0], rgba[1], rgba[2], max(rgba[3], 0.5))
-                painter.setPen(Qt.NoPen)
+                painter.setPen(Qt.PenStyle.NoPen)
                 painter.setBrush(color)
                 painter.drawRect(int(i * w / n) + 1, 2, int(w / n) - 2, h - 4)
                 continue
@@ -962,13 +963,13 @@ class MainPanelsMixin:
                 # Thicker than in the plot, to read as a colour at this size
                 pen = QPen(color, max(1.5, lw * 1.5))
                 if linestyle in ('--', 'dashed'):
-                    pen.setStyle(Qt.DashLine)
+                    pen.setStyle(Qt.PenStyle.DashLine)
                 elif linestyle in (':', 'dotted'):
-                    pen.setStyle(Qt.DotLine)
+                    pen.setStyle(Qt.PenStyle.DotLine)
                 painter.setPen(pen)
                 painter.drawLine(1, h // 2, w - 1, h // 2)
             else:
-                painter.setPen(Qt.NoPen)
+                painter.setPen(Qt.PenStyle.NoPen)
                 painter.setBrush(color)
                 painter.drawEllipse(w // 2 - 3, h // 2 - 3, 6, 6)
         painter.end()

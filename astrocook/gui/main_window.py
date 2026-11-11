@@ -11,7 +11,7 @@ from PySide6.QtGui import (
 from PySide6.QtWidgets import (
     QApplication, QCheckBox, QDialog, QMainWindow, QMessageBox, QProgressDialog, QStackedWidget, QTextEdit,
 )
-from typing import List, Optional, Union
+from typing import List, Optional, Union, cast
 
 from .continuum_controls import ContinuumControlsMixin
 from .debug_utils import GLOBAL_PLOTTER
@@ -29,6 +29,7 @@ from .theme import FOCUS_BORDER, status_bar_style
 from astrocook.core.debug_hooks import set_debug_plot_handler
 from astrocook.core.session_manager import SessionHistory
 from astrocook.core.session import SessionV2, LogManager
+from astrocook.core.spectrum import SpectrumV2
 from astrocook.core.utils import resource_path # Import recipe helpers
 
 from astrocook.recipes.registry import all_recipes
@@ -58,7 +59,7 @@ class MainWindowV2(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, Main
     def __init__(self, initial_sessions: Union[SessionV2, List[SessionV2], None], initial_log_object: Optional[LogManager]):
         super().__init__()
         # Forces the app name to be "Astrocook" instead of "Python"
-        app = QApplication.instance()
+        app = cast(QApplication, QApplication.instance())
         if app:
             app.setApplicationName("Astrocook")
             app.setApplicationDisplayName("Astrocook")
@@ -496,7 +497,7 @@ class MainWindowV2(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, Main
         (cut in deep lines)."""
         if not self.active_history:
             return None
-        spec = self.active_history.current_state.spec
+        spec = cast(SpectrumV2, self.active_history.current_state.spec)
         try:
             x = spec.x.to_value(au.nm)
         except au.UnitsError:

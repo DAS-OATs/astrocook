@@ -16,7 +16,7 @@ from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QMenu, QPushButton, QSizePolicy,
     QScrollBar, QStackedWidget, QToolTip,
 )
-from typing import List
+from typing import List, Optional
 
 from ..core.structures import ComponentDataV2
 from ..core.atomic_data import STANDARD_MULTIPLETS, xem_d, ATOM_DATA, is_multiplet, series_lines
@@ -306,7 +306,7 @@ class VelocityPlotWidget(QWidget):
         else:
             self._update_plot()
 
-    def plot_system(self, session, component: ComponentDataV2, selected_components: List[ComponentDataV2] = None):
+    def plot_system(self, session, component: ComponentDataV2, selected_components: Optional[List[ComponentDataV2]] = None):
         is_new_component = (self._current_component != component)
         
         self._current_session = session

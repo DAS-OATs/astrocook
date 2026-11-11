@@ -66,7 +66,7 @@ class AstrocookToolbar(NavigationToolbar):
     to remove unwanted buttons and simplify the interface.
     """
     # Define the order of toolbar items to keep (based on V1 functionality)
-    toolitems = [
+    toolitems = [  # type: ignore[assignment]  # None marks a separator, as in matplotlib
         # Label, Tooltip, Icon Filename, Tool ID
         ('Home', 'Reset original view', 'home', 'home'),
         ('Back', 'Back to previous view', 'back', 'back'),
@@ -116,7 +116,7 @@ class AstrocookToolbar(NavigationToolbar):
         for key, action in self._tool_actions.items():
             tip = TOOL_TIPS[key]
             if key in TOOL_SHORTCUTS:
-                tip += f" ({QKeySequence(TOOL_SHORTCUTS[key]).toString(QKeySequence.NativeText)})"
+                tip += f" ({QKeySequence(TOOL_SHORTCUTS[key]).toString(QKeySequence.SequenceFormat.NativeText)})"
             action.setToolTip(tip)
         self.refresh_icons()
         self._add_shortcuts(parent)

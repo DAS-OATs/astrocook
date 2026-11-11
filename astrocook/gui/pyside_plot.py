@@ -12,14 +12,16 @@ import numpy as np
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QVBoxLayout, QWidget
 from dataclasses import dataclass
-from typing import NamedTuple, Optional, TYPE_CHECKING
+from typing import Any, Dict, List, NamedTuple, Optional, Set, TYPE_CHECKING, cast
 
 from astrocook.core.atomic_data import STANDARD_MULTIPLETS, trans_parse, xem_d
 from astrocook.core.spectrum_operations import convert_axis_velocity
 
 # Use TYPE_CHECKING to avoid circular import errors at runtime
 if TYPE_CHECKING:
-    from astrocook.core.session import SessionV2 
+    from astrocook.core.session import SessionV2
+    from astrocook.core.session_manager import SessionHistory
+    from astrocook.core.spectrum import SpectrumV2
 
 from .continuum_editor import ContinuumEditorMixin
 from .plot_canvas import MatplotlibCanvas
@@ -76,7 +78,8 @@ class _PlotArrays(NamedTuple):
     def decimated(self, factor: int) -> '_PlotArrays':
         """Min-max decimation: 2 points every ``factor``."""
         return _PlotArrays(decimate_x_for_min_max(self.x, factor),
-                           *(decimate_y_min_max(a, factor) for a in self[1:]))
+                           *(decimate_y_min_max(a, factor)  # type: ignore[arg-type]  # norm and model may be None, which it returns as it is
+                             for a in self[1:]))
 
 
 @dataclass
@@ -232,12 +235,12 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
         # The arrays of the last plots ('raw', 'norm', 'snr'), the data and the
         # error column of the SNR view they were computed for (_plot_arrays)
         self._cached_data_id = None # Tracks the ID of the cached data
-        self._plot_cache = {}
+        self._plot_cache: Dict[Any, Any] = {}
         self._cached_snr_error_col = "" # Tracks which error col was used
 
         # List to store active iso-mag curves
         self._show_isomag_grid = False
-        self.isomag_artists = []
+        self.isomag_artists: List[Any] = []
 
         # Selection Mode State (the span being dragged is on the canvas)
         self._is_selecting_region = False
@@ -264,14 +267,14 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
         self.spline_artist = None # Matplotlib Line2D (smooth line)
 
         # --- Highlight State ---
-        self._highlighted_uuids = set()
+        self._highlighted_uuids: Set[Any] = set()
         # The highlighted systems of the last plot, (marker line, guide
         # lines) or None, and the pixels of the axes without them: a new
         # selection is drawn over these (_blit_highlights)
-        self._highlight_artists = None
+        self._highlight_artists: Any = None
         self._highlight_base = None
         self._drawing_highlight_base = False
-        self._plotted_state = None
+        self._plotted_state: Optional['SessionV2'] = None
         # Any full draw may change what is under the highlights
         self.canvas.mpl_connect('draw_event', self._on_full_draw)
 
@@ -307,7 +310,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
             else: self.canvas.draw_idle()
             return # Exit early
 
-        spec = session_state.spec
+        spec = cast('SpectrumV2', session_state.spec)
         ax = self.canvas.axes
         # The Select tool needs λ (F73)
         self.toolbar.set_select_enabled(spec.x.unit.is_equivalent(au.nm))
@@ -325,10 +328,10 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
         self.canvas.cursor_artists = []
         self.canvas.cursor_label = None
 
-        self._tick_visuals = []
+        self._tick_visuals: List[Any] = []
         self._highlight_artists = None
         self._plotted_state = session_state
-        self._ghost_artists = {}  # row of the session list -> its line
+        self._ghost_artists: Dict[Any, Any] = {}  # row of the session list -> its line
 
         plot_occurred = False
         if spec and len(spec.x) > 0:
@@ -1243,7 +1246,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
         # We call plot_spectrum to ensure everything (including limits) 
         # is in a consistent state.
         self.plot_spectrum(
-            session_state=self.main_window.active_history.current_state,
+            session_state=cast('SessionHistory', self.main_window.active_history).current_state,
             force_autoscale=False 
         )
     

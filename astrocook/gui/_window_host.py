@@ -1,0 +1,79 @@
+"""What the mixins of :class:`~astrocook.gui.main_window.MainWindowV2` use
+of the window that mixes them in, declared for the type checker (phase
+6-quater, PR 4-bis).
+
+As ``core/_spectrum_host.py`` for the spectrum: the mixins (``main_sessions.py``
+and the others) inherit ``HostBase``, which is ``WindowHost`` only when the
+type checker reads them and ``object`` at run time, so nothing changes. The
+declarations are of types only: where one changes, change the real
+definition with it. The methods that a mixin defines and another uses are
+declared here with a loose signature.
+"""
+from typing import TYPE_CHECKING, Any, List, Optional
+
+if TYPE_CHECKING:
+    from PySide6.QtCore import QThreadPool
+    from PySide6.QtWidgets import (QCheckBox, QComboBox, QListView, QMainWindow,
+                                   QPushButton, QStackedWidget, QWidget)
+
+    from astrocook.core.session_manager import SessionHistory
+    from astrocook.gui.main_sessions import SessionListModel
+    from astrocook.gui.pyside_plot import SpectrumPlotWidget
+
+    class WindowHost(QMainWindow):
+        """The part of ``MainWindowV2`` that its mixins use."""
+        session_histories: List[SessionHistory]
+        active_history: Optional[SessionHistory]
+        session_model: SessionListModel
+        thread_pool: QThreadPool
+        plot_viewer: SpectrumPlotWidget
+        recipe_category_map: Any
+        mock_gui_context: Any
+        # Created and reset (to None) by the mixins that open them
+        log_scripter_dialog: Any
+        active_recipe_dialog: Any
+        progress_dialog: Any
+        qt_log_handler: Any
+        _recipe_started: Any
+        _pending_recipe: Optional[dict]
+        _last_attempted_recipe: Optional[dict]
+        _suppress_refit_warning: bool
+        # Widgets of the side panels (main_panels.py)
+        aux_col_combo: QComboBox
+        norm_y_checkbox: QCheckBox
+        session_list_view: QListView
+        left_sidebar_widget: QWidget
+        right_sidebar_widget: QWidget
+        central_stack: QStackedWidget
+        session_collapse_button: QPushButton
+        plot_controls_collapse_button: QPushButton
+
+        # Methods defined by one mixin (or the window) and used by another
+        def _show_custom_message(self, *args: Any, **kwargs: Any) -> Any: ...
+        def _update_undo_redo_actions(self, *args: Any, **kwargs: Any) -> Any: ...
+        def _update_view_for_session(self, *args: Any, **kwargs: Any) -> Any: ...
+        def _update_ui_state(self, *args: Any, **kwargs: Any) -> Any: ...
+        def _update_window_title(self, *args: Any, **kwargs: Any) -> Any: ...
+        def _update_follow_banner(self, *args: Any, **kwargs: Any) -> Any: ...
+        def _add_recent_file(self, *args: Any, **kwargs: Any) -> Any: ...
+        def _forget_followed(self, *args: Any, **kwargs: Any) -> Any: ...
+        def _show_if_followed(self, *args: Any, **kwargs: Any) -> Any: ...
+        def _refuse_if_followed(self, *args: Any, **kwargs: Any) -> Any: ...
+        def _refuse_recipe_if_followed(self, *args: Any, **kwargs: Any) -> Any: ...
+        def _launch_identification_viewer(self, *args: Any, **kwargs: Any) -> Any: ...
+        def _launch_log_scripter(self, *args: Any, **kwargs: Any) -> Any: ...
+        def _launch_recipe_dialog(self, *args: Any, **kwargs: Any) -> Any: ...
+        def _on_recipe_requested(self, *args: Any, **kwargs: Any) -> Any: ...
+        def _on_duplicate_session(self, *args: Any, **kwargs: Any) -> Any: ...
+        def _load_session(self, *args: Any, **kwargs: Any) -> Any: ...
+        def _populate_snr_combo(self, *args: Any, **kwargs: Any) -> Any: ...
+        def _safely_close_progress_dialog(self, *args: Any, **kwargs: Any) -> Any: ...
+        def _reposition_floating_widgets(self, *args: Any, **kwargs: Any) -> Any: ...
+        def _force_restack_floating_widgets(self, *args: Any, **kwargs: Any) -> Any: ...
+        def _trigger_replot(self, *args: Any, **kwargs: Any) -> Any: ...
+        def show_status(self, *args: Any, **kwargs: Any) -> Any: ...
+        def update_gui_session_state(self, *args: Any, **kwargs: Any) -> Any: ...
+
+    HostBase = WindowHost
+else:
+    HostBase = object

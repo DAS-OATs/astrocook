@@ -14,6 +14,8 @@ live long (the main window, the System Inspector, the toolbars) apply them
 again when the system switches between light and dark
 (``QEvent.ApplicationPaletteChange``).
 """
+from typing import cast
+
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QPalette
 from PySide6.QtWidgets import QApplication
@@ -155,7 +157,7 @@ def apply_appearance(mode: str):
     theme, offscreen), the palette is set here. "system" undoes a palette
     set here, giving back that of the system."""
     global _palette_forced
-    app = QApplication.instance()
+    app = cast(QApplication, QApplication.instance())
     scheme = {"system": Qt.ColorScheme.Unknown, "light": Qt.ColorScheme.Light,
               "dark": Qt.ColorScheme.Dark}[mode]
     hints = app.styleHints()

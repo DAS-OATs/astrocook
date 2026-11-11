@@ -8,6 +8,7 @@ the user by the hook of :func:`install_excepthook`.
 import logging
 import sys
 import traceback
+from typing import cast
 
 import astropy.units as au
 
@@ -48,7 +49,7 @@ def report_unexpected_error(exc_type, exc, tb) -> None:
     global _showing
     from PySide6.QtCore import QThread
     from PySide6.QtWidgets import QApplication, QMessageBox
-    app = QApplication.instance()
+    app = cast(QApplication, QApplication.instance())
     if _showing or app is None or QThread.currentThread() is not app.thread():
         return
     _showing = True

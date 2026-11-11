@@ -11,7 +11,7 @@ import logging
 import os
 import time
 from copy import deepcopy
-from typing import List, Optional
+from typing import TYPE_CHECKING, Any, List, Optional, cast
 
 import numpy as np
 from PySide6.QtCore import QItemSelectionModel, QLocale, QPoint, QSettings, QStringListModel, Qt
@@ -26,11 +26,15 @@ from astrocook.core.session import SessionV2, load_session_from_file
 from astrocook.core.session_manager import SessionHistory
 from astrocook.core.structures import HistoryLogV2
 
+if TYPE_CHECKING:
+    from astrocook.core.spectrum import SpectrumV2
+
 from .qt_workers import SessionLoadWorker
 from .theme import FOCUS_BORDER, palette_hex
 
 from astrocook.gui.errors import DATA_ERRORS, QT_ERRORS
 import copy
+from astrocook.gui._window_host import HostBase
 logger = logging.getLogger(__name__)
 
 
@@ -63,7 +67,7 @@ class SessionListModel(QStringListModel):
         return super().data(index, role)
 
 
-class MainSessionsMixin:
+class MainSessionsMixin(HostBase):
     """The sessions of ``MainWindowV2``.
 
     Uses the window's ``session_histories``, ``active_history``, the
@@ -301,7 +305,7 @@ class MainSessionsMixin:
             self.aux_col_combo.addItem("None")
             
             if is_valid:
-                all_cols = list(session_state_to_show.spec.t._data_dict.keys())
+                all_cols = list(cast('SpectrumV2', cast(SessionV2, session_state_to_show).spec).t._data_dict.keys())
                 core_cols = {'x', 'xmin', 'xmax', 'y', 'dy'}
                 aux_col_names = sorted([c for c in all_cols if c not in core_cols])
                 if aux_col_names:
@@ -361,7 +365,7 @@ class MainSessionsMixin:
         if set_current_list_item:
             list_index_to_select = target_list_index # Use specific index if provided (for branching/add)
             if list_index_to_select is None: # Otherwise, find index of active history
-                 try: list_index_to_select = self.session_histories.index(self.active_history)
+                 try: list_index_to_select = self.session_histories.index(cast(SessionHistory, self.active_history))
                  except (ValueError, AttributeError): list_index_to_select = -1
 
             if list_index_to_select >= 0:
@@ -416,7 +420,7 @@ class MainSessionsMixin:
         
         # --- Retrieve the last used directory ---
         settings = QSettings("Astrocook", "AstrocookV2")
-        last_dir = settings.value("last_working_dir", os.getcwd())
+        last_dir = cast(str, settings.value("last_working_dir", os.getcwd()))
 
         file_names, _ = QFileDialog.getOpenFileNames(
             self, 
@@ -440,7 +444,7 @@ class MainSessionsMixin:
         session = load_session_from_file(archive_path=file_path, name=session_name,
                                          format_name='auto', gui_context=self.mock_gui_context)
         if session and session != 0:
-            session._source_path = file_path
+            cast(Any, session)._source_path = file_path
         return session
 
     def open_files(self, paths: List[str]):
@@ -750,7 +754,7 @@ class MainSessionsMixin:
         if not history_item: return
         
         state = history_item.current_state
-        spec = state.spec
+        spec = cast('SpectrumV2', state.spec)
         systs = state.systs
         meta = spec.meta if spec else {}
 
@@ -777,7 +781,7 @@ class MainSessionsMixin:
         
         # --- 1. Editable Properties Section ---
         form_layout = QFormLayout()
-        form_layout.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
+        form_layout.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
         form_layout.setVerticalSpacing(5)
 
         def _expand_field(widget):
@@ -796,7 +800,7 @@ class MainSessionsMixin:
         
         # z_em
         self.info_zem_edit = _expand_field(QLineEdit(f"{spec._data.z_em:.5f}"))
-        dbl_validator = QDoubleValidator(); dbl_validator.setLocale(QLocale.C)
+        dbl_validator = QDoubleValidator(); dbl_validator.setLocale(QLocale.Language.C)
         self.info_zem_edit.setValidator(dbl_validator)
         form_layout.addRow("Emission redshift (z_em):", self.info_zem_edit)
 
@@ -921,11 +925,11 @@ class MainSessionsMixin:
         )
         
         stats_label = QLabel(stats_html)
-        stats_label.setTextFormat(Qt.RichText)
+        stats_label.setTextFormat(Qt.TextFormat.RichText)
         layout.addWidget(stats_label)
         
         # --- 3. Buttons ---
-        btn_box = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
+        btn_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel)
         btn_box.accepted.connect(lambda: self._apply_session_info_changes(
             dialog, history_item
         ))
@@ -1056,7 +1060,7 @@ class MainSessionsMixin:
         
         # --- Sync with the last used directory ---
         settings = QSettings("Astrocook", "AstrocookV2")
-        last_dir = settings.value("last_working_dir", os.getcwd())
+        last_dir = cast(str, settings.value("last_working_dir", os.getcwd()))
         default_path = os.path.join(last_dir, session_to_save_final.name + ".acs2")
 
         file_name, selected_filter = QFileDialog.getSaveFileName(
@@ -1186,7 +1190,7 @@ class MainSessionsMixin:
 
         logger.debug(f"Opening {file_path}.")
         
-        QApplication.setOverrideCursor(Qt.WaitCursor)
+        QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
         try:
             new_session = self._load_session(file_path)
 

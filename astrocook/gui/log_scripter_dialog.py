@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (
     QFileDialog, QMenu
 )
 from PySide6.QtGui import QFontDatabase, QKeySequence, QTextCursor
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 # --- V2 Imports ---
 from astrocook.recipes.registry import RECIPES
@@ -26,12 +26,16 @@ class LogScripterDialog(QDialog):
     A non-modal dialog to display, edit, and save the session's log history
     as a runnable script.
     """
+    # The dialog keeps its main layout in ``self.layout``, which hides the
+    # method of QWidget of the same name (it is never called as a method)
+    layout: Any  # type: ignore[assignment]
+
     def __init__(self, log_object: LogManager, session_name: str, parent: 'MainWindowV2', recipe_map: dict):
         super().__init__(parent)
         self.main_window = parent # Store reference to MainWindowV2
         self.setWindowTitle(f"Session Log: {session_name}")
         
-        self.log_object = log_object # Save the log manager
+        self.log_object: Optional[LogManager] = log_object # Save the log manager
         self.recipe_map = recipe_map
 
         self.layout = QVBoxLayout(self)
@@ -41,13 +45,13 @@ class LogScripterDialog(QDialog):
         
         self.undo_button = QPushButton("Undo")
         self.undo_button.setToolTip("Undo last action in the main session")
-        self.undo_button.setShortcut(QKeySequence.Undo)
+        self.undo_button.setShortcut(QKeySequence.StandardKey.Undo)
         self.undo_button.clicked.connect(self._on_undo)
         button_layout.addWidget(self.undo_button)
 
         self.redo_button = QPushButton("Redo")
         self.redo_button.setToolTip("Redo last action in the main session")
-        self.redo_button.setShortcut(QKeySequence.Redo)
+        self.redo_button.setShortcut(QKeySequence.StandardKey.Redo)
         self.redo_button.clicked.connect(self._on_redo)
         button_layout.addWidget(self.redo_button)
         

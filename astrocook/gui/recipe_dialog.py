@@ -1,4 +1,5 @@
 import logging
+from typing import Any, Dict, Optional, Set
 import html
 import webbrowser
 from PySide6.QtWidgets import (
@@ -28,7 +29,7 @@ class RecipeDialog(QDialog):
     recipe_requested = Signal(str, str, dict, dict)
 
     def __init__(self, recipe_category: str, recipe_name: str,
-                 session: SessionV2, parent=None, param_docs: dict = None):
+                 session: SessionV2, parent=None, param_docs: Optional[dict] = None):
         """``param_docs`` replaces the descriptions of some parameters in
         this dialog only (e.g. the number of values that Equalize and
         Stitch expects); the registry is not changed (F79)."""
@@ -39,8 +40,8 @@ class RecipeDialog(QDialog):
         self.session = session
         self.parent_window = parent 
 
-        self.input_widgets = {}
-        self._current_params = set()  # parameters whose default is "_current_"
+        self.input_widgets: Dict[Any, Any] = {}
+        self._current_params: Set[Any] = set()  # parameters whose default is "_current_"
         self._last_focused_widget = None
                 
         # 1. Operators 
@@ -56,7 +57,7 @@ class RecipeDialog(QDialog):
             self.schema = get_recipe(recipe_category, recipe_name)
         except KeyError as e:
             logger.error(f"There is no description of the recipe {recipe_category}.{recipe_name}: {e}")
-            self.schema = None 
+            self.schema = None  # type: ignore[assignment]  # no description of the recipe: the dialog stops at `if not self.schema`
 
         self._apply_styles()
         self._setup_ui()

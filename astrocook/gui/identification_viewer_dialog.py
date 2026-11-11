@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (
     QTableWidgetItem,
     QTextEdit, QVBoxLayout
 )
-from typing import List, Optional, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, Set, TYPE_CHECKING, cast
 
 from astrocook.core.atomic_data import STANDARD_MULTIPLETS, trans_parse, xem_d, is_multiplet, series_lines
 if TYPE_CHECKING:
@@ -54,7 +54,8 @@ def doublet_rows(spec, ident_dict, region_map) -> List[dict]:
     The pairs are found again from the candidates stored per region (the
     recipe does not store the pairs)."""
     x_nm = spec.x.to_value(au.nm)
-    rows, paired = [], set()
+    rows: List[Any] = []
+    paired: Set[Any] = set()
     for name, members in STANDARD_MULTIPLETS.items():
         if len(members) != 2:
             continue
@@ -127,6 +128,10 @@ class IdentificationViewerDialog(QDialog):
     plot (``zoom_to(xmin, xmax)``, in nm). It was a list of redshifts per
     transition (visual review of phase 5-bis).
     """
+    # The main layout is kept in ``self.layout``, which hides the method of
+    # QWidget of the same name (it is never called as a method)
+    layout: Any  # type: ignore[assignment]
+
     def __init__(self, spec: Optional['SpectrumV2'], session_name: str, parent=None,
                  zoom_to=None):
         super().__init__(parent)
@@ -162,7 +167,7 @@ class IdentificationViewerDialog(QDialog):
         button_box.rejected.connect(self.reject)
         self.layout.addWidget(button_box)
 
-        self._regions = {}  # row region ID -> (xmin, xmax) in nm
+        self._regions: Dict[Any, Any] = {}  # row region ID -> (xmin, xmax) in nm
         self._populate_results(spec)
         self.resize(760, 520)
 
@@ -182,7 +187,7 @@ class IdentificationViewerDialog(QDialog):
 
         region_map = None
         if spec.has_aux_column('abs_ids'):
-            region_map = spec.get_column('abs_ids').value
+            region_map = cast(au.Quantity, spec.get_column('abs_ids')).value
 
         if not json_string:
             self.summary_label.setText("No identifications found in session metadata.")

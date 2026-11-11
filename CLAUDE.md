@@ -86,16 +86,21 @@ Current version: 2.6.0. Python ≥3.12.
   length by construction, `itertools.pairwise` for consecutive pairs. New
   code must not add warnings.
 - Types: `mypy` (no arguments; config in `[tool.mypy]` of `pyproject.toml`,
-  no strict option). It checks `astrocook/recipes/`,
-  `astrocook/mcp_server/`, `astrocook/core/` and `astrocook/fitting/` with
-  zero errors since phase 6-quater, PR 4; `gui/` comes in PR 4-bis. New
-  code in those packages must not add errors. A mixin of the spectrum
-  inherits `HostBase` (`core/_spectrum_host.py`): what it uses of
-  `SpectrumV2` is declared there, and the methods that return a new
-  spectrum are annotated `-> Self`. To narrow an `Optional` use `spec_of(session)` or
-  `column_of(spec, name)` (`recipes/_spectrum.py`), `assert` or `cast`, no
-  new branches; a `# type: ignore[code]` says why, and a real bug found
-  goes in the findings register instead of being fixed.
+  no strict option). It checks the whole package (`recipes/`,
+  `mcp_server/`, `core/`, `fitting/` and `gui/`) with zero errors since
+  phase 6-quater, PR 4-bis. New code must not add errors. A mixin of the
+  spectrum inherits `HostBase` (`core/_spectrum_host.py`) and one of the
+  main window `HostBase` of `gui/_window_host.py` (the plot mouse one,
+  `gui/_plot_host.py`): what it uses of the class that mixes it in is
+  declared there (types only, `object` at run time), and the methods of
+  the spectrum that return a new one are annotated `-> Self`; a new
+  attribute or method used across mixins is declared there too. To narrow
+  an `Optional` use `spec_of(session)` or `column_of(spec, name)`
+  (`recipes/_spectrum.py`), `assert` or `cast` (in `gui/` always `cast`:
+  an event handler must raise what it raised), no new branches; a Qt enum
+  is written with its class (`Qt.CursorShape.WaitCursor`); a
+  `# type: ignore[code]` says why, and a real bug found goes in the
+  findings register instead of being fixed.
 - CI (GitHub Actions, `.github/workflows/tests.yml`): `pytest` on Python
   3.12 and 3.13 (coverage report on 3.13), `ruff check .` and `mypy`
   (the `types` job, on the full `[dev]` install). The slow

@@ -16,10 +16,11 @@ from astrocook.recipes.errors import RecipeError
 from astrocook.recipes.registry import get_recipe
 
 from astrocook.gui.errors import QT_ERRORS
+from astrocook.gui._window_host import HostBase
 logger = logging.getLogger(__name__)
 
 
-class ContinuumControlsMixin:
+class ContinuumControlsMixin(HostBase):
     """The controls of the continuum editor of ``MainWindowV2``.
 
     Uses the window's ``plot_viewer`` (the editor itself), ``active_history``,

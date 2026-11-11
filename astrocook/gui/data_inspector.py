@@ -4,6 +4,7 @@ plot, opened from its context menu, with a sliding window of rows.
 Moved out of ``pyside_plot.py`` in phase 5 (split of the GUI).
 """
 import numpy as np
+from typing import cast
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (QAbstractItemView, QDialog, QDialogButtonBox, QHeaderView,
@@ -37,7 +38,7 @@ def format_value(col_name: str, val, col_obj=None) -> str:
         return str(val)
     if col_name in WAVELENGTH_COLUMNS:
         return f"{val:.5f}"
-    magnitude = abs(val)
+    magnitude = abs(cast(float, val))
     if magnitude == 0:
         return "0"
     if 1e-3 <= magnitude < 1e6:
