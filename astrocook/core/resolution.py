@@ -5,7 +5,7 @@ unit says what it is: dimensionless for the resolving power R, ``km/s``
 for the FWHM in velocity. A component of a system list can override it
 with its own value (always R).
 
-Before #526 the resolution could also live in the ``SpectrumDataV2.resol``
+Before #526 the resolution could also live in the ``SpectrumData.resol``
 attribute and in the meta keys ``resol`` (R), ``RESOL`` (R, V1 archives)
 and ``resol_fwhm`` (km/s), and its unit was guessed from its value (below
 500: FWHM in km/s). These legacy sources are migrated into the column when
@@ -94,7 +94,7 @@ def legacy_resolution(data) -> Tuple[Optional[float], str]:
 
 
 def migrate_resolution(data):
-    """Move the resolution of a ``SpectrumDataV2`` into its ``resol`` column.
+    """Move the resolution of a ``SpectrumData`` into its ``resol`` column.
 
     A column with at least one valid value is kept (a dimensionless column
     with median below ``LEGACY_KMS_THRESHOLD`` was a FWHM in km/s before
@@ -105,10 +105,10 @@ def migrate_resolution(data):
 
     Returns
     -------
-    SpectrumDataV2
+    SpectrumData
         The same object if nothing changes, a new one otherwise.
     """
-    from astrocook.core.structures import DataColumnV2
+    from astrocook.core.structures import DataColumn
 
     if getattr(data, 'resol', 0.0):
         r_legacy, source = legacy_resolution(data)
@@ -127,7 +127,7 @@ def migrate_resolution(data):
                              "(dimensionless, median below %g).",
                              LEGACY_KMS_THRESHOLD)
                 aux = dict(data.aux_cols)
-                aux['resol'] = DataColumnV2(values, au.km / au.s,
+                aux['resol'] = DataColumn(values, au.km / au.s,
                                             description="Resolution (FWHM km/s)")
                 return dataclasses.replace(data, aux_cols=aux)
             return data
@@ -147,9 +147,9 @@ def _valid_column(data) -> bool:
 
 
 def _with_flat_column(data, r: float, source: str):
-    from astrocook.core.structures import DataColumnV2
+    from astrocook.core.structures import DataColumn
     aux = dict(data.aux_cols)
-    aux['resol'] = DataColumnV2(np.full(len(data.x.values), r),
+    aux['resol'] = DataColumn(np.full(len(data.x.values), r),
                                 au.dimensionless_unscaled,
                                 description=f"Resolving power (from {source})")
     return dataclasses.replace(data, aux_cols=aux)
@@ -179,7 +179,7 @@ def migrate_component_resolutions(systs, spec):
 
     Returns
     -------
-    SystemListV2
+    SystemList
         The same object if nothing changes, a new one otherwise.
     """
     from astrocook.core.atomic_data import ATOM_DATA, STANDARD_MULTIPLETS

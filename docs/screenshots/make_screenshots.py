@@ -248,7 +248,7 @@ class Studio:
 
     # Windows and sessions
     def new_window(self, *sessions, size=WINDOW_SIZE):
-        from astrocook.gui.main_window import MainWindowV2
+        from astrocook.gui.main_window import MainWindow
         if self.window is not None:
             self.window.close()
             self.window.deleteLater()
@@ -256,7 +256,7 @@ class Studio:
         # Each scene starts from the default state of the panels
         from PySide6.QtCore import QSettings
         QSettings("Astrocook", "AstrocookV2").remove("plot_controls")
-        self.window = MainWindowV2(None, None)
+        self.window = MainWindow(None, None)
         # Message boxes are modal and would wait for a click: record them
         # (e.g. the warnings of the fits after a pipeline) and go on
         self.window._show_custom_message = self._record_message

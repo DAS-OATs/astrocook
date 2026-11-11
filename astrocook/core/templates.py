@@ -12,7 +12,7 @@ DATA_DIR = Path(__file__).resolve().parent.parent / 'data'
 def qso_composite() -> Tuple[np.ndarray, np.ndarray]:
     """
     QSO composite spectrum, used to trace the Lyman-alpha emission when
-    fitting the continuum (``SpectrumV2.fit_continuum(template=True)``).
+    fitting the continuum (``Spectrum.fit_continuum(template=True)``).
 
     Read once from ``qso_composite.dat`` (the same file as V1).
 

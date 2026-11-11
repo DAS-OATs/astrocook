@@ -1,7 +1,7 @@
 """Characterization tests of the recipe layer of ``recipes/edit.py`` and
 ``recipes/flux.py``.
 
-The SpectrumV2 methods behind several of these recipes are covered by the
+The Spectrum methods behind several of these recipes are covered by the
 snapshots; here the target is the recipe itself: parameter parsing (string
 inputs as from the GUI dialogs), the lookup of other sessions by display
 name, the chaining with the core methods, and what is returned on bad
@@ -20,12 +20,12 @@ import astropy.units as au
 import pytest
 from astrocook.recipes.errors import InvalidParameter, RecipeError, RecipeFailed  # phase 6-bis, PR 3
 
-from astrocook.session.session import SessionV2
-from astrocook.core.spectrum import SpectrumV2
+from astrocook.session.session import Session
+from astrocook.core.spectrum import Spectrum
 from astrocook.core.structures import (
-    ComponentDataV2, DataColumnV2, SpectrumDataV2, SystemListDataV2,
+    ComponentData, DataColumn, SpectrumData, SystemListData,
 )
-from astrocook.core.system_list import SystemListV2
+from astrocook.core.system_list import SystemList
 
 FLUX = au.erg / (au.cm**2 * au.s * au.nm)
 Z_EM = 4.1
@@ -42,20 +42,20 @@ def _spec(x0=612.0, x1=620.0, step=0.005, scale=1.0, seed=0, resol=0.0,
     cont = scale * (x / 616.0) ** -1.5
     model = cont * (1.0 - 0.5 * np.exp(-0.5 * ((x - 616.0) / 0.02) ** 2))
     y = model + 0.02 * cont * rng.standard_normal(n)
-    aux = {"cont": DataColumnV2(cont, FLUX), "model": DataColumnV2(model, FLUX)}
+    aux = {"cont": DataColumn(cont, FLUX), "model": DataColumn(model, FLUX)}
     aux.update(extra or {})
-    return SpectrumV2(SpectrumDataV2(
-        x=DataColumnV2(x, au.nm), xmin=DataColumnV2(x - step / 2, au.nm),
-        xmax=DataColumnV2(x + step / 2, au.nm), y=DataColumnV2(y, FLUX),
-        dy=DataColumnV2(0.02 * cont, FLUX), aux_cols=aux, z_em=z_em,
+    return Spectrum(SpectrumData(
+        x=DataColumn(x, au.nm), xmin=DataColumn(x - step / 2, au.nm),
+        xmax=DataColumn(x + step / 2, au.nm), y=DataColumn(y, FLUX),
+        dy=DataColumn(0.02 * cont, FLUX), aux_cols=aux, z_em=z_em,
         resol=resol))
 
 
 def _systs(*zs, series="CIV"):
-    comps = [ComponentDataV2(id=i + 1, z=z, dz=None, logN=13.5, dlogN=None,
+    comps = [ComponentData(id=i + 1, z=z, dz=None, logN=13.5, dlogN=None,
                              b=10.0, db=None, series=series)
              for i, z in enumerate(zs)]
-    return SystemListV2(SystemListDataV2(components=comps))
+    return SystemList(SystemListData(components=comps))
 
 
 def _gui(**sessions):
@@ -67,14 +67,14 @@ def _gui(**sessions):
 
 
 def _session(spec=None, gui=None, systs=None, name="main"):
-    return SessionV2(name=name, gui=gui, spec=spec if spec is not None else _spec(),
+    return Session(name=name, gui=gui, spec=spec if spec is not None else _spec(),
                      systs=systs)
 
 
 # --- Edit > Set properties ------------------------------------------------
 
 def test_set_properties_numeric():
-    session = _session(_spec(extra={"resol": DataColumnV2(
+    session = _session(_spec(extra={"resol": DataColumn(
         np.full(N, 30000.0), au.dimensionless_unscaled)}))
     out = session.edit.set_properties(name="new", object="QSO", z_em="3.5",
                                       resol="45000")
@@ -104,7 +104,7 @@ def test_set_properties_current_keeps_values():
 def _with_meta(meta):
     import dataclasses
     spec = _spec()
-    return _session(SpectrumV2(dataclasses.replace(spec._data, meta=dict(meta))))
+    return _session(Spectrum(dataclasses.replace(spec._data, meta=dict(meta))))
 
 
 def test_set_properties_current_object_without_one():
@@ -139,7 +139,7 @@ def test_set_properties_pixel_fwhm():
 
 def test_set_properties_keeps_column_if_asked():
     column = np.linspace(40000.0, 50000.0, N)
-    session = _session(_spec(extra={"resol": DataColumnV2(
+    session = _session(_spec(extra={"resol": DataColumn(
         column, au.dimensionless_unscaled)}))
     out = session.edit.set_properties(resol="45000", overwrite_resol_col=False)
     np.testing.assert_array_equal(out.spec.get_column("resol").value, column)
@@ -198,7 +198,7 @@ def test_mask_expression_bad_input_fails(target, expression):
     lambda s: s.edit.split("λ > 0"),
 ])
 def test_some_operations_keep_the_resolution(operation):
-    # F22: these operations rebuilt SpectrumDataV2 without the resol
+    # F22: these operations rebuilt SpectrumData without the resol
     # attribute (reset to 0), and the resolution was lost when it lived in
     # the attribute alone. Since #526 it is moved into the column, which
     # they keep

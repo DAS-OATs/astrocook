@@ -11,8 +11,8 @@ import logging
 
 import pytest
 
-from astrocook.session.session import SessionV2
-from astrocook.fitting.voigt_fitter import NoPixelsToFit, VoigtFitterV2
+from astrocook.session.session import Session
+from astrocook.fitting.voigt_fitter import NoPixelsToFit, VoigtFitter
 from astrocook.mocks import MockComponent, MockTruth, generate
 from astrocook.recipes.errors import RecipeCancelled, RecipeFailed
 from astrocook.recipes.progress import cancel_requested, cancellable, parse_progress
@@ -30,7 +30,7 @@ def civ_and_siiv():
                                   MockComponent("SiIV", Z, 13.3, 12.0)],
                       lam_min_nm=400.0, lam_max_nm=455.0, dv_kms=2.5,
                       resol=45000.0, snr=30.0, z_em=2.0, seed=7)
-    session = SessionV2("civ_siiv", None, spec=generate(truth, truth_columns=False))
+    session = Session("civ_siiv", None, spec=generate(truth, truth_columns=False))
     session = session.continuum.estimate_auto()
     return session.absorbers.add_component("CIV", str(Z), "14.0", "12.0")
 
@@ -87,7 +87,7 @@ def test_a_component_with_no_pixel_is_not_fitted(civ_and_siiv):
     systs = civ_and_siiv.systs.add_component("NV", Z, logN=13.0, b=10.0)
     new = systs.components[-1].uuid
     with systs.fitting_context([new], spec=civ_and_siiv.spec):
-        fitter = VoigtFitterV2(civ_and_siiv.spec, systs)
+        fitter = VoigtFitter(civ_and_siiv.spec, systs)
         with pytest.raises(NoPixelsToFit, match=r"\(NV at z = 1\.9000\): their lines "
                                                  r"fall outside the spectrum \(400\.0-455\.0 nm\)"):
             fitter.fit(max_nfev=10)

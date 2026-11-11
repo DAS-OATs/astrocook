@@ -6,11 +6,11 @@ import os
 
 # Import Astrocook Core
 from astrocook.core.structures import (
-    SpectrumDataV2, DataColumnV2, ComponentDataV2, SystemListDataV2
+    SpectrumData, DataColumn, ComponentData, SystemListData
 )
-from astrocook.core.spectrum import SpectrumV2
-from astrocook.core.system_list import SystemListV2
-from astrocook.fitting.voigt_fitter import VoigtFitterV2
+from astrocook.core.spectrum import Spectrum
+from astrocook.core.system_list import SystemList
+from astrocook.fitting.voigt_fitter import VoigtFitter
 from astrocook.fitting.bayesian_fitter import BayesianVoigtFitter
 
 def generate_synthetic_data(n_components=1, snr=20, regime='unsaturated'):
@@ -47,25 +47,25 @@ def generate_synthetic_data(n_components=1, snr=20, regime='unsaturated'):
             logN_i = 20.3
             b_i = 30.0
         
-        comp = ComponentDataV2(
+        comp = ComponentData(
             id=i, z=z_i, dz=None, logN=logN_i, dlogN=None, b=b_i, db=None, series='Ly_a'
         )
         components.append(comp)
         logging.info(f"  Component {i}: z={z_i:.5f}, logN={logN_i:.2f}, b={b_i:.1f}")
 
-    sys_list = SystemListV2(SystemListDataV2(components=components))
+    sys_list = SystemList(SystemListData(components=components))
     
     # Create dummy spectrum for generation
-    x_col = DataColumnV2(x_arr, au.Angstrom)
-    spec_data = SpectrumDataV2(
+    x_col = DataColumn(x_arr, au.Angstrom)
+    spec_data = SpectrumData(
         x=x_col, xmin=x_col, xmax=x_col, 
-        y=DataColumnV2(np.ones_like(x_arr), au.dimensionless_unscaled),
-        dy=DataColumnV2(np.ones_like(x_arr)/snr, au.dimensionless_unscaled)
+        y=DataColumn(np.ones_like(x_arr), au.dimensionless_unscaled),
+        dy=DataColumn(np.ones_like(x_arr)/snr, au.dimensionless_unscaled)
     )
-    spec = SpectrumV2(spec_data)
+    spec = Spectrum(spec_data)
     
     # Generate model
-    fitter = VoigtFitterV2(spec, sys_list)
+    fitter = VoigtFitter(spec, sys_list)
     # We use Case B loop for generation by not setting up fit context
     _, true_flux_phys = fitter.compute_model_flux()
     true_flux = true_flux_phys / fitter._norm
@@ -76,13 +76,13 @@ def generate_synthetic_data(n_components=1, snr=20, regime='unsaturated'):
     dy_obs = np.ones_like(y_obs) / snr
     
     # Final Spectrum
-    final_data = SpectrumDataV2(
+    final_data = SpectrumData(
         x=x_col, xmin=x_col, xmax=x_col,
-        y=DataColumnV2(y_obs, au.dimensionless_unscaled),
-        dy=DataColumnV2(dy_obs, au.dimensionless_unscaled),
-        aux_cols={'cont': DataColumnV2(np.ones_like(x_arr), au.dimensionless_unscaled)}
+        y=DataColumn(y_obs, au.dimensionless_unscaled),
+        dy=DataColumn(dy_obs, au.dimensionless_unscaled),
+        aux_cols={'cont': DataColumn(np.ones_like(x_arr), au.dimensionless_unscaled)}
     )
-    return SpectrumV2(final_data), sys_list
+    return Spectrum(final_data), sys_list
 
 def run_comparison(n_components=1, snr=20, regime='unsaturated'):
     # 1. Setup
@@ -93,13 +93,13 @@ def run_comparison(n_components=1, snr=20, regime='unsaturated'):
     # Start with a slightly perturbed guess
     guess_comps = []
     for c in true_sys.components:
-        gc = ComponentDataV2(
+        gc = ComponentData(
             id=c.id, z=c.z + 0.0001, dz=None, logN=c.logN - 0.5, dlogN=None, b=c.b + 5.0, db=None, series=c.series
         )
         guess_comps.append(gc)
-    guess_sys = SystemListV2(SystemListDataV2(components=guess_comps))
+    guess_sys = SystemList(SystemListData(components=guess_comps))
     
-    f_fitter = VoigtFitterV2(spec, guess_sys)
+    f_fitter = VoigtFitter(spec, guess_sys)
     fit_sys, model_flux, res = f_fitter.fit(verbose=0)
     
     logging.info(f"Frequentist Success: {res.success}")

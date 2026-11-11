@@ -127,7 +127,7 @@ def test_about_from_the_window(qtbot, monkeypatch, tmp_path):
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
     shown = []
     monkeypatch.setattr(AboutDialog, "exec", lambda self: shown.append(self))
-    window = main_window.MainWindowV2(None, None)
+    window = main_window.MainWindow(None, None)
     qtbot.addWidget(window)
     window._on_about_requested()
     assert len(shown) == 1 and shown[0].parent() is window

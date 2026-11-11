@@ -27,7 +27,7 @@ import warnings
 import numpy as np
 import pytest
 
-from astrocook.session.session import SessionV2
+from astrocook.session.session import Session
 from astrocook.mocks import MockComponent, MockTruth, generate
 
 # The outcomes of a failure (phase 6-bis, PR 3): see recipe_outcomes.py
@@ -59,7 +59,7 @@ UUID, SERIES_JSON, Z_JSON, LIST_AS_TEXT = (_Token(n) for n in
 def _sessions():
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        base = SessionV2("mock", None, spec=generate(TRUTH, truth_columns=False)
+        base = Session("mock", None, spec=generate(TRUTH, truth_columns=False)
                          ).continuum.estimate_auto()
         fitted = base.absorbers.components_auto()
         ident = base.absorbers.identify_lines()
@@ -109,7 +109,7 @@ def _reference(name, session, param, expected, base):
         warnings.simplefilter("ignore")
         result = _run(name, session, param, _unfreeze(expected),
                       {k: _unfreeze(v) for k, v in base})
-    assert isinstance(result, SessionV2)
+    assert isinstance(result, Session)
     return _fingerprint(result)
 
 
@@ -1217,7 +1217,7 @@ def _check(caplog, name, session, param, value, base, expected):
         return
     with caplog.at_level(logging.ERROR):
         result = _run(name, session, param, value, base)
-    assert isinstance(result, SessionV2), caplog.text
+    assert isinstance(result, Session), caplog.text
     if expected == ACCEPTED:
         return
     reference = _reference(name, session, param, _freeze(expected),

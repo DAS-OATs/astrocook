@@ -7,7 +7,7 @@ parameters in grey.
 import pytest
 from PySide6.QtCore import Qt
 
-from astrocook.core.structures import ComponentDataV2, ParameterConstraintV2
+from astrocook.core.structures import ComponentData, ParameterConstraint
 
 GREY = "#888888"
 
@@ -19,7 +19,7 @@ def model(qapp):
 
 
 def _comps():
-    return [ComponentDataV2(id=i, z=2.0 + 1e-4 * i, dz=None, logN=13.0,
+    return [ComponentData(id=i, z=2.0 + 1e-4 * i, dz=None, logN=13.0,
                             dlogN=None, b=10.0, db=None, series="CIV")
             for i in (1, 2, 3)]
 
@@ -32,7 +32,7 @@ def _colour(model, row, col_name):
 
 def _link_b(target, dependent):
     # dependent.b = target.b
-    return {dependent.uuid: {"b": ParameterConstraintV2(
+    return {dependent.uuid: {"b": ParameterConstraint(
         is_free=False, target_uuid=target.uuid,
         expression=f"p['{target.uuid}'].b")}}
 
@@ -60,7 +60,7 @@ def test_links_are_not_coloured_outside_the_selected_group(model):
 
 def test_frozen_parameter_is_grey(model):
     c1, c2, c3 = _comps()
-    frozen = {c3.uuid: {"logN": ParameterConstraintV2(is_free=False)}}
+    frozen = {c3.uuid: {"logN": ParameterConstraint(is_free=False)}}
     model.update_data([c1, c2, c3], frozen)
     model.set_highlighted_uuids(set(), set())
     assert _colour(model, 2, "logN") == GREY
@@ -91,7 +91,7 @@ def test_link_removed_with_group_selected_is_not_coloured(model):
 
 
 def test_link_keeps_its_colour_when_another_is_added(model):
-    comps = [ComponentDataV2(id=i, z=2.0 + 1e-4 * i, dz=None, logN=13.0,
+    comps = [ComponentData(id=i, z=2.0 + 1e-4 * i, dz=None, logN=13.0,
                              dlogN=None, b=10.0, db=None, series="CIV")
              for i in range(1, 9)]
     selected = {c.uuid for c in comps}

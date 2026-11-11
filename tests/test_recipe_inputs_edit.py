@@ -20,11 +20,11 @@ import astropy.units as au
 import numpy as np
 import pytest
 
-from astrocook.session.session import SessionV2
-from astrocook.core.spectrum import SpectrumV2
-from astrocook.core.structures import (ComponentDataV2, DataColumnV2, SpectrumDataV2,
-                                       SystemListDataV2)
-from astrocook.core.system_list import SystemListV2
+from astrocook.session.session import Session
+from astrocook.core.spectrum import Spectrum
+from astrocook.core.structures import (ComponentData, DataColumn, SpectrumData,
+                                       SystemListData)
+from astrocook.core.system_list import SystemList
 
 # The outcomes of a failure (phase 6-bis, PR 3): see recipe_outcomes.py
 from recipe_outcomes import FAILS, FAILURES, RAISES, REFUSED, check_failure  # noqa: E402,F401
@@ -39,16 +39,16 @@ def _spec(x0=380.0, x1=460.0, scale=1.0):
     cont = scale * (x / 420.0) ** -1.5
     y = (cont * (1 - 0.5 * np.exp(-0.5 * ((x - 420.0) / 0.05) ** 2))
          + 0.02 * cont * rng.standard_normal(len(x)))
-    return SpectrumV2(SpectrumDataV2(
-        x=DataColumnV2(x, au.nm), xmin=DataColumnV2(x - 0.01, au.nm),
-        xmax=DataColumnV2(x + 0.01, au.nm), y=DataColumnV2(y, FLUX),
-        dy=DataColumnV2(0.02 * cont, FLUX), aux_cols={"cont": DataColumnV2(cont, FLUX)},
+    return Spectrum(SpectrumData(
+        x=DataColumn(x, au.nm), xmin=DataColumn(x - 0.01, au.nm),
+        xmax=DataColumn(x + 0.01, au.nm), y=DataColumn(y, FLUX),
+        dy=DataColumn(0.02 * cont, FLUX), aux_cols={"cont": DataColumn(cont, FLUX)},
         z_em=2.5, resol=0.0))
 
 
 def _systs(*zs):
-    return SystemListV2(SystemListDataV2(components=[
-        ComponentDataV2(id=i + 1, z=z, dz=None, logN=13.5, dlogN=None, b=10.0, db=None,
+    return SystemList(SystemListData(components=[
+        ComponentData(id=i + 1, z=z, dz=None, logN=13.5, dlogN=None, b=10.0, db=None,
                         series="CIV") for i, z in enumerate(zs)]))
 
 
@@ -56,11 +56,11 @@ def _session():
     """The main session (380-460 nm, one CIV system) and three others in the
     GUI: blue (360-400 nm, a system inside the main range), red (440-500
     nm, twice the flux), same (the main range, 1.5 times the flux)."""
-    s = SessionV2(name="main", gui=None, spec=_spec(), systs=_systs(1.70))
-    others = {"blue": SessionV2(name="blue", gui=None, spec=_spec(360.0, 400.0, 1.0),
+    s = Session(name="main", gui=None, spec=_spec(), systs=_systs(1.70))
+    others = {"blue": Session(name="blue", gui=None, spec=_spec(360.0, 400.0, 1.0),
                                 systs=_systs(1.40, 1.71)),
-              "red": SessionV2(name="red", gui=None, spec=_spec(440.0, 500.0, 2.0)),
-              "same": SessionV2(name="same", gui=None, spec=_spec(scale=1.5))}
+              "red": Session(name="red", gui=None, spec=_spec(440.0, 500.0, 2.0)),
+              "same": Session(name="same", gui=None, spec=_spec(scale=1.5))}
     s._gui = SimpleNamespace(session_histories=[
         SimpleNamespace(display_name=k, current_state=v) for k, v in others.items()])
     return s
@@ -445,6 +445,6 @@ def _check(caplog, csv_file, name, param, value, base, expected):
         return
     with caplog.at_level(logging.ERROR):
         result = _run(name, param, value, base, csv_file)
-    assert isinstance(result, (SessionV2, list)), caplog.text
+    assert isinstance(result, (Session, list)), caplog.text
     reference = _run(name, param, expected, base, csv_file)
     assert _fingerprint(result) == _fingerprint(reference)

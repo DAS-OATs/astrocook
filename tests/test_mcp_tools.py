@@ -18,14 +18,14 @@ pytest.importorskip("mcp")
 
 from mcp import Client, StdioServerParameters  # noqa: E402
 
-from astrocook.session.session import SessionV2, load_session_from_file  # noqa: E402
+from astrocook.session.session import Session, load_session_from_file  # noqa: E402
 from astrocook.mcp_server.schemas import parameters_schema  # noqa: E402
 from astrocook.mcp_server.server import build_server, instructions  # noqa: E402
 from astrocook.mcp_server.tools import (  # noqa: E402
     EXCLUDED, SERVER_PARAMS, as_tools, tool_name)
 from astrocook.mocks import MockComponent, MockTruth, generate  # noqa: E402
 from astrocook.recipes import registry  # noqa: E402
-from astrocook.recipes.flux import RecipeFluxV2  # noqa: E402
+from astrocook.recipes.flux import RecipeFlux  # noqa: E402
 from astrocook.recipes.params import typed_recipe  # noqa: E402
 from astrocook.recipes.progress import check_cancelled  # noqa: E402
 from astrocook.recipes.registry import all_recipes, build_spec, get_recipe  # noqa: E402
@@ -60,7 +60,7 @@ def mock_archive(tmp_path_factory):
                       lam_min_nm=440.0, lam_max_nm=460.0, dv_kms=2.5,
                       resol=45000.0, snr=50.0, z_em=2.0, seed=1)
     path = tmp_path_factory.mktemp("mock") / "mock.acs2"
-    SessionV2("mock", None, spec=generate(truth)).save(str(path))
+    Session("mock", None, spec=generate(truth)).save(str(path))
     return path
 
 
@@ -131,7 +131,7 @@ def new_recipe(monkeypatch):
         return float(steps)
 
     for fn in (scale_test, measure_test, progress_test):
-        monkeypatch.setattr(RecipeFluxV2, fn.__name__, typed_recipe(fn), raising=False)
+        monkeypatch.setattr(RecipeFlux, fn.__name__, typed_recipe(fn), raising=False)
     flux = dict(registry.RECIPES["flux"])
     flux["scale_test"] = build_spec("flux", "scale_test", {
         "brief": "Scale the flux (test).",
@@ -431,7 +431,7 @@ def wait_recipe(new_recipe, monkeypatch):
             time.sleep(seconds)
         return self._session.edit.apply_expression("y_waited", "y * 1")
 
-    monkeypatch.setattr(RecipeFluxV2, "wait_test", typed_recipe(wait_test), raising=False)
+    monkeypatch.setattr(RecipeFlux, "wait_test", typed_recipe(wait_test), raising=False)
     flux = dict(registry.RECIPES["flux"])
     flux["wait_test"] = build_spec("flux", "wait_test", {
         "brief": "Wait (test).", "details": "Waits, silent.",

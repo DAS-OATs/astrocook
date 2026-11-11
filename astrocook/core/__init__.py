@@ -1,14 +1,20 @@
 from typing import Any
 
-from astrocook.core.structures import SpectrumDataV2, SystemListDataV2
+from astrocook._renamed import renamed
+from astrocook.core.structures import SpectrumData, SystemListData
 
-__all__ = ["SessionV2", "SpectrumDataV2", "SystemListDataV2"]
+__all__ = ["Session", "SpectrumData", "SystemListData"]
+
+_old_names = renamed(__name__, {"SessionV2": "Session",
+                                "SpectrumDataV2": "SpectrumData",
+                                "SystemListDataV2": "SystemListData"})
 
 
 def __getattr__(name: str) -> Any:
-    # ``SessionV2`` lives in ``astrocook.session`` since phase 6-quater
+    # ``Session`` lives in ``astrocook.session`` since phase 6-quater
     # (PR 5); served lazily so that ``core/`` does not import it.
-    if name == "SessionV2":
-        from astrocook.session.session import SessionV2
-        return SessionV2
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    if name == "Session":
+        from astrocook.session.session import Session
+        return Session
+    # The old names (PR 6): ``SessionV2`` warns here, then is served as above.
+    return _old_names(name)

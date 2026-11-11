@@ -21,7 +21,7 @@ import numpy as np
 import pytest
 from PySide6.QtWidgets import QApplication, QMessageBox
 
-from astrocook.gui.main_window import MainWindowV2
+from astrocook.gui.main_window import MainWindow
 from astrocook.recipes.registry import all_recipes, get_recipe
 
 # Small real archive (J0103-1305, 2156 pixels, 764 components), quick to load
@@ -53,7 +53,7 @@ def messages(monkeypatch):
 def window(qtbot, monkeypatch, tmp_path, messages):
     # Keep the settings of the test run away from the user's ones
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
-    win = MainWindowV2(None, None)
+    win = MainWindow(None, None)
     qtbot.addWidget(win)
 
     def custom_message(*args, **kwargs):
@@ -543,8 +543,8 @@ def test_inspector_keys(loaded, monkeypatch):
 def _inspector_state(window, continuum=True, systems=True):
     """The session of the window with or without a continuum and systems."""
     import numpy as np
-    from astrocook.core.structures import SystemListDataV2
-    from astrocook.core.system_list import SystemListV2
+    from astrocook.core.structures import SystemListData
+    from astrocook.core.system_list import SystemList
     history = window.active_history
     state = history.current_state
     spec = state.spec
@@ -552,7 +552,7 @@ def _inspector_state(window, continuum=True, systems=True):
         spec = spec.update_column("cont", np.full(len(spec.x), np.nanmedian(spec.y.value)))
     state = state.with_new_spectrum(spec)
     if not systems:
-        state = state.with_new_system_list(SystemListV2(SystemListDataV2()))
+        state = state.with_new_system_list(SystemList(SystemListData()))
     history.add_state(state)
     window._on_view_system_inspector()
     inspector = window.system_inspector
@@ -683,7 +683,7 @@ def test_gui_imports_after_pyplot():
             "import astrocook.gui.main_window as mw\n"
             "from PySide6.QtWidgets import QApplication\n"
             "app = QApplication([])\n"
-            "window = mw.MainWindowV2(None, None)\n")
+            "window = mw.MainWindow(None, None)\n")
     result = subprocess.run([sys.executable, "-c", code], capture_output=True,
                             text=True, timeout=120,
                             env={**os.environ, "QT_QPA_PLATFORM": "offscreen",
@@ -711,26 +711,26 @@ def test_close_session(loaded):
 
 # --- Session logs ---------------------------------------------------------
 # Characterization for phase 3 (removal of the V1 GUILog): the log of every
-# history is a HistoryLogV2, shared by all its states; a branch gets a copy.
+# history is a HistoryLog, shared by all its states; a branch gets a copy.
 
 def _recipes(log):
     return [e.recipe_name for e in log.entries]
 
 
 def test_history_log_is_v2(ready):
-    from astrocook.core.structures import HistoryLogV2
+    from astrocook.core.structures import HistoryLog
     history = ready.active_history
-    assert isinstance(history.log_manager, HistoryLogV2)
+    assert isinstance(history.log_manager, HistoryLog)
     assert _recipes(history.log_manager) == ["set_properties"]
     assert all(s.log_manager is history.log_manager for s in history.states)
 
 
 def test_branch_copies_the_log(qtbot, ready):
-    from astrocook.core.structures import HistoryLogV2
+    from astrocook.core.structures import HistoryLog
     original = ready.active_history
     _run_recipe(qtbot, ready, "edit", "extract_preset", {"region": "red_side"})
     branch = ready.session_histories[1]
-    assert isinstance(branch.log_manager, HistoryLogV2)
+    assert isinstance(branch.log_manager, HistoryLog)
     assert branch.log_manager is not original.log_manager
     assert _recipes(branch.log_manager) == ["set_properties", "extract_preset"]
     assert all(s.log_manager is branch.log_manager for s in branch.states)
@@ -770,7 +770,7 @@ def test_each_branch_logs_the_recipe(qtbot, ready):
 
 
 def test_script_run_builds_a_v2_history(ready):
-    from astrocook.core.structures import HistoryLogV2
+    from astrocook.core.structures import HistoryLog
     from astrocook.gui.qt_workers import ScriptWorker
     script = ("set_properties(z_em='4.072', resol='45000')\n"
               "# a comment\n"
@@ -782,7 +782,7 @@ def test_script_run_builds_a_v2_history(ready):
     worker.run()  # synchronously, in this thread
     assert errors == []
     (history,) = results
-    assert isinstance(history.log_manager, HistoryLogV2)
+    assert isinstance(history.log_manager, HistoryLog)
     assert _recipes(history.log_manager) == ["set_properties", "smooth"]
     assert len(history.states) == 3
 

@@ -1,7 +1,7 @@
-"""Continuum methods of :class:`~astrocook.core.spectrum.SpectrumV2`.
+"""Continuum methods of :class:`~astrocook.core.spectrum.Spectrum`.
 
 Part of the split of ``spectrum.py`` into thematic modules (phase 5): the
-methods are defined here, in a mixin class that ``SpectrumV2`` inherits, and
+methods are defined here, in a mixin class that ``Spectrum`` inherits, and
 are used as before (``spec.fit_continuum(...)``).
 """
 import astropy.units as au
@@ -13,7 +13,7 @@ from scipy.interpolate import PchipInterpolator
 from typing import Self, List, Union, cast
 
 from astrocook.core.spectrum_operations import find_absorbed_regions, fit_powerlaw_to_regions
-from astrocook.core.structures import DataColumnV2
+from astrocook.core.structures import DataColumn
 from astrocook.core._spectrum_host import HostBase
 
 logger = logging.getLogger(__name__)
@@ -23,7 +23,7 @@ class ContinuumMixin(HostBase):
     """Estimate of the continuum: absorbed regions, interpolated or
     power-law continuum, continuum from manual knots.
 
-    Mixed into ``SpectrumV2``, whose data and methods it uses: ``_data``,
+    Mixed into ``Spectrum``, whose data and methods it uses: ``_data``,
     ``history``, ``x``, ``get_column``, ``has_aux_column``,
     ``update_column`` and ``_renormalize_model``. The results are new
     instances of the class (``self.__class__``).
@@ -47,7 +47,7 @@ class ContinuumMixin(HostBase):
 
         Returns
         -------
-        SpectrumV2
+        Spectrum
             A new instance with the ``abs_mask`` column added/updated.
         """
         # Call Pure Function
@@ -64,7 +64,7 @@ class ContinuumMixin(HostBase):
         
         # State Update
         new_aux_cols = deepcopy(self._data.aux_cols)
-        new_aux_cols['abs_mask'] = DataColumnV2(
+        new_aux_cols['abs_mask'] = DataColumn(
             values=mask,
             unit=au.dimensionless_unscaled,
             description="Mask of absorbed regions (True=absorbed)"
@@ -102,7 +102,7 @@ class ContinuumMixin(HostBase):
 
         Returns
         -------
-        SpectrumV2
+        Spectrum
             A new instance with the ``cont`` column added/updated.
         """
         from astrocook.core.spectrum_operations import (
@@ -191,7 +191,7 @@ class ContinuumMixin(HostBase):
         new_aux_cols = deepcopy(self._data.aux_cols)
         
         # [CRITICAL] Store the Intrinsic Continuum
-        new_aux_cols['cont'] = DataColumnV2(
+        new_aux_cols['cont'] = DataColumn(
             values=cont_intrinsic,
             unit=self._data.y.unit, 
             description=f"Continuum (smooth={smooth_std_kms} km/s, fudge={applied_fudge:.3f}, template={template})"
@@ -220,7 +220,7 @@ class ContinuumMixin(HostBase):
         # 7. Create New Data Core
         new_data = dataclasses.replace(self._data, aux_cols=new_aux_cols)
         
-        # 8. Return New SpectrumV2
+        # 8. Return New Spectrum
         hist_entry = f"Fitted continuum (fudge={applied_fudge:.3f}, smooth={smooth_std_kms} km/s, template={template})"
         return self.__class__(data=new_data, history=self.history + [hist_entry])
     
@@ -238,7 +238,7 @@ class ContinuumMixin(HostBase):
 
         Returns
         -------
-        SpectrumV2
+        Spectrum
             A new instance containing the ``cont_pl`` column.
         """
         
@@ -254,7 +254,7 @@ class ContinuumMixin(HostBase):
         
         # 2. Create new data core
         new_aux_cols = deepcopy(self._data.aux_cols)
-        new_aux_cols['cont_pl'] = DataColumnV2(
+        new_aux_cols['cont_pl'] = DataColumn(
             values=pl_values,
             unit=self._data.y.unit, # Power-law has same unit as flux
             description=f"Power-law fit to regions: {regions_str}"
@@ -262,7 +262,7 @@ class ContinuumMixin(HostBase):
         
         new_data = dataclasses.replace(self._data, aux_cols=new_aux_cols)
         
-        # 3. Return new SpectrumV2
+        # 3. Return new Spectrum
         new_history = self.history + [f"Fitted power-law (regions={regions_str})"]
         return self.__class__(data=new_data, history=new_history)
     
@@ -282,7 +282,7 @@ class ContinuumMixin(HostBase):
 
         Returns
         -------
-        SpectrumV2
+        Spectrum
             A new instance with the updated continuum.
         """
         # 1. Validation (Safe for numpy arrays)
@@ -331,7 +331,7 @@ class ContinuumMixin(HostBase):
             )
             
             if new_model_data_col:
-                # We use internal update logic to avoid creating two SpectrumV2 objects
+                # We use internal update logic to avoid creating two Spectrum objects
                 new_aux = deepcopy(new_spec._data.aux_cols)
                 new_aux['model'] = new_model_data_col
                 new_data = dataclasses.replace(new_spec._data, aux_cols=new_aux)

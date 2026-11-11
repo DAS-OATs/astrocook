@@ -23,9 +23,9 @@ import astropy.units as au
 import numpy as np
 import pytest
 
-from astrocook.session.session import SessionV2
-from astrocook.core.spectrum import SpectrumV2
-from astrocook.core.structures import DataColumnV2, SpectrumDataV2
+from astrocook.session.session import Session
+from astrocook.core.spectrum import Spectrum
+from astrocook.core.structures import DataColumn, SpectrumData
 
 # The outcomes of a failure (phase 6-bis, PR 3): see recipe_outcomes.py
 from recipe_outcomes import FAILS, FAILURES, RAISES, REFUSED, check_failure  # noqa: E402,F401
@@ -43,17 +43,17 @@ def _spec(scale=1.0):
     cont = scale * (x / 420.0) ** -1.5 * (1 + 0.1 * (scale - 1) * (x - 420.0) / 40.0)
     y = (cont * (1 - 0.5 * np.exp(-0.5 * ((x - 420.0) / 0.05) ** 2))
          + 0.02 * cont * rng.standard_normal(len(x)))
-    return SpectrumV2(SpectrumDataV2(
-        x=DataColumnV2(x, au.nm), xmin=DataColumnV2(x - 0.01, au.nm),
-        xmax=DataColumnV2(x + 0.01, au.nm), y=DataColumnV2(y, FLUX),
-        dy=DataColumnV2(0.02 * cont, FLUX), aux_cols={}, z_em=2.5))
+    return Spectrum(SpectrumData(
+        x=DataColumn(x, au.nm), xmin=DataColumn(x - 0.01, au.nm),
+        xmax=DataColumn(x + 0.01, au.nm), y=DataColumn(y, FLUX),
+        dy=DataColumn(0.02 * cont, FLUX), aux_cols={}, z_em=2.5))
 
 
 @pytest.fixture(scope="module")
 def sessions():
     """The session each recipe runs on (fit_continuum needs a mask)."""
-    plain = SessionV2(name="main", gui=None, spec=_spec())
-    other = SessionV2(name="other", gui=None, spec=_spec(2.0))  # another level and slope
+    plain = Session(name="main", gui=None, spec=_spec())
+    other = Session(name="other", gui=None, spec=_spec(2.0))  # another level and slope
     plain._gui = SimpleNamespace(session_histories=[
         SimpleNamespace(display_name="other", current_state=other)])
     masked = plain.continuum.find_absorbed()
@@ -459,9 +459,9 @@ def _check(sessions, caplog, name, param, value, expected):
         return
     with caplog.at_level(logging.ERROR):
         result = _run(sessions, name, param, value)
-    assert isinstance(result, SessionV2), caplog.text
+    assert isinstance(result, Session), caplog.text
     with caplog.at_level(logging.ERROR):
         reference = _run(sessions, name, param, expected)
-    assert isinstance(reference, SessionV2)
+    assert isinstance(reference, Session)
     for got, want in zip(_data(result), _data(reference), strict=True):
         assert np.array_equal(got, want, equal_nan=True)

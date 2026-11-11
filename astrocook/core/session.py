@@ -1,4 +1,4 @@
-"""Old home of ``SessionV2``, now ``astrocook.session.session`` (phase
+"""Old home of ``Session``, now ``astrocook.session.session`` (phase
 6-quater, PR 5). Every name of the new module is served from here, lazily
 (PEP 562): ``core/`` imports nothing of ``astrocook.session`` until a name
 is asked, so there is no import cycle. The objects are the same, and there

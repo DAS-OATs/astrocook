@@ -34,7 +34,7 @@ def test_find_absorbed(snapshot, absorbed):
 
 
 def test_find_absorbed_regions_matches_method(j0103_window, absorbed):
-    # The pure function and the SpectrumV2 method must agree
+    # The pure function and the Spectrum method must agree
     spec = j0103_window
     mask = find_absorbed_regions(spec.x, spec.y.value, spec.dy.value,
                                  spec._data.z_em, SMOOTH_LEN_LYA,
@@ -67,8 +67,8 @@ def test_fit_powerlaw(snapshot, j0103_window):
 def test_estimate_auto_smoothing_is_a_fwhm(j0103_window):
     # F16 (findings register, decided with Guido): the final smoothing is
     # given as a FWHM (default 800 km/s); the deprecated smooth_std is a sigma
-    from astrocook.session.session import SessionV2
-    session = SessionV2("w", None, spec=j0103_window)
+    from astrocook.session.session import Session
+    session = Session("w", None, spec=j0103_window)
     default = session.continuum.estimate_auto().spec.get_column("cont").value
     as_sigma = session.continuum.estimate_auto(
         smooth_std=str(800.0 / 2.354820045)).spec.get_column("cont").value

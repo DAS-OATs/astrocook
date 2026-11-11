@@ -3,7 +3,7 @@
 
 Monte Carlo on mock spectra (``astrocook.mocks``, independent of the fitting
 code): one CIV component (z = 2.97, logN = 13.5, b = 12 km/s), R = 45000,
-2.5 km/s pixels, S/N = 20, fitted by ``VoigtFitterV2`` from a nearby guess
+2.5 km/s pixels, S/N = 20, fitted by ``VoigtFitter`` from a nearby guess
 in many noise realizations. The "pull" (fitted - true) / error must have a
 standard deviation of 1 if the errors are right.
 
@@ -18,9 +18,9 @@ import dataclasses
 import numpy as np
 import pytest
 
-from astrocook.core.structures import ComponentDataV2, DataColumnV2, SystemListDataV2
-from astrocook.core.system_list import SystemListV2
-from astrocook.fitting.voigt_fitter import VoigtFitterV2
+from astrocook.core.structures import ComponentData, DataColumn, SystemListData
+from astrocook.core.system_list import SystemList
+from astrocook.fitting.voigt_fitter import VoigtFitter
 from astrocook.mocks import MockComponent, MockTruth, generate
 
 TRUE = dict(z=2.97, logN=13.5, b=12.0)
@@ -37,11 +37,11 @@ def _fit(seed, dy_factor):
     spec = generate(truth)
     data = spec._data
     spec = type(spec)(dataclasses.replace(
-        data, dy=DataColumnV2(data.dy.values * dy_factor, data.dy.unit)))
-    guess = ComponentDataV2(id=1, z=TRUE["z"] + 2e-5, dz=None, logN=13.3,
+        data, dy=DataColumn(data.dy.values * dy_factor, data.dy.unit)))
+    guess = ComponentData(id=1, z=TRUE["z"] + 2e-5, dz=None, logN=13.3,
                             dlogN=None, b=10.0, db=None, series="CIV")
-    systs = SystemListV2(SystemListDataV2(components=[guess]))
-    fitted, _, result = VoigtFitterV2(spec, systs).fit(max_nfev=2000,
+    systs = SystemList(SystemListData(components=[guess]))
+    fitted, _, result = VoigtFitter(spec, systs).fit(max_nfev=2000,
                                                        z_window_kms=20.0)
     comp = fitted.components[0]
     red_chi2 = np.sum(result.fun ** 2) / (len(result.fun) - 3)

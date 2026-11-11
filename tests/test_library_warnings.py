@@ -12,7 +12,7 @@ import numpy as np
 from astropy.io import fits
 from astropy.table import Table
 
-from astrocook.session.session import SessionV2, load_session_from_file
+from astrocook.session.session import Session, load_session_from_file
 from astrocook.core.spectrum_operations import compute_auto_fudge
 from astrocook.io.adapter import _fits_meta, _write_fits_table
 
@@ -58,7 +58,7 @@ def test_the_header_written_is_the_same(tmp_path):
 def test_long_keywords_are_written_without_warnings(tmp_path):
     # series_map_json and the like become HIERARCH cards, the standard way
     # to hold them: astropy warned at every save of an identification
-    session = SessionV2("s", None, spec=_spec(), systs=_systs(("CIV", 2.97, 13.6, 12.0)))
+    session = Session("s", None, spec=_spec(), systs=_systs(("CIV", 2.97, 13.6, 12.0)))
     session.systs._data.meta["series_map_json"] = '{"1": "CIV"}'
     _, caught = _recorded(lambda: session.save(str(tmp_path / "s.acs2")))
     assert caught == []
@@ -70,7 +70,7 @@ def test_bayesian_samples_not_saved_is_said_by_astrocook(tmp_path, caplog):
     # F28: astropy skipped them with a warning of its own; now a WARNING of
     # Astrocook says what is lost (they are still not saved: the strict xfail
     # test_bayesian_results_are_saved)
-    session = SessionV2("s", None, spec=_spec(), systs=_systs(("CIV", 2.97, 13.6, 12.0)))
+    session = Session("s", None, spec=_spec(), systs=_systs(("CIV", 2.97, 13.6, 12.0)))
     session.systs._data.meta["bayesian_results"] = {"samples": [[1.0, 2.0]]}
     with caplog.at_level(logging.WARNING):
         _, caught = _recorded(lambda: session.save(str(tmp_path / "s.acs2")))

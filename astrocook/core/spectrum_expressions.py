@@ -1,9 +1,9 @@
-"""Expressions, masks and regions of :class:`~astrocook.core.spectrum.SpectrumV2`:
+"""Expressions, masks and regions of :class:`~astrocook.core.spectrum.Spectrum`:
 columns computed or masked with NumExpr expressions (also across spectra),
 splitting by an expression, masks limited to a range, preset regions.
 
 Part of the split of ``spectrum.py`` into thematic modules (phase 5): the
-methods are defined here, in a mixin class that ``SpectrumV2`` inherits, and
+methods are defined here, in a mixin class that ``Spectrum`` inherits, and
 are used as before (``spec.apply_expression(...)``).
 """
 import astropy.units as au
@@ -15,11 +15,11 @@ import re
 from typing import TYPE_CHECKING, Self, Dict, List, Optional, Tuple
 
 from astrocook.core.atomic_data import ATOM_DATA
-from astrocook.core.structures import DataColumnV2, SpectrumDataV2
+from astrocook.core.structures import DataColumn, SpectrumData
 from astrocook.core._spectrum_host import HostBase
 
 if TYPE_CHECKING:
-    from astrocook.core.spectrum import SpectrumV2
+    from astrocook.core.spectrum import Spectrum
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +42,7 @@ REGION_PRESETS = {
 class ExpressionsMixin(HostBase):
     """Expressions on the columns, masks and regions.
 
-    Mixed into ``SpectrumV2``, whose data and methods it uses: ``_data``,
+    Mixed into ``Spectrum``, whose data and methods it uses: ``_data``,
     ``history``, ``x``, ``t``, ``get_column``, ``update_column`` and
     ``get_resampled_column`` (of ``CombineMixin``). The results are new
     instances of the class (``self.__class__``).
@@ -105,7 +105,7 @@ class ExpressionsMixin(HostBase):
     # --- Methods implementing the API ---
 
     def prepare_expression_context(self, expression: str, 
-                                   other_specs: Dict[str, 'SpectrumV2']) -> Tuple[str, Dict[str, np.ndarray]]:
+                                   other_specs: Dict[str, 'Spectrum']) -> Tuple[str, Dict[str, np.ndarray]]:
         """
         Prepare context for cross-spectrum arithmetic expressions.
 
@@ -118,7 +118,7 @@ class ExpressionsMixin(HostBase):
         expression : str
             The raw expression string (e.g., ``"F - s1.F"``).
         other_specs : dict
-            A dictionary mapping alias names to :class:`SpectrumV2` objects.
+            A dictionary mapping alias names to :class:`Spectrum` objects.
 
         Returns
         -------
@@ -178,7 +178,7 @@ class ExpressionsMixin(HostBase):
 
         Returns
         -------
-        SpectrumV2
+        Spectrum
             A new instance with the computed column.
         """
         target_col = target_col.strip() # --- Enforce clean column names ---
@@ -211,15 +211,15 @@ class ExpressionsMixin(HostBase):
         else:
             logger.debug(f"Expression result for new column '{target_col}' will be dimensionless.")
 
-        # 4. Create new SpectrumDataV2 using the immutable pattern
+        # 4. Create new SpectrumData using the immutable pattern
         core_cols = {
             'x': self._data.x, 'xmin': self._data.xmin, 'xmax': self._data.xmax,
             'y': self._data.y, 'dy': self._data.dy
         }
         aux_cols = deepcopy(self._data.aux_cols)
 
-        # 5. Create the new DataColumnV2
-        new_data_col = DataColumnV2(new_values, target_unit)
+        # 5. Create the new DataColumn
+        new_data_col = DataColumn(new_values, target_unit)
 
         # 6. Overwrite or add the target column
         if target_col in core_cols:
@@ -228,7 +228,7 @@ class ExpressionsMixin(HostBase):
             aux_cols[target_col] = new_data_col
 
         # 7. Create the new data core
-        new_data_core = SpectrumDataV2(
+        new_data_core = SpectrumData(
             x=core_cols['x'], xmin=core_cols['xmin'], xmax=core_cols['xmax'],
             y=core_cols['y'], dy=core_cols['dy'],
             aux_cols=aux_cols,
@@ -236,7 +236,7 @@ class ExpressionsMixin(HostBase):
             z_em=self._data.z_em   # Propagate
         )
 
-        # 8. Return a NEW SpectrumV2 instance
+        # 8. Return a NEW Spectrum instance
         new_history = self.history + [f"Apply: {target_col} = {expression}"]
         return self.__class__(data=new_data_core, history=new_history)
 
@@ -256,7 +256,7 @@ class ExpressionsMixin(HostBase):
 
         Returns
         -------
-        SpectrumV2
+        Spectrum
             A new instance with the masked column.
         """
         target_col = target_col.strip() # --- Enforce clean column names ---
@@ -285,9 +285,9 @@ class ExpressionsMixin(HostBase):
         # 4. Create new data array
         new_values = target_q.value.copy()
         new_values[mask_indices] = np.nan
-        new_data_col = DataColumnV2(new_values, target_q.unit)
+        new_data_col = DataColumn(new_values, target_q.unit)
 
-        # 5. Create new SpectrumDataV2 using the immutable pattern
+        # 5. Create new SpectrumData using the immutable pattern
         core_cols = {
             'x': self._data.x, 'xmin': self._data.xmin, 'xmax': self._data.xmax,
             'y': self._data.y, 'dy': self._data.dy
@@ -301,7 +301,7 @@ class ExpressionsMixin(HostBase):
             aux_cols[target_col] = new_data_col
 
         # 7. Create the new data core
-        new_data_core = SpectrumDataV2(
+        new_data_core = SpectrumData(
             x=core_cols['x'], xmin=core_cols['xmin'], xmax=core_cols['xmax'],
             y=core_cols['y'], dy=core_cols['dy'],
             aux_cols=aux_cols,
@@ -309,11 +309,11 @@ class ExpressionsMixin(HostBase):
             z_em=self._data.z_em   # Propagate
         )
 
-        # 8. Return a NEW SpectrumV2 instance
+        # 8. Return a NEW Spectrum instance
         new_history = self.history + [f"Mask: {target_col} where {expression}"]
         return self.__class__(data=new_data_core, history=new_history)
     
-    def calc_intersection_expression(self, others_specs: List['SpectrumV2'], 
+    def calc_intersection_expression(self, others_specs: List['Spectrum'], 
                                      z_target: float, trans_self: str, 
                                      trans_others: List[str], window_kms: float) -> Optional[str]:
         """
@@ -324,7 +324,7 @@ class ExpressionsMixin(HostBase):
 
         Parameters
         ----------
-        others_specs : list of SpectrumV2
+        others_specs : list of Spectrum
             List of other spectra to intersect with.
         z_target : float
             Target redshift for the velocity conversion.
@@ -399,7 +399,7 @@ class ExpressionsMixin(HostBase):
 
         Returns
         -------
-        SpectrumV2
+        Spectrum
             A new instance containing only the rows where the expression evaluates to True.
         """
         # 1. Get contexts for numexpr
@@ -424,10 +424,10 @@ class ExpressionsMixin(HostBase):
         for col_name, quantity in all_cols.items():
             # Apply the mask to get the subset of data
             new_values = quantity.value[mask]
-            new_data_cols[col_name] = DataColumnV2(new_values, quantity.unit)
+            new_data_cols[col_name] = DataColumn(new_values, quantity.unit)
 
-        # 5. Build new SpectrumDataV2
-        new_data_core = SpectrumDataV2(
+        # 5. Build new SpectrumData
+        new_data_core = SpectrumData(
             x=new_data_cols.pop('x'),
             xmin=new_data_cols.pop('xmin'),
             xmax=new_data_cols.pop('xmax'),
@@ -438,7 +438,7 @@ class ExpressionsMixin(HostBase):
             z_em=self._data.z_em
         )
         
-        # 6. Return NEW SpectrumV2
+        # 6. Return NEW Spectrum
         new_history = self.history + [f"Split with expression: {expression}"]
         return self.__class__(data=new_data_core, history=new_history)
     
@@ -458,7 +458,7 @@ class ExpressionsMixin(HostBase):
 
         Returns
         -------
-        SpectrumV2
+        Spectrum
             A new instance with the updated mask.
         """
         col = self.get_column(mask_col)

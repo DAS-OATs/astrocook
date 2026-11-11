@@ -14,9 +14,9 @@ import pytest
 
 import astropy.units as au
 
-from astrocook.session.session import SessionV2
-from astrocook.core.spectrum import SpectrumV2
-from astrocook.core.structures import DataColumnV2, HistoryLogV2, SpectrumDataV2
+from astrocook.session.session import Session
+from astrocook.core.spectrum import Spectrum
+from astrocook.core.structures import DataColumn, HistoryLog, SpectrumData
 from astrocook.recipes.params import (InvalidParameter, convert,
                                       resolve_params)
 from astrocook.recipes.registry import ParamSpec, get_recipe
@@ -31,11 +31,11 @@ def _session():
     cont = (x / 420.0) ** -1.5
     y = cont * (1 - 0.5 * np.exp(-0.5 * ((x - 420.0) / 0.05) ** 2))
     y = y + 0.02 * cont * rng.standard_normal(len(x))
-    spec = SpectrumV2(SpectrumDataV2(
-        x=DataColumnV2(x, au.nm), xmin=DataColumnV2(x - 0.005, au.nm),
-        xmax=DataColumnV2(x + 0.005, au.nm), y=DataColumnV2(y, FLUX),
-        dy=DataColumnV2(0.02 * cont, FLUX), aux_cols={}, z_em=2.5))
-    return SessionV2(name="main", gui=None, spec=spec)
+    spec = Spectrum(SpectrumData(
+        x=DataColumn(x, au.nm), xmin=DataColumn(x - 0.005, au.nm),
+        xmax=DataColumn(x + 0.005, au.nm), y=DataColumn(y, FLUX),
+        dy=DataColumn(0.02 * cont, FLUX), aux_cols={}, z_em=2.5))
+    return Session(name="main", gui=None, spec=spec)
 
 
 def _p(type_, **kw):
@@ -130,9 +130,9 @@ def test_every_recipe_is_typed():
     """Every recipe of the registry converts its parameters (phase 6-bis,
     PR 2a-2c): a new recipe must be decorated with ``typed_recipe``."""
     from astrocook.recipes.registry import all_recipes
-    from astrocook.session.session import SessionV2
+    from astrocook.session.session import Session
     for spec in all_recipes():
-        method = getattr(type(getattr(SessionV2("s", None), spec.category)), spec.name)
+        method = getattr(type(getattr(Session("s", None), spec.category)), spec.name)
         assert getattr(method, "typed_recipe", False), f"{spec.category}.{spec.name}"
 
 
@@ -192,7 +192,7 @@ def test_the_gui_logs_the_values_used():
     from astrocook.gui.main_recipes import _add_log_entry
 
     class History:
-        log_manager = HistoryLogV2()
+        log_manager = HistoryLog()
 
     history = History()
     _add_log_entry(history, "smooth", {"sigma_kms": "50.0"})
@@ -210,7 +210,7 @@ def test_a_log_of_strings_still_replays(tmp_path):
     read back and run again."""
     from astrocook.session.session import load_session_from_file
     session = _session()
-    log = HistoryLogV2()
+    log = HistoryLog()
     log.add_entry("smooth", {"sigma_kms": "50.0"})
     log.add_entry("rebin", {"xstart": "None", "xend": "None", "dx": "20.0",
                             "xunit": "km/s", "kappa": "5.0", "filling": "nan"})

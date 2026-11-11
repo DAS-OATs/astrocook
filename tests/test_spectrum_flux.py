@@ -1,8 +1,8 @@
-"""The flux methods of SpectrumV2: scaling, running standard deviation,
+"""The flux methods of Spectrum: scaling, running standard deviation,
 smoothing, calibration.
 
 Characterization tests written before the methods were moved to their own
-module (phase 5, split of SpectrumV2): the paths that the recipe tests
+module (phase 5, split of Spectrum): the paths that the recipe tests
 (``test_recipes_edit_flux.py``) and the snapshots do not reach.
 """
 import logging
@@ -12,9 +12,9 @@ import numpy as np
 import pytest
 
 from astrocook.core.photometry import generate_calibration_curve
-from astrocook.core.spectrum import SpectrumV2
+from astrocook.core.spectrum import Spectrum
 from astrocook.core.spectrum_operations import running_std, smooth_spectrum
-from astrocook.core.structures import DataColumnV2, SpectrumDataV2
+from astrocook.core.structures import DataColumn, SpectrumData
 
 FLUX = au.erg / au.cm**2 / au.s / au.nm
 FLAM = au.erg / (au.cm**2 * au.s * au.Angstrom)
@@ -27,18 +27,18 @@ def spec():
     x = np.linspace(400.0, 700.0, 3001)
     y = 1e-16 * (2.0 + 0.001 * (x - 400.0)) + 1e-18 * rng.normal(size=x.size)
     aux = {
-        "cont": DataColumnV2(1e-16 * (2.0 + 0.001 * (x - 400.0)), FLUX, "Continuum"),
-        "model": DataColumnV2(1e-16 * np.full(x.size, 1.9), FLUX, "Model"),
-        "cont_pl": DataColumnV2(1e-16 * np.full(x.size, 2.1), FLUX, "Power law"),
-        "telluric_model": DataColumnV2(np.linspace(0.9, 1.0, x.size),
+        "cont": DataColumn(1e-16 * (2.0 + 0.001 * (x - 400.0)), FLUX, "Continuum"),
+        "model": DataColumn(1e-16 * np.full(x.size, 1.9), FLUX, "Model"),
+        "cont_pl": DataColumn(1e-16 * np.full(x.size, 2.1), FLUX, "Power law"),
+        "telluric_model": DataColumn(np.linspace(0.9, 1.0, x.size),
                                        au.dimensionless_unscaled, "Transmission"),
-        "flag": DataColumnV2(np.zeros(x.size, dtype=bool), au.dimensionless_unscaled),
+        "flag": DataColumn(np.zeros(x.size, dtype=bool), au.dimensionless_unscaled),
     }
-    data = SpectrumDataV2(
-        x=DataColumnV2(x, au.nm), xmin=DataColumnV2(x - 0.05, au.nm),
-        xmax=DataColumnV2(x + 0.05, au.nm), y=DataColumnV2(y, FLUX),
-        dy=DataColumnV2(np.full(x.size, 1e-18), FLUX), aux_cols=aux, z_em=3.0)
-    return SpectrumV2(data, history=["start"])
+    data = SpectrumData(
+        x=DataColumn(x, au.nm), xmin=DataColumn(x - 0.05, au.nm),
+        xmax=DataColumn(x + 0.05, au.nm), y=DataColumn(y, FLUX),
+        dy=DataColumn(np.full(x.size, 1e-18), FLUX), aux_cols=aux, z_em=3.0)
+    return Spectrum(data, history=["start"])
 
 
 def _col(spec, name):
@@ -156,7 +156,7 @@ def test_calibrate(spec):
 
 def test_calibrate_leaves_the_transmission(spec):
     # The telluric model is a dimensionless transmission (see
-    # SpectrumV2.norm): it was multiplied by the calibration curve and given
+    # Spectrum.norm): it was multiplied by the calibration curve and given
     # a flux unit (findings register F69)
     new = spec.calibrate(MAGS)
     np.testing.assert_array_equal(_col(new, "telluric_model").value,
@@ -177,7 +177,7 @@ def test_flux_columns_with_a_flux_without_unit(spec):
         aux[name] = type(aux[name])(aux[name].values, au.dimensionless_unscaled)
     aux["resol"] = type(aux["cont"])(np.full(spec.x.size, 50000.0),
                                      au.dimensionless_unscaled)
-    nounit = SpectrumV2(type(data)(
+    nounit = Spectrum(type(data)(
         x=data.x, xmin=data.xmin, xmax=data.xmax,
         y=type(data.y)(data.y.values, au.dimensionless_unscaled),
         dy=type(data.dy)(data.dy.values, au.dimensionless_unscaled),

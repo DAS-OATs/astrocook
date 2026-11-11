@@ -1,8 +1,8 @@
-"""Flux methods of :class:`~astrocook.core.spectrum.SpectrumV2`: scaling,
+"""Flux methods of :class:`~astrocook.core.spectrum.Spectrum`: scaling,
 running standard deviation, smoothing, calibration.
 
 Part of the split of ``spectrum.py`` into thematic modules (phase 5): the
-methods are defined here, in a mixin class that ``SpectrumV2`` inherits, and
+methods are defined here, in a mixin class that ``Spectrum`` inherits, and
 are used as before (``spec.smooth(...)``).
 """
 import astropy.units as au
@@ -14,7 +14,7 @@ from typing import Self, Union
 
 from astrocook.core.photometry import generate_calibration_curve
 from astrocook.core.spectrum_operations import running_std, smooth_spectrum
-from astrocook.core.structures import DataColumnV2, SpectrumDataV2
+from astrocook.core.structures import DataColumn, SpectrumData
 from astrocook.core._spectrum_host import HostBase
 
 logger = logging.getLogger(__name__)
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 # Flux columns: scaled and calibrated as the flux, and smoothed.
 FLUX_AUX_COLUMNS = ('cont', 'model', 'cont_pl')
 # Transmissions (dimensionless, multiplied by the continuum in
-# SpectrumV2.norm): smoothed, as the flux they apply to, but never scaled.
+# Spectrum.norm): smoothed, as the flux they apply to, but never scaled.
 TRANSMISSION_AUX_COLUMNS = ('telluric_model',)
 
 
@@ -34,7 +34,7 @@ class FluxMixin(HostBase):
     """Operations on the flux: scaling, running standard deviation,
     smoothing (of the spectrum or of one column), calibration on magnitudes.
 
-    Mixed into ``SpectrumV2``, whose data and methods it uses: ``_data``,
+    Mixed into ``Spectrum``, whose data and methods it uses: ``_data``,
     ``history``, ``x``, ``y``, ``dy``, ``t`` and ``_renormalize_model``. The
     results are new instances of the class (``self.__class__``).
     """
@@ -51,13 +51,13 @@ class FluxMixin(HostBase):
 
         Returns
         -------
-        SpectrumV2
+        Spectrum
             A new instance with scaled flux.
         """
         # 1. Scale core columns
         # Handle cases where scale_factor is scalar or array
-        new_y = DataColumnV2(self.y.value * scale_factor, self.y.unit)
-        new_dy = DataColumnV2(self.dy.value * scale_factor, self.dy.unit)
+        new_y = DataColumn(self.y.value * scale_factor, self.y.unit)
+        new_dy = DataColumn(self.dy.value * scale_factor, self.dy.unit)
 
         # 2. Scale flux-like auxiliary columns
         new_aux_cols = deepcopy(self._data.aux_cols)
@@ -65,7 +65,7 @@ class FluxMixin(HostBase):
             if name in new_aux_cols:
                 col = new_aux_cols[name]
                 # Ensure we propagate description and unit
-                new_aux_cols[name] = DataColumnV2(
+                new_aux_cols[name] = DataColumn(
                     col.values * scale_factor, 
                     col.unit, 
                     col.description
@@ -79,7 +79,7 @@ class FluxMixin(HostBase):
             aux_cols=new_aux_cols
         )
         
-        # 4. Return new SpectrumV2
+        # 4. Return new Spectrum
         # (Optional: summarize scalar or mean of array for history)
         if np.size(scale_factor) == 1:
             info = f"{scale_factor:.3f}"
@@ -107,7 +107,7 @@ class FluxMixin(HostBase):
 
         Returns
         -------
-        SpectrumV2
+        Spectrum
             A new instance with the added RMS column.
         """
         
@@ -130,19 +130,19 @@ class FluxMixin(HostBase):
             h=h_window
         )
         
-        new_std_col = DataColumnV2(
+        new_std_col = DataColumn(
             values=rms_values,
             unit=input_col_data.unit, # RMS has same unit as the input
             description=f"Running StdDev (window={window_pix}pix) of {input_col}"
         )
 
-        # 4. Create new SpectrumDataV2 by adding the new column
+        # 4. Create new SpectrumData by adding the new column
         new_aux_cols = deepcopy(self._data.aux_cols)
         new_aux_cols[output_col] = new_std_col
         
         new_data = dataclasses.replace(self._data, aux_cols=new_aux_cols)
         
-        # 5. Return new SpectrumV2
+        # 5. Return new Spectrum
         new_history = self.history + [f"Calculated running RMS (window={window_pix}pix) on {input_col}"]
         return self.__class__(data=new_data, history=new_history)
 
@@ -158,7 +158,7 @@ class FluxMixin(HostBase):
 
         Returns
         -------
-        SpectrumV2
+        Spectrum
             A new instance with smoothed columns.
         """
         
@@ -169,7 +169,7 @@ class FluxMixin(HostBase):
             sigma_kms=sigma_kms,
             z_ref=self._data.z_em
         )
-        new_y_col = DataColumnV2(new_y_values, self._data.y.unit, "Smoothed Flux")
+        new_y_col = DataColumn(new_y_values, self._data.y.unit, "Smoothed Flux")
 
         new_dy_values = smooth_spectrum(
             x=self._data.x.quantity,
@@ -177,7 +177,7 @@ class FluxMixin(HostBase):
             sigma_kms=sigma_kms,
             z_ref=self._data.z_em
         )
-        new_dy_col = DataColumnV2(new_dy_values, self._data.dy.unit, "Smoothed Error")
+        new_dy_col = DataColumn(new_dy_values, self._data.dy.unit, "Smoothed Error")
 
         # 2. Smooth flux-like auxiliary columns
         new_aux_cols = deepcopy(self._data.aux_cols)
@@ -194,7 +194,7 @@ class FluxMixin(HostBase):
                             self._data.z_em
                         )
                         
-                        new_aux_cols[col_name] = DataColumnV2(
+                        new_aux_cols[col_name] = DataColumn(
                             new_vals, old_col.unit, old_col.description
                         )
                 except (ValueError, TypeError) as e:
@@ -203,7 +203,7 @@ class FluxMixin(HostBase):
         
         # --- RE-NORMALIZATION BLOCK HAS BEEN REMOVED ---
 
-        # 3. Create new SpectrumDataV2
+        # 3. Create new SpectrumData
         new_data = dataclasses.replace(
             self._data, 
             y=new_y_col, 
@@ -211,7 +211,7 @@ class FluxMixin(HostBase):
             aux_cols=new_aux_cols
         )
         
-        # 4. Return new SpectrumV2
+        # 4. Return new Spectrum
         new_history = self.history + [f"Smoothed spectrum (sigma={sigma_kms} km/s)"]
         return self.__class__(data=new_data, history=new_history)
 
@@ -230,7 +230,7 @@ class FluxMixin(HostBase):
 
         Returns
         -------
-        SpectrumV2
+        Spectrum
             A new instance with the smoothed column.
         """
         all_cols = self.t._data_dict
@@ -253,13 +253,13 @@ class FluxMixin(HostBase):
             z_ref=self._data.z_em
         )
         
-        new_data_col = DataColumnV2(
+        new_data_col = DataColumn(
             values=new_values,
             unit=old_col_data.unit,
             description=f"Smoothed {target_col}"
         )
         
-        # 4. Create new SpectrumDataV2 using the immutable pattern
+        # 4. Create new SpectrumData using the immutable pattern
         core_cols = {
             'x': self._data.x, 'xmin': self._data.xmin, 'xmax': self._data.xmax,
             'y': self._data.y, 'dy': self._data.dy
@@ -288,7 +288,7 @@ class FluxMixin(HostBase):
         # --- END ADD ---
 
         # 7. Create the new data core
-        new_data_core = SpectrumDataV2(
+        new_data_core = SpectrumData(
             x=core_cols['x'], xmin=core_cols['xmin'], xmax=core_cols['xmax'],
             y=core_cols['y'], dy=core_cols['dy'],
             aux_cols=aux_cols,
@@ -296,7 +296,7 @@ class FluxMixin(HostBase):
             z_em=self._data.z_em
         )
 
-        # 8. Return a NEW SpectrumV2 instance
+        # 8. Return a NEW Spectrum instance
         new_history = self.history + [f"Smoothed column: {target_col} (sigma={sigma_kms} km/s)"]
         return self.__class__(data=new_data_core, history=new_history)
 
@@ -311,7 +311,7 @@ class FluxMixin(HostBase):
 
         Returns
         -------
-        SpectrumV2
+        Spectrum
             A new instance with calibrated flux.
         """
         # 1. Get the pure numerical correction curve
@@ -323,8 +323,8 @@ class FluxMixin(HostBase):
         new_unit = au.erg / (au.cm**2 * au.s * au.Angstrom)
 
         # 3. Helper to apply curve and unit to a column
-        def apply_corr(col: DataColumnV2) -> DataColumnV2:
-            return DataColumnV2(col.values * correction_curve, new_unit, col.description)
+        def apply_corr(col: DataColumn) -> DataColumn:
+            return DataColumn(col.values * correction_curve, new_unit, col.description)
 
         # 4. Apply to all relevant columns
         new_y = apply_corr(self._data.y)

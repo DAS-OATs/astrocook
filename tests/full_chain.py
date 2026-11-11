@@ -54,23 +54,23 @@ def seed_uuids(seed: int = 0) -> None:
 def j0103_session():
     """Raw J0103-1305 spectrum in the chain window; z_em and R are set by
     the chain itself, as a user would do."""
-    from astrocook.session.session import SessionV2
-    from astrocook.core.spectrum import SpectrumV2
-    from astrocook.core.structures import DataColumnV2, SpectrumDataV2
+    from astrocook.session.session import Session
+    from astrocook.core.spectrum import Spectrum
+    from astrocook.core.structures import DataColumn, SpectrumData
 
-    loaded = SessionV2.open_new(str(J0103_SESSION), "J0103-1305", None, "auto")
+    loaded = Session.open_new(str(J0103_SESSION), "J0103-1305", None, "auto")
     spec = loaded.spec
     x = spec.x.value
     sel = (x > J0103_CHAIN_WINDOW_NM[0]) & (x < J0103_CHAIN_WINDOW_NM[1])
 
     def col(q):
-        return DataColumnV2(q.value[sel], q.unit)
+        return DataColumn(q.value[sel], q.unit)
 
-    data = SpectrumDataV2(
+    data = SpectrumData(
         x=col(spec.x), xmin=col(spec.xmin), xmax=col(spec.xmax),
         y=col(spec.y), dy=col(spec.dy),
         aux_cols={"resol": col(spec.get_column("resol"))})
-    session = SessionV2("J0103-1305", None, spec=SpectrumV2(data))
+    session = Session("J0103-1305", None, spec=Spectrum(data))
     return session.edit.set_properties(z_em=str(J0103_Z_EM),
                                        resol=str(J0103_RESOL))
 
@@ -100,9 +100,9 @@ def mock_truth():
 
 def mock_session():
     """Mock spectrum; z_em and R are already set by the generator."""
-    from astrocook.session.session import SessionV2
+    from astrocook.session.session import Session
     from astrocook.mocks import generate
-    return SessionV2("mock", None, spec=generate(mock_truth()))
+    return Session("mock", None, spec=generate(mock_truth()))
 
 
 def run_chain(session):

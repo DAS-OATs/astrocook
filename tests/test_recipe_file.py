@@ -3,22 +3,22 @@ import numpy as np
 import astropy.units as au
 from astropy.io import ascii
 
-from astrocook.session.session import SessionV2
-from astrocook.core.spectrum import SpectrumV2
-from astrocook.core.structures import DataColumnV2, SpectrumDataV2
+from astrocook.session.session import Session
+from astrocook.core.spectrum import Spectrum
+from astrocook.core.structures import DataColumn, SpectrumData
 
 
 def _make_session(n=20):
     x = np.linspace(400.0, 410.0, n)
     y = np.linspace(1.0, 2.0, n)
-    data = SpectrumDataV2(
-        x=DataColumnV2(x, au.nm),
-        xmin=DataColumnV2(x - 0.25, au.nm),
-        xmax=DataColumnV2(x + 0.25, au.nm),
-        y=DataColumnV2(y, au.dimensionless_unscaled),
-        dy=DataColumnV2(0.1 * y, au.dimensionless_unscaled),
+    data = SpectrumData(
+        x=DataColumn(x, au.nm),
+        xmin=DataColumn(x - 0.25, au.nm),
+        xmax=DataColumn(x + 0.25, au.nm),
+        y=DataColumn(y, au.dimensionless_unscaled),
+        dy=DataColumn(0.1 * y, au.dimensionless_unscaled),
     )
-    return SessionV2(name="export_test", gui=None, spec=SpectrumV2(data))
+    return Session(name="export_test", gui=None, spec=Spectrum(data))
 
 
 def test_export_ascii_writes_spectrum_columns(tmp_path):

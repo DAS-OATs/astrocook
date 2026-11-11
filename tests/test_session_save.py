@@ -9,23 +9,23 @@ import numpy as np
 import astropy.units as au
 import pytest
 
-from astrocook.session.session import SessionV2, load_session_from_file
-from astrocook.core.spectrum import SpectrumV2
-from astrocook.core.structures import DataColumnV2, HistoryLogV2, SpectrumDataV2
+from astrocook.session.session import Session, load_session_from_file
+from astrocook.core.spectrum import Spectrum
+from astrocook.core.structures import DataColumn, HistoryLog, SpectrumData
 
 
 def _make_session():
     x = np.linspace(400.0, 410.0, 50)
     one = np.ones_like(x)
-    data = SpectrumDataV2(
-        x=DataColumnV2(x, au.nm),
-        xmin=DataColumnV2(x - 0.1, au.nm),
-        xmax=DataColumnV2(x + 0.1, au.nm),
-        y=DataColumnV2(one, au.dimensionless_unscaled),
-        dy=DataColumnV2(0.1 * one, au.dimensionless_unscaled),
+    data = SpectrumData(
+        x=DataColumn(x, au.nm),
+        xmin=DataColumn(x - 0.1, au.nm),
+        xmax=DataColumn(x + 0.1, au.nm),
+        y=DataColumn(one, au.dimensionless_unscaled),
+        dy=DataColumn(0.1 * one, au.dimensionless_unscaled),
     )
-    session = SessionV2(name="save_test", gui=None, spec=SpectrumV2(data))
-    log = HistoryLogV2()
+    session = Session(name="save_test", gui=None, spec=Spectrum(data))
+    log = HistoryLog()
     log.add_entry("smooth", {"std": 10.0})
     session.log_manager = log
     return session

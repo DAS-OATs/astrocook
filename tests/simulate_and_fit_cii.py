@@ -13,11 +13,11 @@ from scipy.ndimage import gaussian_filter1d
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import astrocook # Import package to locate run_astrocook.py
-from astrocook.session.session import SessionV2
-from astrocook.core.structures import DataColumnV2
+from astrocook.session.session import Session
+from astrocook.core.structures import DataColumn
 from astrocook.core.atomic_data import STANDARD_MULTIPLETS, ATOM_DATA
-from astrocook.fitting.voigt_fitter import VoigtFitterV2
-from astrocook.core.system_list import SystemListV2
+from astrocook.fitting.voigt_fitter import VoigtFitter
+from astrocook.core.system_list import SystemList
 
 # --- CONFIGURATION ---
 TARGET_ION = 'CII_1334'
@@ -51,7 +51,7 @@ def patched_optimize_hierarchy(self, spec, uuid_seed,
 
     def fit_and_evaluate(systs_obj, target_uuids):
         with systs_obj.fitting_context(target_uuids, group_depth=group_depth):
-            fitter = VoigtFitterV2(spec, systs_obj)
+            fitter = VoigtFitter(spec, systs_obj)
             new_systs, _, res = fitter.fit(max_nfev=3000, z_window_kms=z_window_kms, verbose=0)
             
             if new_systs.constraint_model:
@@ -59,7 +59,7 @@ def patched_optimize_hierarchy(self, spec, uuid_seed,
             
             if not res: return float('inf'), systs_obj 
 
-            eval_fitter = VoigtFitterV2(spec, new_systs)
+            eval_fitter = VoigtFitter(spec, new_systs)
             _, model_flux = eval_fitter.compute_model_flux()
             
             y_win = spec.y.value[static_mask]
@@ -78,7 +78,7 @@ def patched_optimize_hierarchy(self, spec, uuid_seed,
     trials_without_imp = 0
     
     for i in range(max_components):
-        eval_fitter = VoigtFitterV2(spec, best_systs)
+        eval_fitter = VoigtFitter(spec, best_systs)
         _, model_phys = eval_fitter.compute_model_flux()
         
         with np.errstate(divide='ignore', invalid='ignore'):
@@ -134,7 +134,7 @@ def patched_optimize_hierarchy(self, spec, uuid_seed,
     
     return best_systs
 
-SystemListV2.optimize_hierarchy = patched_optimize_hierarchy
+SystemList.optimize_hierarchy = patched_optimize_hierarchy
 
 # --- PATCH 3: FIX VOIGT FITTER EDGE CRASH ---
 def patched_find_feature_limits(self, z_center: float, trans_name: str, z_window_kms: float = 150.0):
@@ -203,7 +203,7 @@ def patched_find_feature_limits(self, z_center: float, trans_name: str, z_window
     return self._x_ang[idx_min], self._x_ang[idx_max]
 
 # Apply the patch
-VoigtFitterV2._find_feature_limits = patched_find_feature_limits
+VoigtFitter._find_feature_limits = patched_find_feature_limits
 
 # --- HELPER FUNCTIONS ---
 class HeadlessContext:
@@ -234,7 +234,7 @@ def refine_z_seed(session, z_guess, window_kms):
 
 def merge_nearby_components(systs, velocity_threshold=50.0):
     """Merges components closer than velocity_threshold (km/s)."""
-    from astrocook.core.system_list import SystemListV2
+    from astrocook.core.system_list import SystemList
     components = systs.components
     if not components: return systs
 
@@ -274,7 +274,7 @@ def merge_nearby_components(systs, velocity_threshold=50.0):
     for i, c in enumerate(new_components):
         object.__setattr__(c, 'id', i+1)
             
-    return SystemListV2(dataclasses.replace(systs._data, components=new_components))
+    return SystemList(dataclasses.replace(systs._data, components=new_components))
 
 def simulate_observation(session, snr, fwhm_kms, z_em_val):
     logging.info(f"Simulating Observation: SNR={snr}, FWHM={fwhm_kms} km/s")
@@ -297,7 +297,7 @@ def simulate_observation(session, snr, fwhm_kms, z_em_val):
     resol_R = c_kms / fwhm_kms
     
     resol_array = np.full(len(flux), resol_R)
-    col_resol = DataColumnV2(resol_array, au.dimensionless_unscaled, description="Resolving Power R")
+    col_resol = DataColumn(resol_array, au.dimensionless_unscaled, description="Resolving Power R")
     
     new_aux = new_spec._data.aux_cols.copy()
     new_aux['resol'] = col_resol
@@ -317,7 +317,7 @@ def process_mock(file_path, output_dir, snr, fwhm_kms, do_merge):
 
     context = HeadlessContext()
     # Load raw file
-    sess = SessionV2.open_new(file_path, "spec", context, "ascii_resvel_header")
+    sess = Session.open_new(file_path, "spec", context, "ascii_resvel_header")
     if sess is None: return None
 
     # --- DYNAMIC Z_SEED ---

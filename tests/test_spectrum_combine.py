@@ -1,8 +1,8 @@
-"""The methods of SpectrumV2 that combine or regrid spectra: stitch, rebin,
+"""The methods of Spectrum that combine or regrid spectra: stitch, rebin,
 coadd, resampling.
 
 Characterization tests written before the methods were moved to their own
-module (phase 5, split of SpectrumV2): the paths that the recipe tests and
+module (phase 5, split of Spectrum): the paths that the recipe tests and
 the snapshots do not reach.
 """
 import logging
@@ -11,8 +11,8 @@ import astropy.units as au
 import numpy as np
 import pytest
 
-from astrocook.core.spectrum import SpectrumV2
-from astrocook.core.structures import DataColumnV2, SpectrumDataV2
+from astrocook.core.spectrum import Spectrum
+from astrocook.core.structures import DataColumn, SpectrumData
 
 FLUX = au.erg / au.cm**2 / au.s / au.nm
 
@@ -20,19 +20,19 @@ FLUX = au.erg / au.cm**2 / au.s / au.nm
 def _spec(lo, hi, n=201, aux=None, meta=None):
     x = np.linspace(lo, hi, n)
     half = 0.5 * (x[1] - x[0])
-    data = SpectrumDataV2(
-        x=DataColumnV2(x, au.nm), xmin=DataColumnV2(x - half, au.nm),
-        xmax=DataColumnV2(x + half, au.nm),
-        y=DataColumnV2(1.0 + 0.01 * (x - lo), FLUX),
-        dy=DataColumnV2(np.full(n, 0.05), FLUX),
+    data = SpectrumData(
+        x=DataColumn(x, au.nm), xmin=DataColumn(x - half, au.nm),
+        xmax=DataColumn(x + half, au.nm),
+        y=DataColumn(1.0 + 0.01 * (x - lo), FLUX),
+        dy=DataColumn(np.full(n, 0.05), FLUX),
         aux_cols=aux(x) if aux else {}, meta=meta or {}, z_em=3.0)
-    return SpectrumV2(data, history=["start"])
+    return Spectrum(data, history=["start"])
 
 
 # --- stitch -----------------------------------------------------------------------------
 
 def test_stitch_pads_missing_columns():
-    a = _spec(500.0, 510.0, aux=lambda x: {"cont": DataColumnV2(np.ones(x.size), FLUX)})
+    a = _spec(500.0, 510.0, aux=lambda x: {"cont": DataColumn(np.ones(x.size), FLUX)})
     b = _spec(490.0, 499.0)
     new = a.stitch([b])
     assert np.all(np.diff(new.x.value) > 0)  # sorted by default
@@ -61,8 +61,8 @@ def test_rebin_drops_the_masks(caplog):
     # A boolean mask (e.g. abs_mask) is not interpolated: dropped, with a
     # warning; the numerical columns are kept
     spec = _spec(500.0, 510.0, aux=lambda x: {
-        "cont": DataColumnV2(np.ones(x.size), FLUX),
-        "abs_mask": DataColumnV2(x > 505.0, au.dimensionless_unscaled),
+        "cont": DataColumn(np.ones(x.size), FLUX),
+        "abs_mask": DataColumn(x > 505.0, au.dimensionless_unscaled),
     })
     with caplog.at_level(logging.WARNING):
         new = spec.rebin(None, None, 0.1 * au.nm, None, np.nan)
@@ -77,7 +77,7 @@ def test_rebin_drops_the_masks(caplog):
 
 def test_coadd_without_resolution_everywhere(caplog):
     a = _spec(500.0, 510.0, aux=lambda x: {
-        "resol": DataColumnV2(np.full(x.size, 45000.0), au.dimensionless_unscaled)},
+        "resol": DataColumn(np.full(x.size, 45000.0), au.dimensionless_unscaled)},
         meta={"plot_style": "step"})
     b = _spec(505.0, 515.0)
     with caplog.at_level(logging.WARNING):
@@ -91,8 +91,8 @@ def test_coadd_without_resolution_everywhere(caplog):
 
 def test_resample_drops_the_masks(caplog):
     spec = _spec(500.0, 510.0, aux=lambda x: {
-        "cont": DataColumnV2(np.ones(x.size), FLUX),
-        "abs_mask": DataColumnV2(x > 505.0, au.dimensionless_unscaled),
+        "cont": DataColumn(np.ones(x.size), FLUX),
+        "abs_mask": DataColumn(x > 505.0, au.dimensionless_unscaled),
     })
     grid = _spec(502.0, 508.0, n=61)
     with caplog.at_level(logging.WARNING):
@@ -113,8 +113,8 @@ def test_resampled_column():
 
 def test_resampled_column_errors():
     spec = _spec(500.0, 510.0, aux=lambda x: {
-        "abs_mask": DataColumnV2(x > 505.0, au.dimensionless_unscaled)})
-    # The message once referred to self.name, which SpectrumV2 does not
+        "abs_mask": DataColumn(x > 505.0, au.dimensionless_unscaled)})
+    # The message once referred to self.name, which Spectrum does not
     # have: AttributeError instead of ValueError (findings register F71)
     with pytest.raises(ValueError, match="'missing' not found"):
         spec.get_resampled_column("missing", np.array([505.0]))

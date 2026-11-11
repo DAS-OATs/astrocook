@@ -7,7 +7,7 @@ import subprocess
 # Ensure we can import astrocook
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from astrocook.session.session import SessionV2
+from astrocook.session.session import Session
 
 # --- CONFIGURATION ---
 SPECIES_CONFIG = {
@@ -62,7 +62,7 @@ def run_sightline_pipeline(data_dir: str, output_dir: str, los_id: str,
         if not os.path.exists(path):
             logging.error(f"File not found: {path}")
             return None
-        sess = SessionV2.open_new(path, key, context, "ascii_resvel_header")
+        sess = Session.open_new(path, key, context, "ascii_resvel_header")
         if sess == 0: raise RuntimeError(f"Failed to load {fname}")
         sessions[key] = sess
 

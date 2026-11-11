@@ -200,7 +200,7 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
             # logging.debug("on_motion: plot_widget or main_window invalid.")
             return
 
-        main_window = self.plot_widget.main_window # type: MainWindowV2
+        main_window = self.plot_widget.main_window # type: MainWindow
 
         # Update Selection Span while dragging
         if (self.plot_widget and self.plot_widget._is_selecting_region and

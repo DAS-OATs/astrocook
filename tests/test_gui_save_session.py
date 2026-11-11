@@ -6,31 +6,31 @@ import astropy.units as au
 import pytest
 from PySide6.QtWidgets import QFileDialog, QMessageBox
 
-from astrocook.session.session import SessionV2
+from astrocook.session.session import Session
 from astrocook.session.history import SessionHistory
-from astrocook.core.spectrum import SpectrumV2
-from astrocook.core.structures import DataColumnV2, HistoryLogV2, SpectrumDataV2
-from astrocook.gui.main_window import MainWindowV2
+from astrocook.core.spectrum import Spectrum
+from astrocook.core.structures import DataColumn, HistoryLog, SpectrumData
+from astrocook.gui.main_window import MainWindow
 
 
 @pytest.fixture
 def window_with_v2_session(qtbot, monkeypatch, tmp_path):
     # Keep the settings of the test run away from the user's ones
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
-    window = MainWindowV2(None, None)
+    window = MainWindow(None, None)
     qtbot.addWidget(window)
 
     x = np.linspace(400.0, 410.0, 50)
     one = np.ones_like(x)
-    data = SpectrumDataV2(
-        x=DataColumnV2(x, au.nm),
-        xmin=DataColumnV2(x - 0.1, au.nm),
-        xmax=DataColumnV2(x + 0.1, au.nm),
-        y=DataColumnV2(one, au.dimensionless_unscaled),
-        dy=DataColumnV2(0.1 * one, au.dimensionless_unscaled),
+    data = SpectrumData(
+        x=DataColumn(x, au.nm),
+        xmin=DataColumn(x - 0.1, au.nm),
+        xmax=DataColumn(x + 0.1, au.nm),
+        y=DataColumn(one, au.dimensionless_unscaled),
+        dy=DataColumn(0.1 * one, au.dimensionless_unscaled),
     )
-    session = SessionV2(name="gui_save_test", gui=None, spec=SpectrumV2(data))
-    history = SessionHistory(session, HistoryLogV2())
+    session = Session(name="gui_save_test", gui=None, spec=Spectrum(data))
+    history = SessionHistory(session, HistoryLog())
     return window, history
 
 
@@ -82,7 +82,7 @@ def test_loaded_log_is_kept_by_the_gui(window_with_v2_session, tmp_path):
     history.log_manager.add_entry("smooth", {"sigma_kms": "20"})
     path = tmp_path / "session.acs2"
     history.current_state.save(str(path))
-    loaded = SessionV2.open_new(str(path), "reloaded", None, "auto")
+    loaded = Session.open_new(str(path), "reloaded", None, "auto")
 
     window.add_session(loaded)
     log = window.active_history.log_manager

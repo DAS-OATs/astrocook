@@ -19,9 +19,9 @@ from astrocook.core.spectrum_operations import convert_axis_velocity
 
 # Use TYPE_CHECKING to avoid circular import errors at runtime
 if TYPE_CHECKING:
-    from astrocook.session.session import SessionV2
+    from astrocook.session.session import Session
     from astrocook.session.history import SessionHistory
-    from astrocook.core.spectrum import SpectrumV2
+    from astrocook.core.spectrum import Spectrum
 
 from .continuum_editor import ContinuumEditorMixin
 from .plot_canvas import MatplotlibCanvas
@@ -200,7 +200,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
     Refactored widget that contains the plot canvas, toolbar, and toggles.
     This replaces the content that was previously inside SpectrumViewerPySide.
     """
-    def __init__(self, initial_session_state: Optional['SessionV2'], main_window_ref):
+    def __init__(self, initial_session_state: Optional['Session'], main_window_ref):
         super().__init__()
         self.main_window = main_window_ref
 
@@ -274,14 +274,14 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
         self._highlight_artists: Any = None
         self._highlight_base = None
         self._drawing_highlight_base = False
-        self._plotted_state: Optional['SessionV2'] = None
+        self._plotted_state: Optional['Session'] = None
         # Any full draw may change what is under the highlights
         self.canvas.mpl_connect('draw_event', self._on_full_draw)
 
         # Draw initial plot (will read checkbox state from main window)
         self.plot_spectrum(session_state=initial_session_state, initial_draw=True)
 
-    def plot_spectrum(self, session_state: Optional['SessionV2'], initial_draw=False, force_autoscale: bool = False):
+    def plot_spectrum(self, session_state: Optional['Session'], initial_draw=False, force_autoscale: bool = False):
         """
         Retrieves data from the immutable V2 Session and plots it.
 
@@ -310,7 +310,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
             else: self.canvas.draw_idle()
             return # Exit early
 
-        spec = cast('SpectrumV2', session_state.spec)
+        spec = cast('Spectrum', session_state.spec)
         ax = self.canvas.axes
         # The Select tool needs λ (F73)
         self.toolbar.set_select_enabled(spec.x.unit.is_equivalent(au.nm))
@@ -393,7 +393,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
         # Get the unique ID of the immutable data core
         current_data_id = None
         if session_state and session_state.spec:
-            # The ._data object is the frozen SpectrumDataV2
+            # The ._data object is the frozen SpectrumData
             current_data_id = id(session_state.spec._data)
 
         # If data changed OR the SNR error col changed, invalidate caches
@@ -1250,8 +1250,8 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
             force_autoscale=False 
         )
     
-    def update_plot(self, new_session_state: Optional['SessionV2'], force_autoscale: bool = False):
-        """Called by MainWindowV2 to swap the immutable session object and redraw."""
+    def update_plot(self, new_session_state: Optional['Session'], force_autoscale: bool = False):
+        """Called by MainWindow to swap the immutable session object and redraw."""
         self.plot_spectrum(session_state=new_session_state, initial_draw=False, force_autoscale=force_autoscale)
 
     def set_highlights(self, uuids: set):

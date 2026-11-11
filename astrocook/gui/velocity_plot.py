@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
 )
 from typing import List, Optional
 
-from ..core.structures import ComponentDataV2
+from ..core.structures import ComponentData
 from ..core.atomic_data import STANDARD_MULTIPLETS, xem_d, ATOM_DATA, is_multiplet, series_lines
 from ..core.resolution import resolution_at
 from ..fitting.lsf import C_KMS as C_KMS_INSPECTOR, PixelLSF
@@ -306,7 +306,7 @@ class VelocityPlotWidget(QWidget):
         else:
             self._update_plot()
 
-    def plot_system(self, session, component: ComponentDataV2, selected_components: Optional[List[ComponentDataV2]] = None):
+    def plot_system(self, session, component: ComponentData, selected_components: Optional[List[ComponentData]] = None):
         is_new_component = (self._current_component != component)
         
         self._current_session = session

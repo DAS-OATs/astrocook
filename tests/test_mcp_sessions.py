@@ -13,7 +13,7 @@ pytest.importorskip("mcp")
 
 from mcp import Client  # noqa: E402
 
-from astrocook.session.session import SessionV2, load_session_from_file  # noqa: E402
+from astrocook.session.session import Session, load_session_from_file  # noqa: E402
 from astrocook.mcp_server.server import build_server  # noqa: E402
 from astrocook.mocks import MockComponent, MockTruth, generate  # noqa: E402
 
@@ -42,7 +42,7 @@ def mock_archive(tmp_path_factory):
                       lam_min_nm=440.0, lam_max_nm=460.0, dv_kms=2.5,
                       resol=45000.0, snr=50.0, z_em=2.0, seed=1)
     path = tmp_path_factory.mktemp("mock") / "mock.acs2"
-    SessionV2("mock", None, spec=generate(truth)).save(str(path))
+    Session("mock", None, spec=generate(truth)).save(str(path))
     return path
 
 

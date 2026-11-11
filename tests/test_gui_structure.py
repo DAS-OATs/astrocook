@@ -5,7 +5,7 @@ Only the classes of Astrocook are looked at, not the Qt bases.
 """
 import pytest
 
-from astrocook.gui.main_window import MainWindowV2
+from astrocook.gui.main_window import MainWindow
 from astrocook.gui.pyside_plot import SpectrumPlotWidget
 
 #: Methods of SpectrumPlotWidget before the split (staticMetaObject is
@@ -43,7 +43,7 @@ SPECTRUM_PLOT_WIDGET |= {'_update_swatches'}
 SPECTRUM_PLOT_WIDGET |= {'_update_top_room'}
 
 
-#: Methods and class attributes of MainWindowV2 before the split (without
+#: Methods and class attributes of MainWindow before the split (without
 #: the dead code removed in phase 5-bis, F77 and F80)
 MAIN_WINDOW = {
     '_RECIPES_REQUIRING_RESOL', '_RECIPES_REQUIRING_Z_EM', '_add_session_internal',
@@ -123,13 +123,13 @@ def _own_names(cls):
 
 
 @pytest.mark.parametrize("cls, interface", [(SpectrumPlotWidget, SPECTRUM_PLOT_WIDGET),
-                                            (MainWindowV2, MAIN_WINDOW)])
+                                            (MainWindow, MAIN_WINDOW)])
 def test_the_interface_is_unchanged(cls, interface):
     names = set().union(*(_own_names(c) for c in _astrocook_classes(cls)))
     assert names == interface
 
 
-@pytest.mark.parametrize("cls", [SpectrumPlotWidget, MainWindowV2])
+@pytest.mark.parametrize("cls", [SpectrumPlotWidget, MainWindow])
 def test_no_name_is_defined_twice(cls):
     seen = {}
     for c in _astrocook_classes(cls):

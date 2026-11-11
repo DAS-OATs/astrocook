@@ -32,16 +32,16 @@ sys.path.insert(0, str(ROOT / "tests"))
 
 
 def _systs(components):
-    from astrocook.core.structures import ComponentDataV2, SystemListDataV2
-    from astrocook.core.system_list import SystemListV2
-    comps = [ComponentDataV2(id=i + 1, z=c[1], dz=None, logN=c[2], dlogN=None,
+    from astrocook.core.structures import ComponentData, SystemListData
+    from astrocook.core.system_list import SystemList
+    comps = [ComponentData(id=i + 1, z=c[1], dz=None, logN=c[2], dlogN=None,
                              b=c[3], db=None, series=c[0])
              for i, c in enumerate(components)]
-    return SystemListV2(SystemListDataV2(components=comps))
+    return SystemList(SystemListData(components=comps))
 
 
 def bench_single(repeat):
-    from astrocook.fitting.voigt_fitter import VoigtFitterV2
+    from astrocook.fitting.voigt_fitter import VoigtFitter
     from astrocook.mocks import MockComponent, MockTruth, generate
     spec = generate(MockTruth(
         components=[MockComponent("Ly_a", 4.0, 13.8, 25.0)],
@@ -50,14 +50,14 @@ def bench_single(repeat):
     times = []
     for _ in range(repeat):
         t0 = time.perf_counter()
-        VoigtFitterV2(spec, _systs([("Ly_a", 4.0, 13.5, 20.0)])).fit(
+        VoigtFitter(spec, _systs([("Ly_a", 4.0, 13.5, 20.0)])).fit(
             max_nfev=2000, z_window_kms=20.0)
         times.append(time.perf_counter() - t0)
     return float(np.median(times))
 
 
 def bench_group(repeat):
-    from astrocook.fitting.voigt_fitter import VoigtFitterV2
+    from astrocook.fitting.voigt_fitter import VoigtFitter
     from astrocook.mocks import MockComponent, MockTruth, generate
     z0 = 3.0
     dz = 40.0 / 299792.458 * (1 + z0)
@@ -70,7 +70,7 @@ def bench_group(repeat):
     times = []
     for _ in range(repeat):
         t0 = time.perf_counter()
-        VoigtFitterV2(spec, _systs(guess)).fit(max_nfev=2000, z_window_kms=20.0)
+        VoigtFitter(spec, _systs(guess)).fit(max_nfev=2000, z_window_kms=20.0)
         times.append(time.perf_counter() - t0)
     return float(np.median(times))
 

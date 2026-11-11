@@ -15,14 +15,14 @@ from typing import Dict, List, Optional, TYPE_CHECKING
 # --- V2 Imports ---
 from .v1_archive import read_v1_spectrum, read_v1_system_list
 if TYPE_CHECKING:
-    from astrocook.session.session import SessionV2
+    from astrocook.session.session import Session
 from astrocook.core.structures import (
-    SessionMetadataV2, DataColumnV2, SpectrumDataV2, 
-    SystemListDataV2, ComponentDataV2,
-    HistoryLogV2
+    SessionMetadata, DataColumn, SpectrumData, 
+    SystemListData, ComponentData,
+    HistoryLog
 )
-from astrocook.core.spectrum import SpectrumV2 
-from astrocook.core.system_list import SystemListV2
+from astrocook.core.spectrum import Spectrum 
+from astrocook.core.system_list import SystemList
 
 logger = logging.getLogger(__name__)
 
@@ -79,10 +79,10 @@ def load_and_migrate_structure(archive_root, structure_name, gui_context, format
             # A raw file whose format has no V2 loader (the V1 loaders of
             # astrocook.legacy were the fallback before phase 3)
             raise ValueError(f"No loader for the file format '{format_name}'.")
-        return SpectrumV2(data=read_v1_spectrum(path_to_load))
+        return Spectrum(data=read_v1_spectrum(path_to_load))
 
     elif structure_name == 'systs':
-        if not os.path.exists(path_to_load): return SystemListV2(data=SystemListDataV2()) 
+        if not os.path.exists(path_to_load): return SystemList(data=SystemListData()) 
 
         if v2_metadata is not None:
             # [FIX] Removed try/except. Fail loudly if V2 fails.
@@ -95,20 +95,20 @@ def load_and_migrate_structure(archive_root, structure_name, gui_context, format
         # The custom multiplets of the components carry their transitions in
         # their names (atomic_data.series_lines): they were added to
         # STANDARD_MULTIPLETS here (F12, phase 6-bis PR 7)
-        return SystemListV2(data=migrated_data)
+        return SystemList(data=migrated_data)
 
     return None
 
 # ... (_v2_table_to_spectrum_data, load_spec_data_v2_from_archive, _parse_v2_metadata_constraints remain same) ...
-def _v2_table_to_spectrum_data(spec_table: Table) -> SpectrumDataV2:
+def _v2_table_to_spectrum_data(spec_table: Table) -> SpectrumData:
     t = spec_table
     meta = t.meta
     
-    x_col = DataColumnV2(t['x'].value, t['x'].unit)
-    y_col = DataColumnV2(t['y'].value, t['y'].unit)
-    dy_col = DataColumnV2(t['dy'].value, t['dy'].unit)
-    xmin_col = DataColumnV2(t['xmin'].value, t['xmin'].unit)
-    xmax_col = DataColumnV2(t['xmax'].value, t['xmax'].unit)
+    x_col = DataColumn(t['x'].value, t['x'].unit)
+    y_col = DataColumn(t['y'].value, t['y'].unit)
+    dy_col = DataColumn(t['dy'].value, t['dy'].unit)
+    xmin_col = DataColumn(t['xmin'].value, t['xmin'].unit)
+    xmax_col = DataColumn(t['xmax'].value, t['xmax'].unit)
     
     aux_cols = {}
     core_cols = ['x', 'y', 'dy', 'xmin', 'xmax']
@@ -116,29 +116,29 @@ def _v2_table_to_spectrum_data(spec_table: Table) -> SpectrumDataV2:
         if colname not in core_cols:
             col_data = t[colname]
             col_unit = col_data.unit if col_data.unit is not None else au.dimensionless_unscaled
-            aux_cols[colname] = DataColumnV2(col_data.value, col_unit, description=f"Auxiliary column: {colname}")
+            aux_cols[colname] = DataColumn(col_data.value, col_unit, description=f"Auxiliary column: {colname}")
             
     z_em = float(meta.pop('Z_EM', 0.0))
     
     # The resolution in the meta keys (resol_fwhm, RESOL) is moved into the
     # resol column when the spectrum is built (core/resolution.py, #526)
-    return SpectrumDataV2(
+    return SpectrumData(
         x=x_col, xmin=xmin_col, xmax=xmax_col, 
         y=y_col, dy=dy_col, 
         aux_cols=aux_cols, meta=meta, z_em=z_em
     )
 
-def load_spec_data_v2_from_archive(spec_fits_path: str) -> 'SpectrumV2':
+def load_spec_data_v2_from_archive(spec_fits_path: str) -> 'Spectrum':
     spec_table = Table.read(spec_fits_path)
     data_core = _v2_table_to_spectrum_data(spec_table)
-    return SpectrumV2(data=data_core)
+    return Spectrum(data=data_core)
 
 def _parse_v2_metadata_constraints(v2_metadata: Dict) -> Dict[str, Dict]:
     return v2_metadata.get('constraints_by_uuid', {})
 
-def _v2_table_to_component_list(systs_table: Table) -> (List[ComponentDataV2], Dict[int, str]):
+def _v2_table_to_component_list(systs_table: Table) -> (List[ComponentData], Dict[int, str]):
     """
-    Converts a V2-native Astropy Table back into ComponentDataV2 objects.
+    Converts a V2-native Astropy Table back into ComponentData objects.
     Robustly handles masked values and optional columns.
     """
     components = []
@@ -163,7 +163,7 @@ def _v2_table_to_component_list(systs_table: Table) -> (List[ComponentDataV2], D
         b_val = safe_float('b') or 0.0
         btur_val = safe_float('btur') or 0.0
 
-        comp = ComponentDataV2(
+        comp = ComponentData(
             id=int(row['id']),
             z=z_val,
             dz=safe_float('dz'),
@@ -190,27 +190,27 @@ def _v2_table_to_component_list(systs_table: Table) -> (List[ComponentDataV2], D
     return components, id_to_uuid_map
 
 # ... (load_systs_data_v2_from_archive, _serialize_v2_metadata remain same) ...
-def load_systs_data_v2_from_archive(systs_fits_path: str, v2_metadata: Dict) -> 'SystemListV2':
-    from astrocook.core.system_list import SystemListV2
+def load_systs_data_v2_from_archive(systs_fits_path: str, v2_metadata: Dict) -> 'SystemList':
+    from astrocook.core.system_list import SystemList
     try:
         systs_table = Table.read(systs_fits_path)
     except FileNotFoundError:
-        return SystemListV2(data=SystemListDataV2())
+        return SystemList(data=SystemListData())
     
     components, id_to_uuid_map = _v2_table_to_component_list(systs_table)
     v2_constraints_map = _parse_v2_metadata_constraints(v2_metadata)
     meta = systs_table.meta
     
-    data_core = SystemListDataV2(
+    data_core = SystemListData(
         components=components,
         parsed_constraints={},
         v2_constraints_map=v2_constraints_map,
         v1_id_to_uuid_map=id_to_uuid_map,
         meta=meta
     )
-    return SystemListV2(data=data_core)
+    return SystemList(data=data_core)
 
-def _serialize_v2_metadata(session: 'SessionV2', with_log: bool = True) -> str:
+def _serialize_v2_metadata(session: 'Session', with_log: bool = True) -> str:
     """The metadata of a session as JSON: the constraints, the identifiers of
     the components, the identifications of the regions, the version and
     (``with_log``) the session log."""
@@ -221,13 +221,13 @@ def _serialize_v2_metadata(session: 'SessionV2', with_log: bool = True) -> str:
     log_history_data = None
     log_type = "unknown"
 
-    if isinstance(log_manager_to_save, HistoryLogV2):
+    if isinstance(log_manager_to_save, HistoryLog):
         log_history_data = log_manager_to_save.to_dict()
         log_type = "v2"
     else:
         log_history_data = {}
     
-    metadata = SessionMetadataV2(
+    metadata = SessionMetadata(
         constraints_by_uuid=constraint_map_obj,
         log_history_json=log_history_data,
         log_type=log_type,
@@ -293,7 +293,7 @@ def _write_fits_table(table: Table, path: str) -> None:
         table.write(path, format='fits', overwrite=True)
 
 
-def _convert_spec_data_to_table(spec_data: SpectrumDataV2) -> Table:
+def _convert_spec_data_to_table(spec_data: SpectrumData) -> Table:
     t = Table()
     t['x'] = Column(spec_data.x.values, unit=spec_data.x.unit)
     t['xmin'] = Column(spec_data.xmin.values, unit=spec_data.xmin.unit)
@@ -311,9 +311,9 @@ def _convert_spec_data_to_table(spec_data: SpectrumDataV2) -> Table:
     t.meta['Z_EM'] = spec_data.z_em
     return t
 
-def _convert_syst_list_to_table(systs_data: SystemListDataV2) -> Table:
+def _convert_syst_list_to_table(systs_data: SystemListData) -> Table:
     """
-    Converts the V2 SystemListDataV2 core into a FITS-compatible Astropy Table.
+    Converts the V2 SystemListData core into a FITS-compatible Astropy Table.
     Now supports Chi2 and Resol columns.
     """
     data_dict = {
@@ -391,7 +391,7 @@ def _write_replacing(final_path: str, add_members) -> None:
             os.remove(temp_path)
 
 
-def save_archive_v2(session_v2_final: 'SessionV2', session_v2_initial: Optional['SessionV2'], file_path: str):
+def save_archive_v2(session_v2_final: 'Session', session_v2_initial: Optional['Session'], file_path: str):
     temp_dir = None
     try:
         temp_dir = tempfile.mkdtemp()
@@ -451,7 +451,7 @@ def save_archive_v2(session_v2_final: 'SessionV2', session_v2_initial: Optional[
 
         _write_replacing(final_path, add_members)
 
-        # The caller (SessionV2.save) logs the save; a failure goes to its
+        # The caller (Session.save) logs the save; a failure goes to its
         # caller, which reports it once
         logger.debug(f"Archive written: {final_path}")
 

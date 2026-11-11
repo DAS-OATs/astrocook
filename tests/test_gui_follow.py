@@ -14,7 +14,7 @@ from PySide6.QtWidgets import QFileDialog, QMessageBox
 
 from astrocook import follow
 from astrocook.session.session import load_session_from_file
-from astrocook.gui.main_window import MainWindowV2
+from astrocook.gui.main_window import MainWindow
 
 from test_gui_smoke import SESSION_FILE, _run_recipe
 
@@ -24,7 +24,7 @@ def _new_window(qtbot, monkeypatch, tmp_path):
     for kind in ("warning", "critical", "information", "question"):
         monkeypatch.setattr(QMessageBox, kind, staticmethod(
             lambda *a, **k: QMessageBox.StandardButton.Ok))
-    win = MainWindowV2(None, None)
+    win = MainWindow(None, None)
     qtbot.addWidget(win)
     monkeypatch.setattr(win, "_show_custom_message",
                         lambda *a, **k: QMessageBox.StandardButton.Ok)
@@ -76,9 +76,9 @@ def _rewrite(archive, z_em):
     """Save the archive again, as the server does after a recipe: the session
     with z_em changed and the recipe in its log."""
     from astrocook.session.history import SessionHistory
-    from astrocook.core.structures import HistoryLogV2
+    from astrocook.core.structures import HistoryLog
     session = load_session_from_file(str(SESSION_FILE), "J0103", None, "auto")
-    history = SessionHistory(session, HistoryLogV2())
+    history = SessionHistory(session, HistoryLog())
     history.log_manager.add_entry("set_properties", {"z_em": z_em})
     history.add_state(session.with_new_spectrum(session.spec.with_properties(z_em=z_em)))
     follow.write_archive(history, archive)
@@ -280,7 +280,7 @@ def test_followed_from_the_command_line(qtbot, monkeypatch, tmp_path, archive):
     follow.write_marker(archive, "J0103")
     session = load_session_from_file(str(archive), "J0103", None, "auto")
     session._source_path = str(archive)
-    win = MainWindowV2([session], None)
+    win = MainWindow([session], None)
     qtbot.addWidget(win)
     assert win.is_followed() and not win.follow_banner.isHidden()
     assert "_source_path" not in session.__dict__

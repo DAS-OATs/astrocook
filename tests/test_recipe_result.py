@@ -12,7 +12,7 @@ import warnings
 import numpy as np
 import pytest
 
-from astrocook.session.session import SessionV2
+from astrocook.session.session import Session
 from astrocook.mocks import MockComponent, MockTruth, generate
 from astrocook.recipes.errors import InvalidParameter, RecipeFailed
 from astrocook.recipes.result import RecipeResult, compare_sessions, run
@@ -26,7 +26,7 @@ TRUTH = MockTruth(components=[MockComponent("CIV", 1.93, 13.8, 10.0)],
 def sessions():
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        raw = SessionV2("mock", None, spec=generate(TRUTH, truth_columns=False))
+        raw = Session("mock", None, spec=generate(TRUTH, truth_columns=False))
         cont = raw.continuum.estimate_auto()
         fitted = cont.absorbers.doublets_auto()
     return raw, cont, fitted
@@ -246,7 +246,7 @@ def test_what_a_pipeline_makes_and_drops_is_discarded():
                       snr=50.0, z_em=2.7, seed=1)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        cont = SessionV2("m", None, spec=generate(truth, truth_columns=False)
+        cont = Session("m", None, spec=generate(truth, truth_columns=False)
                          ).continuum.estimate_auto()
         result = run(cont, "absorbers.lya_auto", min_b=40.0)
     assert "removed" not in result.extra
@@ -256,13 +256,13 @@ def test_what_a_pipeline_makes_and_drops_is_discarded():
 def test_the_groups_that_could_not_be_fitted_are_flagged(sessions, monkeypatch):
     # Agreed with Guido in phase 6: the flag not_fitted, set by refit_all on
     # the components of a group whose fit failed (they keep their values)
-    from astrocook.fitting.voigt_fitter import VoigtFitterV2
+    from astrocook.fitting.voigt_fitter import VoigtFitter
     from astrocook.gui.inspector_table import flag_cue
     _, _, fitted = sessions
 
     def fit(self, *args, **kwargs):
         raise ValueError("x0 is infeasible")
-    monkeypatch.setattr(VoigtFitterV2, "fit", fit)
+    monkeypatch.setattr(VoigtFitter, "fit", fit)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         result = run(fitted, "absorbers.refit_all")
@@ -314,7 +314,7 @@ def test_lya_auto_does_not_refit_the_red_side():
                       snr=50.0, z_em=2.7, seed=1)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        cont = SessionV2("m", None, spec=generate(truth, truth_columns=False)
+        cont = Session("m", None, spec=generate(truth, truth_columns=False)
                          ).continuum.estimate_auto()
         civ = cont.absorbers.doublets_auto()
         result = run(civ, "absorbers.lya_auto", min_b=40.0)
@@ -334,7 +334,7 @@ def test_the_candidates_dropped_are_in_the_result():
                       snr=30.0, z_em=2.7, seed=1)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        raw = SessionV2("mock", None, spec=generate(truth, truth_columns=False))
+        raw = Session("mock", None, spec=generate(truth, truth_columns=False))
         cont = raw.continuum.estimate_auto()
         result = run(cont, "identify_lines", score_threshold=0.999)
     dropped = result.extra["dropped_candidates"]

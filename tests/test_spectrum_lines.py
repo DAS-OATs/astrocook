@@ -1,8 +1,8 @@
-"""The line methods of SpectrumV2: detection of the absorbed regions,
+"""The line methods of Spectrum: detection of the absorbed regions,
 identification, velocity bounds, redshift of a doublet across two spectra.
 
 Characterization tests written before the methods were moved to their own
-module (phase 5, split of SpectrumV2): the paths that the identification
+module (phase 5, split of Spectrum): the paths that the identification
 tests (``test_identify_lines.py``, ``test_snapshots_identification.py``)
 do not reach. ``detect_absorptions``, ``get_velocity_bounds`` and
 ``detect_doublet_z`` had no test.

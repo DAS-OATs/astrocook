@@ -7,9 +7,9 @@ import pytest
 from astropy.table import Table
 
 from astrocook.core.atomic_data import ATOMIC_DATA_PATH
-from astrocook.session.session import SessionV2
+from astrocook.session.session import Session
 from astrocook.session.history import SessionHistory
-from astrocook.core.structures import HistoryLogV2
+from astrocook.core.structures import HistoryLog
 from astrocook.methods_text import (
     REFERENCES, MethodsValues, fmt, methods_file_name, methods_text, series_list,
     series_name)
@@ -26,7 +26,7 @@ def _mock():
     truth = MockTruth(components=[MockComponent("CIV", Z, 13.8, 10.0)],
                       lam_min_nm=440.0, lam_max_nm=460.0, dv_kms=2.5,
                       resol=45000.0, snr=50.0, z_em=2.0, seed=1)
-    return SessionV2("mock", None, spec=generate(truth))
+    return Session("mock", None, spec=generate(truth))
 
 
 def step(history, recipe, reason=None, **params):
@@ -43,7 +43,7 @@ def step(history, recipe, reason=None, **params):
 def history():
     """Continuum, a note, a CIV component, a refit; a component added and
     undone, with a note written after it (undone with it)."""
-    h = SessionHistory(_mock(), HistoryLogV2())
+    h = SessionHistory(_mock(), HistoryLog())
     step(h, "continuum.estimate_auto", reason="To normalize the flux")
     h.log_manager.add_note("The continuum was checked by eye.")
     h.log_manager.add_note("A gap the server saw.", kind="gap_seen")
@@ -135,7 +135,7 @@ def test_a_session_alone_has_only_its_log(history):
 
 def test_an_archive_then_new_steps(history):
     """The entries of an archive have no states; those made after it do."""
-    log = HistoryLogV2()
+    log = HistoryLog()
     log.add_entry("estimate_auto", dict(history.log_manager.entries[0].params))
     session = history.states[1].with_new_spectrum(history.states[1].spec)
     h = SessionHistory(session, log)
@@ -147,14 +147,14 @@ def test_an_archive_then_new_steps(history):
 
 
 def test_an_empty_log():
-    out = methods_text(SessionHistory(_mock(), HistoryLogV2()))
+    out = methods_text(SessionHistory(_mock(), HistoryLog()))
     assert [p.kind for p in out.paragraphs] == ["opening"]
     assert "was opened with Astrocook" in out.text and "its log has no recipes" in out.text
     assert out.references == (REFERENCES["C20"][1],)
 
 
 def test_notes_before_the_first_recipe_and_gaps():
-    h = SessionHistory(_mock(), HistoryLogV2())
+    h = SessionHistory(_mock(), HistoryLog())
     h.log_manager.add_note("z_em from the Ly-a peak")
     h.log_manager.add_note("Needed z_em: measured by hand.", kind="gap")
     out = methods_text(h).paragraphs
@@ -166,7 +166,7 @@ def test_an_unknown_recipe():
     """A recipe of a later version (not in the registry): its name and
     parameters."""
     session = _mock()
-    session.log_manager = HistoryLogV2()
+    session.log_manager = HistoryLog()
     session.log_manager.add_entry("future_recipe", {"a": 1.0, "b": "x"})
     assert "The recipe future_recipe was run (a = 1, b = x)." in methods_text(session).text
 
@@ -190,7 +190,7 @@ def new_recipe(monkeypatch):
 
 def test_a_new_recipe_is_described_with_no_code_here(new_recipe):
     session = _mock()
-    session.log_manager = HistoryLogV2()
+    session.log_manager = HistoryLog()
     session.log_manager.add_entry("scale_test", {"factor": 3.0, "column": "y3",
                                                  "hidden": True})
     session.log_manager.add_entry("bare_test", {"factor": 2.0, "column": "y4"})
@@ -221,7 +221,7 @@ def test_every_recipe_has_its_text(spec):
     assert set(spec.references) <= set(REFERENCES)
     # The whole paragraph, from a log entry with the defaults
     session = _mock()
-    session.log_manager = HistoryLogV2()
+    session.log_manager = HistoryLog()
     session.log_manager.add_entry(spec.name, params)
     step_text = [x for x in methods_text(session).paragraphs if x.kind == "step"][0].text
     assert "Other parameters" not in step_text

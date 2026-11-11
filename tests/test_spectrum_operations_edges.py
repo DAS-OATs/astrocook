@@ -17,7 +17,7 @@ from astrocook.core.spectrum_operations import (
     compute_auto_fudge, compute_flux_scaling, interpolate_continuum_mask,
     rebin_spectrum, running_mean, running_std, smooth_spectrum,
 )
-from astrocook.core.structures import DataColumnV2, SpectrumDataV2
+from astrocook.core.structures import DataColumn, SpectrumData
 
 
 def _noisy(n=200, seed=0):
@@ -130,10 +130,10 @@ def test_interpolate_continuum_with_one_point_raises():
 
 def _spec_data(x, y, dy, half=0.0025):
     unit = au.dimensionless_unscaled
-    return SpectrumDataV2(
-        x=DataColumnV2(x, au.nm), xmin=DataColumnV2(x - half, au.nm),
-        xmax=DataColumnV2(x + half, au.nm), y=DataColumnV2(y, unit),
-        dy=DataColumnV2(dy, unit))
+    return SpectrumData(
+        x=DataColumn(x, au.nm), xmin=DataColumn(x - half, au.nm),
+        xmax=DataColumn(x + half, au.nm), y=DataColumn(y, unit),
+        dy=DataColumn(dy, unit))
 
 
 def _rebin(data, xstart=None, xend=None):
@@ -158,12 +158,12 @@ def test_rebin_ignores_bad_pixels(bad):
     else:
         data.xmax.values[i] = data.xmin.values[i]
     keep = np.arange(len(x)) != i
-    clean = SpectrumDataV2(
-        x=DataColumnV2(x[keep], au.nm),
-        xmin=DataColumnV2(data.xmin.values[keep], au.nm),
-        xmax=DataColumnV2(data.xmax.values[keep], au.nm),
-        y=DataColumnV2(y[keep], au.dimensionless_unscaled),
-        dy=DataColumnV2(dy[keep], au.dimensionless_unscaled))
+    clean = SpectrumData(
+        x=DataColumn(x[keep], au.nm),
+        xmin=DataColumn(data.xmin.values[keep], au.nm),
+        xmax=DataColumn(data.xmax.values[keep], au.nm),
+        y=DataColumn(y[keep], au.dimensionless_unscaled),
+        dy=DataColumn(dy[keep], au.dimensionless_unscaled))
     start, end = 600.0 * au.nm, 600.995 * au.nm
     for got, expected in zip(_rebin(data, start, end), _rebin(clean, start, end), strict=True):
         np.testing.assert_allclose(got, expected, rtol=1e-12)

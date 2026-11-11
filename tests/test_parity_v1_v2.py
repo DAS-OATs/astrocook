@@ -14,9 +14,9 @@ import numpy as np
 import astropy.units as au
 import pytest
 
-from astrocook.core.spectrum import SpectrumV2
+from astrocook.core.spectrum import Spectrum
 from astrocook.core.spectrum_operations import rebin_spectrum, smooth_spectrum
-from astrocook.core.structures import DataColumnV2, SpectrumDataV2
+from astrocook.core.structures import DataColumn, SpectrumData
 from reference.v1.spectrum import Spectrum as SpectrumV1
 
 FLUX_UNIT = au.erg / (au.cm**2 * au.s * au.nm)
@@ -43,10 +43,10 @@ def _v1(x, step, y, dy):
 
 
 def _v2(x, step, y, dy):
-    return SpectrumV2(SpectrumDataV2(
-        x=DataColumnV2(x, au.nm), xmin=DataColumnV2(x - step / 2, au.nm),
-        xmax=DataColumnV2(x + step / 2, au.nm),
-        y=DataColumnV2(y, FLUX_UNIT), dy=DataColumnV2(dy, FLUX_UNIT)))
+    return Spectrum(SpectrumData(
+        x=DataColumn(x, au.nm), xmin=DataColumn(x - step / 2, au.nm),
+        xmax=DataColumn(x + step / 2, au.nm),
+        y=DataColumn(y, FLUX_UNIT), dy=DataColumn(dy, FLUX_UNIT)))
 
 
 def _rebin_both(arrays, xstart, xend, dx, kappa):
@@ -206,23 +206,23 @@ def _voigt_v1(x, step, series, z, logN, b, resol):
 
 
 def _voigt_v2(x, step, series, z, logN, b, resol=None, resol_col=None):
-    from astrocook.core.structures import ComponentDataV2, SystemListDataV2
-    from astrocook.core.system_list import SystemListV2
-    from astrocook.fitting.voigt_fitter import VoigtFitterV2
+    from astrocook.core.structures import ComponentData, SystemListData
+    from astrocook.core.system_list import SystemList
+    from astrocook.fitting.voigt_fitter import VoigtFitter
     one = np.ones_like(x)
     unit = au.dimensionless_unscaled
-    aux = {"cont": DataColumnV2(one, unit)}
+    aux = {"cont": DataColumn(one, unit)}
     if resol_col is not None:
-        aux["resol"] = DataColumnV2(resol_col, unit)
-    spec = SpectrumV2(SpectrumDataV2(
-        x=DataColumnV2(x, au.nm), xmin=DataColumnV2(x - step / 2, au.nm),
-        xmax=DataColumnV2(x + step / 2, au.nm), y=DataColumnV2(one, unit),
-        dy=DataColumnV2(0.02 * one, unit), aux_cols=aux, z_em=4.0,
+        aux["resol"] = DataColumn(resol_col, unit)
+    spec = Spectrum(SpectrumData(
+        x=DataColumn(x, au.nm), xmin=DataColumn(x - step / 2, au.nm),
+        xmax=DataColumn(x + step / 2, au.nm), y=DataColumn(one, unit),
+        dy=DataColumn(0.02 * one, unit), aux_cols=aux, z_em=4.0,
         resol=resol or 0.0))
-    comp = ComponentDataV2(id=1, z=z, dz=None, logN=logN, dlogN=None, b=b,
+    comp = ComponentData(id=1, z=z, dz=None, logN=logN, dlogN=None, b=b,
                            db=None, series=series)
-    _, model = VoigtFitterV2(
-        spec, SystemListV2(SystemListDataV2(components=[comp]))).compute_model_flux()
+    _, model = VoigtFitter(
+        spec, SystemList(SystemListData(components=[comp]))).compute_model_flux()
     return model
 
 

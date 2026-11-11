@@ -1,4 +1,4 @@
-"""``SpectrumV2.identify_lines`` on mocks with a known answer."""
+"""``Spectrum.identify_lines`` on mocks with a known answer."""
 import json
 
 import numpy as np

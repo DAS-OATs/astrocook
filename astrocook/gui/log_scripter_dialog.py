@@ -8,17 +8,17 @@ from typing import TYPE_CHECKING, Any, Optional
 
 # --- V2 Imports ---
 from astrocook.recipes.registry import RECIPES
-from astrocook.core.structures import HistoryLogV2
+from astrocook.core.structures import HistoryLog
 from astrocook.gui.log_script import log_to_script
 
 if TYPE_CHECKING:
-    from .main_window import MainWindowV2 # Import main window for typing
+    from .main_window import MainWindow # Import main window for typing
 
 logger = logging.getLogger(__name__)
 
 
 # Define the type for the log manager
-LogManager = HistoryLogV2
+LogManager = HistoryLog
 
 
 class LogScripterDialog(QDialog):
@@ -30,9 +30,9 @@ class LogScripterDialog(QDialog):
     # method of QWidget of the same name (it is never called as a method)
     layout: Any  # type: ignore[assignment]
 
-    def __init__(self, log_object: LogManager, session_name: str, parent: 'MainWindowV2', recipe_map: dict):
+    def __init__(self, log_object: LogManager, session_name: str, parent: 'MainWindow', recipe_map: dict):
         super().__init__(parent)
-        self.main_window = parent # Store reference to MainWindowV2
+        self.main_window = parent # Store reference to MainWindow
         self.setWindowTitle(f"Session Log: {session_name}")
         
         self.log_object: Optional[LogManager] = log_object # Save the log manager
@@ -142,7 +142,7 @@ class LogScripterDialog(QDialog):
             self.scripter_edit.setPlainText("# No log available.")
             return
 
-        if isinstance(self.log_object, HistoryLogV2):
+        if isinstance(self.log_object, HistoryLog):
             self._populate_v2_script()
         else:
             self.scripter_edit.setPlainText(f"# Error: Unknown log object type: {type(self.log_object)}")
@@ -151,7 +151,7 @@ class LogScripterDialog(QDialog):
         self.scripter_edit.moveCursor(QTextCursor.MoveOperation.End)
 
     def _populate_v2_script(self):
-        """Populates the scripter from a HistoryLogV2 object: the entries,
+        """Populates the scripter from a HistoryLog object: the entries,
         their reasons and the notes (``log_script.py``)."""
         lines = log_to_script(self.log_object)
         if lines:

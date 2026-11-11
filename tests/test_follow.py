@@ -51,10 +51,10 @@ def test_remove(tmp_path):
 def test_the_archive_is_the_session_as_saved(tmp_path):
     from astrocook.session.session import load_session_from_file
     from astrocook.session.history import SessionHistory
-    from astrocook.core.structures import HistoryLogV2
+    from astrocook.core.structures import HistoryLog
     from test_gui_smoke import SESSION_FILE
     session = load_session_from_file(str(SESSION_FILE), "s", None, "auto")
-    history = SessionHistory(session, HistoryLogV2())
+    history = SessionHistory(session, HistoryLog())
     history.log_manager.add_note("A note.")
     follow.write_archive(history, tmp_path / "s.acs2")
     saved = load_session_from_file(str(tmp_path / "s.acs2"), "s", None, "auto")

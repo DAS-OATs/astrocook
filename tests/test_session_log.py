@@ -1,4 +1,4 @@
-"""The session log (``HistoryLogV2``): what is saved, how it is read back,
+"""The session log (``HistoryLog``): what is saved, how it is read back,
 how it follows undo and redo, and how it replays.
 
 Characterization written before phase 6-ter, PR 5a (the reasons of the
@@ -14,10 +14,10 @@ import pytest
 import astropy.units as au
 import numpy as np
 
-from astrocook.session.session import SessionV2, load_session_from_file
+from astrocook.session.session import Session, load_session_from_file
 from astrocook.session.history import SessionHistory
-from astrocook.core.spectrum import SpectrumV2
-from astrocook.core.structures import DataColumnV2, HistoryLogV2, SpectrumDataV2
+from astrocook.core.spectrum import Spectrum
+from astrocook.core.structures import DataColumn, HistoryLog, SpectrumData
 
 FLUX = au.erg / au.cm**2 / au.s / au.nm
 
@@ -28,15 +28,15 @@ def _session(name="main"):
     x = np.arange(400.0, 440.0, 0.01)
     cont = (x / 420.0) ** -1.5
     y = cont + 0.02 * cont * rng.standard_normal(len(x))
-    spec = SpectrumV2(SpectrumDataV2(
-        x=DataColumnV2(x, au.nm), xmin=DataColumnV2(x - 0.005, au.nm),
-        xmax=DataColumnV2(x + 0.005, au.nm), y=DataColumnV2(y, FLUX),
-        dy=DataColumnV2(0.02 * cont, FLUX), aux_cols={}, z_em=2.5))
-    return SessionV2(name=name, gui=None, spec=spec)
+    spec = Spectrum(SpectrumData(
+        x=DataColumn(x, au.nm), xmin=DataColumn(x - 0.005, au.nm),
+        xmax=DataColumn(x + 0.005, au.nm), y=DataColumn(y, FLUX),
+        dy=DataColumn(0.02 * cont, FLUX), aux_cols={}, z_em=2.5))
+    return Session(name=name, gui=None, spec=spec)
 
 
 def _log(*names):
-    log = HistoryLogV2()
+    log = HistoryLog()
     for n in names:
         log.add_entry(n, {"p": n})
     return log
@@ -49,7 +49,7 @@ def _recipes(log):
 # --- The format ----------------------------------------------------------
 
 def test_to_dict_of_a_log():
-    log = HistoryLogV2()
+    log = HistoryLog()
     log.add_entry("smooth", {"sigma_kms": 50.0})
     log.add_entry("rebin", {"dx": 20.0, "xunit": "km/s"})
     assert log.to_dict() == {
@@ -59,13 +59,13 @@ def test_to_dict_of_a_log():
 
 
 def test_to_dict_of_an_empty_log():
-    assert HistoryLogV2().to_dict() == {"entries": [], "current_index": -1}
+    assert HistoryLog().to_dict() == {"entries": [], "current_index": -1}
 
 
 def test_from_dict_reads_name_and_params_only():
     # What the reader of 2.5.0 does with keys it does not know: ignores them
     # (an archive written by a later version opens)
-    log = HistoryLogV2.from_dict({
+    log = HistoryLog.from_dict({
         "entries": [{"recipe_name": "smooth", "params": {"sigma_kms": 50.0},
                      "something_new": "x"}],
         "current_index": 0, "another_key": [1, 2]})
@@ -75,7 +75,7 @@ def test_from_dict_reads_name_and_params_only():
 
 def test_from_dict_of_nothing():
     for data in (None, {}, {"entries": None}):
-        log = HistoryLogV2.from_dict(data)
+        log = HistoryLog.from_dict(data)
         assert log.entries == [] and log.current_index == -1
 
 
@@ -113,7 +113,7 @@ def test_a_new_entry_after_undo_drops_the_redo():
 
 def test_the_history_and_its_log_move_together():
     session = _session()
-    history = SessionHistory(session, HistoryLogV2())
+    history = SessionHistory(session, HistoryLog())
     for name in ("a", "b"):
         history.log_manager.add_entry(name, {})
         history.add_state(history.current_state.with_new_spectrum(
@@ -169,7 +169,7 @@ def test_a_log_reopened_is_the_same(tmp_path):
 
 def test_the_saved_entries_replay(tmp_path):
     session = _session()
-    log = HistoryLogV2()
+    log = HistoryLog()
     log.add_entry("smooth", {"sigma_kms": 50.0})
     log.add_entry("rebin", {"dx": 20.0, "xunit": "km/s"})
     session.log_manager = log
@@ -185,7 +185,7 @@ def test_the_saved_entries_replay(tmp_path):
 
 def test_the_log_scripter_shows_the_entries(qtbot):
     from astrocook.gui.log_scripter_dialog import LogScripterDialog
-    log = HistoryLogV2()
+    log = HistoryLog()
     log.add_entry("set_properties", {"z_em": 2.5, "resol": None})
     log.add_entry("smooth", {"sigma_kms": 50.0})
     log.add_entry("rebin", {"xunit": "km/s"})
@@ -202,7 +202,7 @@ def test_the_log_scripter_shows_the_entries(qtbot):
 # --- Reasons and notes (phase 6-ter, PR 5a) ---------------------------------
 
 def test_a_reason_is_saved_with_its_entry():
-    log = HistoryLogV2()
+    log = HistoryLog()
     log.add_entry("smooth", {"sigma_kms": 50.0}, reason="  Noisy: smooth first. ")
     log.add_entry("rebin", {"dx": 20.0}, reason="   ")  # no reason
     assert [e.reason for e in log.entries] == ["Noisy: smooth first.", None]
@@ -224,7 +224,7 @@ def test_notes_are_not_entries():
 
 
 def test_a_note_needs_a_text_and_a_known_kind():
-    log = HistoryLogV2()
+    log = HistoryLog()
     for text in ("", "  ", None):
         with pytest.raises(ValueError, match="needs a text"):
             log.add_note(text)
@@ -234,7 +234,7 @@ def test_a_note_needs_a_text_and_a_known_kind():
 
 
 def test_the_timeline_puts_notes_where_they_were_written():
-    log = HistoryLogV2()
+    log = HistoryLog()
     log.add_note("before anything")
     log.add_entry("a", {})
     log.add_note("after a")
@@ -279,7 +279,7 @@ def test_a_new_entry_after_undo_drops_the_notes_undone():
 
 def test_notes_do_not_move_the_states_of_a_history():
     session = _session()
-    history = SessionHistory(session, HistoryLogV2())
+    history = SessionHistory(session, HistoryLog())
     history.log_manager.add_note("as opened")
     history.log_manager.add_entry("a", {})
     history.add_state(session.with_new_spectrum(session.spec))
@@ -295,7 +295,7 @@ def test_notes_do_not_move_the_states_of_a_history():
 
 def test_reasons_and_notes_are_saved_and_reopened(tmp_path):
     session = _session()
-    log = HistoryLogV2()
+    log = HistoryLog()
     log.add_note("Opened as given.")
     log.add_entry("smooth", {"sigma_kms": 50.0}, reason="Too noisy to read.")
     log.add_note("Looked at the smoothed flux:\nno line above 3 sigma.")
@@ -318,7 +318,7 @@ def test_reasons_and_notes_are_saved_and_reopened(tmp_path):
 def test_notes_of_a_later_version_are_read():
     # A kind not known here, and an 'after' out of range, are kept as read
     # and brought within the log
-    log = HistoryLogV2.from_dict({
+    log = HistoryLog.from_dict({
         "entries": [{"recipe_name": "a", "params": {}}], "current_index": 0,
         "notes": [{"text": "late", "kind": "gap", "after": 7},
                   {"text": "early", "after": 0}]})
@@ -354,7 +354,7 @@ def test_a_malformed_note_gives_an_empty_log(tmp_path, caplog):
 
 def test_the_log_scripter_shows_reasons_and_notes(qtbot):
     from astrocook.gui.log_scripter_dialog import LogScripterDialog
-    log = HistoryLogV2()
+    log = HistoryLog()
     log.add_note("Opened as given.")
     log.add_entry("smooth", {"sigma_kms": 50.0}, reason="Too noisy.\nSee the plot.")
     log.add_entry("rebin", {"xunit": "km/s"}, reason="Coarser.")
@@ -374,7 +374,7 @@ def test_the_log_scripter_shows_reasons_and_notes(qtbot):
 
 def test_the_comments_of_a_script():
     from astrocook.gui.log_script import ScriptComments, log_to_script
-    log = HistoryLogV2()
+    log = HistoryLog()
     log.add_note("First.\n  Indented line.")
     log.add_note("Second.")
     log.add_entry("smooth", {"sigma_kms": 50.0}, reason="Why.\nBecause.")
@@ -399,7 +399,7 @@ def test_the_gaps_in_a_script():
     # Phase 6-ter, PR 5b: the notes of kind gap and gap_seen are comments of
     # their own and are read back with their kind
     from astrocook.gui.log_script import ScriptComments, log_to_script
-    log = HistoryLogV2()
+    log = HistoryLog()
     log.add_note("Needed z_em.", kind="gap")
     log.add_entry("smooth", {})
     log.add_note("smooth undone.", kind="gap_seen")

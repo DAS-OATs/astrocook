@@ -1,9 +1,9 @@
-"""What the mixins of :class:`~astrocook.core.spectrum.SpectrumV2` use of
+"""What the mixins of :class:`~astrocook.core.spectrum.Spectrum` use of
 the class that mixes them in, declared for the type checker (phase
 6-quater, PR 4).
 
 Each mixin (``spectrum_flux.py`` and the others) uses attributes and methods
-that ``SpectrumV2`` defines, or another mixin does. The mixins inherit
+that ``Spectrum`` defines, or another mixin does. The mixins inherit
 ``SpectrumHost`` only when the type checker reads them; at run time their
 base is ``object``, so this module changes nothing: see
 ``HostBase`` below. The declarations here are of types only: where one
@@ -14,17 +14,17 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Self
 import astropy.units as au
 import numpy as np
 
-from astrocook.core.structures import SpectrumDataV2
+from astrocook.core.structures import SpectrumData
 
 if TYPE_CHECKING:
-    from astrocook.core.spectrum import TableAdapterV2
+    from astrocook.core.spectrum import TableAdapter
 
     class SpectrumHost:
-        """The part of ``SpectrumV2`` that the mixins use."""
-        _data: SpectrumDataV2
+        """The part of ``Spectrum`` that the mixins use."""
+        _data: SpectrumData
         history: List[Any]
 
-        def __init__(self, data: SpectrumDataV2,
+        def __init__(self, data: SpectrumData,
                      history: Optional[list] = None) -> None: ...
 
         @property
@@ -36,7 +36,7 @@ if TYPE_CHECKING:
         @property
         def meta(self) -> Dict[str, Any]: ...
         @property
-        def t(self) -> 'TableAdapterV2': ...
+        def t(self) -> 'TableAdapter': ...
 
         @property
         def xmin(self) -> au.Quantity: ...

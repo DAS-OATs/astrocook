@@ -7,7 +7,7 @@ on the fit and the atomic data, and the references.
 
 A paragraph of a recipe is made of:
 
-- the reason given for the recipe (``LogEntryV2.reason``, e.g. by an agent
+- the reason given for the recipe (``LogEntry.reason``, e.g. by an agent
   through the MCP server), as written;
 - what the recipe did, from the key ``methods`` of the registry (a template
   of its parameters, or a function of them), with the menu of the recipe in
@@ -17,7 +17,7 @@ A paragraph of a recipe is made of:
   after it (:func:`~astrocook.recipes.result.compare_sessions`, as
   ``RecipeResult`` does): the components added, removed and changed, the
   columns, the pixels; and the warnings the fit left on the components;
-- the notes written at its state (``LogNoteV2``: notes and gaps declared,
+- the notes written at its state (``LogNote``: notes and gaps declared,
   as written; the gaps seen by the MCP server are for the development and
   are left out).
 
@@ -570,12 +570,12 @@ def _cite(key: str, narrative: bool = False) -> str:
 def _source(source):
     """The states, the index of the current one and the log of ``source``:
     a ``SessionHistory`` or a session (its log only, no states)."""
-    from astrocook.core.structures import HistoryLogV2
+    from astrocook.core.structures import HistoryLog
     if hasattr(source, 'states') and hasattr(source, 'log_manager'):
         states, current, log = list(source.states), source.current_index, source.log_manager
     else:
         states, current, log = [source], 0, getattr(source, 'log_manager', None)
-    if not isinstance(log, HistoryLogV2):
+    if not isinstance(log, HistoryLog):
         log = None
     return states, current, log
 
@@ -611,7 +611,7 @@ def methods_text(source, *, menus: bool = True) -> MethodsText:
 
     Parameters
     ----------
-    source : SessionHistory or SessionV2
+    source : SessionHistory or Session
         A history (the states and the log, as the GUI and the MCP server
         keep them), or a session alone: then only the log is known, not what
         each recipe changed.

@@ -4,7 +4,7 @@ Reset, and the spacing of the knots, on a slider with a log scale (100 to
 20000 km/s) or typed.
 
 Moved out of ``main_window.py`` in phase 5 (split of the GUI), as a mixin
-of ``MainWindowV2``; the editor on the plot is ``ContinuumEditorMixin``
+of ``MainWindow``; the editor on the plot is ``ContinuumEditorMixin``
 (``continuum_editor.py``).
 """
 import logging
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 class ContinuumControlsMixin(HostBase):
-    """The controls of the continuum editor of ``MainWindowV2``.
+    """The controls of the continuum editor of ``MainWindow``.
 
     Uses the window's ``plot_viewer`` (the editor itself), ``active_history``,
     the widgets of the Edit Continuum section and of the redshift cursor

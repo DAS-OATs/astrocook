@@ -16,8 +16,8 @@ import numpy as np
 import pytest
 from PySide6.QtWidgets import QMessageBox, QProgressDialog
 
-from astrocook.core.structures import HistoryLogV2
-from astrocook.gui.main_window import MainWindowV2
+from astrocook.core.structures import HistoryLog
+from astrocook.gui.main_window import MainWindow
 from astrocook.gui.recipe_progress import RecipeProgressDialog
 
 from test_gui_smoke import SESSION_FILE, _run_recipe
@@ -28,7 +28,7 @@ def _new_window(qtbot, monkeypatch, tmp_path):
     for kind in ("warning", "critical", "information", "question"):
         monkeypatch.setattr(QMessageBox, kind, staticmethod(
             lambda *a, **k: QMessageBox.StandardButton.Ok))
-    win = MainWindowV2(None, None)
+    win = MainWindow(None, None)
     qtbot.addWidget(win)
     monkeypatch.setattr(win, "_show_custom_message",
                         lambda *a, **k: QMessageBox.StandardButton.Ok)
@@ -543,7 +543,7 @@ def test_script_result_replaces_the_history(qtbot, ready):
     window = ready
     from astrocook.session.history import SessionHistory
     old = window.active_history
-    new = SessionHistory(old.states[0], HistoryLogV2())
+    new = SessionHistory(old.states[0], HistoryLog())
     window._process_script_result(new)
     assert window.session_histories == [new] and window.active_history is new
 

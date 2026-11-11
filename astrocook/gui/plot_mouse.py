@@ -19,7 +19,7 @@ from typing import Optional, TYPE_CHECKING
 from astrocook.core.atomic_data import STANDARD_MULTIPLETS, trans_parse, xem_d
 
 if TYPE_CHECKING:
-    from astrocook.session.session import SessionV2
+    from astrocook.session.session import Session
 
 from ._plot_host import PlotHostBase
 from .data_inspector import DataInspectorDialog
@@ -92,7 +92,7 @@ class PlotMouseMixin(PlotHostBase):
         menu.setToolTipsVisible(True)
         return menu
 
-    def get_cursor_line_positions_at_z(self, session_state: 'SessionV2', z_cursor):
+    def get_cursor_line_positions_at_z(self, session_state: 'Session', z_cursor):
         """Helper to get theoretical X positions for cursor lines at a specific Z."""
         positions = []
         spec = session_state.spec

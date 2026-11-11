@@ -5,9 +5,9 @@ Ly-alpha came out low by log(1 + z). The benchmark on mocks cannot measure
 this (no damped systems in its mocks), so this test does."""
 import pytest
 
-from astrocook.core.structures import ComponentDataV2, SystemListDataV2
-from astrocook.core.system_list import SystemListV2
-from astrocook.fitting.voigt_fitter import VoigtFitterV2
+from astrocook.core.structures import ComponentData, SystemListData
+from astrocook.core.system_list import SystemList
+from astrocook.fitting.voigt_fitter import VoigtFitter
 from astrocook.mocks import MockComponent, MockTruth, generate
 
 
@@ -19,24 +19,24 @@ def test_fit_recovers_the_column_of_a_damped_lya(z):
         components=[MockComponent("Ly_a", z, 20.3, 20.0)], lam_min_nm=lam - 6.0,
         lam_max_nm=lam + 6.0, dv_kms=5.0, resol=45000.0, snr=30.0, z_em=z + 0.5,
         seed=3))
-    systs = SystemListV2(SystemListDataV2(components=[ComponentDataV2(
+    systs = SystemList(SystemListData(components=[ComponentData(
         id=1, z=z + 1e-5, dz=None, logN=19.8, dlogN=None, b=30.0, db=None,
         series="Ly_a")]))
-    fitted, _, _ = VoigtFitterV2(spec, systs).fit(max_nfev=500, z_window_kms=50.0)
+    fitted, _, _ = VoigtFitter(spec, systs).fit(max_nfev=500, z_window_kms=50.0)
     assert fitted.components[0].logN == pytest.approx(20.3, abs=0.02)
 
 
 def _dla_session(z=3.0):
-    from astrocook.session.session import SessionV2
+    from astrocook.session.session import Session
     lam = 121.567 * (1 + z)
     spec = generate(MockTruth(
         components=[MockComponent("Ly_a", z, 20.3, 20.0)], lam_min_nm=lam - 6.0,
         lam_max_nm=lam + 6.0, dv_kms=5.0, resol=45000.0, snr=30.0, z_em=z + 0.5,
         seed=3))
-    systs = SystemListV2(SystemListDataV2(components=[ComponentDataV2(
+    systs = SystemList(SystemListData(components=[ComponentData(
         id=1, z=z + 1e-5, dz=None, logN=19.8, dlogN=None, b=30.0, db=None,
         series="Ly_a")]))
-    return SessionV2("dla", None, spec=spec, systs=systs)
+    return Session("dla", None, spec=spec, systs=systs)
 
 
 @pytest.mark.parametrize("max_logN, expected", [("23.0", 20.3), ("19.0", 19.0)])

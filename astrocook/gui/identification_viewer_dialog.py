@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional, Set, TYPE_CHECKING, cast
 
 from astrocook.core.atomic_data import STANDARD_MULTIPLETS, trans_parse, xem_d, is_multiplet, series_lines
 if TYPE_CHECKING:
-    from astrocook.core.spectrum import SpectrumV2
+    from astrocook.core.spectrum import Spectrum
 
 logger = logging.getLogger(__name__)
 
@@ -132,7 +132,7 @@ class IdentificationViewerDialog(QDialog):
     # QWidget of the same name (it is never called as a method)
     layout: Any  # type: ignore[assignment]
 
-    def __init__(self, spec: Optional['SpectrumV2'], session_name: str, parent=None,
+    def __init__(self, spec: Optional['Spectrum'], session_name: str, parent=None,
                  zoom_to=None):
         super().__init__(parent)
         self.setWindowTitle(f"Identifications: {session_name}")
@@ -176,7 +176,7 @@ class IdentificationViewerDialog(QDialog):
         self.results_edit.setVisible(True)
         self.results_edit.setPlainText(text)
 
-    def _populate_results(self, spec: Optional['SpectrumV2']):
+    def _populate_results(self, spec: Optional['Spectrum']):
         """Parses spec.meta and fills the table."""
         if spec is None:
             self.summary_label.setText("No spectrum loaded.")

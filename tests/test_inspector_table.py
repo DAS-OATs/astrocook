@@ -12,7 +12,7 @@ import warnings
 import pytest
 from PySide6.QtCore import QModelIndex, Qt
 
-from astrocook.core.structures import ComponentDataV2, ParameterConstraintV2
+from astrocook.core.structures import ComponentData, ParameterConstraint
 
 
 @pytest.fixture
@@ -22,12 +22,12 @@ def model(qapp):
 
 
 def _comps():
-    c1 = ComponentDataV2(id=1, z=2.0, dz=1.5e-5, logN=13.0, dlogN=0.05,
+    c1 = ComponentData(id=1, z=2.0, dz=1.5e-5, logN=13.0, dlogN=0.05,
                          b=10.0, db=1.25, series="CIV",
                          flags=("b_at_lower_bound",))
-    c2 = ComponentDataV2(id=2, z=2.0001, dz=None, logN=12.5, dlogN=None,
+    c2 = ComponentData(id=2, z=2.0001, dz=None, logN=12.5, dlogN=None,
                          b=10.0, db=None, series="CIV", flags=("nan_errors",))
-    c3 = ComponentDataV2(id=3, z=2.5, dz=2e-6, logN=14.2, dlogN=0.1,
+    c3 = ComponentData(id=3, z=2.5, dz=2e-6, logN=14.2, dlogN=0.1,
                          b=20.0, db=2.0, series="Ly_a")
     return c1, c2, c3
 
@@ -35,11 +35,11 @@ def _comps():
 def _constraints(c1, c2, c3):
     return {
         # c2.b = c1.b
-        c2.uuid: {"b": ParameterConstraintV2(
+        c2.uuid: {"b": ParameterConstraint(
             is_free=False, target_uuid=c1.uuid,
             expression=f"p['{c1.uuid}'].b")},
         # c3.logN frozen
-        c3.uuid: {"logN": ParameterConstraintV2(is_free=False)},
+        c3.uuid: {"logN": ParameterConstraint(is_free=False)},
     }
 
 
@@ -144,7 +144,7 @@ def test_editing_a_cell_asks_for_the_update(filled):
 def test_tooltip_of_a_link_by_expression(model):
     c1, c2, c3 = _comps()
     # c2.b = c1.b * 0.5, written with the uuid of c1
-    cons = {c2.uuid: {"b": ParameterConstraintV2(
+    cons = {c2.uuid: {"b": ParameterConstraint(
         is_free=False, target_uuid=None, expression=f"p['{c1.uuid}'].b * 0.5")}}
     model.update_data([c1, c2, c3], cons)
     tip = _data(model, 1, "b", Qt.ToolTipRole)

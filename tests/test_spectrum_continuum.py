@@ -1,7 +1,7 @@
-"""The continuum methods of SpectrumV2 on a small synthetic spectrum.
+"""The continuum methods of Spectrum on a small synthetic spectrum.
 
 Characterization tests written before the methods were moved to their own
-module (phase 5, split of SpectrumV2): the paths that the snapshots of the
+module (phase 5, split of Spectrum): the paths that the snapshots of the
 continuum (``test_snapshots_continuum.py``) do not reach, i.e. the
 continuum from manual knots, the errors and the renormalization of the
 model.
@@ -13,8 +13,8 @@ import numpy as np
 import pytest
 from scipy.interpolate import PchipInterpolator
 
-from astrocook.core.spectrum import SpectrumV2
-from astrocook.core.structures import DataColumnV2, SpectrumDataV2
+from astrocook.core.spectrum import Spectrum
+from astrocook.core.structures import DataColumn, SpectrumData
 
 FLUX = au.erg / au.cm**2 / au.s / au.nm
 
@@ -23,18 +23,18 @@ def _spec(model=False, cont=False):
     x = np.linspace(500.0, 510.0, 201)
     y = 2.0 + 0.01 * (x - 500.0)
     y[90:110] *= 0.4  # an absorption
-    aux = {"abs_mask": DataColumnV2(
+    aux = {"abs_mask": DataColumn(
         (np.arange(x.size) >= 90) & (np.arange(x.size) < 110),
         au.dimensionless_unscaled)}
     if cont:
-        aux["cont"] = DataColumnV2(np.full(x.size, 2.0), FLUX)
+        aux["cont"] = DataColumn(np.full(x.size, 2.0), FLUX)
     if model:
-        aux["model"] = DataColumnV2(np.where(aux["abs_mask"].values, 1.0, 2.0), FLUX)
-    data = SpectrumDataV2(
-        x=DataColumnV2(x, au.nm), xmin=DataColumnV2(x - 0.025, au.nm),
-        xmax=DataColumnV2(x + 0.025, au.nm), y=DataColumnV2(y, FLUX),
-        dy=DataColumnV2(np.full(x.size, 0.05), FLUX), aux_cols=aux, z_em=3.0)
-    return SpectrumV2(data, history=["start"])
+        aux["model"] = DataColumn(np.where(aux["abs_mask"].values, 1.0, 2.0), FLUX)
+    data = SpectrumData(
+        x=DataColumn(x, au.nm), xmin=DataColumn(x - 0.025, au.nm),
+        xmax=DataColumn(x + 0.025, au.nm), y=DataColumn(y, FLUX),
+        dy=DataColumn(np.full(x.size, 0.05), FLUX), aux_cols=aux, z_em=3.0)
+    return Spectrum(data, history=["start"])
 
 
 # --- update_continuum_from_knots -------------------------------------------

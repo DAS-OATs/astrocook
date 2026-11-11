@@ -1,3 +1,4 @@
+from astrocook._renamed import renamed
 import logging
 import os
 import re
@@ -11,7 +12,7 @@ from astrocook.recipes._spectrum import spec_of
 from astrocook.recipes.params import typed_recipe
 
 if TYPE_CHECKING:
-    from astrocook.session.session import SessionV2
+    from astrocook.session.session import Session
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +51,7 @@ FILE_RECIPES_SCHEMAS = {
     }
 }
 
-class RecipeFileV2:
+class RecipeFile:
     """
     Recipes for file input/output operations.
 
@@ -58,7 +59,7 @@ class RecipeFileV2:
     external formats like ASCII/CSV, and importing modified data back into 
     the session. It operates immutably where applicable to support Undo/Redo.
     """
-    def __init__(self, session_v2: 'SessionV2'):
+    def __init__(self, session_v2: 'Session'):
         self._session = session_v2
         self._tag = 'cb'
 
@@ -195,7 +196,7 @@ class RecipeFileV2:
         return spec_req, write_systems, syst_req, target_list
 
     @typed_recipe
-    def import_ascii(self, file_path: str) -> 'SessionV2':
+    def import_ascii(self, file_path: str) -> 'Session':
         """
         Import columns from an ASCII/CSV file into the current session.
 
@@ -211,7 +212,7 @@ class RecipeFileV2:
 
         Returns
         -------
-        SessionV2
+        Session
             A new session instance containing the imported data.
 
         Raises
@@ -245,3 +246,7 @@ class RecipeFileV2:
 
         logger.info(f"Columns imported: {', '.join(imported_cols)}.")
         return self._session.with_new_spectrum(new_spec)
+
+
+# Old names (phase 6-quater, PR 6): see astrocook/_renamed.py
+__getattr__ = renamed(__name__, {"RecipeFileV2": "RecipeFile"})

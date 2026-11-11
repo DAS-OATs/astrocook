@@ -4,14 +4,14 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from astrocook.session.session import SessionV2
-    from astrocook.core.spectrum import SpectrumV2
+    from astrocook.session.session import Session
+    from astrocook.core.spectrum import Spectrum
 
 
-def spec_of(session: SessionV2) -> SpectrumV2:
+def spec_of(session: Session) -> Spectrum:
     """The spectrum of a session, for the type checker.
 
-    ``SessionV2.spec`` is typed ``Optional`` (a session may hold no
+    ``Session.spec`` is typed ``Optional`` (a session may hold no
     spectrum), but a recipe that works on the spectrum runs on a session
     that has one: this narrows the type, with no change of behaviour.
     """
@@ -20,7 +20,7 @@ def spec_of(session: SessionV2) -> SpectrumV2:
     return spec
 
 
-def column_of(spec: SpectrumV2, name: str) -> Any:
+def column_of(spec: Spectrum, name: str) -> Any:
     """A column that the caller knows is there (``get_column`` is typed to
     return None for a missing one)."""
     col = spec.get_column(name)

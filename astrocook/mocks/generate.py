@@ -4,8 +4,8 @@ from typing import Tuple
 import numpy as np
 import astropy.units as au
 
-from astrocook.core.spectrum import SpectrumV2
-from astrocook.core.structures import DataColumnV2, SpectrumDataV2
+from astrocook.core.spectrum import Spectrum
+from astrocook.core.structures import DataColumn, SpectrumData
 from astrocook.mocks.physics import (
     C_KMS, FWHM_TO_SIGMA, convolve_velocity, is_hydrogen,
     lyman_limit_optical_depth, optical_depth,
@@ -86,7 +86,7 @@ def spike_indices(truth: MockTruth, n_pixels: int) -> np.ndarray:
     return np.sort(rng.choice(n_pixels, size=truth.n_spikes, replace=False))
 
 
-def generate(truth: MockTruth, truth_columns: bool = True) -> SpectrumV2:
+def generate(truth: MockTruth, truth_columns: bool = True) -> Spectrum:
     """Mock spectrum for ``truth``.
 
     The spectrum has the true continuum (with emission lines) in the
@@ -115,16 +115,16 @@ def generate(truth: MockTruth, truth_columns: bool = True) -> SpectrumV2:
 
     unit = au.dimensionless_unscaled
     aux = {
-        "cont": DataColumnV2(cont, unit, description="True continuum"),
-        "mock_flux": DataColumnV2(true_flux, unit, description="Noiseless flux"),
+        "cont": DataColumn(cont, unit, description="True continuum"),
+        "mock_flux": DataColumn(true_flux, unit, description="Noiseless flux"),
     } if truth_columns else {}
     if truth.resol is not None:
         # The resolution goes into the resol column only (#526)
-        aux["resol"] = DataColumnV2(np.full(len(x), float(truth.resol)), unit,
+        aux["resol"] = DataColumn(np.full(len(x), float(truth.resol)), unit,
                                     description="Resolving power")
-    data = SpectrumDataV2(
-        x=DataColumnV2(x, au.nm), xmin=DataColumnV2(xmin, au.nm),
-        xmax=DataColumnV2(xmax, au.nm),
-        y=DataColumnV2(y, unit), dy=DataColumnV2(dy, unit),
+    data = SpectrumData(
+        x=DataColumn(x, au.nm), xmin=DataColumn(xmin, au.nm),
+        xmax=DataColumn(xmax, au.nm),
+        y=DataColumn(y, unit), dy=DataColumn(dy, unit),
         aux_cols=aux, meta={"MOCK": True}, z_em=truth.z_em)
-    return SpectrumV2(data)
+    return Spectrum(data)

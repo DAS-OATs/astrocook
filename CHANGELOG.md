@@ -1,3 +1,8 @@
+## [Unreleased]
+
+### Changed
+- The classes lost the `V2` suffix of their names (phase 6-quater): `SpectrumV2` is now `Spectrum`, `SessionV2` is `Session`, `DataColumnV2` is `DataColumn`, `RecipeAbsorbersV2` is `RecipeAbsorbers`, and so on for the 21 classes of the package. For scripts: the old names still import and give the same class, with a `DeprecationWarning`; they will not be removed before 3.0. The archives (`.acs2`) and the session logs are not affected: they hold no class names. The settings saved by the GUI are kept.
+
 ## [2.6.0] - 2026-11-10
 
 Phase 6-ter of the consolidation: the full MCP server. Astrocook can be driven by an AI agent through 65 tools: the 48 recipes (each one a tool, generated from the registry), the sessions with undo and redo, the inspection of a session, the notes and gaps of the agent, the log as the text of a methods section, the cancellation of a long recipe, a GUI that follows a session of the server and a headless Docker image. Outputs come from `RecipeResult` only, and nothing the agent does is lost. A minor version: the interface of the server grows, the results of the recipes do not change but in the two cases below.

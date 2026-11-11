@@ -3,7 +3,7 @@ entry opens its dialog), undo and redo, the windows of the View menu,
 export and import of ASCII files, the documentation and the About dialog.
 
 Moved out of ``main_window.py`` in phase 5 (split of the GUI), as a mixin
-of ``MainWindowV2``.
+of ``MainWindow``.
 """
 import logging
 import os
@@ -32,7 +32,7 @@ PLOT_COLOURS_KEY = "plot_colours"
 
 
 class MainMenusMixin(HostBase):
-    """The menus of ``MainWindowV2``.
+    """The menus of ``MainWindow``.
 
     Uses the window's ``active_history``, the recipe machinery
     (``_launch_recipe_dialog``, ``_on_recipe_requested``), the sidebars,

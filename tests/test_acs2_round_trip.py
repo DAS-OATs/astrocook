@@ -21,8 +21,8 @@ import numpy as np
 import astropy.units as au
 import pytest
 
-from astrocook.session.session import SessionV2
-from astrocook.core.structures import DataColumnV2, HistoryLogV2
+from astrocook.session.session import Session
+from astrocook.core.structures import DataColumn, HistoryLog
 
 from conftest import DATA_DIR, J0103_SESSION
 from test_recipes_absorbers import _systs
@@ -34,7 +34,7 @@ SMALL_ARCHIVE = DATA_DIR / "J0103-1305_metallines_lya_new_3.acs2"
 def _round_trip(session, tmp_path, name="session", initial=None):
     path = tmp_path / f"{name}.acs2"
     session.save(str(path), initial_session=initial)
-    reloaded = SessionV2.open_new(str(path), name, None, "auto")
+    reloaded = Session.open_new(str(path), name, None, "auto")
     assert reloaded != 0
     return reloaded, path
 
@@ -69,15 +69,15 @@ def _assert_same(a, b, meta=True):
 @pytest.fixture
 def rich_session():
     spec = _spec(extra={
-        "abs_mask": DataColumnV2(np.arange(N) % 3 == 0, au.dimensionless_unscaled),
-        "abs_ids": DataColumnV2((np.arange(N) // 100).astype(float),
+        "abs_mask": DataColumn(np.arange(N) % 3 == 0, au.dimensionless_unscaled),
+        "abs_ids": DataColumn((np.arange(N) // 100).astype(float),
                                 au.dimensionless_unscaled),
-        "resol": DataColumnV2(np.linspace(40000.0, 50000.0, N),
+        "resol": DataColumn(np.linspace(40000.0, 50000.0, N),
                               au.dimensionless_unscaled),
     })
     systs = _systs(("CIV", 2.97, 13.6, 12.0), ("SiIV", 2.98, 13.0, 8.0),
                    ("CIV_1548,SiIV_1393", 2.99, 13.0, 9.0))
-    session = SessionV2("rich", None, spec=spec, systs=systs)
+    session = Session("rich", None, spec=spec, systs=systs)
     session = session.edit.set_properties(object="QSO J0000-0000", z_em="4.1",
                                           resol="45000", overwrite_resol_col=False)
     civ, siiv, _ = session.systs.components
@@ -138,7 +138,7 @@ def test_second_round_trip_is_identical(rich_session, tmp_path):
 def test_archive_contents(rich_session, tmp_path):
     # The state before the changes is stored too (for reproducibility), but
     # it is not loaded back
-    initial = SessionV2("rich", None, spec=_spec())
+    initial = Session("rich", None, spec=_spec())
     _, path = _round_trip(rich_session, tmp_path, initial=initial)
     with tarfile.open(path) as tar:
         names = sorted(tar.getnames())
@@ -168,12 +168,12 @@ def test_archive_without_version(tmp_path):
         names = [n for n in tar.getnames() if n.endswith("_meta.json")]
         meta = json.load(tar.extractfile(names[0]))
     assert "astrocook_version" not in meta
-    session = SessionV2.open_new(str(SMALL_ARCHIVE), "small", None, "auto")
+    session = Session.open_new(str(SMALL_ARCHIVE), "small", None, "auto")
     assert session.saved_with_version is None
 
 
 def test_small_archive_round_trip(tmp_path):
-    original = SessionV2.open_new(str(SMALL_ARCHIVE), "small", None, "auto")
+    original = Session.open_new(str(SMALL_ARCHIVE), "small", None, "auto")
     reloaded, _ = _round_trip(original, tmp_path)
     _assert_same(original, reloaded)
     assert len(reloaded.systs.components) == 764
@@ -182,7 +182,7 @@ def test_small_archive_round_trip(tmp_path):
 @pytest.mark.slow
 def test_large_archive_round_trip(tmp_path):
     # 15 MB archive, ~20 s
-    original = SessionV2.open_new(str(J0103_SESSION), "large", None, "auto")
+    original = Session.open_new(str(J0103_SESSION), "large", None, "auto")
     reloaded, _ = _round_trip(original, tmp_path)
     _assert_same(original, reloaded)
 
@@ -190,7 +190,7 @@ def test_large_archive_round_trip(tmp_path):
 def test_session_log_is_saved(rich_session, tmp_path):
     # Regression test for F26: the archive stored dataclasses.asdict of the
     # log, which was {}, and the loader did not read the log back.
-    log = HistoryLogV2()
+    log = HistoryLog()
     log.add_entry("set_properties", {"z_em": "4.1"})
     log.add_entry("smooth", {"sigma_kms": "20"})
     rich_session.log_manager = log
@@ -200,14 +200,14 @@ def test_session_log_is_saved(rich_session, tmp_path):
     assert meta["log_type"] == "v2"
     assert "smooth" in json.dumps(meta["log_history_json"])
     restored = reloaded.log_manager
-    assert isinstance(restored, HistoryLogV2)
+    assert isinstance(restored, HistoryLog)
     assert [(e.recipe_name, e.params) for e in restored.entries] == [
         ("set_properties", {"z_em": "4.1"}), ("smooth", {"sigma_kms": "20"})]
     assert restored.current_index == 1
 
 
 def test_undone_log_entries_are_not_saved(rich_session, tmp_path):
-    log = HistoryLogV2()
+    log = HistoryLog()
     log.add_entry("set_properties", {"z_em": "4.1"})
     log.add_entry("smooth", {"sigma_kms": "20"})
     log.undo()

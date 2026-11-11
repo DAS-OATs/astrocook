@@ -61,7 +61,7 @@ def plot_spectrum(session, x_min: Optional[float] = None, x_max: Optional[float]
 
     Parameters
     ----------
-    session : SessionV2
+    session : Session
     x_min, x_max : float, optional
         The range, in the unit of x; None: the start (end) of the spectrum.
     normalized : bool, optional

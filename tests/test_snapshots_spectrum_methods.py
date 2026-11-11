@@ -1,4 +1,4 @@
-"""Numerical snapshots of the SpectrumV2 methods that combine spectra.
+"""Numerical snapshots of the Spectrum methods that combine spectra.
 
 Covers stitch, coadd, resample_on_grid, get_resampled_column,
 equalize_to_reference, split and scale_flux on synthetic exposures of the
@@ -9,8 +9,8 @@ import numpy as np
 import astropy.units as au
 import pytest
 
-from astrocook.core.spectrum import SpectrumV2
-from astrocook.core.structures import DataColumnV2, SpectrumDataV2
+from astrocook.core.spectrum import Spectrum
+from astrocook.core.structures import DataColumn, SpectrumData
 
 FLUX_UNIT = au.erg / (au.cm**2 * au.s * au.nm)
 
@@ -31,13 +31,13 @@ def _exposure(start, stop, step, scale=1.0, noise=0.02, resol=45000.0, seed=0):
     flux, cont = _true_flux(x)
     y = scale * flux * (1 + noise * rng.standard_normal(len(x)))
     dy = scale * noise * flux + 1e-3
-    return SpectrumV2(SpectrumDataV2(
-        x=DataColumnV2(x, au.nm), xmin=DataColumnV2(x - step / 2, au.nm),
-        xmax=DataColumnV2(x + step / 2, au.nm),
-        y=DataColumnV2(y, FLUX_UNIT), dy=DataColumnV2(dy, FLUX_UNIT),
+    return Spectrum(SpectrumData(
+        x=DataColumn(x, au.nm), xmin=DataColumn(x - step / 2, au.nm),
+        xmax=DataColumn(x + step / 2, au.nm),
+        y=DataColumn(y, FLUX_UNIT), dy=DataColumn(dy, FLUX_UNIT),
         aux_cols={
-            "cont": DataColumnV2(scale * cont, FLUX_UNIT),
-            "resol": DataColumnV2(np.full(len(x), resol), au.dimensionless_unscaled),
+            "cont": DataColumn(scale * cont, FLUX_UNIT),
+            "resol": DataColumn(np.full(len(x), resol), au.dimensionless_unscaled),
         },
         z_em=3.0))
 
@@ -112,14 +112,14 @@ def test_split_and_scale_flux(snapshot, exposures):
 
 
 def test_voigt_model_on_coadded_spectrum_is_not_zero(exposures):
-    from astrocook.core.structures import ComponentDataV2, SystemListDataV2
-    from astrocook.core.system_list import SystemListV2
-    from astrocook.fitting.voigt_fitter import VoigtFitterV2
+    from astrocook.core.structures import ComponentData, SystemListData
+    from astrocook.core.system_list import SystemList
+    from astrocook.fitting.voigt_fitter import VoigtFitter
 
     ref, *others = exposures
     coadd = ref.coadd(others, xstart=None, xend=None, dx=2.0 * au.km / au.s)
-    comp = ComponentDataV2(id=1, z=501.0 / 154.8204 - 1, dz=None, logN=13.5,
+    comp = ComponentData(id=1, z=501.0 / 154.8204 - 1, dz=None, logN=13.5,
                            dlogN=None, b=10.0, db=None, series="CIV")
-    _, model = VoigtFitterV2(
-        coadd, SystemListV2(SystemListDataV2(components=[comp]))).compute_model_flux()
+    _, model = VoigtFitter(
+        coadd, SystemList(SystemListData(components=[comp]))).compute_model_flux()
     assert np.mean(model == 0) < 0.01

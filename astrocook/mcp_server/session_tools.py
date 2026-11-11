@@ -21,7 +21,7 @@ from pydantic import Field
 
 from astrocook import gaps
 from astrocook.methods_text import methods_text
-from astrocook.session.session import SessionV2
+from astrocook.session.session import Session
 from astrocook.recipes._spectrum import spec_of
 from astrocook.mcp_server.errors import run_recipe
 from astrocook.mcp_server.outputs import (
@@ -89,7 +89,7 @@ def register_session_tools(server: MCPServer, store: SessionStore) -> None:
             raise ToolError(f"No such file: {file_path}")
         with store.writing():
             session, warnings = run_recipe(
-                "session_open", SessionV2.open_new, str(file_path),
+                "session_open", Session.open_new, str(file_path),
                 file_path.stem, store.context, "auto")
             session_id = store.add(session, str(file_path))
         params: dict[str, Any] = {}

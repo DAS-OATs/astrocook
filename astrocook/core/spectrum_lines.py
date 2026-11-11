@@ -1,9 +1,9 @@
-"""Line methods of :class:`~astrocook.core.spectrum.SpectrumV2`: absorbed
+"""Line methods of :class:`~astrocook.core.spectrum.Spectrum`: absorbed
 regions, identification of the lines, velocity bounds, redshift of a
 doublet across two spectra.
 
 Part of the split of ``spectrum.py`` into thematic modules (phase 5): the
-methods are defined here, in a mixin class that ``SpectrumV2`` inherits, and
+methods are defined here, in a mixin class that ``Spectrum`` inherits, and
 are used as before (``spec.identify_lines(...)``).
 """
 import astropy.units as au
@@ -20,11 +20,11 @@ from astrocook.core.spectrum_operations import (
     _find_kinematic_doublet_candidates, detect_regions, merge_regions_by_velocity,
     rate_doublet_candidate,
 )
-from astrocook.core.structures import DataColumnV2
+from astrocook.core.structures import DataColumn
 from astrocook.core._spectrum_host import HostBase
 
 if TYPE_CHECKING:
-    from astrocook.core.spectrum import SpectrumV2
+    from astrocook.core.spectrum import Spectrum
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +39,7 @@ Z_EM_MARGIN_KMS = 3000.0
 class LinesMixin(HostBase):
     """Absorbed regions and identification of the lines.
 
-    Mixed into ``SpectrumV2``, whose data and methods it uses: ``_data``,
+    Mixed into ``Spectrum``, whose data and methods it uses: ``_data``,
     ``history``, ``meta``, ``x``, ``y``, ``dy``, ``cont``, ``get_column``,
     ``has_aux_column``, ``with_properties`` and ``find_absorbed`` (of
     ``ContinuumMixin``). The results are new instances of the class
@@ -61,7 +61,7 @@ class LinesMixin(HostBase):
 
         Returns
         -------
-        SpectrumV2
+        Spectrum
             A new instance with the ``region_id`` column updated.
         """
         # 1. Get the mask
@@ -86,9 +86,9 @@ class LinesMixin(HostBase):
         
         logger.info(f"{num_regions} absorbed regions of at least {min_pix} pixels.")
 
-        # 3. Create new DataColumnV2 for the IDs
+        # 3. Create new DataColumn for the IDs
         # We use a dimensionless unit for IDs
-        region_col = DataColumnV2(
+        region_col = DataColumn(
             values=region_map,
             unit=au.dimensionless_unscaled,
             description=f"Detected regions from '{mask_col}' (ID 0 = continuum)"
@@ -143,7 +143,7 @@ class LinesMixin(HostBase):
 
         Returns
         -------
-        SpectrumV2
+        Spectrum
             A new instance with the ``abs_ids`` column and identification metadata.
         """
         # This is the 'self' spectrum object
@@ -247,7 +247,7 @@ class LinesMixin(HostBase):
             if not np.any(mask_1) or not np.any(mask_2): continue
             
             r2_score = rate_doublet_candidate(
-                cast('SpectrumV2', spec), mask_1, mask_2, series_name, z_test, debug_rating=debug_rating
+                cast('Spectrum', spec), mask_1, mask_2, series_name, z_test, debug_rating=debug_rating
             )
             
             if not (r2_score > threshold or bypass_scoring) and threshold <= 1.0:
@@ -412,7 +412,7 @@ class LinesMixin(HostBase):
         # rich UI Metadata [THE FIX]
         new_meta['region_identifications'] = json.dumps(region_info)
 
-        vis_col = DataColumnV2(
+        vis_col = DataColumn(
             values=final_vis_map,
             unit=au.dimensionless_unscaled,
             description="Absorption regions with identifications"
@@ -452,7 +452,7 @@ class LinesMixin(HostBase):
         v = c_kms * (x - lam_obs) / lam_obs
         return np.min(v), np.max(v)
 
-    def detect_doublet_z(self, other_spec: 'SpectrumV2', 
+    def detect_doublet_z(self, other_spec: 'Spectrum', 
                          trans_self: str, trans_other: str) -> float:
         """
         Find the redshift of maximum coincidence between this spectrum and another.
@@ -462,7 +462,7 @@ class LinesMixin(HostBase):
 
         Parameters
         ----------
-        other_spec : SpectrumV2
+        other_spec : Spectrum
             The other spectrum object.
         trans_self : str
             Transition in this spectrum (e.g., ``'OVI_1031'``).

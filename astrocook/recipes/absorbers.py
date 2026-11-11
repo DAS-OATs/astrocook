@@ -1,3 +1,4 @@
+from astrocook._renamed import renamed
 import astropy.units as au
 import json
 import logging
@@ -5,7 +6,7 @@ import numpy as np
 from typing import TYPE_CHECKING, Any, Optional
 
 from astrocook.core.atomic_data import STANDARD_MULTIPLETS, is_multiplet, series_lines
-from astrocook.fitting.voigt_fitter import NoPixelsToFit, VoigtFitterV2
+from astrocook.fitting.voigt_fitter import NoPixelsToFit, VoigtFitter
 
 from astrocook.fitting.voigt_model import LINK_ERRORS, LINK_FUNCTIONS
 from astrocook.recipes.errors import InvalidParameter, MissingPrerequisite, RecipeFailed
@@ -17,7 +18,7 @@ from astrocook.recipes.messages import (msg_no_resolution, msg_session_not_found
                                        msg_z_em_unset)
 
 if TYPE_CHECKING:
-    from astrocook.session.session import SessionV2
+    from astrocook.session.session import Session
 
 logger = logging.getLogger(__name__)
 
@@ -539,7 +540,7 @@ def _region_ident_dict(value) -> dict:
 
 
 def _identification_extra(spec) -> dict:
-    """The identification of :meth:`RecipeAbsorbersV2.identify_lines`, for
+    """The identification of :meth:`RecipeAbsorbers.identify_lines`, for
     the structured result (phase 6-bis, PR 4b; F49: the candidate systems
     keep their region and their score): the candidate systems and the
     regions, with their range in x and their identifications."""
@@ -606,11 +607,11 @@ def merge_region_ids(old_ids, old_ident, new_ids, new_ident):
 def _without_components(session, uuids):
     """The session without the components ``uuids`` (and the constraints
     on them), with the model recomputed from the remaining ones."""
-    from astrocook.fitting.voigt_fitter import VoigtFitterV2
+    from astrocook.fitting.voigt_fitter import VoigtFitter
     systs = session.systs.delete_component(uuids=list(uuids))
     session = session.with_new_system_list(systs)
     if systs.components:
-        _, model_flux = VoigtFitterV2(session.spec, systs).compute_model_flux()
+        _, model_flux = VoigtFitter(session.spec, systs).compute_model_flux()
         session = session.with_new_spectrum(session.spec.update_model(model_flux))
     return session
 
@@ -636,7 +637,7 @@ def _remove_narrow(session, series: str, min_b: float, refit_kwargs: dict):
         # A failure of the refit is a RecipeError, which the cleaning
         # boundary of the pipeline turns into a WARNING (phase 6); before
         # phase 6-bis (PR 3) its 0 removed the lines without a refit, silently
-        session = RecipeAbsorbersV2(trimmed).refit_all(**refit_kwargs)
+        session = RecipeAbsorbers(trimmed).refit_all(**refit_kwargs)
     uuids = narrow(session)
     if uuids:
         logger.info(f"{len(uuids)} lines still narrower than {min_b} km/s after the last refit removed.")
@@ -749,12 +750,12 @@ def _flag_not_fitted(systs, uuids):
     """The system list with the flag ``not_fitted`` on the components
     ``uuids``."""
     import dataclasses
-    from astrocook.core.system_list import SystemListV2
+    from astrocook.core.system_list import SystemList
     targets = set(uuids)
     comps = [dataclasses.replace(c, flags=tuple(c.flags or ()) + (NOT_FITTED,))
              if c.uuid in targets and NOT_FITTED not in (c.flags or ()) else c
              for c in systs.components]
-    return SystemListV2(dataclasses.replace(systs._data, components=comps))
+    return SystemList(dataclasses.replace(systs._data, components=comps))
 
 
 def _log_flags(components) -> None:
@@ -771,15 +772,15 @@ def _log_flags(components) -> None:
                     "with wider bounds (e.g. Refit Selected) or check the component.")
 
 
-class RecipeAbsorbersV2:
+class RecipeAbsorbers:
     """
     Recipes for identification, fitting, and management of absorption lines.
 
     These methods are accessed via the ``session.absorbers`` attribute and delegate
-    logic to :class:`~astrocook.core.system_list.SystemListV2`,
-    :class:`~astrocook.core.spectrum.SpectrumV2`, and the fitting engine.
+    logic to :class:`~astrocook.core.system_list.SystemList`,
+    :class:`~astrocook.core.spectrum.Spectrum`, and the fitting engine.
     """
-    def __init__(self, session_v2: 'SessionV2'):
+    def __init__(self, session_v2: 'Session'):
         self._session = session_v2
         self._tag = 'abs'
 
@@ -793,7 +794,7 @@ class RecipeAbsorbersV2:
                         region_limit: str = "None",
                         max_b: float = 50.0, max_logN: float = 19.0,
                         mask: str = "new",
-                        z_em_margin_kms: float = 3000.0) -> 'SessionV2':
+                        z_em_margin_kms: float = 3000.0) -> 'Session':
         """
         Auto-detect and fit components.
 
@@ -836,7 +837,7 @@ class RecipeAbsorbersV2:
         mask : str, optional
             The mask of the absorbed pixels used to find the regions:
             ``'new'`` (made again with the defaults of
-            :meth:`~astrocook.recipes.continuum.RecipeContinuumV2.find_absorbed`)
+            :meth:`~astrocook.recipes.continuum.RecipeContinuum.find_absorbed`)
             or ``'session'`` (the ``abs_mask`` already in the session, e.g.
             from ``estimate_auto`` with other parameters). Defaults to
             ``'new'`` (F50, phase 6-bis, PR 6b).
@@ -846,8 +847,8 @@ class RecipeAbsorbersV2:
 
         Returns
         -------
-        SessionV2
-            A new :class:`~astrocook.session.session.SessionV2` with detected systems.
+        Session
+            A new :class:`~astrocook.session.session.Session` with detected systems.
         """
         progress(logger, 0)
         logger.info(f"Searching for components (region: {region_limit}).")
@@ -878,8 +879,8 @@ class RecipeAbsorbersV2:
             # Always generate a fresh mask to ensure it matches current z_em/flux state.
             # This prevents "stale mask" bugs when running recipes sequentially.
             logger.info(f"Finding the absorbed regions (column '{mask_col}').")
-            from astrocook.recipes.continuum import RecipeContinuumV2
-            rec_cont = RecipeContinuumV2(session_current)
+            from astrocook.recipes.continuum import RecipeContinuum
+            rec_cont = RecipeContinuum(session_current)
             session_current = rec_cont.find_absorbed(
                 smooth_len_lya="5000.0", 
                 smooth_len_out="400.0",
@@ -901,7 +902,7 @@ class RecipeAbsorbersV2:
             # Get bounds as Quantities
             obs_min, obs_max = spec.get_region_bounds(region_limit)
 
-            # Delegate logic to SystemListV2
+            # Delegate logic to SystemList
             new_systs = session_current.systs.remove_in_region(obs_min, obs_max)
             kept = {c.uuid for c in new_systs.components}
             report_removed([c.uuid for c in session_current.systs.components
@@ -931,7 +932,7 @@ class RecipeAbsorbersV2:
             old_abs_ids = old_col.value.copy()
             
         # Create a temp recipe wrapper for the masked session
-        rec_temp = RecipeAbsorbersV2(session_current)
+        rec_temp = RecipeAbsorbers(session_current)
         
         session_step1 = rec_temp.identify_lines(
             multiplets=multiplets, 
@@ -972,7 +973,7 @@ class RecipeAbsorbersV2:
 
         # --- 3. POPULATE ---
         logger.info("Adding the components (step 2 of 3).")
-        rec_step2 = RecipeAbsorbersV2(session_step1)
+        rec_step2 = RecipeAbsorbers(session_step1)
         session_step2 = rec_step2.populate_from_identification(
             region_id_col='abs_ids',
             series_map_json=series_map_json,
@@ -983,7 +984,7 @@ class RecipeAbsorbersV2:
         
         # --- 4. REFIT ALL ---
         logger.info("Fitting the components (step 3 of 3).")
-        rec_step3 = RecipeAbsorbersV2(session_step2)
+        rec_step3 = RecipeAbsorbers(session_step2)
         final_session = rec_step3.refit_all(
             max_nfev='200',
             z_window_kms=z_window_kms,
@@ -1013,7 +1014,7 @@ class RecipeAbsorbersV2:
                       z_window_kms: float = 20.0,
                       max_b: float = 50.0, max_logN: float = 19.0,
                       mask: str = "new",
-                      z_em_margin_kms: float = 3000.0) -> 'SessionV2':
+                      z_em_margin_kms: float = 3000.0) -> 'Session':
         """
         Auto-fit metal doublets (Red Side).
 
@@ -1037,7 +1038,7 @@ class RecipeAbsorbersV2:
         mask : str, optional
             The mask of the absorbed pixels used to find the regions:
             ``'new'`` (made again with the defaults of
-            :meth:`~astrocook.recipes.continuum.RecipeContinuumV2.find_absorbed`)
+            :meth:`~astrocook.recipes.continuum.RecipeContinuum.find_absorbed`)
             or ``'session'`` (the ``abs_mask`` already in the session, e.g.
             from ``estimate_auto`` with other parameters). Defaults to
             ``'new'`` (F50, phase 6-bis, PR 6b).
@@ -1047,8 +1048,8 @@ class RecipeAbsorbersV2:
 
         Returns
         -------
-        SessionV2
-            A new :class:`~astrocook.session.session.SessionV2` with detected doublets.
+        Session
+            A new :class:`~astrocook.session.session.Session` with detected doublets.
         """
         return self.components_auto(
             multiplets=multiplets,
@@ -1065,13 +1066,13 @@ class RecipeAbsorbersV2:
     def lya_auto(self, score_threshold: float = 0.1, min_b: float = 10.0,
                  z_window_kms: float = 100.0, max_b: float = 50.0,
                  max_logN: float = 19.0, mask: str = "new",
-                 z_em_margin_kms: float = 3000.0) -> 'SessionV2':
+                 z_em_margin_kms: float = 3000.0) -> 'Session':
         """
         Auto-fit Ly-alpha forest.
 
         Wrapper for :meth:`components_auto` targeted at the forest. Includes
         filtering of interlopers based on the b-parameter.
-        Delegates to :meth:`astrocook.core.system_list.SystemListV2.filter_by_criteria`.
+        Delegates to :meth:`astrocook.core.system_list.SystemList.filter_by_criteria`.
 
         Parameters
         ----------
@@ -1090,7 +1091,7 @@ class RecipeAbsorbersV2:
         mask : str, optional
             The mask of the absorbed pixels used to find the regions:
             ``'new'`` (made again with the defaults of
-            :meth:`~astrocook.recipes.continuum.RecipeContinuumV2.find_absorbed`)
+            :meth:`~astrocook.recipes.continuum.RecipeContinuum.find_absorbed`)
             or ``'session'`` (the ``abs_mask`` already in the session, e.g.
             from ``estimate_auto`` with other parameters). Defaults to
             ``'new'`` (F50, phase 6-bis, PR 6b).
@@ -1100,8 +1101,8 @@ class RecipeAbsorbersV2:
 
         Returns
         -------
-        SessionV2
-            A new :class:`~astrocook.session.session.SessionV2` with the forest model.
+        Session
+            A new :class:`~astrocook.session.session.Session` with the forest model.
         """
         progress(logger, 0)
         logger.info("Fitting the Lyman-alpha forest.")
@@ -1147,7 +1148,7 @@ class RecipeAbsorbersV2:
     def forest_auto(self, score_threshold: float = 0.1, min_b: float = 10.0,
                     z_window_kms: float = 20.0, max_b: float = 50.0,
                     max_logN: float = 19.0,
-                    z_em_margin_kms: float = 3000.0) -> 'SessionV2':
+                    z_em_margin_kms: float = 3000.0) -> 'Session':
         """
         Auto-fit full Lyman series.
 
@@ -1174,8 +1175,8 @@ class RecipeAbsorbersV2:
 
         Returns
         -------
-        SessionV2
-            A new :class:`~astrocook.session.session.SessionV2` with Lyman series systems.
+        Session
+            A new :class:`~astrocook.session.session.Session` with Lyman series systems.
         """
         logger.info("Fitting the Lyman series in the forest.")
         
@@ -1209,14 +1210,14 @@ class RecipeAbsorbersV2:
             new_series_json = None
 
         # 3. POPULATE & FIT
-        rec_step2 = RecipeAbsorbersV2(session_id_only)
+        rec_step2 = RecipeAbsorbers(session_id_only)
         session_step2 = rec_step2.populate_from_identification(
             series_map_json=new_series_json,
             z_map_json=spec_meta.get('z_map_json')
         )
         
         # 4. Refit All
-        rec_step3 = RecipeAbsorbersV2(session_step2)
+        rec_step3 = RecipeAbsorbers(session_step2)
         # max_nfev as before the defaults were aligned with the GUI (#573)
         refit_kwargs = dict(z_window_kms=z_window_kms, group_depth='1',
                             max_nfev='100', max_b=max_b, max_logN=max_logN)
@@ -1234,13 +1235,13 @@ class RecipeAbsorbersV2:
     @typed_recipe
     def metals_auto(self, ions: str = "CIV,SiIV,NV,OVI,CII,MgII",
                     aic_penalty: float = 5.0, z_window_kms: float = 20.0,
-                    max_b: float = 50.0, max_logN: float = 19.0) -> 'SessionV2':
+                    max_b: float = 50.0, max_logN: float = 19.0) -> 'Session':
         """
         Check for associated metals.
 
         Scans existing systems and attempts to add other common metal ions
         (e.g., NV, SiIV) at the same redshift, keeping them if fit quality holds.
-        Delegates to :meth:`astrocook.core.system_list.SystemListV2.add_component`.
+        Delegates to :meth:`astrocook.core.system_list.SystemList.add_component`.
 
         Parameters
         ----------
@@ -1264,8 +1265,8 @@ class RecipeAbsorbersV2:
 
         Returns
         -------
-        SessionV2
-            A new :class:`~astrocook.session.session.SessionV2` with added metals.
+        Session
+            A new :class:`~astrocook.session.session.Session` with added metals.
         """
         ion_list = [i.strip() for i in ions.split(',')]
         z_win = z_window_kms
@@ -1312,7 +1313,7 @@ class RecipeAbsorbersV2:
             try:
                 with trial_systs.fitting_context(list(group), group_depth=FIT_EXPANSION_DEPTH,
                                                  spec=spec):
-                    fitter = VoigtFitterV2(spec, trial_systs, check_stop=_fit_cancelled)
+                    fitter = VoigtFitter(spec, trial_systs, check_stop=_fit_cancelled)
                     fitted_systs, model_flux, res = fitter.fit(max_nfev=100, z_window_kms=z_win,
                                                                verbose=0, b_max=b_max,
                                                                logN_max=logN_max)
@@ -1338,7 +1339,7 @@ class RecipeAbsorbersV2:
             # The AIC with the ion against the same model without it, on
             # the pixels of its fit (3 more free parameters)
             chi2_with, n_pix = fitter.chi2_on_fit_pixels(model_flux)
-            _, flux_without = VoigtFitterV2(
+            _, flux_without = VoigtFitter(
                 spec, fitted_systs.delete_component(uuid=new_uuid)).compute_model_flux()
             chi2_without, _ = fitter.chi2_on_fit_pixels(flux_without)
             delta_aic = chi2_with - chi2_without + 2 * 3
@@ -1372,7 +1373,7 @@ class RecipeAbsorbersV2:
             # the ions found: it refitted the session it started from, and
             # lost them (F111)
             found = current_session.with_new_system_list(running_systs)
-            return RecipeAbsorbersV2(found).refit_all(max_b=max_b, max_logN=max_logN,
+            return RecipeAbsorbers(found).refit_all(max_b=max_b, max_logN=max_logN,
                                                       group_depth='0', max_nfev='100')
         else:
             logger.info("No metals found.")
@@ -1387,13 +1388,13 @@ class RecipeAbsorbersV2:
                        score_threshold: float = 0.5,
                        bypass_scoring: bool = False,
                        debug_rating: bool = False,
-                       z_em_margin_kms: float = 3000.0) -> 'SessionV2':
+                       z_em_margin_kms: float = 3000.0) -> 'Session':
         """
         Identify likely absorption systems.
 
         Finds absorption regions, computes correlation signals for multiplets, and
         identifies the most likely candidates using a scoring system.
-        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.identify_lines`.
+        Delegates to :meth:`astrocook.core.spectrum.Spectrum.identify_lines`.
 
         Parameters
         ----------
@@ -1418,8 +1419,8 @@ class RecipeAbsorbersV2:
 
         Returns
         -------
-        SessionV2
-            A new :class:`~astrocook.session.session.SessionV2` with identification maps
+        Session
+            A new :class:`~astrocook.session.session.Session` with identification maps
             in metadata.
         """
         multiplet_list = [m.strip() for m in multiplets.split(',') if m.strip()]
@@ -1440,13 +1441,13 @@ class RecipeAbsorbersV2:
         return self._session.with_new_spectrum(new_spec_v2)
     @typed_recipe
     def populate_from_identification(self, region_id_col: str = 'abs_ids',
-                       series_map_json: str = '', z_map_json: str = '') -> 'SessionV2':
+                       series_map_json: str = '', z_map_json: str = '') -> 'Session':
         """
         Populate components from identification.
 
         Populates the system list using the regions and candidates found by
-        :meth:`identify_lines`. Delegates to :meth:`astrocook.core.system_list.SystemListV2.add_component`
-        and :meth:`astrocook.core.spectrum.SpectrumV2.update_model`.
+        :meth:`identify_lines`. Delegates to :meth:`astrocook.core.system_list.SystemList.add_component`
+        and :meth:`astrocook.core.spectrum.Spectrum.update_model`.
 
         Parameters
         ----------
@@ -1459,11 +1460,11 @@ class RecipeAbsorbersV2:
 
         Returns
         -------
-        SessionV2
-            A new :class:`~astrocook.session.session.SessionV2` with populated systems
+        Session
+            A new :class:`~astrocook.session.session.Session` with populated systems
             and updated model.
         """
-        from astrocook.fitting.voigt_fitter import VoigtFitterV2
+        from astrocook.fitting.voigt_fitter import VoigtFitter
 
         if not series_map_json or not z_map_json:
             raise RecipeFailed("There is no identification to build the components from: "
@@ -1500,10 +1501,10 @@ class RecipeAbsorbersV2:
         if running_systs.constraint_model:
             running_systs.constraint_model.set_active_components(None)
 
-        final_fitter = VoigtFitterV2(spec, running_systs)
+        final_fitter = VoigtFitter(spec, running_systs)
         _, model_flux = final_fitter.compute_model_flux()
         
-        # Delegate to SpectrumV2
+        # Delegate to Spectrum
         new_spec = spec.update_model(model_flux)
         
         # Remove temporary JSON maps to prevent FITS header overflow
@@ -1521,12 +1522,12 @@ class RecipeAbsorbersV2:
     @typed_recipe
     def add_component(self, series: str = 'Ly_a', z: float = 0.0,
                       logN: float = 13.5, b: float = 10.0, btur: float = 0.0,
-                      z_window_kms: float = 20.0) -> 'SessionV2':
+                      z_window_kms: float = 20.0) -> 'Session':
         """
         Add a single component.
 
         Adds a new manual Voigt component at a specific redshift and auto-fits it.
-        Delegates to :meth:`astrocook.core.system_list.SystemListV2.add_component`.
+        Delegates to :meth:`astrocook.core.system_list.SystemList.add_component`.
 
         Parameters
         ----------
@@ -1545,8 +1546,8 @@ class RecipeAbsorbersV2:
 
         Returns
         -------
-        SessionV2
-            A new :class:`~astrocook.session.session.SessionV2` with the added component.
+        Session
+            A new :class:`~astrocook.session.session.Session` with the added component.
         """
         z_f, logN_f, b_f, btur_f, z_win_f = z, logN, b, btur, z_window_kms
 
@@ -1557,16 +1558,16 @@ class RecipeAbsorbersV2:
             logger.info(f"Custom multiplet {series} ({', '.join(series_lines(series))}).")
 
         if self._session.systs is None:
-            from astrocook.core.structures import SystemListDataV2
-            from astrocook.core.system_list import SystemListV2
-            empty_systs = SystemListV2(SystemListDataV2())
+            from astrocook.core.structures import SystemListData
+            from astrocook.core.system_list import SystemList
+            empty_systs = SystemList(SystemListData())
             new_systs = empty_systs.add_component(series, z_f, logN_f, b_f, btur_f)
         else:
             new_systs = self._session.systs.add_component(series, z_f, logN_f, b_f, btur_f)
             
         added_comp = new_systs.components[-1]
         temp_session = self._session.with_new_system_list(new_systs)
-        temp_recipe = RecipeAbsorbersV2(temp_session)
+        temp_recipe = RecipeAbsorbers(temp_session)
             
         logger.info(f"Fitting the new {added_comp.series} component.")
         final_session = temp_recipe.fit_component(added_comp.uuid, z_window_kms=str(z_win_f))
@@ -1574,12 +1575,12 @@ class RecipeAbsorbersV2:
     @typed_recipe
     def update_component(self, uuid: str, z: Optional[float] = None, logN: Optional[float] = None,
                          b: Optional[float] = None, btur: Optional[float] = None,
-                         series: Optional[str] = None, resol: Optional[float] = None) -> 'SessionV2':
+                         series: Optional[str] = None, resol: Optional[float] = None) -> 'Session':
         """
         Update component parameters.
 
         Modifies the physical parameters of an existing component.
-        Delegates to :meth:`astrocook.core.system_list.SystemListV2.update_component`.
+        Delegates to :meth:`astrocook.core.system_list.SystemList.update_component`.
 
         Parameters
         ----------
@@ -1600,8 +1601,8 @@ class RecipeAbsorbersV2:
 
         Returns
         -------
-        SessionV2
-            A new :class:`~astrocook.session.session.SessionV2` with updated component.
+        Session
+            A new :class:`~astrocook.session.session.Session` with updated component.
         """
         changes: dict[str, Any] = {}
         # None: unchanged ('None' in the dialogs and the log)
@@ -1618,12 +1619,12 @@ class RecipeAbsorbersV2:
     def update_components(self, uuids: list, z: Optional[float] = None,
                           logN: Optional[float] = None, b: Optional[float] = None,
                           btur: Optional[float] = None, series: str = 'None',
-                          resol: Optional[float] = None) -> 'SessionV2':
+                          resol: Optional[float] = None) -> 'Session':
         """
         Batch update component parameters.
 
         Modifies the physical parameters of multiple existing components simultaneously.
-        Delegates to :meth:`astrocook.core.system_list.SystemListV2.update_components`.
+        Delegates to :meth:`astrocook.core.system_list.SystemList.update_components`.
 
         Parameters
         ----------
@@ -1644,8 +1645,8 @@ class RecipeAbsorbersV2:
 
         Returns
         -------
-        SessionV2
-            A new :class:`~astrocook.session.session.SessionV2` with updated components.
+        Session
+            A new :class:`~astrocook.session.session.Session` with updated components.
         """
         # Parse values
         changes: dict[str, Any] = {}
@@ -1665,15 +1666,15 @@ class RecipeAbsorbersV2:
         return self._session.with_new_system_list(new_systs)
             
     @typed_recipe
-    def delete_component(self, uuid: Optional[str] = None, uuids: Optional[list] = None) -> 'SessionV2':
+    def delete_component(self, uuid: Optional[str] = None, uuids: Optional[list] = None) -> 'Session':
         """
         Delete component(s).
 
         Removes specified components and updates the model. Without a
         continuum the model cannot be computed: the components are deleted
         anyway and the ``model`` column, if any, is removed.
-        Delegates to :meth:`astrocook.core.system_list.SystemListV2.delete_component`
-        and :meth:`astrocook.core.spectrum.SpectrumV2.update_model`.
+        Delegates to :meth:`astrocook.core.system_list.SystemList.delete_component`
+        and :meth:`astrocook.core.spectrum.Spectrum.update_model`.
 
         Parameters
         ----------
@@ -1684,13 +1685,13 @@ class RecipeAbsorbersV2:
 
         Returns
         -------
-        SessionV2
-            A new :class:`~astrocook.session.session.SessionV2` with components removed.
+        Session
+            A new :class:`~astrocook.session.session.Session` with components removed.
         """
-        from astrocook.fitting.voigt_fitter import VoigtFitterV2
+        from astrocook.fitting.voigt_fitter import VoigtFitter
         
-        # 1. Delegate to SystemListV2 (which we updated to handle lists)
-        # We pass both arguments; SystemListV2 handles the set logic.
+        # 1. Delegate to SystemList (which we updated to handle lists)
+        # We pass both arguments; SystemList handles the set logic.
         new_systs = self._session.systs.delete_component(uuid=uuid, uuids=uuids)
         kept = {c.uuid for c in new_systs.components}
         report_removed([c.uuid for c in self._session.systs.components if c.uuid not in kept],
@@ -1708,7 +1709,7 @@ class RecipeAbsorbersV2:
             return self._session.with_new_spectrum(spec).with_new_system_list(new_systs)
 
         # 3. Recompute Model (Only once!)
-        fitter = VoigtFitterV2(spec, new_systs)
+        fitter = VoigtFitter(spec, new_systs)
         _, model_flux = fitter.compute_model_flux()
             
         # 4. Update Spectrum
@@ -1723,7 +1724,7 @@ class RecipeAbsorbersV2:
 
         Finds the redshift of maximum overlap between this session and a sibling
         session (useful for doublet identification across orders/exposures).
-        Delegates to :meth:`astrocook.core.spectrum.SpectrumV2.detect_doublet_z`.
+        Delegates to :meth:`astrocook.core.spectrum.Spectrum.detect_doublet_z`.
 
         Parameters
         ----------
@@ -1759,13 +1760,13 @@ class RecipeAbsorbersV2:
             
     @typed_recipe
     def fit_component(self, uuid: str, max_nfev: int = 2000, z_window_kms: float = 20.0,
-                      group_depth: int = 2) -> 'SessionV2':
+                      group_depth: int = 2) -> 'Session':
         """
         Fit component.
 
         Fits the selected component (and its connected neighbors) using the Voigt engine.
-        Delegates to :meth:`astrocook.core.system_list.SystemListV2.fitting_context`
-        and :class:`astrocook.fitting.voigt_fitter.VoigtFitterV2`.
+        Delegates to :meth:`astrocook.core.system_list.SystemList.fitting_context`
+        and :class:`astrocook.fitting.voigt_fitter.VoigtFitter`.
 
         Parameters
         ----------
@@ -1780,8 +1781,8 @@ class RecipeAbsorbersV2:
 
         Returns
         -------
-        SessionV2
-            A new :class:`~astrocook.session.session.SessionV2` with updated parameters
+        Session
+            A new :class:`~astrocook.session.session.Session` with updated parameters
             and model.
         """
         max_nfev_i, z_win_f, depth_i = max_nfev, z_window_kms, group_depth
@@ -1794,26 +1795,26 @@ class RecipeAbsorbersV2:
         _warn_if_unconvolved(current_session.spec)
         with current_session.systs.fitting_context([uuid], group_depth=depth_i,
                                                    spec=current_session.spec):
-            fitter = VoigtFitterV2(spec_of(current_session), current_session.systs,
+            fitter = VoigtFitter(spec_of(current_session), current_session.systs,
                                    check_stop=_fit_cancelled)
             new_systs, model_flux, res = fitter.fit(max_nfev=max_nfev_i, z_window_kms=z_win_f)
 
         if new_systs.constraint_model:
             new_systs.constraint_model.set_active_components(None)
 
-        # Delegate to SpectrumV2
+        # Delegate to Spectrum
         new_spec = spec_of(current_session).update_model(model_flux)
             
         return current_session.with_new_spectrum(new_spec).with_new_system_list(new_systs)
             
     @typed_recipe
     def update_constraint(self, uuid: str, param: str, is_free: Optional[bool] = None, 
-                          expression: Optional[str] = None, target_uuid: Optional[str] = None) -> 'SessionV2':
+                          expression: Optional[str] = None, target_uuid: Optional[str] = None) -> 'Session':
         """
         Update constraint.
 
         Freeze, unfreeze, or link component parameters.
-        Delegates to :meth:`astrocook.core.system_list.SystemListV2.update_constraint`.
+        Delegates to :meth:`astrocook.core.system_list.SystemList.update_constraint`.
 
         Parameters
         ----------
@@ -1830,8 +1831,8 @@ class RecipeAbsorbersV2:
 
         Returns
         -------
-        SessionV2
-            A new :class:`~astrocook.session.session.SessionV2` with updated constraints.
+        Session
+            A new :class:`~astrocook.session.session.Session` with updated constraints.
         """
         new_systs = self._session.systs.update_constraint(
             uuid, param, is_free, expression, target_uuid
@@ -1859,7 +1860,7 @@ class RecipeAbsorbersV2:
                 logger.info(f"Linked: {param} set to {new_val:.4f}.")
                 new_systs = new_systs.update_component(uuid, **{param: new_val})
             except LINK_ERRORS as e:
-                # The link is checked by SystemListV2.update_constraint:
+                # The link is checked by SystemList.update_constraint:
                 # this should not happen (phase 6)
                 logger.warning(f"The linked {param} could not be computed ({e}): it "
                                "keeps its value until the next fit.")
@@ -1867,7 +1868,7 @@ class RecipeAbsorbersV2:
         return self._session.with_new_system_list(new_systs)
             
     @typed_recipe
-    def update_constraints_column(self, param: str, is_free: bool) -> 'SessionV2':
+    def update_constraints_column(self, param: str, is_free: bool) -> 'Session':
         """
         Bulk update constraints.
 
@@ -1883,8 +1884,8 @@ class RecipeAbsorbersV2:
 
         Returns
         -------
-        SessionV2
-            A new :class:`~astrocook.session.session.SessionV2` with updated constraints.
+        Session
+            A new :class:`~astrocook.session.session.Session` with updated constraints.
         """
         if not self._session.systs or not self._session.systs.components:
             raise RecipeFailed("There are no components.")
@@ -1914,7 +1915,7 @@ class RecipeAbsorbersV2:
 
     @typed_recipe
     def add_linked_system(self, series_list: str, z: float, logN: float = 13.5, 
-                          b: float = 10.0, z_window_kms: float = 20.0) -> 'SessionV2':
+                          b: float = 10.0, z_window_kms: float = 20.0) -> 'Session':
         """
         Add linked system.
 
@@ -1936,8 +1937,8 @@ class RecipeAbsorbersV2:
 
         Returns
         -------
-        SessionV2
-            A new :class:`~astrocook.session.session.SessionV2` with linked components
+        Session
+            A new :class:`~astrocook.session.session.Session` with linked components
             fitted.
         """
         series_names = [s.strip() for s in series_list.split(',') if s.strip()]
@@ -1955,9 +1956,9 @@ class RecipeAbsorbersV2:
         # But we need the UUID, so we call the SystemList API directly
         
         if current_session.systs is None:
-            from astrocook.core.structures import SystemListDataV2
-            from astrocook.core.system_list import SystemListV2
-            new_systs = SystemListV2(SystemListDataV2())
+            from astrocook.core.structures import SystemListData
+            from astrocook.core.system_list import SystemList
+            new_systs = SystemList(SystemListData())
         else:
             new_systs = current_session.systs
             
@@ -1983,7 +1984,7 @@ class RecipeAbsorbersV2:
         # 3. Create Temp Session & Fit
         # We fit the Primary (which pulls in the linked secondaries via grouping)
         temp_session = current_session.with_new_system_list(new_systs)
-        temp_recipe = RecipeAbsorbersV2(temp_session)
+        temp_recipe = RecipeAbsorbers(temp_session)
         
         logger.info("Fitting the linked components.")
         # Fit centered on Primary
@@ -1995,13 +1996,13 @@ class RecipeAbsorbersV2:
     def optimize_system(self, uuid: str, max_components: int = 5,
                         threshold_sigma: float = 2.5, aic_penalty: float = 5.0,
                         z_window_kms: float = 100.0, min_dv: float = 10.0,
-                        group_depth: int = 2, patience: int = 2) -> 'SessionV2':
+                        group_depth: int = 2, patience: int = 2) -> 'Session':
         """
         Optimize system (Iterative Fit).
 
         Iteratively adds components to a system to minimize residuals using the
         Akaike Information Criterion (AIC).
-        Delegates to :meth:`astrocook.core.system_list.SystemListV2.optimize_hierarchy`.
+        Delegates to :meth:`astrocook.core.system_list.SystemList.optimize_hierarchy`.
 
         Parameters
         ----------
@@ -2026,8 +2027,8 @@ class RecipeAbsorbersV2:
 
         Returns
         -------
-        SessionV2
-            A new :class:`~astrocook.session.session.SessionV2` with optimized systems.
+        Session
+            A new :class:`~astrocook.session.session.Session` with optimized systems.
         """
         max_c, thresh, aic_p = max_components, threshold_sigma, aic_penalty
         z_win, min_dv_f, depth, pat = z_window_kms, min_dv, group_depth, patience
@@ -2058,11 +2059,11 @@ class RecipeAbsorbersV2:
         if new_systs.constraint_model:
             new_systs.constraint_model.set_active_components(None)
 
-        from astrocook.fitting.voigt_fitter import VoigtFitterV2
-        fitter = VoigtFitterV2(spec_of(current_session), new_systs)
+        from astrocook.fitting.voigt_fitter import VoigtFitter
+        fitter = VoigtFitter(spec_of(current_session), new_systs)
         _, model_flux = fitter.compute_model_flux()
             
-        # Delegate to SpectrumV2
+        # Delegate to Spectrum
         new_spec = spec_of(current_session).update_model(model_flux)
             
         return current_session.with_new_spectrum(new_spec).with_new_system_list(new_systs)
@@ -2070,7 +2071,7 @@ class RecipeAbsorbersV2:
     @typed_recipe
     def fit_bayesian(self, uuids: Optional[list[str]] = None, engine: str = 'mcmc',
                      nsteps: int = 500, nlive: int = 250,
-                     group_depth: int = 2) -> 'SessionV2':
+                     group_depth: int = 2) -> 'Session':
         """
         Run Bayesian sampling (MCMC or Nested) on a group of components.
 
@@ -2152,12 +2153,12 @@ class RecipeAbsorbersV2:
                 
             from dataclasses import replace
             final_systs_data = replace(new_systs._data, meta=new_meta)
-            from ..core.system_list import SystemListV2
-            final_systs = SystemListV2(final_systs_data)
+            from ..core.system_list import SystemList
+            final_systs = SystemList(final_systs_data)
 
         # 3. Update Model flux
-        from ..fitting.voigt_fitter import VoigtFitterV2
-        fitter = VoigtFitterV2(spec_of(current_session), final_systs)
+        from ..fitting.voigt_fitter import VoigtFitter
+        fitter = VoigtFitter(spec_of(current_session), final_systs)
         _, model_flux = fitter.compute_model_flux()
         new_spec = spec_of(current_session).update_model(model_flux)
 
@@ -2168,14 +2169,14 @@ class RecipeAbsorbersV2:
                   group_depth: int = 2, max_group_size: int = 20,
                   region_limit: str = "None",
                   selected_uuids: Optional[list] = None,
-                  max_b: float = 300.0, max_logN: float = 23.0) -> 'SessionV2':
+                  max_b: float = 300.0, max_logN: float = 23.0) -> 'Session':
         """
         Refit all systems.
 
         Iteratively fits all disjoint groups of components (islands) in the spectrum.
         Uses chunking for large groups.
-        Delegates to :meth:`astrocook.core.system_list.SystemListV2.get_connected_group`
-        and :class:`astrocook.fitting.voigt_fitter.VoigtFitterV2`.
+        Delegates to :meth:`astrocook.core.system_list.SystemList.get_connected_group`
+        and :class:`astrocook.fitting.voigt_fitter.VoigtFitter`.
 
         Parameters
         ----------
@@ -2201,8 +2202,8 @@ class RecipeAbsorbersV2:
 
         Returns
         -------
-        SessionV2
-            A new :class:`~astrocook.session.session.SessionV2` with all systems refitted.
+        Session
+            A new :class:`~astrocook.session.session.Session` with all systems refitted.
         """
         max_nfev_i, z_win_f, depth_i = max_nfev, z_window_kms, group_depth
         max_size_i, b_max_f, logN_max_f = max_group_size, max_b, max_logN
@@ -2231,7 +2232,7 @@ class RecipeAbsorbersV2:
             # Execute a single fit pass for the entire 'Super-Group'
             with current_session.systs.fitting_context(list(combined_active_set), group_depth=FIT_EXPANSION_DEPTH,
                                                        spec=current_session.spec):
-                fitter = VoigtFitterV2(spec_of(current_session), current_session.systs, 
+                fitter = VoigtFitter(spec_of(current_session), current_session.systs, 
                                       check_stop=_fit_cancelled)
                 new_systs, model_flux, res = fitter.fit(
                     max_nfev=max_nfev_i, z_window_kms=z_win_f, b_max=b_max_f,
@@ -2308,7 +2309,7 @@ class RecipeAbsorbersV2:
         else:
             logger.debug(f"Refit All: Strategy = Connected Groups (depth={depth_i}).")
             # The groups of the components in the region; their neighbours
-            # outside it can be pulled in (moved to SystemListV2.fit_groups
+            # outside it can be pulled in (moved to SystemList.fit_groups
             # in phase 6-ter, PR 3: the MCP server shows the same groups)
             work_units = current_session.systs.fit_groups(
                 uuids_in_region, max_depth=depth_i, spec=current_session.spec,
@@ -2323,7 +2324,7 @@ class RecipeAbsorbersV2:
         updated_components_map = {} 
 
         import dataclasses
-        from astrocook.core.system_list import SystemListV2
+        from astrocook.core.system_list import SystemList
 
         failed_units = []
         not_fitted: list[Any] = []  # the components of the groups that could not be fitted
@@ -2356,10 +2357,10 @@ class RecipeAbsorbersV2:
                 
             local_comps = [c for c in reference_systs.components if z_start <= c.z <= z_end]
             local_systs_data = dataclasses.replace(reference_systs._data, components=local_comps)
-            local_systs = SystemListV2(local_systs_data)
+            local_systs = SystemList(local_systs_data)
                 
             try:
-                fitter = VoigtFitterV2(spec_of(current_session), local_systs)
+                fitter = VoigtFitter(spec_of(current_session), local_systs)
                     
                 with local_systs.fitting_context(target_uuids, group_depth=FIT_EXPANSION_DEPTH,
                                                  spec=current_session.spec):
@@ -2396,7 +2397,7 @@ class RecipeAbsorbersV2:
                 final_comps.append(c)
             
         new_systs_data = dataclasses.replace(reference_systs._data, components=final_comps)
-        final_systs = SystemListV2(new_systs_data)
+        final_systs = SystemList(new_systs_data)
 
         # 3b. Uncertainties on the final model (issue #534): each unit was
         # fitted while its neighbours still had their initial values, so
@@ -2414,10 +2415,10 @@ class RecipeAbsorbersV2:
         if final_systs.constraint_model:
             final_systs.constraint_model.set_active_components(None)
             
-        final_fitter = VoigtFitterV2(spec_of(current_session), final_systs)
+        final_fitter = VoigtFitter(spec_of(current_session), final_systs)
         _, model_flux = final_fitter.compute_model_flux()
 
-        # Delegate to SpectrumV2
+        # Delegate to Spectrum
         new_spec = spec_of(current_session).update_model(model_flux)
         _log_flags(final_systs.components)
             
@@ -2426,8 +2427,8 @@ class RecipeAbsorbersV2:
     def _final_uncertainties(self, spec, systs, work_units, z_window_kms):
         """Recompute the uncertainties of each work unit on the final model."""
         import dataclasses
-        from astrocook.core.system_list import SystemListV2
-        from astrocook.fitting.voigt_fitter import VoigtFitterV2
+        from astrocook.core.system_list import SystemList
+        from astrocook.fitting.voigt_fitter import VoigtFitter
         c_kms = 299792.458
         updated = {}
         for target_uuids in work_units:
@@ -2437,12 +2438,12 @@ class RecipeAbsorbersV2:
             dz_buffer = (1 + max(c.z for c in targets)) * (1000.0 / c_kms)
             z_lo = min(c.z for c in targets) - dz_buffer
             z_hi = max(c.z for c in targets) + dz_buffer
-            local = SystemListV2(dataclasses.replace(
+            local = SystemList(dataclasses.replace(
                 systs._data, components=[c for c in systs.components if z_lo <= c.z <= z_hi]))
             try:
                 with local.fitting_context(list(target_uuids), group_depth=FIT_EXPANSION_DEPTH,
                                            spec=spec):
-                    evaluated = VoigtFitterV2(spec, local).evaluate_uncertainties(z_window_kms)
+                    evaluated = VoigtFitter(spec, local).evaluate_uncertainties(z_window_kms)
                 for c in evaluated.components:
                     if c.uuid in target_uuids:
                         updated[c.uuid] = c
@@ -2451,11 +2452,11 @@ class RecipeAbsorbersV2:
                 logger.warning(f"The uncertainties of a group could not be recomputed at "
                                f"the final parameters ({e}): it keeps those of its fit.")
         comps = [updated.get(c.uuid, c) for c in systs.components]
-        return SystemListV2(dataclasses.replace(systs._data, components=comps))
+        return SystemList(dataclasses.replace(systs._data, components=comps))
 
     @typed_recipe
     def clean_negligible(self, min_logN: float = 11.5, max_b: float = 80.0,
-                         min_b: float = 3.0, combined_check: bool = True) -> 'SessionV2':
+                         min_b: float = 3.0, combined_check: bool = True) -> 'Session':
         r"""
         Clean negligible components.
 
@@ -2489,8 +2490,8 @@ class RecipeAbsorbersV2:
 
         Returns
         -------
-        SessionV2
-            A new :class:`~astrocook.session.session.SessionV2` with the flagged components removed.
+        Session
+            A new :class:`~astrocook.session.session.Session` with the flagged components removed.
         """
         lim_N, lim_b_max, lim_b_min = min_logN, max_b, min_b
         use_combined = combined_check
@@ -2540,3 +2541,6 @@ class RecipeAbsorbersV2:
         else:
             logger.info("No components to remove.")
             return self._session
+
+# Old names (phase 6-quater, PR 6): see astrocook/_renamed.py
+__getattr__ = renamed(__name__, {"RecipeAbsorbersV2": "RecipeAbsorbers"})

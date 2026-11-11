@@ -1297,7 +1297,7 @@ its own, except the smallest; the model of each PR proposed by the rule
 | 4 | Type checker, step 2: `core/` and `fitting/` | Sonnet | half a day to a day (done, 11 November 2026: see below) |
 | 4-bis | Type checker, step 3: `gui/` (361 errors, 199 of them `attr-defined` from the mixins of `MainWindowV2` and `SpectrumPlotWidget`: the same cure as PR 4, a host class for the type checker) | Sonnet | half a day (done, 11 November 2026: see below) |
 | 5 | `SessionV2` (and `SessionHistory`) out of `core/`, e.g. into `astrocook/session/`, the old import kept as an alias | Sonnet | 2-3 h (done, 11 November 2026: see below) |
-| 6 | The `V2` suffixes dropped, with the aliases of PR 2 (code, tests, docs) | Sonnet | half a day |
+| 6 | The `V2` suffixes dropped, with the aliases of PR 2 (code, tests, docs) | Sonnet | half a day (done, 11 November 2026: see below) |
 | 7 | Review of the recipes of file and flux (8 recipes) | Opus | half a day |
 | 8 | Review of edit, columns and expressions (`set_properties`, `x_convert`, `y_convert`, `apply_expression`, `mask_expression`, `smooth_column`), with F120 (one set of column names) | Opus | half a day to a day |
 | 9 | Review of edit, several spectra (`delete`, `split`, `extract_preset`, `trim_common`, `stitch`, `equalize_and_stitch` with its complexity of 31, `coadd`, `import_systems`, `import_systems_ascii`) | Opus | a day |
@@ -1451,8 +1451,8 @@ its own, except the smallest; the model of each PR proposed by the rule
   `DeprecationWarning`**, unlike the renamed classes of PR 6: the path is
   used by the scripts and by the tests, which have warnings as errors, and
   the plan of PR 2 (the helper `astrocook/_renamed.py`) was not written, so
-  there was no mechanism to reuse: PR 6 will decide whether this one is
-  folded into it. The names as strings: no pickle, and neither the
+  there was no mechanism to reuse: PR 6 decided to keep them apart (see
+  its result). The names as strings: no pickle, and neither the
   archives nor the logs hold the path of a module (the logs hold recipe
   names and parameters); `SessionV2.__module__` is now
   `astrocook.session.session`. The imports of the package, the tests and the
@@ -1464,6 +1464,78 @@ its own, except the smallest; the model of each PR proposed by the rule
   imports `astrocook.session` at module level. No change of behaviour. Fast
   suite (3623 passed), `ruff check .` and `mypy` clean; no slow test and no
   benchmark: only modules and imports moved, so the numbers cannot change.
+- *Result of PR 6* (the `V2` suffixes; 11 November 2026): the 21 classes
+  lost the suffix, in the package, the tests, the benchmarks, the docs and
+  `CLAUDE.md` (a word-boundary `sed` over the files that held the names,
+  then `ruff`, `mypy` and the suite). The names, old → new: `SessionV2`,
+  `SessionMetadataV2`, `SpectrumV2`, `TableAdapterV2`, `SpectrumDataV2`,
+  `DataColumnV2`, `ComponentDataV2`, `ParameterConstraintV2`,
+  `SystemListV2`, `SystemListDataV2`, `LogEntryV2`, `LogNoteV2`,
+  `HistoryLogV2`, `VoigtFitterV2`, `VoigtModelConstraintV2`,
+  `MainWindowV2`, `RecipeFileV2`, `RecipeEditV2`, `RecipeFluxV2`,
+  `RecipeContinuumV2`, `RecipeAbsorbersV2`, each without `V2`. Conflicts
+  looked for and none found: no `Session`, `Spectrum`, `SystemList`,
+  `MainWindow`, `VoigtFitter`... existed as a name in the package, the
+  tests or the imported libraries (Qt has `QMainWindow`; the only
+  `Spectrum` is the V1 class in `tests/reference/v1/`, a separate module,
+  imported there as `SpectrumV1`). Left as they are, on purpose: the
+  `"AstrocookV2"` of the `QSettings` (the key of the user's saved
+  settings: renaming it would lose them), the `V2` of prose ("V2
+  archive", the format `.acs2`), `ROADMAP_HISTORY.md` and the past entries
+  of `CHANGELOG.md`, the V1 copies in `tests/reference/v1/`.
+  - *The aliases* (one mechanism, `astrocook/_renamed.py`, written here as
+    the decision of PR 2 asked): a module that defined or exported a class
+    ends with `__getattr__ = renamed(__name__, {"SpectrumV2": "Spectrum"})`
+    (PEP 562). The old name gives **the same class** (`isinstance`
+    unchanged) with a `DeprecationWarning` that names the module, the old
+    and the new name, pointing at the importer's line; the new name is
+    looked up when the old one is asked, so the helper works while the
+    module is still importing; a name not in the mapping is the usual
+    `AttributeError`. Modules with a mapping: those that defined a class
+    (`core/structures.py`, `core/spectrum.py`, `core/system_list.py`,
+    `fitting/voigt_model.py`, `fitting/voigt_fitter.py`, the five modules
+    of `recipes/`, `gui/main_window.py`, `session/session.py`) and the
+    packages that exported one (`astrocook`, `astrocook.session`,
+    `astrocook.core`). A class imported from a module that only imports it
+    (e.g. `from astrocook.recipes.edit import SpectrumV2`) is not served:
+    it was never the home of the name. No version of removal (3.0 at the
+    earliest).
+  - *The mechanism of PR 5 is not folded into it* (the question PR 5
+    left): the two answer different things. A moved module (PR 5: the
+    *path* `astrocook.core.session`, the name unchanged) stays silent
+    (the scripts and the tests use it, and a path costs nothing); a
+    renamed class (PR 6) warns, as decided in PR 2. They compose: the
+    forwarders of `core/session.py` serve what the new module serves, so
+    `from astrocook.core.session import SessionV2` warns (once, from the
+    helper). `core/__init__.py` keeps its lazy `Session` (no import of
+    `astrocook.session` at import time) and passes the old names to the
+    helper.
+  - *Names as strings*: the `.acs2` archives (the three of `tests/data/`
+    opened member by member) and the session logs hold no class name (the
+    logs hold recipe names and parameters; there is no pickle), so nothing
+    to translate and no change of the format. The registry, `__name__`
+    and the messages: only the docstrings, comments and log lines
+    (`logger.debug("Initialized VoigtModelConstraint ...")`) changed. No
+    `mock.patch` of a class by name, and no docs autogenerated from the
+    names (`docs/conf.py` only had a comment). A stale comment of
+    `structures.py` named `ConstraintDataV2`, which never existed: now
+    `ParameterConstraint`. `tests/test_gui_structure.py` follows the new
+    names.
+  - New `tests/test_renamed_classes.py`: for each of the 21 classes (and
+    each module or package that exported it) the old name is the same
+    object as the new one and warns with `pytest.warns`, the new name does
+    not warn (`simplefilter("error")`), the warning points at the
+    importer, `isinstance` with the old name, an unknown name is an
+    `AttributeError`, and the helper on a throw-away module.
+  - *One snapshot regenerated*: `tests/snapshots/v1_archive_v1_metals_constraints_systems.npz`
+    stored `str(ParameterConstraintV2(...))`, the `repr` of the dataclass,
+    in its `constraint_values`; the `repr` carries the class name, so the
+    stored strings now read `ParameterConstraint(...)`. Checked: of the
+    keys of the file only that one differs, and by the `V2` and nothing
+    else.
+  No change of behaviour. `ruff check .` and `mypy` clean, the fast suite
+  green (after the snapshot above); no slow test and no benchmark: only names changed, so the numbers
+  cannot change.
 - *Decisions of PR 2* (old names; proposed in the conversation of PR 2,
   agreed with Guido, 11 November 2026):
   - *A renamed parameter*: its old names are `aliases` of the parameter in

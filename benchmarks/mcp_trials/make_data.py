@@ -43,28 +43,28 @@ def edit_truth():
 
 
 def make(trial: str, folder: Path) -> Path:
-    from astrocook.core.session import SessionV2
-    from astrocook.core.spectrum import SpectrumV2
-    from astrocook.core.structures import SpectrumDataV2
+    from astrocook.core.session import Session
+    from astrocook.core.spectrum import Spectrum
+    from astrocook.core.structures import SpectrumData
     from astrocook.mocks import generate
     folder.mkdir(parents=True, exist_ok=True)
     if trial == "mock":
         import full_chain
         spec = generate(full_chain.mock_truth(), truth_columns=False)
         path = folder / "spectrum.acs2"
-        SessionV2("spectrum", None, spec=spec).save(str(path))
+        Session("spectrum", None, spec=spec).save(str(path))
     elif trial == "edit":
         spec = generate(edit_truth(), truth_columns=False)
         path = folder / "spectrum.acs2"
-        SessionV2("spectrum", None, spec=spec).save(str(path))
+        Session("spectrum", None, spec=spec).save(str(path))
     elif trial == "j0103":
         from conftest import J0103_SESSION
-        full = SessionV2.open_new(str(J0103_SESSION), "J0103-1305", None, "auto")
+        full = Session.open_new(str(J0103_SESSION), "J0103-1305", None, "auto")
         d = full.spec._data
-        data = SpectrumDataV2(x=d.x, xmin=d.xmin, xmax=d.xmax, y=d.y, dy=d.dy,
+        data = SpectrumData(x=d.x, xmin=d.xmin, xmax=d.xmax, y=d.y, dy=d.dy,
                               aux_cols={"resol": d.aux_cols["resol"]})
         path = folder / "J0103-1305.acs2"
-        SessionV2("J0103-1305", None, spec=SpectrumV2(data)).save(str(path))
+        Session("J0103-1305", None, spec=Spectrum(data)).save(str(path))
     else:
         raise SystemExit(f"unknown trial {trial!r}: one of {TRIALS}")
     return path

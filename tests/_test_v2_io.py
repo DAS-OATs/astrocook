@@ -11,14 +11,14 @@ def test_spectrum_data_integrity():
     test_file_path = '/Users/guido/Library/CloudStorage/GoogleDrive-guido.cupani@inaf.it/My Drive/GitHub/astrocook/tests/data/J0103-1305_metallines_lya_new_spec.fits'
     format_name = 'generic_spectrum' 
     
-    # 1. Load the SpectrumV2 object using the full V2 adapter chain
+    # 1. Load the Spectrum object using the full V2 adapter chain
     try:
         spec_v2 = load_spectrum_to_v2_format(
             path=test_file_path, 
             format_name=format_name,
             # We must pass a mock GUI since the adapter still requires it for V1 I/O flags
             gui=object() # Pass a generic object to satisfy the V1 requirement
-        ) # Get the spectrum object from the session (or load directly if load_spectrum_to_v2_format returns SpectrumV2)
+        ) # Get the spectrum object from the session (or load directly if load_spectrum_to_v2_format returns Spectrum)
     except Exception as e:
         print(f"ERROR: V2 loading chain failed during direct execution: {e}")
         return

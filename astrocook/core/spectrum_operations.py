@@ -11,11 +11,11 @@ from scipy.stats import binned_statistic
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 
 from astrocook.core.atomic_data import ATOM_DATA, get_multiplet_velocity_lags, STANDARD_MULTIPLETS, xem_d
-from astrocook.core.structures import DataColumnV2, SpectrumDataV2 
+from astrocook.core.structures import DataColumn, SpectrumData 
 from astrocook.core.debug_hooks import request_debug_plot
 
 if TYPE_CHECKING:
-    from astrocook.core.spectrum import SpectrumV2
+    from astrocook.core.spectrum import Spectrum
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +56,7 @@ def convert_axis_velocity(
     else:
         return x_quantity.to(target_unit)
 
-def convert_x_axis(spec_data: SpectrumDataV2, z_ref: float, xunit: au.Unit) -> Tuple[au.Quantity, au.Quantity, au.Quantity]:
+def convert_x_axis(spec_data: SpectrumData, z_ref: float, xunit: au.Unit) -> Tuple[au.Quantity, au.Quantity, au.Quantity]:
     """
     Performs X-axis conversion based on V1 logic and returns new Quantity arrays.
     """
@@ -79,8 +79,8 @@ def convert_x_axis(spec_data: SpectrumDataV2, z_ref: float, xunit: au.Unit) -> T
     
     return x_new, xmin_new, xmax_new
 
-def convert_y_axis(spec_data: SpectrumDataV2, yunit: au.Unit
-                   ) -> Tuple[DataColumnV2, DataColumnV2, Dict[str, DataColumnV2]]:
+def convert_y_axis(spec_data: SpectrumData, yunit: au.Unit
+                   ) -> Tuple[DataColumn, DataColumn, Dict[str, DataColumn]]:
     """
     Performs Y-axis unit conversion on flux and error data using native Astropy methods.
 
@@ -100,9 +100,9 @@ def convert_y_axis(spec_data: SpectrumDataV2, yunit: au.Unit
     y_new = y.to(yunit) 
     dy_new = dy.to(yunit) 
     
-    # Create new DataColumnV2 instances
-    new_y = DataColumnV2(y_new.value, yunit)
-    new_dy = DataColumnV2(dy_new.value, yunit)
+    # Create new DataColumn instances
+    new_y = DataColumn(y_new.value, yunit)
+    new_dy = DataColumn(dy_new.value, yunit)
 
     new_aux_cols = {}
     original_y_unit = spec_data.y.unit # The unit of the data before conversion
@@ -116,8 +116,8 @@ def convert_y_axis(spec_data: SpectrumDataV2, yunit: au.Unit
             # Apply standard Astropy conversion
             converted_quantity = data_col.quantity.to(yunit)
             
-            # Create a new DataColumnV2 entry
-            new_aux_cols[name] = DataColumnV2(
+            # Create a new DataColumn entry
+            new_aux_cols[name] = DataColumn(
                 converted_quantity.value, 
                 yunit, 
                 description=data_col.description
@@ -258,7 +258,7 @@ def compute_flux_scaling(
 
 def rebin_spectrum(
         x_in: au.Quantity, xmin_in: au.Quantity, xmax_in: au.Quantity,
-        spec_data: SpectrumDataV2,
+        spec_data: SpectrumData,
         xstart: Optional[au.Quantity], xend: Optional[au.Quantity], 
         dx: au.Quantity, calc_unit: au.Unit,
         kappa: Optional[float], filling: float
@@ -674,7 +674,7 @@ def compute_auto_fudge(
     Calculates a scalar fudge factor to center the continuum residuals.
     Fixes the 'Low Bias' issue where sigma-clipped continuums sit too low.
 
-    In ``SpectrumV2.fit_continuum`` it is applied to the interpolated
+    In ``Spectrum.fit_continuum`` it is applied to the interpolated
     continuum, which passes through the unabsorbed pixels, so it returns 1
     there (findings register F3, accepted: see ``fit_continuum``).
     """
@@ -1022,7 +1022,7 @@ def _find_kinematic_doublet_candidates(
     return candidates
 
 def rate_doublet_candidate(
-    spectrum: 'SpectrumV2',
+    spectrum: 'Spectrum',
     region_mask_1: np.ndarray,
     region_mask_2: np.ndarray,
     multiplet_name: str,

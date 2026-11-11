@@ -128,8 +128,8 @@ class Snapshot:
 @pytest.fixture(scope="session")
 def j0103_session():
     """The J0103-1305 session (spectrum with continuum, and system list)."""
-    from astrocook.session.session import SessionV2
-    session = SessionV2.open_new(str(J0103_SESSION), "J0103-1305", None, "auto")
+    from astrocook.session.session import Session
+    session = Session.open_new(str(J0103_SESSION), "J0103-1305", None, "auto")
     return session[0] if isinstance(session, (list, tuple)) else session
 
 
@@ -140,23 +140,23 @@ def j0103_window(j0103_session):
     resol only, with ``z_em = J0103_Z_EM``. Saved continuum and model are
     left out, so that each stage can be run from scratch.
     """
-    from astrocook.core.spectrum import SpectrumV2
-    from astrocook.core.structures import DataColumnV2, SpectrumDataV2
+    from astrocook.core.spectrum import Spectrum
+    from astrocook.core.structures import DataColumn, SpectrumData
 
     spec = j0103_session.spec
     x = spec.x.value
     sel = (x > J0103_WINDOW_NM[0]) & (x < J0103_WINDOW_NM[1])
 
     def col(q):
-        return DataColumnV2(q.value[sel], q.unit)
+        return DataColumn(q.value[sel], q.unit)
 
-    data = SpectrumDataV2(
+    data = SpectrumData(
         x=col(spec.x), xmin=col(spec.xmin), xmax=col(spec.xmax),
         y=col(spec.y), dy=col(spec.dy),
         aux_cols={"resol": col(spec.get_column("resol"))},
         z_em=J0103_Z_EM,
     )
-    return SpectrumV2(data)
+    return Spectrum(data)
 
 
 @pytest.fixture(scope="session")
@@ -167,8 +167,8 @@ def j0103_window_with_continuum(j0103_session, j0103_window):
     frozen inputs of the identification and fit stages: a change in the
     continuum algorithm does not propagate to their snapshots.
     """
-    from astrocook.core.spectrum import SpectrumV2
-    from astrocook.core.structures import DataColumnV2
+    from astrocook.core.spectrum import Spectrum
+    from astrocook.core.structures import DataColumn
     import dataclasses
 
     spec = j0103_session.spec
@@ -178,9 +178,9 @@ def j0103_window_with_continuum(j0103_session, j0103_window):
     unabs = spec.get_column("mask_unabs").value[sel].astype(bool)
 
     aux = dict(j0103_window._data.aux_cols)
-    aux["cont"] = DataColumnV2(cont.value[sel], cont.unit)
-    aux["abs_mask"] = DataColumnV2(~unabs, au.dimensionless_unscaled)
-    return SpectrumV2(dataclasses.replace(j0103_window._data, aux_cols=aux))
+    aux["cont"] = DataColumn(cont.value[sel], cont.unit)
+    aux["abs_mask"] = DataColumn(~unabs, au.dimensionless_unscaled)
+    return Spectrum(dataclasses.replace(j0103_window._data, aux_cols=aux))
 
 
 @pytest.fixture(scope="session")

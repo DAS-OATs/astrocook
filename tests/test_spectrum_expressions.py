@@ -1,7 +1,7 @@
-"""Expressions, masks and regions of SpectrumV2.
+"""Expressions, masks and regions of Spectrum.
 
 Characterization tests written before the methods were moved to their own
-module (phase 5, split of SpectrumV2): the paths that the recipe tests
+module (phase 5, split of Spectrum): the paths that the recipe tests
 (``test_recipes_edit_flux.py`` and others) do not reach.
 """
 import logging
@@ -10,22 +10,22 @@ import astropy.units as au
 import numpy as np
 import pytest
 
-from astrocook.core.spectrum import SpectrumV2
-from astrocook.core.structures import DataColumnV2, SpectrumDataV2
+from astrocook.core.spectrum import Spectrum
+from astrocook.core.structures import DataColumn, SpectrumData
 
 FLUX = au.erg / au.cm**2 / au.s / au.nm
 
 
 def _spec(lo=500.0, hi=510.0, n=101, mask=False):
     x = np.linspace(lo, hi, n)
-    aux = {"cont": DataColumnV2(np.full(n, 2.0), FLUX)}
+    aux = {"cont": DataColumn(np.full(n, 2.0), FLUX)}
     if mask:
-        aux["abs_mask"] = DataColumnV2(np.ones(n, dtype=bool), au.dimensionless_unscaled)
-    data = SpectrumDataV2(
-        x=DataColumnV2(x, au.nm), xmin=DataColumnV2(x - 0.05, au.nm),
-        xmax=DataColumnV2(x + 0.05, au.nm), y=DataColumnV2(1.0 + 0.1 * (x - lo), FLUX),
-        dy=DataColumnV2(np.full(n, 0.05), FLUX), aux_cols=aux, z_em=3.0)
-    return SpectrumV2(data, history=["start"])
+        aux["abs_mask"] = DataColumn(np.ones(n, dtype=bool), au.dimensionless_unscaled)
+    data = SpectrumData(
+        x=DataColumn(x, au.nm), xmin=DataColumn(x - 0.05, au.nm),
+        xmax=DataColumn(x + 0.05, au.nm), y=DataColumn(1.0 + 0.1 * (x - lo), FLUX),
+        dy=DataColumn(np.full(n, 0.05), FLUX), aux_cols=aux, z_em=3.0)
+    return Spectrum(data, history=["start"])
 
 
 # --- prepare_expression_context --------------------------------------------------------

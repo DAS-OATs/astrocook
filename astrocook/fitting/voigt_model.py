@@ -1,12 +1,13 @@
+from astrocook._renamed import renamed
 import logging
 import numpy as np
 import re
 from typing import Collection, List, Dict, Any, TYPE_CHECKING, Optional, Set, Tuple
 
-from astrocook.core.structures import ParameterConstraintV2 
+from astrocook.core.structures import ParameterConstraint 
 
 if TYPE_CHECKING:
-    from astrocook.core.system_list import SystemListV2
+    from astrocook.core.system_list import SystemList
 
 logger = logging.getLogger(__name__)
 
@@ -43,12 +44,12 @@ class _ComponentProxy:
     def btur(self): return self._arr[self._idx+3]
 
 
-class VoigtModelConstraintV2:
+class VoigtModelConstraint:
     """
     Manages parameter constraints and vector mapping for Voigt fitting.
 
     This class acts as a bridge between the high-level, object-oriented representation
-    of absorption systems (:class:`~astrocook.core.system_list.SystemListV2`) and the
+    of absorption systems (:class:`~astrocook.core.system_list.SystemList`) and the
     flat parameter arrays required by numerical optimizers.
 
     It handles:
@@ -61,7 +62,7 @@ class VoigtModelConstraintV2:
 
     Parameters
     ----------
-    system_list : SystemListV2
+    system_list : SystemList
         The system list containing the components to model.
     constraints : dict, optional
         Initial constraints dictionary (legacy argument, usually handled internally).
@@ -78,9 +79,9 @@ class VoigtModelConstraintV2:
         'btur': (0.0, 100.0)
     }
 
-    def __init__(self, system_list: 'SystemListV2', constraints: Optional[Dict[str, Any]] = None):
+    def __init__(self, system_list: 'SystemList', constraints: Optional[Dict[str, Any]] = None):
         self._system_list = system_list
-        self.v2_constraints_by_uuid: Dict[str, Dict[str, ParameterConstraintV2]] = {}          
+        self.v2_constraints_by_uuid: Dict[str, Dict[str, ParameterConstraint]] = {}          
 
         self._active_uuids: Optional[Set[str]] = None
         self._component_groups = [list(self._system_list.components)]
@@ -91,7 +92,7 @@ class VoigtModelConstraintV2:
         
         self._refresh_state()
         
-        logger.debug(f"Initialized VoigtModelConstraintV2 with {len(self.p_free_vector)} free parameters.")
+        logger.debug(f"Initialized VoigtModelConstraint with {len(self.p_free_vector)} free parameters.")
 
     def set_active_components(self, target_uuids: Optional[Collection[str]] = None, group_depth: int = 2,
                               spec=None):
@@ -116,7 +117,7 @@ class VoigtModelConstraintV2:
             - ``1``: Direct neighbors/links only.
             - ``2``: Neighbors of neighbors (Friends of Friends).
             Defaults to ``2``.
-        spec : SpectrumV2, optional
+        spec : Spectrum, optional
             The spectrum to be fitted: lines closer than its instrumental
             FWHM are blended (findings register F14).
         """
@@ -219,7 +220,7 @@ class VoigtModelConstraintV2:
         num_params = len(self._initial_p_vector)
         is_free = np.ones(num_params, dtype=bool)
         
-        from astrocook.core.structures import ParameterConstraintV2
+        from astrocook.core.structures import ParameterConstraint
         import dataclasses
 
         for i, (comp, param_name) in enumerate(self._get_component_param_iterator()):
@@ -241,7 +242,7 @@ class VoigtModelConstraintV2:
             elif v1_key in v1_parsed:
                 raw_state = v1_parsed[v1_key]
 
-            v2_constraint_obj: ParameterConstraintV2
+            v2_constraint_obj: ParameterConstraint
             
             if raw_state:
                 if isinstance(raw_state, dict):
@@ -266,7 +267,7 @@ class VoigtModelConstraintV2:
                 if param_name == 'btur':
                     effective_is_free = False
                 is_free[i] = effective_is_free
-                v2_constraint_obj = ParameterConstraintV2(is_free=effective_is_free)
+                v2_constraint_obj = ParameterConstraint(is_free=effective_is_free)
 
             if v2_uuid not in self.v2_constraints_by_uuid:
                 self.v2_constraints_by_uuid[v2_uuid] = {}
@@ -317,7 +318,7 @@ class VoigtModelConstraintV2:
                 tgt_uuid = v1_id_map.get(vid)
                 if tgt_uuid:
                     expr = expr.replace(f"p[{vid}]", f"p['{tgt_uuid}']")
-        return ParameterConstraintV2(effective_is_free, tgt_uuid, expr, None)
+        return ParameterConstraint(effective_is_free, tgt_uuid, expr, None)
 
     def _get_component_param_iterator(self):
         for group in self._component_groups:
@@ -397,7 +398,7 @@ class VoigtModelConstraintV2:
         return np.array(lower), np.array(upper)
 
     @property
-    def v2_constraints_for_save(self) -> Dict[str, Dict[str, ParameterConstraintV2]]:
+    def v2_constraints_for_save(self) -> Dict[str, Dict[str, ParameterConstraint]]:
         return self.v2_constraints_by_uuid
     
     def get_active_param_labels(self) -> List[str]:
@@ -419,3 +420,6 @@ class VoigtModelConstraintV2:
             if self._param_map['is_free'][i]:
                 labels.append(f"{param_name} ({comp.id})")
         return labels
+
+# Old names (phase 6-quater, PR 6): see astrocook/_renamed.py
+__getattr__ = renamed(__name__, {"VoigtModelConstraintV2": "VoigtModelConstraint"})

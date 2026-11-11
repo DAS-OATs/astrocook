@@ -10,14 +10,14 @@ import pytest
 from astrocook.recipes.errors import InvalidParameter, RecipeFailed  # phase 6-bis, PR 3
 from astrocook.recipes.params import typed_recipe
 
-from astrocook.session.session import SessionV2
+from astrocook.session.session import Session
 
 from test_recipes_absorbers import _systs
 from test_recipes_edit_flux import _spec
 
 
 def _two():
-    session = SessionV2("s", None, spec=_spec(),
+    session = Session("s", None, spec=_spec(),
                         systs=_systs(("CIV", 2.0, 13.0, 10.0), ("SiIV", 2.0001, 12.5, 8.0)))
     return session, [c.uuid for c in session.systs.components]
 
@@ -50,8 +50,8 @@ def test_link_with_sqrt_is_refused(caplog):
 from types import SimpleNamespace  # noqa: E402
 
 import astrocook.recipes.absorbers as absorbers  # noqa: E402
-from astrocook.core.system_list import SystemListV2  # noqa: E402
-from astrocook.fitting.voigt_fitter import VoigtFitterV2  # noqa: E402
+from astrocook.core.system_list import SystemList  # noqa: E402
+from astrocook.fitting.voigt_fitter import VoigtFitter  # noqa: E402
 
 from test_recipes_edit_flux import _gui, _session  # noqa: E402
 
@@ -79,7 +79,7 @@ def test_failed_cleaning_keeps_the_result_of_lya_auto(monkeypatch, caplog):
     # Option (b), Guido's choice: the result is kept, the WARNING says what
     # it still contains
     session = _session(systs=_systs(("Ly_a", 4.0, 13.0, 5.0), ("Ly_a", 4.001, 13.5, 30.0)))
-    monkeypatch.setattr(absorbers.RecipeAbsorbersV2, "components_auto",
+    monkeypatch.setattr(absorbers.RecipeAbsorbers, "components_auto",
                         lambda self, **kwargs: session)
 
     def broken(*args, **kwargs):
@@ -94,7 +94,7 @@ def test_failed_cleaning_keeps_the_result_of_lya_auto(monkeypatch, caplog):
 
 def test_unreadable_min_b_of_lya_auto_fails(monkeypatch, caplog):
     session = _session(systs=_systs(("Ly_a", 4.0, 13.0, 5.0)))
-    monkeypatch.setattr(absorbers.RecipeAbsorbersV2, "components_auto",
+    monkeypatch.setattr(absorbers.RecipeAbsorbers, "components_auto",
                         lambda self, **kwargs: session)
     with pytest.raises(InvalidParameter, match="min_b: 'ten' is not a number"):
         session.absorbers.lya_auto(min_b="ten")
@@ -103,7 +103,7 @@ def test_unreadable_min_b_of_lya_auto_fails(monkeypatch, caplog):
 def _failing_fit(monkeypatch, error):
     def fit(self, *args, **kwargs):
         raise error
-    monkeypatch.setattr(VoigtFitterV2, "fit", fit)
+    monkeypatch.setattr(VoigtFitter, "fit", fit)
 
 
 def test_failed_groups_of_refit_all_are_counted(monkeypatch, caplog):
@@ -161,7 +161,7 @@ def test_failed_delete_component_fails(monkeypatch):
 
     def broken(self, **kwargs):
         raise RuntimeError("delete")
-    monkeypatch.setattr(SystemListV2, "delete_component", broken)
+    monkeypatch.setattr(SystemList, "delete_component", broken)
     with pytest.raises(RuntimeError) as info:
         session.absorbers.delete_component(uuid=a)
     assert "In the recipe absorbers.delete_component" in info.value.__notes__[-1]
@@ -173,7 +173,7 @@ def test_failed_refit_of_an_import_keeps_the_import(monkeypatch, caplog):
     session = _session(gui=_gui(src=source))
     def failing(self, **kwargs):
         raise RecipeFailed("the fit did not converge")
-    monkeypatch.setattr(absorbers.RecipeAbsorbersV2, "refit_all", failing)
+    monkeypatch.setattr(absorbers.RecipeAbsorbers, "refit_all", failing)
     with caplog.at_level(logging.WARNING):
         out = session.edit.import_systems("src", refit=True)
     assert len(out.systs.components) == 1
@@ -248,7 +248,7 @@ def test_failed_estimate_of_the_continuum_stops_the_fit(name, monkeypatch, caplo
     # The 0 of the failed estimate went on as the session: "'int' object has
     # no attribute 'systs'"
     session, uuid = _without_continuum()
-    monkeypatch.setattr(continuum.RecipeContinuumV2, "estimate_auto", _failing_estimate)
+    monkeypatch.setattr(continuum.RecipeContinuum, "estimate_auto", _failing_estimate)
     with caplog.at_level(logging.INFO), pytest.raises(RecipeFailed) as info:
         FIT_RECIPES[name](session, uuid)
     assert CONTINUUM_ESTIMATED in [r.getMessage() for r in caplog.records]
@@ -260,7 +260,7 @@ def test_failed_estimate_of_the_continuum_stops_the_fit(name, monkeypatch, caplo
 
 def test_failed_estimate_of_the_continuum_stops_populate(monkeypatch):
     session, _ = _without_continuum()
-    monkeypatch.setattr(continuum.RecipeContinuumV2, "estimate_auto", _failing_estimate)
+    monkeypatch.setattr(continuum.RecipeContinuum, "estimate_auto", _failing_estimate)
     with pytest.raises(RecipeFailed, match="Populate components from identification → "
                                            "Auto-estimate continuum"):
         session.absorbers.populate_from_identification(
