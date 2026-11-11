@@ -611,8 +611,8 @@
         <span class="c1"># Pixel edges, for the exact convolution with the LSF (#526)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_xmin_ang</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spectrum</span><span class="o">.</span><span class="n">xmin</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">au</span><span class="o">.</span><span class="n">Angstrom</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_xmax_ang</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spectrum</span><span class="o">.</span><span class="n">xmax</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">au</span><span class="o">.</span><span class="n">Angstrom</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_x_tau</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_lsf</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_x_tau</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lsf</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
         
         <span class="n">norm_q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spectrum</span><span class="o">.</span><span class="n">norm</span>
         
@@ -637,7 +637,7 @@
         <span class="c1"># 2. Resolution Setup: the 'resol' column of the spectrum, as R</span>
         <span class="c1"># (#526; before, five sources and a guess of the unit by value). A</span>
         <span class="c1"># flat column takes the scalar path, as a global value did before</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_resol_column</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_resol_column</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_use_variable_resolution</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_val</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_unit</span> <span class="o">=</span> <span class="s1">'R'</span>
@@ -654,16 +654,16 @@
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"VoigtFitter: No resolution found. Fitting unconvolved profiles."</span><span class="p">)</span>
 
         <span class="c1"># Placeholders</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_fit_mask</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fit_mask</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_sl</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_x_calc</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_y_norm_calc</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_dy_norm_calc</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_fit_mask_calc</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_resol_calc</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_x_calc</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_y_norm_calc</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dy_norm_calc</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fit_mask_calc</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_resol_calc</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
         
         <span class="c1"># Cache is now a dict: { (resol_val, unit_str): tau_array }</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_cached_tau_groups</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cached_tau_groups</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
         
         <span class="c1"># [OPTIMIZATION] Cache list of active components for the inner loop</span>
         <span class="c1"># Stores tuples: (index_in_system_list, component_object)</span>
@@ -706,7 +706,7 @@
 <span class="w">        </span><span class="sd">"""Fine grid and LSF for the pixels ``sl`` (#526): the optical</span>
 <span class="sd">        depth is computed on ``self._x_tau``, the model on the pixels.</span>
 <span class="sd">        Without ``cache``, for a model computed once (see ``PixelLSF``)."""</span>
-        <span class="n">r_values</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">r_values</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_variable_resolution</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resol_column</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">r_values</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_resol_column</span><span class="p">[</span><span class="n">sl</span><span class="p">][</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_resol_column</span><span class="p">[</span><span class="n">sl</span><span class="p">])])</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_val</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -902,7 +902,7 @@
             <span class="n">p</span> <span class="o">=</span> <span class="n">p0</span><span class="o">.</span><span class="n">copy</span><span class="p">();</span> <span class="n">p</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">+=</span> <span class="n">step</span>
             <span class="n">jac</span><span class="p">[:,</span> <span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_residual_function</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="o">-</span> <span class="n">r0</span><span class="p">)</span> <span class="o">/</span> <span class="n">step</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_active_fit_components</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_active_lines_data</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_active_lines_data</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">errors</span><span class="p">,</span> <span class="n">red_chi2</span><span class="p">,</span> <span class="n">cov</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scaled_errors</span><span class="p">(</span><span class="n">r0</span><span class="p">,</span> <span class="n">jac</span><span class="p">)</span>
             <span class="n">linked_errors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_linked_errors</span><span class="p">(</span><span class="n">p0</span><span class="p">,</span> <span class="n">cov</span><span class="p">)</span>
@@ -921,7 +921,7 @@
             <span class="k">if</span> <span class="n">active</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">c</span><span class="o">.</span><span class="n">uuid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">active</span><span class="p">:</span>
                 <span class="n">comps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="p">);</span> <span class="k">continue</span>
             <span class="n">idx</span> <span class="o">=</span> <span class="n">i</span> <span class="o">*</span> <span class="mi">4</span>
-            <span class="n">new</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'chi2'</span><span class="p">:</span> <span class="n">red_chi2</span><span class="p">}</span>
+            <span class="n">new</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'chi2'</span><span class="p">:</span> <span class="n">red_chi2</span><span class="p">}</span>
             <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">j</span> <span class="ow">in</span> <span class="p">((</span><span class="s1">'dz'</span><span class="p">,</span> <span class="n">idx</span><span class="p">),</span> <span class="p">(</span><span class="s1">'dlogN'</span><span class="p">,</span> <span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="s1">'db'</span><span class="p">,</span> <span class="n">idx</span> <span class="o">+</span> <span class="mi">2</span><span class="p">),</span>
                             <span class="p">(</span><span class="s1">'dbtur'</span><span class="p">,</span> <span class="n">idx</span> <span class="o">+</span> <span class="mi">3</span><span class="p">)):</span>
                 <span class="k">if</span> <span class="n">is_free_mask</span><span class="p">[</span><span class="n">j</span><span class="p">]:</span>
@@ -1009,7 +1009,7 @@
             <span class="n">continuum_threshold</span> <span class="o">=</span> <span class="mf">0.95</span>
 
         <span class="c1"># 1. Find Center Index</span>
-        <span class="n">idx_center</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="p">,</span> <span class="n">lambda_obs</span><span class="p">)</span>
+        <span class="n">idx_center</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="p">,</span> <span class="n">lambda_obs</span><span class="p">)</span>
         <span class="n">idx_center</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">idx_center</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
 
         <span class="c1"># 2. Determine Search Range (Indices)</span>
@@ -1275,7 +1275,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_active_lines_data</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">iterator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_active_fit_components</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_active_fit_components</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_system_list</span><span class="o">.</span><span class="n">components</span><span class="p">)</span>
-        <span class="n">grouped_lines</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">grouped_lines</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
         
         <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">iterator</span><span class="p">:</span>
             <span class="n">res_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_component_resolution</span><span class="p">(</span><span class="n">comp</span><span class="p">)</span>
@@ -1446,7 +1446,7 @@
         <span class="c1"># Statistics</span>
         <span class="n">p_free_errors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
         <span class="n">is_free_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="o">.</span><span class="n">_param_map</span><span class="p">[</span><span class="s1">'is_free'</span><span class="p">]</span>
-        <span class="n">red_chi2</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">red_chi2</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">linked_errors</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">p_free_errors</span><span class="p">,</span> <span class="n">red_chi2</span><span class="p">,</span> <span class="n">cov</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scaled_errors</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">fun</span><span class="p">,</span> <span class="n">res</span><span class="o">.</span><span class="n">jac</span><span class="p">)</span>

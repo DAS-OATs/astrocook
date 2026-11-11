@@ -2204,7 +2204,7 @@
         
         <span class="c1"># 1. Delegate to SystemListV2 (which we updated to handle lists)</span>
         <span class="c1"># We pass both arguments; SystemListV2 handles the set logic.</span>
-        <span class="n">new_systs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">delete_component</span><span class="p">(</span><span class="n">uuid</span><span class="o">=</span><span class="n">uuid</span><span class="p">,</span> <span class="n">uuids</span><span class="o">=</span><span class="n">uuids</span><span class="p">)</span>  <span class="c1"># type: ignore[arg-type]  # the core annotates them `str`/`list` with a None default (core/: PR 4)</span>
+        <span class="n">new_systs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">delete_component</span><span class="p">(</span><span class="n">uuid</span><span class="o">=</span><span class="n">uuid</span><span class="p">,</span> <span class="n">uuids</span><span class="o">=</span><span class="n">uuids</span><span class="p">)</span>
         <span class="n">kept</span> <span class="o">=</span> <span class="p">{</span><span class="n">c</span><span class="o">.</span><span class="n">uuid</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">new_systs</span><span class="o">.</span><span class="n">components</span><span class="p">}</span>
         <span class="n">report_removed</span><span class="p">([</span><span class="n">c</span><span class="o">.</span><span class="n">uuid</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">components</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">uuid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kept</span><span class="p">],</span>
                        <span class="s2">"deleted"</span><span class="p">)</span>
@@ -2680,6 +2680,7 @@
             <span class="p">}</span>
                 
             <span class="n">active_uuids</span> <span class="o">=</span> <span class="n">constraints</span><span class="o">.</span><span class="n">_active_uuids</span>
+            <span class="k">assert</span> <span class="n">active_uuids</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
             <span class="k">for</span> <span class="n">active_uuid</span> <span class="ow">in</span> <span class="n">active_uuids</span><span class="p">:</span>
                 <span class="n">new_meta</span><span class="p">[</span><span class="s1">'bayesian_results'</span><span class="p">][</span><span class="n">active_uuid</span><span class="p">]</span> <span class="o">=</span> <span class="n">group_results</span>
                 

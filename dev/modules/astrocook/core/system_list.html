@@ -478,7 +478,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">ast</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Collection</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Tuple</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.fitting.voigt_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">LINK_ERRORS</span><span class="p">,</span> <span class="n">LINK_FUNCTIONS</span><span class="p">,</span> <span class="n">VoigtModelConstraintV2</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ComponentDataV2</span><span class="p">,</span> <span class="n">SystemListDataV2</span><span class="p">,</span> <span class="n">ParameterConstraintV2</span>
@@ -666,7 +666,8 @@
         <span class="c1"># (Fixes JSON artifacts and converts dicts -&gt; objects)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_ensure_clean_data</span><span class="p">()</span>
         
-        <span class="bp">self</span><span class="o">.</span><span class="n">constraint_model</span> <span class="o">=</span> <span class="kc">None</span> 
+        <span class="c1"># Created by the call below, so that it is never None when used</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">constraint_model</span><span class="p">:</span> <span class="n">VoigtModelConstraintV2</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># type: ignore[assignment]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_constraint_model</span><span class="p">()</span></div>
 
 
@@ -862,7 +863,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">constraint_model</span><span class="o">.</span><span class="n">_param_map</span>
     
     <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">parsed_constraints</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parsed_constraints</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">ParameterConstraintV2</span><span class="p">]:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">parsed_constraints</span>
     
     <span class="nd">@property</span>
@@ -875,7 +876,7 @@
 <div class="viewcode-block" id="SystemListV2.fitting_context">
 <a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.fitting_context">[docs]</a>
     <span class="nd">@contextlib</span><span class="o">.</span><span class="n">contextmanager</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">fitting_context</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">active_uuids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">group_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fitting_context</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">active_uuids</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">group_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
                         <span class="n">spec</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">'SpectrumV2'</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Context manager for safe fitting.</span>
@@ -1185,7 +1186,7 @@
              <span class="n">comp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_component_by_uuid</span><span class="p">(</span><span class="n">uuid</span><span class="p">)</span>
              <span class="k">if</span> <span class="n">comp</span><span class="p">:</span>
                  <span class="n">legacy_key</span> <span class="o">=</span> <span class="p">(</span><span class="n">comp</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">param</span><span class="p">)</span>
-                 <span class="n">existing</span> <span class="o">=</span> <span class="n">current_parsed</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">legacy_key</span><span class="p">)</span>
+                 <span class="n">existing</span> <span class="o">=</span> <span class="n">current_parsed</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cast</span><span class="p">(</span><span class="n">Any</span><span class="p">,</span> <span class="n">legacy_key</span><span class="p">))</span>  <span class="c1"># legacy keys use the int id</span>
         
         <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ParameterConstraintV2</span>
         
@@ -1244,7 +1245,7 @@
 
 <div class="viewcode-block" id="SystemListV2.delete_component">
 <a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.delete_component">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">delete_component</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuid</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">uuids</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SystemListV2'</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">delete_component</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuid</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">uuids</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SystemListV2'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Remove component(s) and clean up constraints linking to them.</span>
 
@@ -1318,7 +1319,7 @@
 
 <div class="viewcode-block" id="SystemListV2.get_connected_group">
 <a class="viewcode-back" href="../../../api/astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2.get_connected_group">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_connected_group</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seed_uuids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">max_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_connected_group</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seed_uuids</span><span class="p">:</span> <span class="n">Collection</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">max_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
                             <span class="n">spec</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">'SpectrumV2'</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Find a set of components that must be fitted together.</span>
@@ -1548,7 +1549,7 @@
 
         <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">other</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
             <span class="c1"># Prepare the arguments we want to change</span>
-            <span class="n">changes</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'id'</span><span class="p">:</span> <span class="n">next_id</span><span class="p">}</span>
+            <span class="n">changes</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'id'</span><span class="p">:</span> <span class="n">next_id</span><span class="p">}</span>
             
             <span class="k">if</span> <span class="ow">not</span> <span class="n">copy_uuids</span><span class="p">:</span>
                 <span class="n">changes</span><span class="p">[</span><span class="s1">'uuid'</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">())</span>
@@ -1682,7 +1683,7 @@
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Optimizing the components of </span><span class="si">{</span><span class="n">series_name</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
         <span class="n">best_aic</span><span class="p">,</span> <span class="n">best_systs</span> <span class="o">=</span> <span class="n">fit_and_evaluate</span><span class="p">(</span><span class="n">current_systs</span><span class="p">,</span> <span class="p">[</span><span class="n">uuid_seed</span><span class="p">])</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"AIC of the starting model: </span><span class="si">{</span><span class="n">best_aic</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
-        <span class="n">tried</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">tried</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">stopped</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"the </span><span class="si">{</span><span class="n">max_components</span><span class="si">}</span><span class="s2"> components allowed were tried"</span>
         <span class="k">if</span> <span class="n">trace</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">trace</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">start_aic</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">best_aic</span><span class="p">),</span> <span class="n">tried</span><span class="o">=</span><span class="n">tried</span><span class="p">)</span>

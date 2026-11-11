@@ -473,7 +473,7 @@
   <h1>Source code for astrocook.fitting.bayesian_fitter</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Collection</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.voigt_fitter</span><span class="w"> </span><span class="kn">import</span> <span class="n">VoigtFitterV2</span>
 
 <span class="k">try</span><span class="p">:</span>
@@ -696,7 +696,7 @@
             
         <span class="c1"># Initialize walkers in a small cluster around the best-fit / initial guess</span>
         <span class="c1"># We add some noise but stay within bounds</span>
-        <span class="n">pos</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">pos</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nwalkers</span><span class="p">):</span>
             <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p_initial</span> <span class="o">+</span> <span class="mf">1e-4</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ndim</span><span class="p">)</span>
             <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lower_bounds</span> <span class="o">+</span> <span class="mf">1e-8</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">upper_bounds</span> <span class="o">-</span> <span class="mf">1e-8</span><span class="p">)</span>
@@ -847,7 +847,7 @@
         <span class="c1"># We only update components that were part of the active group</span>
         <span class="c1"># This ensures we don't accidentally reset/clear errors for other components</span>
         <span class="n">new_systs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">systs</span>
-        <span class="n">active_uuids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fitter</span><span class="o">.</span><span class="n">_constraints</span><span class="o">.</span><span class="n">_active_uuids</span>
+        <span class="n">active_uuids</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Collection</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fitter</span><span class="o">.</span><span class="n">_constraints</span><span class="o">.</span><span class="n">_active_uuids</span>
         <span class="k">if</span> <span class="n">active_uuids</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># If everything was active (no context), update everything</span>
             <span class="n">active_uuids</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">uuid</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">fitter</span><span class="o">.</span><span class="n">_constraints</span><span class="o">.</span><span class="n">_system_list</span><span class="o">.</span><span class="n">components</span><span class="p">]</span>

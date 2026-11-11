@@ -477,7 +477,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">tarfile</span> 
 <span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.io.adapter</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_and_migrate_structure</span><span class="p">,</span> <span class="n">save_archive_v2</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.io.v1_archive</span><span class="w"> </span><span class="kn">import</span> <span class="n">V1ArchiveManager</span>
@@ -499,7 +499,7 @@
 
 <div class="viewcode-block" id="load_session_from_file">
 <a class="viewcode-back" href="../../../api/astrocook.core.session.html#astrocook.core.session.load_session_from_file">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">load_session_from_file</span><span class="p">(</span><span class="n">archive_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">gui_context</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">format_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">'SessionV2'</span><span class="p">]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_session_from_file</span><span class="p">(</span><span class="n">archive_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">gui_context</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">format_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="s1">'SessionV2'</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Orchestrate the loading of a session from a file or archive.</span>
 
@@ -577,9 +577,9 @@
             
             <span class="c1"># 1. FIND THE ACTUAL FITS FILE</span>
             <span class="n">spec_file_path</span> <span class="o">=</span> <span class="kc">None</span>
-            <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">temp_dir</span><span class="p">):</span>
-                <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">'_spec.fits'</span><span class="p">):</span>
-                    <span class="n">spec_file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">temp_dir</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">fname</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">temp_dir</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">fname</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">'_spec.fits'</span><span class="p">):</span>
+                    <span class="n">spec_file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">temp_dir</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span>
                     <span class="k">break</span>
             
             <span class="k">if</span> <span class="ow">not</span> <span class="n">spec_file_path</span><span class="p">:</span>
@@ -732,7 +732,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">cb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">edit</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_shade</span> <span class="o">=</span> <span class="kc">False</span> 
         <span class="bp">self</span><span class="o">.</span><span class="n">_open_twin</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_clicks</span> <span class="o">=</span> <span class="p">[]</span>  
+        <span class="bp">self</span><span class="o">.</span><span class="n">_clicks</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>  
         <span class="bp">self</span><span class="o">.</span><span class="n">_z_sel</span> <span class="o">=</span> <span class="mf">0.0</span>   
         <span class="bp">self</span><span class="o">.</span><span class="n">_series_sel</span> <span class="o">=</span> <span class="s1">'Ly_a'</span> 
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"SessionV2 '</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">' initialized."</span><span class="p">)</span></div>
@@ -763,7 +763,7 @@
 <div class="viewcode-block" id="SessionV2.open_new">
 <a class="viewcode-back" href="../../../api/astrocook.core.session.html#astrocook.core.session.SessionV2.open_new">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">open_new</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">gui_context</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">format_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>        
+    <span class="k">def</span><span class="w"> </span><span class="nf">open_new</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">gui_context</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">format_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="s1">'SessionV2'</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>        
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Factory method: Create a new SessionV2 by loading data from a file.</span>
 
@@ -794,7 +794,7 @@
 
 <div class="viewcode-block" id="SessionV2.with_new_spectrum">
 <a class="viewcode-back" href="../../../api/astrocook.core.session.html#astrocook.core.session.SessionV2.with_new_spectrum">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">with_new_spectrum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_spectrum</span><span class="p">:</span> <span class="n">SpectrumV2</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">with_new_spectrum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_spectrum</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SpectrumV2</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s1">'SessionV2'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Return a new SessionV2 instance with an updated spectrum.</span>
 
@@ -803,8 +803,9 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        new_spectrum : SpectrumV2</span>
-<span class="sd">            The new spectral data object.</span>
+<span class="sd">        new_spectrum : SpectrumV2 or None</span>
+<span class="sd">            The new spectral data object (``None``: a session without</span>
+<span class="sd">            spectrum is copied as it is).</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
