@@ -8,7 +8,7 @@ extraction filter, which refuses such members.
 import io
 import tarfile
 
-from astrocook.core.session import load_session_from_file
+from astrocook.session.session import load_session_from_file
 from astrocook.io.v1_archive import V1ArchiveManager
 
 

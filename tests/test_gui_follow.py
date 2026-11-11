@@ -13,7 +13,7 @@ import pytest
 from PySide6.QtWidgets import QFileDialog, QMessageBox
 
 from astrocook import follow
-from astrocook.core.session import load_session_from_file
+from astrocook.session.session import load_session_from_file
 from astrocook.gui.main_window import MainWindowV2
 
 from test_gui_smoke import SESSION_FILE, _run_recipe
@@ -75,7 +75,7 @@ def test_a_duplicate_starts_with_a_new_log(qtbot, window, archive):
 def _rewrite(archive, z_em):
     """Save the archive again, as the server does after a recipe: the session
     with z_em changed and the recipe in its log."""
-    from astrocook.core.session_manager import SessionHistory
+    from astrocook.session.history import SessionHistory
     from astrocook.core.structures import HistoryLogV2
     session = load_session_from_file(str(SESSION_FILE), "J0103", None, "auto")
     history = SessionHistory(session, HistoryLogV2())

@@ -17,7 +17,7 @@ from PySide6.QtWidgets import (QApplication, QDialog, QFileDialog, QLineEdit,
                                QMessageBox, QProgressDialog)
 
 from astrocook.core.resolution import resolution_summary
-from astrocook.core.session_manager import SessionHistory
+from astrocook.session.history import SessionHistory
 from astrocook.core.structures import HistoryLogV2
 from astrocook.recipes._spectrum import spec_of
 from astrocook.recipes.errors import RecipeError

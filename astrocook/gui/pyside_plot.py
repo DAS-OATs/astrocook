@@ -19,8 +19,8 @@ from astrocook.core.spectrum_operations import convert_axis_velocity
 
 # Use TYPE_CHECKING to avoid circular import errors at runtime
 if TYPE_CHECKING:
-    from astrocook.core.session import SessionV2
-    from astrocook.core.session_manager import SessionHistory
+    from astrocook.session.session import SessionV2
+    from astrocook.session.history import SessionHistory
     from astrocook.core.spectrum import SpectrumV2
 
 from .continuum_editor import ContinuumEditorMixin

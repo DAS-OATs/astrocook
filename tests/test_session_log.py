@@ -14,8 +14,8 @@ import pytest
 import astropy.units as au
 import numpy as np
 
-from astrocook.core.session import SessionV2, load_session_from_file
-from astrocook.core.session_manager import SessionHistory
+from astrocook.session.session import SessionV2, load_session_from_file
+from astrocook.session.history import SessionHistory
 from astrocook.core.spectrum import SpectrumV2
 from astrocook.core.structures import DataColumnV2, HistoryLogV2, SpectrumDataV2
 

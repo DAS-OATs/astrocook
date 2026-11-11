@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from PySide6.QtWidgets import (QCheckBox, QComboBox, QListView, QMainWindow,
                                    QPushButton, QStackedWidget, QWidget)
 
-    from astrocook.core.session_manager import SessionHistory
+    from astrocook.session.history import SessionHistory
     from astrocook.gui.main_sessions import SessionListModel
     from astrocook.gui.pyside_plot import SpectrumPlotWidget
 

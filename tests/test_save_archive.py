@@ -17,7 +17,7 @@ import tarfile
 import pytest
 
 import astrocook.io.adapter as adapter
-from astrocook.core.session import SessionV2
+from astrocook.session.session import SessionV2
 
 from test_recipes_absorbers import _systs
 from test_recipes_edit_flux import _spec

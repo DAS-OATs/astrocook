@@ -13,7 +13,7 @@ import pytest
 
 from astrocook.recipes.errors import RecipeFailed
 
-from astrocook.core.session import SessionV2, load_session_from_file
+from astrocook.session.session import SessionV2, load_session_from_file
 from astrocook.io.loaders import detect_file_format
 
 from test_recipes_edit_flux import _spec

@@ -10,7 +10,7 @@ import astropy.units as au
 import pytest
 
 from astrocook.core.atomic_data import ATOM_DATA, STANDARD_MULTIPLETS
-from astrocook.core.session import SessionV2
+from astrocook.session.session import SessionV2
 from astrocook.core.spectrum import SpectrumV2
 from astrocook.core.structures import (
     ComponentDataV2, DataColumnV2, SpectrumDataV2, SystemListDataV2,

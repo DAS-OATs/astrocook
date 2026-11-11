@@ -18,7 +18,7 @@ pytest.importorskip("mcp")
 from mcp import Client  # noqa: E402
 
 from astrocook import follow  # noqa: E402
-from astrocook.core.session import SessionV2, load_session_from_file  # noqa: E402
+from astrocook.session.session import SessionV2, load_session_from_file  # noqa: E402
 from astrocook.core.spectrum import SpectrumV2  # noqa: E402
 from astrocook.core.structures import DataColumnV2, SpectrumDataV2  # noqa: E402
 from astrocook.mcp_server.sessions import SessionStore  # noqa: E402

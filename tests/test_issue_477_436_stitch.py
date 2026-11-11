@@ -11,7 +11,7 @@ import numpy as np
 import astropy.units as au
 import pytest
 
-from astrocook.core.session import SessionV2
+from astrocook.session.session import SessionV2
 from astrocook.core.spectrum import SpectrumV2
 from astrocook.core.structures import DataColumnV2, SpectrumDataV2
 from astrocook.recipes.edit import RecipeEditV2
@@ -86,7 +86,7 @@ def test_two_arms_two_cuts_is_rejected(arms):
 def test_gui_dialog_asks_for_one_cut_with_two_arms(qtbot, monkeypatch, tmp_path):
     # GUI side of #477: with two arms the dialog must ask for one value and
     # pass the other session itself (the field is hidden from the user)
-    from astrocook.core.session_manager import SessionHistory
+    from astrocook.session.history import SessionHistory
     from astrocook.core.structures import HistoryLogV2
     from astrocook.recipes.registry import get_recipe
 

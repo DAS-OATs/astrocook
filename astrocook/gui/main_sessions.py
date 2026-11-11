@@ -22,8 +22,8 @@ from PySide6.QtWidgets import (QApplication, QDialog, QDialogButtonBox, QFileDia
                                QProgressDialog, QSizePolicy, QVBoxLayout)
 
 from astrocook.core.resolution import resolution_summary
-from astrocook.core.session import SessionV2, load_session_from_file
-from astrocook.core.session_manager import SessionHistory
+from astrocook.session.session import SessionV2, load_session_from_file
+from astrocook.session.history import SessionHistory
 from astrocook.core.structures import HistoryLogV2
 
 if TYPE_CHECKING:

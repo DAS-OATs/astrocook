@@ -1296,7 +1296,7 @@ its own, except the smallest; the model of each PR proposed by the rule
 | 3 | Type checker, step 1: mypy in CI on `recipes/` and `mcp_server/` | Sonnet | half a day (done, 11 November 2026: see below) |
 | 4 | Type checker, step 2: `core/` and `fitting/` | Sonnet | half a day to a day (done, 11 November 2026: see below) |
 | 4-bis | Type checker, step 3: `gui/` (361 errors, 199 of them `attr-defined` from the mixins of `MainWindowV2` and `SpectrumPlotWidget`: the same cure as PR 4, a host class for the type checker) | Sonnet | half a day (done, 11 November 2026: see below) |
-| 5 | `SessionV2` (and `SessionHistory`) out of `core/`, e.g. into `astrocook/session/`, the old import kept as an alias | Sonnet | 2-3 h |
+| 5 | `SessionV2` (and `SessionHistory`) out of `core/`, e.g. into `astrocook/session/`, the old import kept as an alias | Sonnet | 2-3 h (done, 11 November 2026: see below) |
 | 6 | The `V2` suffixes dropped, with the aliases of PR 2 (code, tests, docs) | Sonnet | half a day |
 | 7 | Review of the recipes of file and flux (8 recipes) | Opus | half a day |
 | 8 | Review of edit, columns and expressions (`set_properties`, `x_convert`, `y_convert`, `apply_expression`, `mask_expression`, `smooth_column`), with F120 (one set of column names) | Opus | half a day to a day |
@@ -1435,6 +1435,35 @@ its own, except the smallest; the model of each PR proposed by the rule
     TypeError): in PR 10, or with the decision on the console;
   - PRs 3-6 before the reviews (the order proposed), or the renaming
     last, so that the reviews do not meet a change of every file.
+- *Result of PR 5* (`SessionV2` out of `core/`; 11 November 2026): new
+  package `astrocook/session/`, with `session.py` (`SessionV2`,
+  `load_session_from_file`, the rest of the old `core/session.py`, moved with
+  `git mv`) and `history.py` (`SessionHistory`, the old
+  `core/session_manager.py`); `astrocook.session` re-exports the three
+  names. The reason: a session imports the recipes, so it was a module of
+  `core/` that depended on the layer above it (and `core/__init__.py`
+  imported it at once). Aliases: `core/session.py`, `core/session_manager.py`
+  and `core/__init__.py` (for `SessionV2`) hold only a module `__getattr__`
+  (PEP 562) that imports the new module **when a name is asked** and returns
+  the same object (`from astrocook.core.session import SessionV2` is
+  `astrocook.session.session.SessionV2`). Lazy, so `core/` imports nothing
+  of `astrocook.session` at import time and no cycle can form; and **without
+  `DeprecationWarning`**, unlike the renamed classes of PR 6: the path is
+  used by the scripts and by the tests, which have warnings as errors, and
+  the plan of PR 2 (the helper `astrocook/_renamed.py`) was not written, so
+  there was no mechanism to reuse: PR 6 will decide whether this one is
+  folded into it. The names as strings: no pickle, and neither the
+  archives nor the logs hold the path of a module (the logs hold recipe
+  names and parameters); `SessionV2.__module__` is now
+  `astrocook.session.session`. The imports of the package, the tests and the
+  docs (`docs/tutorials/scripting.md`, `generate_sphinx.sh`, the docstring
+  references) use the new path; `astrocook/session` is in the `files` of
+  mypy; `tests/test_broad_excepts.py` follows the file. New
+  `tests/test_session_package.py`: the old and the new path give the same
+  objects, an unknown name is an `AttributeError`, no module of `core/`
+  imports `astrocook.session` at module level. No change of behaviour. Fast
+  suite (3623 passed), `ruff check .` and `mypy` clean; no slow test and no
+  benchmark: only modules and imports moved, so the numbers cannot change.
 - *Decisions of PR 2* (old names; proposed in the conversation of PR 2,
   agreed with Guido, 11 November 2026):
   - *A renamed parameter*: its old names are `aliases` of the parameter in
@@ -1542,7 +1571,7 @@ not in a plan yet.
 | Proposal | Phase | Why there |
 |---|---|---|
 | A type checker (mypy or pyright) in CI, gradually: `recipes/` and `mcp_server/` first, then `core/` and `fitting/`; the GUI last, if ever | 6-quater (moved from 6-ter, PR 8) | the server builds the tools from the typed parameters: checked types serve the agents first |
-| `SessionV2` (and `SessionHistory`) out of `core/`, e.g. into `astrocook/session/`, the old import kept as an alias | 6-quater, with the `V2` renaming (moved from 6-ter, PR 8) | the headless server works on the sessions; the core becomes the bottom layer |
+| `SessionV2` (and `SessionHistory`) out of `core/`, e.g. into `astrocook/session/`, the old import kept as an alias | 6-quater, PR 5 (done, 11 November 2026) | the headless server works on the sessions; the core becomes the bottom layer |
 | Ruff with `B` (flake8-bugbear), a PR of its own; the style rules (`E`, `W`) left out | first PR of 6-quater (moved from 6-ter, PR 8) | small and mechanical; finds bugs, not style |
 | The `V2` suffixes of the class names (`SpectrumV2`, `RecipeAbsorbersV2`, ...) dropped, the old names kept as aliases | 6-quater | changes the interface of the scripts, as a renamed parameter: the same mechanism of aliases |
 | The complex functions of the recipes that phase 7 does not rewrite (e.g. `RecipeEditV2.equalize_and_stitch`, 31) | 6-quater | the recipes are reviewed one by one there |
@@ -2106,5 +2135,5 @@ One line per concluded phase; the long rows are in `ROADMAP_HISTORY.md`, "7. Pro
 | 6 – Error handling | done (November 2026), PRs #691-#701; release 2.4.0 |
 | 6-bis – Recipe API | done (November 2026), PRs #705-#723; release 2.5.0 |
 | 6-ter – Full MCP server | done (November 2026), PRs #726-#747 and the closing PR 8; release 2.6.0 published on GitHub on 10 November 2026 (PR 9, #751: version, CHANGELOG, `switcher.json`); plan of the phase agreed (PR 0, #726); the tools generated from the registry, F106 found (PR 1, #729); F106 fixed (PR 1-bis, #730); the tools of the sessions, undo and redo (PR 2, #731); the tools of inspection (PR 3, #732); progress notifications (PR 4, #733); the agent's decisions in the log (PR 5a); the gaps of the recipes (PR 5b); the log as the text of a methods section (PR 5c); the GUI following a session of the server, F109 found (PR 5-bis); the headless Docker image, F110 found (PR 6, not published); trials with fresh agents, F111-F116 found (PR 7, report in section 4.3); heartbeat and reads during a recipe, F113 in part (PR 7-bis); trial 3, the editing tools, F117-F120 found (PR 7); the outputs of trial 3 (PR 7-ter); F111 and the cancellation, F113 closed, F121 found (PR 7-quater) |
-| 6-quater – Review of the recipe parameters | in progress (November 2026): plan of the phase agreed (in PR 1, ruff `B`); PR 2, the aliases of the renamed parameters |
+| 6-quater – Review of the recipe parameters | in progress (November 2026): plan of the phase agreed (in PR 1, ruff `B`); PR 2, the aliases of the renamed parameters; PR 3-4-bis, mypy on the whole package; PR 5, `SessionV2` and `SessionHistory` into `astrocook/session/` |
 | 7 – Robust components | not started |

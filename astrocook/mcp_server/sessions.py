@@ -1,6 +1,6 @@
 """The sessions open in the server.
 
-Each session is a :class:`~astrocook.core.session_manager.SessionHistory`,
+Each session is a :class:`~astrocook.session.history.SessionHistory`,
 as in the GUI, under an identifier that the tools return and take. The log
 entries are added here, after each recipe, as the GUI does: the recipes
 do not write them (``ROADMAP_HISTORY.md``, section 4.1).
@@ -41,8 +41,8 @@ from typing import Any, Iterator, Optional
 from mcp.server.mcpserver.exceptions import ToolError
 
 from astrocook import follow, gaps
-from astrocook.core.session import SessionV2
-from astrocook.core.session_manager import SessionHistory
+from astrocook.session.session import SessionV2
+from astrocook.session.history import SessionHistory
 from astrocook.core.structures import HistoryLogV2
 from astrocook.recipes.params import resolve_params
 

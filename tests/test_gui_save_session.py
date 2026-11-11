@@ -6,8 +6,8 @@ import astropy.units as au
 import pytest
 from PySide6.QtWidgets import QFileDialog, QMessageBox
 
-from astrocook.core.session import SessionV2
-from astrocook.core.session_manager import SessionHistory
+from astrocook.session.session import SessionV2
+from astrocook.session.history import SessionHistory
 from astrocook.core.spectrum import SpectrumV2
 from astrocook.core.structures import DataColumnV2, HistoryLogV2, SpectrumDataV2
 from astrocook.gui.main_window import MainWindowV2

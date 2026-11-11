@@ -27,7 +27,7 @@ import pytest
 from astrocook.recipes.errors import InvalidParameter, RecipeFailed  # phase 6-bis, PR 3
 
 from astrocook.core.atomic_data import STANDARD_MULTIPLETS
-from astrocook.core.session import SessionV2
+from astrocook.session.session import SessionV2
 from astrocook.core.structures import ComponentDataV2, SystemListDataV2
 from astrocook.core.system_list import SystemListV2
 from astrocook.fitting.voigt_fitter import VoigtFitterV2

@@ -8,7 +8,7 @@ from astrocook.recipes._spectrum import spec_of
 from astrocook.recipes.params import typed_recipe
 
 if TYPE_CHECKING:
-    from astrocook.core.session import SessionV2
+    from astrocook.session.session import SessionV2
 
 logger = logging.getLogger(__name__)
 
@@ -209,7 +209,7 @@ class RecipeContinuumV2:
         Returns
         -------
         SessionV2
-            A new :class:`~astrocook.core.session.SessionV2` with updated continuum
+            A new :class:`~astrocook.session.session.SessionV2` with updated continuum
             and absorption mask.
 
         Raises
@@ -273,7 +273,7 @@ class RecipeContinuumV2:
         Returns
         -------
         SessionV2
-            A new :class:`~astrocook.core.session.SessionV2` with the ``abs_mask``
+            A new :class:`~astrocook.session.session.SessionV2` with the ``abs_mask``
             column added/updated.
 
         Raises
@@ -329,7 +329,7 @@ class RecipeContinuumV2:
         Returns
         -------
         SessionV2
-            A new :class:`~astrocook.core.session.SessionV2` with the ``cont``
+            A new :class:`~astrocook.session.session.SessionV2` with the ``cont``
             column added/updated.
 
         Raises
@@ -371,7 +371,7 @@ class RecipeContinuumV2:
         Returns
         -------
         SessionV2
-            A new :class:`~astrocook.core.session.SessionV2` with the ``cont_pl``
+            A new :class:`~astrocook.session.session.SessionV2` with the ``cont_pl``
             column added/updated.
 
         Raises
@@ -410,7 +410,7 @@ class RecipeContinuumV2:
         Returns
         -------
         SessionV2
-            A new :class:`~astrocook.core.session.SessionV2` with the updated continuum.
+            A new :class:`~astrocook.session.session.SessionV2` with the updated continuum.
         """
         # 1. Delegate Business Logic to Core
         new_spec = spec_of(self._session).update_continuum_from_knots(

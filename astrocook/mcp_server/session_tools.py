@@ -21,7 +21,7 @@ from pydantic import Field
 
 from astrocook import gaps
 from astrocook.methods_text import methods_text
-from astrocook.core.session import SessionV2
+from astrocook.session.session import SessionV2
 from astrocook.recipes._spectrum import spec_of
 from astrocook.mcp_server.errors import run_recipe
 from astrocook.mcp_server.outputs import (

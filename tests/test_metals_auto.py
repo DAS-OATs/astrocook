@@ -11,7 +11,7 @@ import logging
 
 import pytest
 
-from astrocook.core.session import SessionV2
+from astrocook.session.session import SessionV2
 from astrocook.fitting.voigt_fitter import NoPixelsToFit, VoigtFitterV2
 from astrocook.mocks import MockComponent, MockTruth, generate
 from astrocook.recipes.errors import RecipeCancelled, RecipeFailed

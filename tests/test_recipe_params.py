@@ -14,7 +14,7 @@ import pytest
 
 import astropy.units as au
 
-from astrocook.core.session import SessionV2
+from astrocook.session.session import SessionV2
 from astrocook.core.spectrum import SpectrumV2
 from astrocook.core.structures import DataColumnV2, HistoryLogV2, SpectrumDataV2
 from astrocook.recipes.params import (InvalidParameter, convert,
@@ -130,7 +130,7 @@ def test_every_recipe_is_typed():
     """Every recipe of the registry converts its parameters (phase 6-bis,
     PR 2a-2c): a new recipe must be decorated with ``typed_recipe``."""
     from astrocook.recipes.registry import all_recipes
-    from astrocook.core.session import SessionV2
+    from astrocook.session.session import SessionV2
     for spec in all_recipes():
         method = getattr(type(getattr(SessionV2("s", None), spec.category)), spec.name)
         assert getattr(method, "typed_recipe", False), f"{spec.category}.{spec.name}"
@@ -208,7 +208,7 @@ def test_a_log_of_strings_still_replays(tmp_path):
     """The logs written before the typed parameters (strings, as by the
     dialogs of 2.4.0) replay with the same results: saved in an archive,
     read back and run again."""
-    from astrocook.core.session import load_session_from_file
+    from astrocook.session.session import load_session_from_file
     session = _session()
     log = HistoryLogV2()
     log.add_entry("smooth", {"sigma_kms": "50.0"})

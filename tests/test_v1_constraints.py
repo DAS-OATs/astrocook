@@ -16,7 +16,7 @@ import numpy as np
 import pytest
 from astropy.io import fits
 
-from astrocook.core.session import load_session_from_file
+from astrocook.session.session import load_session_from_file
 from astrocook.io.v1_archive import parse_v1_fits_constraints
 from astrocook.mocks import MockComponent, MockTruth, generate
 

@@ -21,7 +21,7 @@ from PySide6.QtWidgets import (QAbstractItemView, QApplication, QCheckBox, QComb
                                QListView, QMessageBox, QPushButton, QSizePolicy, QSlider,
                                QStyle, QVBoxLayout, QWidget)
 
-from astrocook.core.session import SessionV2
+from astrocook.session.session import SessionV2
 from astrocook.core.utils import resource_path
 
 from .floating_cards import CARD_WIDTH, CardFader, CollapsibleSection, WrappedLabel

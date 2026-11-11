@@ -13,7 +13,7 @@ from scipy.ndimage import gaussian_filter1d
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import astrocook # Import package to locate run_astrocook.py
-from astrocook.core.session import SessionV2
+from astrocook.session.session import SessionV2
 from astrocook.core.structures import DataColumnV2
 from astrocook.core.atomic_data import STANDARD_MULTIPLETS, ATOM_DATA
 from astrocook.fitting.voigt_fitter import VoigtFitterV2

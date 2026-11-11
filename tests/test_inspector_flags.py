@@ -31,7 +31,7 @@ def _inspector(with_spectrum=False):
     inspector = _gui().SystemInspector(None)
     if with_spectrum:
         # Selecting rows draws the velocity plot
-        from astrocook.core.session import SessionV2
+        from astrocook.session.session import SessionV2
         from astrocook.mocks import MockComponent, MockTruth, generate
         spec = generate(MockTruth(
             components=[MockComponent("Ly_a", 3.01, 13.0, 20.0)], lam_min_nm=484.0,

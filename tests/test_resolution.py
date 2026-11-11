@@ -116,7 +116,7 @@ def test_with_properties_without_resolution_leaves_it():
 
 def test_set_properties_current_keeps_a_variable_column():
     # Before #526 '_current_' wrote the attribute into a flat column
-    from astrocook.core.session import SessionV2
+    from astrocook.session.session import SessionV2
     variable = np.linspace(40000.0, 50000.0, N)
     session = SessionV2("s", None, spec=_spectrum(resol=45000.0, resol_col=variable))
     out = session.edit.set_properties(z_em="3.0")
@@ -207,7 +207,7 @@ def test_resolution_summary():
 def test_system_inspector_reads_the_column_by_its_unit(qtbot, col, unit, expected):
     # Before #526 the inspector always read the column as km/s
     from types import SimpleNamespace
-    from astrocook.core.session import SessionV2
+    from astrocook.session.session import SessionV2
     from astrocook.gui.system_inspector import VelocityPlotWidget
     holder = SimpleNamespace(_current_session=SessionV2(
         "s", None, spec=_spectrum(resol_col=col, resol_unit=unit)))

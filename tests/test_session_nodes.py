@@ -17,8 +17,8 @@ import numpy as np
 import pytest
 from PySide6.QtWidgets import QMessageBox
 
-from astrocook.core.session import load_session_from_file
-from astrocook.core.session_manager import SessionHistory
+from astrocook.session.session import load_session_from_file
+from astrocook.session.history import SessionHistory
 from astrocook.core.structures import HistoryLogV2
 from astrocook.gui.log_script import log_to_script
 from astrocook.gui.main_window import MainWindowV2

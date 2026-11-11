@@ -17,7 +17,7 @@ from astrocook.recipes.messages import (msg_no_resolution, msg_session_not_found
                                        msg_z_em_unset)
 
 if TYPE_CHECKING:
-    from astrocook.core.session import SessionV2
+    from astrocook.session.session import SessionV2
 
 logger = logging.getLogger(__name__)
 
@@ -847,7 +847,7 @@ class RecipeAbsorbersV2:
         Returns
         -------
         SessionV2
-            A new :class:`~astrocook.core.session.SessionV2` with detected systems.
+            A new :class:`~astrocook.session.session.SessionV2` with detected systems.
         """
         progress(logger, 0)
         logger.info(f"Searching for components (region: {region_limit}).")
@@ -1048,7 +1048,7 @@ class RecipeAbsorbersV2:
         Returns
         -------
         SessionV2
-            A new :class:`~astrocook.core.session.SessionV2` with detected doublets.
+            A new :class:`~astrocook.session.session.SessionV2` with detected doublets.
         """
         return self.components_auto(
             multiplets=multiplets,
@@ -1101,7 +1101,7 @@ class RecipeAbsorbersV2:
         Returns
         -------
         SessionV2
-            A new :class:`~astrocook.core.session.SessionV2` with the forest model.
+            A new :class:`~astrocook.session.session.SessionV2` with the forest model.
         """
         progress(logger, 0)
         logger.info("Fitting the Lyman-alpha forest.")
@@ -1175,7 +1175,7 @@ class RecipeAbsorbersV2:
         Returns
         -------
         SessionV2
-            A new :class:`~astrocook.core.session.SessionV2` with Lyman series systems.
+            A new :class:`~astrocook.session.session.SessionV2` with Lyman series systems.
         """
         logger.info("Fitting the Lyman series in the forest.")
         
@@ -1265,7 +1265,7 @@ class RecipeAbsorbersV2:
         Returns
         -------
         SessionV2
-            A new :class:`~astrocook.core.session.SessionV2` with added metals.
+            A new :class:`~astrocook.session.session.SessionV2` with added metals.
         """
         ion_list = [i.strip() for i in ions.split(',')]
         z_win = z_window_kms
@@ -1419,7 +1419,7 @@ class RecipeAbsorbersV2:
         Returns
         -------
         SessionV2
-            A new :class:`~astrocook.core.session.SessionV2` with identification maps
+            A new :class:`~astrocook.session.session.SessionV2` with identification maps
             in metadata.
         """
         multiplet_list = [m.strip() for m in multiplets.split(',') if m.strip()]
@@ -1460,7 +1460,7 @@ class RecipeAbsorbersV2:
         Returns
         -------
         SessionV2
-            A new :class:`~astrocook.core.session.SessionV2` with populated systems
+            A new :class:`~astrocook.session.session.SessionV2` with populated systems
             and updated model.
         """
         from astrocook.fitting.voigt_fitter import VoigtFitterV2
@@ -1546,7 +1546,7 @@ class RecipeAbsorbersV2:
         Returns
         -------
         SessionV2
-            A new :class:`~astrocook.core.session.SessionV2` with the added component.
+            A new :class:`~astrocook.session.session.SessionV2` with the added component.
         """
         z_f, logN_f, b_f, btur_f, z_win_f = z, logN, b, btur, z_window_kms
 
@@ -1601,7 +1601,7 @@ class RecipeAbsorbersV2:
         Returns
         -------
         SessionV2
-            A new :class:`~astrocook.core.session.SessionV2` with updated component.
+            A new :class:`~astrocook.session.session.SessionV2` with updated component.
         """
         changes: dict[str, Any] = {}
         # None: unchanged ('None' in the dialogs and the log)
@@ -1645,7 +1645,7 @@ class RecipeAbsorbersV2:
         Returns
         -------
         SessionV2
-            A new :class:`~astrocook.core.session.SessionV2` with updated components.
+            A new :class:`~astrocook.session.session.SessionV2` with updated components.
         """
         # Parse values
         changes: dict[str, Any] = {}
@@ -1685,7 +1685,7 @@ class RecipeAbsorbersV2:
         Returns
         -------
         SessionV2
-            A new :class:`~astrocook.core.session.SessionV2` with components removed.
+            A new :class:`~astrocook.session.session.SessionV2` with components removed.
         """
         from astrocook.fitting.voigt_fitter import VoigtFitterV2
         
@@ -1781,7 +1781,7 @@ class RecipeAbsorbersV2:
         Returns
         -------
         SessionV2
-            A new :class:`~astrocook.core.session.SessionV2` with updated parameters
+            A new :class:`~astrocook.session.session.SessionV2` with updated parameters
             and model.
         """
         max_nfev_i, z_win_f, depth_i = max_nfev, z_window_kms, group_depth
@@ -1831,7 +1831,7 @@ class RecipeAbsorbersV2:
         Returns
         -------
         SessionV2
-            A new :class:`~astrocook.core.session.SessionV2` with updated constraints.
+            A new :class:`~astrocook.session.session.SessionV2` with updated constraints.
         """
         new_systs = self._session.systs.update_constraint(
             uuid, param, is_free, expression, target_uuid
@@ -1884,7 +1884,7 @@ class RecipeAbsorbersV2:
         Returns
         -------
         SessionV2
-            A new :class:`~astrocook.core.session.SessionV2` with updated constraints.
+            A new :class:`~astrocook.session.session.SessionV2` with updated constraints.
         """
         if not self._session.systs or not self._session.systs.components:
             raise RecipeFailed("There are no components.")
@@ -1937,7 +1937,7 @@ class RecipeAbsorbersV2:
         Returns
         -------
         SessionV2
-            A new :class:`~astrocook.core.session.SessionV2` with linked components
+            A new :class:`~astrocook.session.session.SessionV2` with linked components
             fitted.
         """
         series_names = [s.strip() for s in series_list.split(',') if s.strip()]
@@ -2027,7 +2027,7 @@ class RecipeAbsorbersV2:
         Returns
         -------
         SessionV2
-            A new :class:`~astrocook.core.session.SessionV2` with optimized systems.
+            A new :class:`~astrocook.session.session.SessionV2` with optimized systems.
         """
         max_c, thresh, aic_p = max_components, threshold_sigma, aic_penalty
         z_win, min_dv_f, depth, pat = z_window_kms, min_dv, group_depth, patience
@@ -2202,7 +2202,7 @@ class RecipeAbsorbersV2:
         Returns
         -------
         SessionV2
-            A new :class:`~astrocook.core.session.SessionV2` with all systems refitted.
+            A new :class:`~astrocook.session.session.SessionV2` with all systems refitted.
         """
         max_nfev_i, z_win_f, depth_i = max_nfev, z_window_kms, group_depth
         max_size_i, b_max_f, logN_max_f = max_group_size, max_b, max_logN
@@ -2490,7 +2490,7 @@ class RecipeAbsorbersV2:
         Returns
         -------
         SessionV2
-            A new :class:`~astrocook.core.session.SessionV2` with the flagged components removed.
+            A new :class:`~astrocook.session.session.SessionV2` with the flagged components removed.
         """
         lim_N, lim_b_max, lim_b_min = min_logN, max_b, min_b
         use_combined = combined_check

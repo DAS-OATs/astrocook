@@ -8,7 +8,7 @@ sphinx-apidoc -f -e --no-toc -o \
     docs/api astrocook \
     astrocook/core/atomic_data.py \
     astrocook/core/photometry.py \
-    astrocook/core/session_manager.py \
+    astrocook/session/history.py \
     astrocook/core/spectrum_operations.py \
     astrocook/core/spectrum_combine.py \
     astrocook/core/spectrum_continuum.py \

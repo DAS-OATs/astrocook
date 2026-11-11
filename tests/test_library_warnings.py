@@ -12,7 +12,7 @@ import numpy as np
 from astropy.io import fits
 from astropy.table import Table
 
-from astrocook.core.session import SessionV2, load_session_from_file
+from astrocook.session.session import SessionV2, load_session_from_file
 from astrocook.core.spectrum_operations import compute_auto_fudge
 from astrocook.io.adapter import _fits_meta, _write_fits_table
 

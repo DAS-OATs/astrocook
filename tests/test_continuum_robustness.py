@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "benchmarks"))
 
 import validate_mocks as vm  # noqa: E402
 
-from astrocook.core.session import SessionV2  # noqa: E402
+from astrocook.session.session import SessionV2  # noqa: E402
 from astrocook.core.spectrum_operations import _masked_window_mean  # noqa: E402
 from astrocook.mocks import generate  # noqa: E402
 

@@ -11,7 +11,7 @@ import astropy.units as au
 import numpy as np
 from pydantic import BaseModel, Field
 
-from astrocook.core.session import SessionV2
+from astrocook.session.session import SessionV2
 from astrocook.recipes._spectrum import column_of, spec_of
 
 

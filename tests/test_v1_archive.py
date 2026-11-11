@@ -23,7 +23,7 @@ import numpy as np
 import pytest
 from astropy.io import fits
 
-from astrocook.core.session import load_session_from_file
+from astrocook.session.session import load_session_from_file
 
 DATA = Path(__file__).parent / "data"
 ARCHIVES = ["v1_systems", "v1_metals_constraints"]

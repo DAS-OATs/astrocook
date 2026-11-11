@@ -21,7 +21,7 @@ import numpy as np
 import astropy.units as au
 import pytest
 
-from astrocook.core.session import SessionV2
+from astrocook.session.session import SessionV2
 from astrocook.core.structures import DataColumnV2, HistoryLogV2
 
 from conftest import DATA_DIR, J0103_SESSION

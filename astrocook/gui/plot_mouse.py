@@ -19,7 +19,7 @@ from typing import Optional, TYPE_CHECKING
 from astrocook.core.atomic_data import STANDARD_MULTIPLETS, trans_parse, xem_d
 
 if TYPE_CHECKING:
-    from astrocook.core.session import SessionV2
+    from astrocook.session.session import SessionV2
 
 from ._plot_host import PlotHostBase
 from .data_inspector import DataInspectorDialog
