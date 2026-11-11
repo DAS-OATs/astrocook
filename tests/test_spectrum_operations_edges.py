@@ -165,7 +165,7 @@ def test_rebin_ignores_bad_pixels(bad):
         y=DataColumnV2(y[keep], au.dimensionless_unscaled),
         dy=DataColumnV2(dy[keep], au.dimensionless_unscaled))
     start, end = 600.0 * au.nm, 600.995 * au.nm
-    for got, expected in zip(_rebin(data, start, end), _rebin(clean, start, end)):
+    for got, expected in zip(_rebin(data, start, end), _rebin(clean, start, end), strict=True):
         np.testing.assert_allclose(got, expected, rtol=1e-12)
 
 

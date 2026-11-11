@@ -104,7 +104,7 @@ def _compare_components(ref, act, stage):
 
     # Match each reference component with the nearest one of the same series
     pairs = []
-    for i, (z, series) in enumerate(zip(col(ref, "z"), col(ref, "series"))):
+    for i, (z, series) in enumerate(zip(col(ref, "z"), col(ref, "series"), strict=True)):
         same = np.flatnonzero(col(act, "series") == series)
         if len(same):
             j = same[np.argmin(np.abs(col(act, "z")[same] - z))]

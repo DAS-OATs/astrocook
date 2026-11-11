@@ -388,7 +388,7 @@ class VoigtFitterV2:
                           - self._constraints.map_p_free_to_full(p_minus)[linked]) / (2 * h)
         with np.errstate(invalid='ignore'):
             errors = np.sqrt(np.einsum('ij,jk,ik->i', grad, cov, grad))
-        return dict(zip(linked, errors))
+        return dict(zip(linked, errors, strict=True))
 
     def evaluate_uncertainties(self, z_window_kms: float = 20.0) -> SystemListV2:
         """
@@ -985,7 +985,7 @@ class VoigtFitterV2:
             is_spectator = (active_uuids is not None) and (old_comp.uuid not in active_uuids)
             
             # Helper to assign error
-            def resolve_error(param_idx, old_err):
+            def resolve_error(param_idx, old_err, is_spectator=is_spectator):
                 if is_free_mask[param_idx]:
                     return p_full_errors[param_idx] # New calculated error
                 elif is_spectator:
@@ -1037,7 +1037,7 @@ class VoigtFitterV2:
             
         # Report the components whose uncertainties could not be computed
         # (findings register F20): the errors stay NaN, which the tables show
-        nan_errors = [c for c, old in zip(new_components, old_components)
+        nan_errors = [c for c, old in zip(new_components, old_components, strict=True)
                       if (active_uuids is None or old.uuid in active_uuids)
                       and any(e is not None and np.isnan(e)
                               for e in (c.dz, c.dlogN, c.db, c.dbtur))]

@@ -1357,7 +1357,7 @@ class RecipeEditV2:
         # --- [FIX] 3. Gather and Sort All Arms (Blue-to-Red) ---
         # It doesn't matter which arm was right-clicked; we MUST process them from bluest to reddest.
         all_sessions_info = [(self._session.name, self._session.spec)]
-        for name, spec in zip(others_list, resolved_others):
+        for name, spec in zip(others_list, resolved_others, strict=True):
             all_sessions_info.append((name, spec))
             
         all_sessions_info.sort(key=lambda item: np.nanmin(item[1].x.value))

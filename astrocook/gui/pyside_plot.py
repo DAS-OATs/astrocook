@@ -890,7 +890,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
         except DATA_ERRORS:
             ticks, x_ticks = [], []
 
-        for (comp, t, is_highlighted), x_plot in zip(ticks, x_ticks):
+        for (comp, t, is_highlighted), x_plot in zip(ticks, x_ticks, strict=True):
             # Check xlim *before* appending to keep lists small
             if xlim[0] <= x_plot <= xlim[1]:
                 # If highlighted, add to special list (also drawn as a
@@ -974,7 +974,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
         long spectrum (6.3 s instead of 0.77 s on 300 000 pixels)."""
         handles, labels = ax.get_legend_handles_labels()
         try:
-            self.main_window.update_plot_swatches(dict(zip(labels, handles)),
+            self.main_window.update_plot_swatches(dict(zip(labels, handles, strict=True)),
                                                   self._ghost_artists)
         except AttributeError:
             pass  # No main window controls (e.g. in tests)

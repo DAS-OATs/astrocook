@@ -245,7 +245,7 @@ def merge_nearby_components(systs, velocity_threshold=50.0):
         by_series[c.series].append(c)
         
     new_components = []
-    for series, comps in by_series.items():
+    for comps in by_series.values():
         comps.sort(key=lambda x: x.z)
         merged = []
         if not comps: continue

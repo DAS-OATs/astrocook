@@ -288,7 +288,7 @@ def parse_v1_fits_constraints(hdr: Dict[str, Any]) -> Dict[Tuple[int, str], Dict
                 continue
 
     # --- Convert Intermediate Data to Final V2 Structure ---
-    for n, data in constraint_data.items():
+    for data in constraint_data.values():
         if 'id' in data and 'par' in data and 'val' in data:
             comp_id = data['id']
             param_name = data['par']

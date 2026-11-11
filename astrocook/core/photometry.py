@@ -122,7 +122,7 @@ def generate_calibration_curve(x: au.Quantity, y: au.Quantity,
             filt, mag = pair.split('=')
             targets.append((filt.strip(), float(mag.strip())))
     except ValueError:
-        raise ValueError("Invalid format. Use 'Filter=Mag, Filter=Mag'.")
+        raise ValueError("Invalid format. Use 'Filter=Mag, Filter=Mag'.") from None
 
     if not targets:
          raise ValueError("No valid magnitudes provided.")
@@ -183,6 +183,6 @@ def generate_calibration_curve(x: au.Quantity, y: au.Quantity,
                         "curve: the factor of each band is used alone, and the "
                         "magnitudes are only approximately reached.")
         factors = single
-    for b, f in zip(bands, factors):
+    for b, f in zip(bands, factors, strict=True):
         logger.info(f"Calibration in {b[1]} ({b[0]:.0f} nm): factor {f:.3e}.")
     return np.interp(x_nm, waves, factors)

@@ -361,7 +361,7 @@ class ExpressionsMixin:
         v_mins.append(v1); v_maxs.append(v2)
         
         # 2. Others
-        for spec, trans in zip(others_specs, trans_others):
+        for spec, trans in zip(others_specs, trans_others, strict=True):
             v1, v2 = get_bounds(spec, trans, z_target)
             v_mins.append(v1); v_maxs.append(v2)
             

@@ -1473,7 +1473,7 @@ class RecipeAbsorbersV2:
             z_map = {int(k): v for k, v in z_map.items()}
         except (ValueError, TypeError, AttributeError) as e:
             # ValueError covers json.JSONDecodeError
-            raise RecipeFailed(f"The identification cannot be read: {e}")
+            raise RecipeFailed(f"The identification cannot be read: {e}") from e
 
         running_systs = self._session.systs
         spec = self._session.spec

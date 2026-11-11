@@ -22,6 +22,22 @@ Italian.
   what is left (not just a terse list). Do not wait for long test runs to
   finish before sending it: report their result when it comes.
 
+## Choice of the model (agreed with Guido, November 2026)
+Guido gives each PR (except the smallest) a conversation of its own, and
+chooses its model. At the start of each phase, when its plan is written,
+say for each PR whether Sonnet is enough, with an estimate of its time,
+and write both in the plan of the phase in `ROADMAP.md`.
+- Sonnet is enough for mechanical work with a criterion of success that
+  a tool checks: lint and type-checker warnings, renamings with aliases,
+  moving modules, wiring an existing piece of data to another place (e.g.
+  the labels of the menus from the registry), short texts whose content
+  is already decided. Tell it the rule "no change of behaviour" in the
+  prompt (e.g. for the type checker: `assert` or `cast`, no new branches).
+- Opus for the work of judgement: the design of a mechanism used by
+  several PRs, the review of the interface of the recipes (names, types,
+  defaults, units), anything that can change the numerical results or
+  touches the science, the plans of the phases.
+
 ## Project
 Astrocook: a Python package for the analysis of quasar spectra (continuum,
 identification of absorption systems, Voigt fitting). PySide6 GUI +
@@ -64,8 +80,11 @@ Current version: 2.6.0. Python ≥3.12.
   the Qt system libraries and the package (with `[dev]` extras) into
   `.venv/`, and sets `QT_QPA_PLATFORM=offscreen` and `MPLBACKEND=Agg`.
   Locally: `python -m venv .venv && .venv/bin/pip install -e ".[dev]"`.
-- Lint: `ruff check .` (config in `pyproject.toml`; pyflakes rules only for
-  now, `tests/reference/v1/` excluded). New code must not add warnings.
+- Lint: `ruff check .` (config in `pyproject.toml`; the pyflakes rules
+  and flake8-bugbear, `B`, since phase 6-quater; `tests/reference/v1/`
+  excluded). A `zip()` says `strict=True` where its inputs have the same
+  length by construction, `itertools.pairwise` for consecutive pairs. New
+  code must not add warnings.
 - CI (GitHub Actions, `.github/workflows/tests.yml`): `pytest` on Python
   3.12 and 3.13 (coverage report on 3.13), and `ruff check .`. The slow
   tests (`pytest --run-slow -m slow`) run in a separate job, not on pull
@@ -152,9 +171,11 @@ Phase 6-ter (the full MCP server: 65 tools, 48 of them generated from the
 recipe registry, sessions with undo and redo, inspection, notes, gaps, the
 log as text, cancellation, the GUI following a session, a headless Docker
 image) is closed and released as 2.6.0: see "Result of the phase" in
-`ROADMAP.md`. Next: 6-quater (review of the recipe parameters, recipe by recipe;
-it starts with ruff `B`, then the type checker and `SessionV2` out of
-`core/` with the renaming of the `V2` suffixes) and phase 7 (robust
+`ROADMAP.md`. In progress: 6-quater (review of the recipe parameters,
+recipe by recipe; it starts with ruff `B`, then the type checker and
+`SessionV2` out of `core/` with the renaming of the `V2` suffixes; its
+plan, with the model and the estimate of each PR, in `ROADMAP.md`), then
+phase 7 (robust
 components, measured on the benchmark of phase 4; the real analysis of the
 MCP server goes there).
 

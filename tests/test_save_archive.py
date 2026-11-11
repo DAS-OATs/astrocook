@@ -34,8 +34,11 @@ def _names(path):
         return sorted(tar.getnames())
 
 
-def _fail_on_call(monkeypatch, obj, name, n, exc=OSError("simulated failure")):
-    """Make the ``n``-th call of ``obj.name`` raise ``exc``."""
+def _fail_on_call(monkeypatch, obj, name, n, exc=None):
+    """Make the ``n``-th call of ``obj.name`` raise ``exc`` (an OSError by
+    default)."""
+    if exc is None:
+        exc = OSError("simulated failure")
     original = getattr(obj, name)
     calls = {"n": 0}
 

@@ -219,7 +219,7 @@ class BayesianVoigtFitter:
             # Astrocook's RecipeProgressDialog looks for '>> PROGRESS: X' messages
             update_interval = max(1, nsteps // 100)
 
-            for i, result in enumerate(sampler.sample(pos, iterations=nsteps, progress=False)):
+            for i, _ in enumerate(sampler.sample(pos, iterations=nsteps, progress=False)):
                 
                 # Update GUI every 1% or at least every step
                 if i % update_interval == 0:

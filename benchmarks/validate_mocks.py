@@ -37,6 +37,7 @@ import json
 import logging
 import sys
 import time
+from itertools import pairwise
 from multiprocessing import Pool
 from pathlib import Path
 
@@ -480,7 +481,7 @@ def completeness_by_significance(records):
     their weaker line: it should rise around DETECTION_SIGMA."""
     systems = [s for r in records for s in r["identification"]["systems"]]
     out = {}
-    for lo, hi in zip(SIGNIFICANCE_BINS[:-1], SIGNIFICANCE_BINS[1:]):
+    for lo, hi in pairwise(SIGNIFICANCE_BINS):
         sel = [s["found"] for s in systems if lo <= s["significance"] < hi]
         out[f"{lo:g}-{hi:g}"] = dict(n=len(sel),
                                      found=float(np.mean(sel)) if sel else None)
