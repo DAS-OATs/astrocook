@@ -1618,7 +1618,7 @@ its own, except the smallest; the model of each PR proposed by the rule
   defaults removed, one type changed; the numbers of a valid call with the
   sessions in one unit do not move (fingerprints taken on master before the
   change, `test_valid_results_unchanged`), those with units mixed are fixed
-  (F132-F134, agreed); no recipe of the continuum, the fits or the
+  (F132-F134 and F138, agreed); no recipe of the continuum, the fits or the
   identification is touched, so no benchmark and no slow test.
   - *One rule for the sessions* (left by PR 7; `recipes/_sessions.py`): a
     parameter of kind `session` (one) or `sessions` (several,
@@ -1644,9 +1644,14 @@ its own, except the smallest; the model of each PR proposed by the rule
     when the units are the same, hence the same bits); `arb_flux` with a
     physical flux only when scaled (it takes the unit of the reference), a
     normalized flux never with one that is not; an axis in velocity against
-    a wavelength refused (`x_convert` first). F138 (`flux.equalize`, the
-    same in `equalize_to_reference`) registered, not changed: outside the
-    recipes of the PR.
+    a wavelength refused (`x_convert` first). The rule is in
+    `recipes/_combine.py`. F138 (`flux.equalize` and the core of
+    `equalize_to_reference` and `coadd`, the same faults), found in the
+    PR and fixed before the merge (Guido): the core compares in the units
+    of the spectrum scaled (a script gets the right numbers too),
+    `flux.equalize` keeps the unit of its flux (an arbitrary one takes
+    that of the reference); fingerprints of `equalize` (orders 0, 1, -1)
+    and of the core `coadd` taken before.
   - *F123* (option A): `equalize_order` of `coadd` `Optional[int]`, None
     no scaling, 0-5 (the maximum measured: `polyfit` is poorly conditioned
     from order 6-7 on overlaps of 20-50 nm, the reason written next to the
@@ -1673,13 +1678,15 @@ its own, except the smallest; the model of each PR proposed by the rule
   - *Complexity*: `equalize_and_stitch` 23 (mccabe; 31 radon) and `stitch`
     12 → at most 10 for each function of `recipes/edit.py`, with helpers
     (`_numbers`, `_ranges`, `_blue_to_red`, `_arm_part`, `_equalize_arm`,
-    `_in_units_of`), covered by the fingerprints.
+    and `in_units_of` of `recipes/_combine.py`), covered by the
+    fingerprints.
   - *Kept*: `append`, `refit` of the imports (`refit_all` with 20 km/s and
     `max_nfev` 100, fixed), `sort` of `stitch`, `alias_map` of `split`
     (GUI only), `'auto'` of `equalize_ranges` and `manual_factors`,
     `window_kms`, `kappa`, `dx`.
   - *Docs*: the tutorial of Edit (the sessions by name or as objects,
-    the units of the combination, the limits above), *Using Astrocook from
+    the units of the combination, the limits above), of Flux (the units
+    of *Equalize*), *Using Astrocook from
     an AI Agent* (the tools that read several sessions), the CHANGELOG. No
     screenshot: no dialog of a scene changed (the coadd dialog of the
     scenes is filled by the GUI with this session first).
@@ -2102,7 +2109,7 @@ Exception: anything that loses user data or crashes is reported at once.
 | F135 | recipes that read other sessions, without a GUI | In a script (a session of `load_session_from_file` with `gui=None`) `coadd`, `equalize_and_stitch`, `import_systems` and `trim_common` failed with an `AttributeError` (`None.session_histories`): a crash, reported to Guido at once (PR 9); `stitch` worked only with sessions given as objects, and its log held their `repr`. Found in the analysis of PR 9 (phase 6-quater) | crash | `test_without_a_gui_a_name_fails_with_a_hint`, `test_in_a_script_the_sessions_themselves` | fixed in PR 9 of 6-quater: one rule for the parameters of kind `session` and `sessions` (`recipes/_sessions.py`): names, or in a script the sessions themselves; the name of the session the recipe runs on is that session; the log records names |
 | F136 | recipes that read other sessions (a name not found) | Each did its own: `coadd` skipped a name not found without a word (and co-added the others), `stitch` with a WARNING, `trim_common` with a WARNING and then "no range in common" (or "N sessions and M transitions"); `trim_common` also gave "no range in common" for an unknown transition of its session and ignored one of another session (an infinite range). Found in the analysis of PR 9 (phase 6-quater) | behaviour | `test_a_name_not_found_fails_naming_it`, `test_refused` | fixed in PR 9 of 6-quater: `RecipeFailed` naming it; an unknown transition `InvalidParameter` |
 | F137 | `coadd` (this session) | The sessions co-added are those named: without this session in the list, the result held the others only, in a new state of this session (its name, its systems), while the description said "with this one"; the first named, not this session, is the reference (units, scaling). Found in the analysis of PR 9 (phase 6-quater) | behaviour, interface | `test_coadd_refused` | fixed in PR 9 of 6-quater (Guido): a list without this session refused; the first named stays the reference (described) |
-| F138 | `flux.equalize` (units) | The same as F132 and F134 in `Spectrum.equalize_to_reference`, used by `flux.equalize`: a session per nm equalized to one per Å keeps its unit with the values of the other (10 times too faint); a session with the axis in Å is not scaled to one in nm (no overlap of the values), without a word. Found in PR 9 (phase 6-quater), not changed there (it changes the numbers of a recipe outside the PR; `equalize_and_stitch` and `coadd` convert before calling the core) | behaviour, units | — | open: to Guido (the same conversion in `equalize`, or in `equalize_to_reference`) |
+| F138 | `flux.equalize` (units) | The same as F132 and F134 in `Spectrum.equalize_to_reference`, used by `flux.equalize`: a session per nm equalized to one per Å kept its unit with the values of the other (10 times too faint); a session with the axis in Å was not scaled to one in nm (no overlap of the values), without a word. The core of `Spectrum.coadd`, called by a script, had F133 and F134 too. Found in PR 9 (phase 6-quater) | behaviour, units | `test_equalize_compares_the_flux_in_one_unit`, `test_equalize_compares_the_axis_in_one_unit`, `test_the_core_in_a_script` | fixed in PR 9 of 6-quater (Guido, added before the merge): the core compares in the units of this spectrum (`_in_units_of_this` of `core/spectrum_combine.py`: the reference converted for the scaling, the result in the unit of this flux; an axis in velocity against a wavelength a `ValueError`), `coadd` of the core converts the flux to the unit of the reference; `flux.equalize` applies the rule of `recipes/_combine.py` (an arbitrary flux takes the unit of the reference, a normalized one refused); same results with one unit (fingerprints) |
 
 Closed findings (fixed or accepted: all the others, F1 to F106 and F108 to F110) are in `ROADMAP_HISTORY.md`, "3.2 Findings register", one row each, to be found by number (`grep "^| F52 "`).
 
@@ -2504,5 +2511,5 @@ One line per concluded phase; the long rows are in `ROADMAP_HISTORY.md`, "7. Pro
 | 6 – Error handling | done (November 2026), PRs #691-#701; release 2.4.0 |
 | 6-bis – Recipe API | done (November 2026), PRs #705-#723; release 2.5.0 |
 | 6-ter – Full MCP server | done (November 2026), PRs #726-#747 and the closing PR 8; release 2.6.0 published on GitHub on 10 November 2026 (PR 9, #751: version, CHANGELOG, `switcher.json`); plan of the phase agreed (PR 0, #726); the tools generated from the registry, F106 found (PR 1, #729); F106 fixed (PR 1-bis, #730); the tools of the sessions, undo and redo (PR 2, #731); the tools of inspection (PR 3, #732); progress notifications (PR 4, #733); the agent's decisions in the log (PR 5a); the gaps of the recipes (PR 5b); the log as the text of a methods section (PR 5c); the GUI following a session of the server, F109 found (PR 5-bis); the headless Docker image, F110 found (PR 6, not published); trials with fresh agents, F111-F116 found (PR 7, report in section 4.3); heartbeat and reads during a recipe, F113 in part (PR 7-bis); trial 3, the editing tools, F117-F120 found (PR 7); the outputs of trial 3 (PR 7-ter); F111 and the cancellation, F113 closed, F121 found (PR 7-quater) |
-| 6-quater – Review of the recipe parameters | in progress (November 2026): plan of the phase agreed (in PR 1, ruff `B`); PR 2, the aliases of the renamed parameters; PR 3-4-bis, mypy on the whole package; PR 5, `SessionV2` and `SessionHistory` into `astrocook/session/`; PR 6, the `V2` suffixes dropped (#759); PR 7, the review of file and flux, F122-F125 found (#761); PR 8, the review of edit on columns and expressions, F120 fixed (one set of names of the columns), F126-F128 found, F127 fixed; PR 8-bis, the units of the flux (`arb_flux`) and the CSV files in ECSV, F129-F131 fixed; PR 9, the review of edit on several spectra, one rule for the sessions, F123 and F132-F137 fixed, F138 found |
+| 6-quater – Review of the recipe parameters | in progress (November 2026): plan of the phase agreed (in PR 1, ruff `B`); PR 2, the aliases of the renamed parameters; PR 3-4-bis, mypy on the whole package; PR 5, `SessionV2` and `SessionHistory` into `astrocook/session/`; PR 6, the `V2` suffixes dropped (#759); PR 7, the review of file and flux, F122-F125 found (#761); PR 8, the review of edit on columns and expressions, F120 fixed (one set of names of the columns), F126-F128 found, F127 fixed; PR 8-bis, the units of the flux (`arb_flux`) and the CSV files in ECSV, F129-F131 fixed; PR 9, the review of edit on several spectra, one rule for the sessions, F123 and F132-F138 fixed |
 | 7 – Robust components | not started |

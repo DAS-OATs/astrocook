@@ -99,6 +99,13 @@ KEPT = {
     "coadd_none": lambda s: RecipeEdit(s).coadd("A, mid", equalize_order=-1),
     "coadd_nm": lambda s: RecipeEdit(s).coadd("A, mid, red", xstart=400, xend=600,
                                               dx=0.05, xunit="nm", kappa=None),
+    # F138, added to PR 9: flux.equalize and the core of coadd
+    "equalize_0": lambda s: s.flux.equalize("mid", order=0),
+    "equalize_1": lambda s: s.flux.equalize("mid", order=1),
+    "equalize_-1": lambda s: s.flux.equalize("mid", order=-1),
+    "core_coadd": lambda s: s.with_new_spectrum(s.spec.coadd(
+        [s._gui.session_histories[1].current_state.spec], None, None,
+        au.Quantity(10.0, "km/s"))),
 }
 
 
@@ -114,6 +121,10 @@ FINGERPRINTS = {
     "eqst_ranges": "f8f1e0b4e9b95e55bec773bac4da5fa8",
     "stitch": "c99259d1886fc72b5bba9a1c18167dbf",
     "stitch_unsorted": "03cec5a59dae2dfae99f306fdef6f688",
+    "equalize_0": "e0ae22a5cc94dae585baba4afc612664",
+    "equalize_1": "c47b53aa0af3e0a64dcbf724c1ba0a79",
+    "equalize_-1": "2a287b990ba5d8da07b43608fb0e7520",
+    "core_coadd": "f5660f5d7c8a4f2f5be591f325135feb",  # the same as coadd_eq0
 }
 
 
@@ -370,3 +381,65 @@ def test_required_parameters():
     assert stitch["properties"]["other_sessions"]["x-astrocook-kind"] == "sessions"
     coadd = parameters_schema(get_recipe("edit", "coadd"))["properties"]["equalize_order"]
     assert coadd["maximum"] == 5
+
+
+# --- Changed: F138, flux.equalize and the core (added to PR 9) ---
+
+def _to_equalize(main, ref):
+    """``main`` as the session A, to be equalized to the session ref."""
+    return _session(main, {"ref": ref})
+
+
+def test_equalize_compares_the_flux_in_one_unit():
+    # F138: a session per nm (10 times the values of the same flux)
+    # equalized to one per Å kept its unit with the values of the other:
+    # 10 times too faint
+    s = _to_equalize(_spec(450.0, 560.0, 0.03, PER_NM, 10.0), _spec(380.0, 460.0, 0.02))
+    out = _quiet(lambda: s.flux.equalize("ref"))
+    assert out.spec.y.unit == PER_NM
+    level = _level(out) * PER_NM
+    assert level.to_value(PER_A) == pytest.approx(1.0, abs=0.01)
+
+
+def test_equalize_compares_the_axis_in_one_unit():
+    # F138: an axis in Å against one in nm: no overlap of the values, so
+    # no scaling (the flux stayed twice as bright)
+    s = _to_equalize(_spec(450.0, 560.0, 0.03, scale=2.0, xunit=au.AA),
+                     _spec(380.0, 460.0, 0.02))
+    out = _quiet(lambda: s.flux.equalize("ref"))
+    assert out.spec.x.unit == au.AA
+    assert _level(out) == pytest.approx(1.0, abs=0.01)
+
+
+def test_equalize_an_arbitrary_flux_takes_the_unit_of_the_reference():
+    # The values were scaled and the unit kept arbitrary
+    s = _to_equalize(_spec(450.0, 560.0, 0.03, ARBITRARY_FLUX, 5.0), _spec(380.0, 460.0, 0.02))
+    out = _quiet(lambda: s.flux.equalize("ref"))
+    assert out.spec.y.unit == PER_A and _level(out) == pytest.approx(1.0, abs=0.01)
+
+
+@pytest.mark.parametrize("main, match", [
+    (_spec(450.0, 560.0, 0.03, au.dimensionless_unscaled), "normalized"),  # scaled
+    (_spec(450.0, 560.0, 0.03).x_convert(2.0, au.km / au.s), "x_convert"),  # not scaled
+])
+def test_equalize_refused(main, match):
+    s = _to_equalize(main, _spec(380.0, 460.0, 0.02))
+    with pytest.raises(RecipeFailed, match=match):
+        _quiet(lambda: s.flux.equalize("ref"))
+
+
+def test_the_core_in_a_script():
+    # Spectrum.coadd and Spectrum.equalize_to_reference, called by a
+    # script, compare in the units of the reference too (F133, F134, F138)
+    blue = _spec(380.0, 460.0, 0.02)
+    red = _spec(450.0, 560.0, 0.03, PER_NM, 10.0)
+    for order in (-1, 0):
+        out = _quiet(lambda o=order: blue.coadd([red], None, None,
+                                                au.Quantity(10.0, "km/s"), equalize_order=o))
+        assert _level(Session(name="c", gui=None, spec=out), 470.0) \
+            == pytest.approx(1.0, abs=0.01), order
+    red_aa = _spec(450.0, 560.0, 0.03, scale=2.0, xunit=au.AA)
+    out = _quiet(lambda: red_aa.equalize_to_reference(blue))
+    assert _level(Session(name="e", gui=None, spec=out)) == pytest.approx(1.0, abs=0.01)
+    with pytest.raises(ValueError, match="x_convert"):
+        _spec(450.0, 560.0, 0.03).x_convert(2.0, au.km / au.s).equalize_to_reference(blue)

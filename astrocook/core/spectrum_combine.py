@@ -22,6 +22,31 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+def _flux_values(flux: au.Quantity, unit) -> np.ndarray:
+    """The values of ``flux`` in ``unit`` when it can be converted, else as
+    they are (as they are also when the unit is the same)."""
+    if flux.unit == unit or not au.Unit(flux.unit).is_equivalent(unit):
+        return flux.value
+    return flux.to_value(unit)
+
+
+def _in_units_of_this(spec, x_unit, y_unit):
+    """The values of the axis and of the flux of ``spec`` in ``x_unit`` and
+    ``y_unit`` (phase 6-quater, PR 9, F133, F134, F138): the axis converted
+    between wavelengths (ValueError for an axis of another kind, e.g. a
+    velocity against a wavelength, which cannot be compared), the flux when
+    it can be (see :func:`_flux_values`)."""
+    x = spec.x
+    if x.unit != x_unit:
+        if not (au.Unit(x.unit).is_equivalent(au.nm) and au.Unit(x_unit).is_equivalent(au.nm)):
+            raise ValueError(f"an axis in {x.unit} cannot be compared with one in "
+                             f"{x_unit}: convert them to wavelengths with x_convert")
+        x_values = x.to_value(x_unit)
+    else:
+        x_values = x.value
+    return x_values, _flux_values(spec.y, y_unit)
+
+
 class CombineMixin(HostBase):
     """Stitching, rebinning, equalization, co-addition and resampling of
     spectra.
@@ -257,13 +282,27 @@ class CombineMixin(HostBase):
         Returns
         -------
         Spectrum
-            A new instance with scaled flux.
+            A new instance with scaled flux, in the unit of this spectrum.
+
+        Notes
+        -----
+        The two spectra are compared in the units of this one (F138, phase
+        6-quater, PR 9): the axis of the reference converted to the unit of
+        this axis, its flux to the unit of this flux when they are of one
+        kind. Before, the values were compared as they were, so a reference
+        with the axis in Å against this one in nm had no overlap (no
+        scaling), and one per Å against this one per nm gave a flux off by
+        their ratio. A flux of another kind (arbitrary, against a physical
+        one) is compared by its values: the scaling calibrates it, and the
+        recipe declares the unit. Nothing is converted when the units are
+        the same.
         """
         from astrocook.core.spectrum_operations import compute_flux_scaling
-        
+
+        ref_x, ref_y = _in_units_of_this(reference_spec, self.x.unit, self.y.unit)
         # Compute the scaling model (array) based on the reference
         scale_model = compute_flux_scaling(
-            reference_spec.x.value, reference_spec.y.value, 
+            ref_x, ref_y,
             self.x.value, self.y.value, 
             order=order
         )
@@ -329,20 +368,27 @@ class CombineMixin(HostBase):
         resol_sources_count = 0
 
         for i, spec in enumerate(all_specs):
+            # The axis and the flux in the units of the reference (F133,
+            # F134, phase 6-quater, PR 9: the values were taken as they
+            # were); a flux of another kind by its values, which the
+            # scaling calibrates. As they are when the units are the same
+            spec_y = _flux_values(spec.y, self.y.unit)
+            spec_dy = _flux_values(spec.dy, self.y.unit)
             # A. Flux Scaling (Skip for self/index 0)
             if i > 0 and equalize_order >= 0:
                 logger.debug(f"Scaling spectrum {i} to the reference.")
+                spec_x, _ = _in_units_of_this(spec, original_x_unit, self.y.unit)
                 # Compute scaling in original frame
                 scale_model = compute_flux_scaling(
                     ref_x, ref_y, 
-                    spec.x.value, spec.y.value, 
+                    spec_x, spec_y, 
                     order=equalize_order
                 )
-                y_val = spec.y.value * scale_model
-                dy_val = spec.dy.value * scale_model
+                y_val = spec_y * scale_model
+                dy_val = spec_dy * scale_model
             else:
-                y_val = spec.y.value
-                dy_val = spec.dy.value
+                y_val = spec_y
+                dy_val = spec_dy
 
             # B. Pre-Convert to Calculation Unit (e.g. km/s)
             # This handles the "negative pixel" issue for overlapping orders

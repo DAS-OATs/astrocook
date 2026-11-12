@@ -18,6 +18,7 @@ from astrocook.core.units import (has_no_unit, is_arbitrary_flux,
 from astrocook.core.system_list import SystemList
 from astrocook.recipes.errors import (InvalidParameter, RecipeError, RecipeFailed,
                                       reason_of)
+from astrocook.recipes._combine import in_units_of_first
 from astrocook.recipes._sessions import is_session, open_session, open_sessions, split_names
 from astrocook.recipes._spectrum import spec_of
 from astrocook.recipes.params import DATA_ERRORS, typed_recipe
@@ -1289,7 +1290,7 @@ class RecipeEdit:
         items = split_names(other_sessions)
         others = open_sessions(self._session, items, 'other_sessions')
         names = [self._session.name] + _labels(items, others)
-        specs = _in_units_of_first([spec_of(self._session)] + [spec_of(s) for s in others],
+        specs = in_units_of_first([spec_of(self._session)] + [spec_of(s) for s in others],
                                    names, scaled=False)
         new_spec = specs[0].stitch(specs[1:], sort=sort)
 
@@ -1371,7 +1372,7 @@ class RecipeEdit:
                             + list(zip(_labels(names, others), [spec_of(s) for s in others],
                                        strict=True)))
         arm_names = [name for name, _ in arms]
-        specs = _in_units_of_first([spec for _, spec in arms], arm_names, scaled=True)
+        specs = in_units_of_first([spec for _, spec in arms], arm_names, scaled=True)
         unit = specs[0].x.unit
         bounds = [None, *cuts, None]
 
@@ -1455,7 +1456,7 @@ class RecipeEdit:
             raise InvalidParameter(f"session_names: name this session too "
                                    f"('{self._session.name}'): the result is a new state of it")
         eq_order = -1 if equalize_order is None or equalize_order < 0 else equalize_order
-        specs = _in_units_of_first([spec_of(s) for s in sessions], _labels(names, sessions),
+        specs = in_units_of_first([spec_of(s) for s in sessions], _labels(names, sessions),
                                    scaled=eq_order >= 0)
 
         xstart_q = au.Quantity(xstart, au.nm) if xstart is not None else None
@@ -1518,50 +1519,6 @@ def _grid_unit(xunit: str) -> au.UnitBase:
     if not (unit.is_equivalent(au.km / au.s) or unit.is_equivalent(au.nm)):
         raise InvalidParameter(f"xunit: {xunit!r} is neither a velocity nor a wavelength")
     return unit
-
-
-def _unit_words(unit) -> str:
-    if is_arbitrary_flux(unit):
-        return "arbitrary units"
-    if has_no_unit(unit):
-        return "no unit (normalized)"
-    return str(unit)
-
-
-def _in_units_of(spec, ref, name: str, ref_name: str, scaled: bool):
-    """``spec`` with the axis and the flux in the units of ``ref`` (F132-F134):
-    converted when the units are of one kind, the arbitrary flux declared in
-    the unit of ``ref`` when ``scaled`` (the scaling calibrates it);
-    RecipeFailed for the other cases. Nothing done when the units are the
-    same, so those results do not move."""
-    x_u, x_ref = au.Unit(spec.x.unit), au.Unit(ref.x.unit)
-    if x_u != x_ref:
-        if not (x_u.is_equivalent(au.nm) and x_ref.is_equivalent(au.nm)):
-            raise RecipeFailed(f"The axis of {name} is in {x_u} and that of {ref_name} in "
-                               f"{x_ref}: convert them to wavelengths with x_convert.")
-        spec = spec.x_convert(spec._data.z_em or 0.0, x_ref)
-    y_u, y_ref = spec.y.unit, ref.y.unit
-    if au.Unit(y_u) == au.Unit(y_ref):
-        return spec
-    if au.Unit(y_u).is_equivalent(y_ref):
-        return spec.y_convert(y_ref)
-    if scaled and (is_arbitrary_flux(y_u) or is_arbitrary_flux(y_ref)) \
-            and not (has_no_unit(y_u) or has_no_unit(y_ref)):
-        logger.info(f"The flux of {name}, in {_unit_words(y_u)}, takes the unit of "
-                    f"{ref_name} ({_unit_words(y_ref)}) once scaled to it.")
-        return spec.with_flux_unit(y_ref)
-    how = ("" if scaled else "; scaled to it (Equalize and stitch arms, or Co-add with "
-           "equalize_order), an arbitrary flux takes the unit of the other")
-    raise RecipeFailed(f"The flux of {name} is in {_unit_words(y_u)} and that of {ref_name} "
-                       f"in {_unit_words(y_ref)}: they cannot be combined{how}. Set_properties "
-                       "declares the unit of a flux (yunit).")
-
-
-def _in_units_of_first(specs: list, names: List[str], scaled: bool) -> list:
-    """The spectra, the first as it is, the others in its units (see
-    :func:`_in_units_of`)."""
-    return [specs[0]] + [_in_units_of(spec, specs[0], name, names[0], scaled)
-                         for spec, name in zip(specs[1:], names[1:], strict=True)]
 
 
 def _blue_to_red(arms: list) -> list:
