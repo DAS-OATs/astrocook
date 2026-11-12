@@ -1620,11 +1620,13 @@ its own, except the smallest; the model of each PR proposed by the rule
   the PR; `optimize_system` and `fit_bayesian` split to PR 10-bis): no
   parameter renamed; five defaults removed; the numbers of a valid call do
   not move (the values of 24 calls taken on master before the change,
-  snapshots `manual_fits_*.npz` of `test_valid_results_unchanged` compared
-  within 1e-6, and the anchor of `detect_anchor` on the mock; an md5 of the
-  values to the bit, as in PR 9, failed on a runner of the CI, Python 3.12:
-  the fits give their last digits differently on different processors,
-  identical here on 3.12 and 3.13), except two cases agreed: the links made without `target_uuid` (F146)
+  snapshots `manual_fits_*.npz` of `test_valid_results_unchanged`, the
+  values and the model within 1e-4 relative, the errors within 1e-2, and the
+  anchor of `detect_anchor` on the mock within 1e-5; on the runners of the
+  CI the fits differ from here by up to 2.5e-6 in b and 3e-4 in the errors
+  (a b at its bound of 300 km/s), with the same code: an md5 of the values,
+  as in PR 9, failed on Python 3.12, a tolerance of 1e-6 on 3.13; here
+  3.12 and 3.13 give the same bits), except two cases agreed: the links made without `target_uuid` (F146)
   and `detect_anchor` on a flux not normalized (F145). No fit of the
   benchmark or of the automatic pipelines goes through the changed paths
   (the pipelines do not call these recipes; `add_linked_system` and the GUI

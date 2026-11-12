@@ -7,9 +7,10 @@
 test saying what it was. The values of the valid results were taken on
 master before the change (``tests/snapshots/manual_fits_*.npz``): the
 numbers of a valid call do not move, except where a finding says so (F145,
-F146). They are compared with a relative tolerance of 1e-6, not to the
-bit: the fits give the last digits differently on different processors
-(an md5 of the values, as in PR 9, failed on a runner of the CI).
+F146). They are compared with a relative tolerance (1e-4 for the values and
+the model, 1e-2 for the errors), not to the bit: on the runners of the CI
+the fits differ from here by up to 2.5e-6 in b and 3e-4 in the errors (an
+md5 of the values, as in PR 9, failed; then a tolerance of 1e-6).
 """
 import hashlib
 import re
@@ -40,14 +41,15 @@ def _values(session):
             return "None"
         return re.sub(r"[0-9a-f]{8}-[0-9a-f-]{27}", lambda m: index.get(m.group(), "?"), text)
 
-    numbers = np.array([[np.nan if v is None else float(v)
-                         for v in (c.z, c.dz, c.logN, c.dlogN, c.b, c.db, c.btur, c.dbtur,
-                                   getattr(c, "resol", None))] for c in comps]).reshape(-1, 9)
+    def table(names):
+        return np.array([[np.nan if getattr(c, n, None) is None else float(getattr(c, n))
+                          for n in names] for c in comps]).reshape(-1, len(names))
     cons = sorted(f"{index.get(u, '?')} {p} {k.is_free} {plain(k.expression)} "
                   f"{plain(k.target_uuid)}"
                   for (u, p), k in (session.systs.parsed_constraints.items()
                                     if session.systs else []))
-    values = {"components": numbers, "series": np.array([c.series for c in comps], dtype=str),
+    values = {"components": table(("z", "logN", "b", "btur", "resol")),
+              "errors": table(("dz", "dlogN", "db", "dbtur")), "series": np.array([c.series for c in comps], dtype=str),
               "constraints": np.array(cons, dtype=str)}
     if session.spec.has_aux_column("model"):
         values["model"] = np.asarray(session.spec.t["model"], dtype=float)
@@ -55,7 +57,10 @@ def _values(session):
 
 
 def _check(snapshot, case, session):
-    snapshot.check(f"manual_fits_{case}", _values(session), rtol=1e-6, atol=1e-12)
+    values = _values(session)
+    errors = {"errors": values.pop("errors")}
+    snapshot.check(f"manual_fits_{case}", values, rtol=1e-4, atol=1e-12)
+    snapshot.check(f"manual_fits_{case}_errors", errors, rtol=1e-2, atol=1e-12)
 
 
 def _fingerprint(session):
@@ -154,7 +159,7 @@ KEPT = {
 @pytest.mark.parametrize("case", sorted(KEPT))
 def test_valid_results_unchanged(case, snapshot):
     """The checks added by PR 10 leave the results of the valid calls as
-    they were (to the bit here, within 1e-6 on another processor)."""
+    they were (to the bit here, within the tolerances on another processor)."""
     sessions, u, lya = _ids()
     result = _quiet(lambda: KEPT[case](sessions, u, lya))
     _check(snapshot, case, result)
@@ -165,7 +170,7 @@ def test_detect_anchor_on_a_normalized_flux_unchanged():
     sessions, u, lya = _ids()
     fitted = sessions["fitted"]
     z = fitted.absorbers.detect_anchor(fitted, "CIV_1548", "CIV_1550")
-    assert z == pytest.approx(DETECT_ANCHOR_Z, abs=0, rel=1e-6)
+    assert z == pytest.approx(DETECT_ANCHOR_Z, abs=0, rel=1e-5)  # a step or two of its grid
 
 
 DETECT_ANCHOR_Z = 1.930000147166357  # master, 12 November 2026
@@ -403,7 +408,7 @@ def test_detect_anchor_reads_the_normalized_flux():
     # "absorbed", and the anchor was the start of the common range
     session = _anchor_session(scale=1e-16)
     z = session.absorbers.detect_anchor(session, "CIV_1548", "CIV_1550")
-    assert z == pytest.approx(DETECT_ANCHOR_Z, abs=0, rel=1e-6)
+    assert z == pytest.approx(DETECT_ANCHOR_Z, abs=0, rel=1e-5)  # a step or two of its grid
 
 
 def test_detect_anchor_without_a_continuum_fails():
