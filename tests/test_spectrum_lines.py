@@ -159,4 +159,6 @@ def test_doublet_redshift_across_two_spectra():
 def test_doublet_redshift_without_overlap():
     blue = _mock([], 540.0, 541.0)
     red = _mock([], 600.0, 601.0)
-    assert blue.detect_doublet_z(red, "CIV_1548", "CIV_1550") == 0.0
+    # A ValueError since phase 6-quater, PR 10 (F145: 0.0, as a redshift)
+    with pytest.raises(ValueError, match="cover no redshift in common"):
+        blue.detect_doublet_z(red, "CIV_1548", "CIV_1550")

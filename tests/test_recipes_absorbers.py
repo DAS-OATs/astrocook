@@ -115,9 +115,10 @@ def test_update_component(one_civ):
     assert comp.z == one_civ.systs.components[0].z  # 'None' leaves it as is
     with pytest.raises(InvalidParameter, match="z: 'abc' is not a number"):
         one_civ.absorbers.update_component(uuid, z="abc")
-    # Unknown UUID: logged, list unchanged
-    same = one_civ.absorbers.update_component("unknown", logN="14.0")
-    assert same.systs.components == one_civ.systs.components
+    # Unknown UUID: refused since phase 6-quater, PR 10 (F142; logged, and a
+    # state with the list unchanged, before)
+    with pytest.raises(InvalidParameter, match="uuid: there is no component 'unknown'"):
+        one_civ.absorbers.update_component("unknown", logN="14.0")
 
 
 def test_update_components(data):
@@ -126,7 +127,10 @@ def test_update_components(data):
     uuids = [c.uuid for c in session.systs.components]
     out = session.absorbers.update_components(uuids, b="15.0")
     assert [c.b for c in out.systs.components] == [15.0, 15.0]
-    assert session.absorbers.update_components(uuids) is session
+    # Nothing to change: refused since phase 6-quater, PR 10 (the same
+    # session, before)
+    with pytest.raises(InvalidParameter, match="give at least one parameter"):
+        session.absorbers.update_components(uuids)
 
 
 def test_delete_component_recomputes_model(data):

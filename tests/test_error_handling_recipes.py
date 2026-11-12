@@ -36,7 +36,9 @@ def test_linked_value_uses_the_functions_of_the_fit(caplog):
 
 def test_link_with_sqrt_is_refused(caplog):
     session, (a, b) = _two()
-    with pytest.raises(RecipeFailed, match="Update constraint: The link of b") as info:
+    # InvalidParameter since phase 6-quater, PR 10 (F117; RecipeFailed before)
+    with pytest.raises(InvalidParameter,
+                       match="Update constraint: expression: The link of b") as info:
         session.absorbers.update_constraint(
             b, "b", is_free=False, expression=f"sqrt(p['{a}'].b)", target_uuid=a)
     assert "NameError" in str(info.value)
@@ -307,9 +309,12 @@ def test_fit_with_a_resolution_has_no_such_warning(caplog):
 
 def test_link_without_is_free_is_checked(caplog):
     session, (a, b) = _two()
-    with pytest.raises(RecipeFailed, match="Update constraint: The link of z") as info:
-        session.absorbers.update_constraint(
-            b, "z", expression='p["z"]', target_uuid=a)
+    # InvalidParameter since phase 6-quater, PR 10 (F117; RecipeFailed
+    # before), and without target_uuid: a target that the expression does
+    # not name is refused first (F146)
+    with pytest.raises(InvalidParameter,
+                       match="Update constraint: expression: The link of z") as info:
+        session.absorbers.update_constraint(b, "z", expression='p["z"]')
     assert "KeyError" in str(info.value)
     # nothing is stored: the session is the one it was
     assert (b, "z") not in session.systs.parsed_constraints
