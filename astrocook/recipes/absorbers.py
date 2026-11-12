@@ -14,8 +14,8 @@ from astrocook.recipes._spectrum import spec_of
 from astrocook.recipes.params import typed_recipe
 from astrocook.recipes.progress import check_cancelled, progress
 from astrocook.recipes.result import report, report_removed
-from astrocook.recipes.messages import (msg_no_resolution, msg_session_not_found,
-                                       msg_z_em_unset)
+from astrocook.recipes.messages import msg_no_resolution, msg_z_em_unset
+from astrocook.recipes._sessions import open_session
 
 if TYPE_CHECKING:
     from astrocook.session.session import Session
@@ -1740,20 +1740,14 @@ class RecipeAbsorbers:
         float
             The detected redshift.
         """
-        sibling_session = None
-        # Without the GUI (a script) there are no other sessions: it failed
-        # with an AttributeError, hidden by a broad except until phase 6-bis
-        gui = getattr(self._session, '_gui', None)
-        for hist in getattr(gui, 'session_histories', None) or []:
-            if hist.display_name == sibling_name:
-                sibling_session = hist.current_state
-                break
+        # The rule of the sessions (phase 6-quater, PR 9): a name among the
+        # open sessions, or in a script the session itself (without the GUI
+        # it failed with an AttributeError, hidden by a broad except until
+        # phase 6-bis)
+        sibling_session = open_session(self._session, sibling_name, 'sibling_name')
 
-        if not sibling_session:
-            raise RecipeFailed(msg_session_not_found.format(name=sibling_name))
-            
         z_found = spec_of(self._session).detect_doublet_z(
-            sibling_session.spec, trans_self, trans_sibling
+            spec_of(sibling_session), trans_self, trans_sibling
         )
         logger.info(f"Anchor redshift: z = {z_found:.5f}.")
         return z_found

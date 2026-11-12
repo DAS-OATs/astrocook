@@ -7,7 +7,8 @@ from typing import TYPE_CHECKING, Optional, Union
 from astrocook.core.column_names import CORE_COLUMNS as CORE_COLUMN_NAMES, internal_column, is_core_column
 from astrocook.core.photometry import STANDARD_FILTERS
 from astrocook.recipes.errors import InvalidParameter, RecipeFailed
-from astrocook.recipes.messages import msg_session_not_found
+from astrocook.recipes._combine import check_axes, flux_relation
+from astrocook.recipes._sessions import is_session, open_session
 from astrocook.recipes._spectrum import spec_of
 from astrocook.recipes.params import typed_recipe
 
@@ -110,7 +111,7 @@ FLUX_RECIPES_SCHEMAS = {
     "equalize": {
         "methods": _methods_equalize,
         "brief": "Equalize flux to reference.",
-        "details": "Scales the flux of this session to match that of another session where they overlap.",
+        "details": "Scales the flux of this session to match that of another session where they overlap, compared in the units of this session; a flux in arbitrary units takes the unit of the reference once scaled, a normalized flux is not scaled to one that is not.",
         "params": [
             # Required (phase 6-quater, PR 7: the default was the string 'None',
             # which still means "no session" and fails as before)
@@ -164,14 +165,11 @@ def _check_magnitudes(magnitudes: str) -> None:
                                    f"filters are {', '.join(STANDARD_FILTERS)}")
 
 
-def _find_session(session: 'Session', name: str):
-    """The history of the open session called ``name`` (RecipeFailed if
-    there is none, or no GUI to find it in)."""
-    gui = getattr(session, '_gui', None)
-    for hist in getattr(gui, 'session_histories', None) or []:
-        if hist.display_name == name:
-            return hist
-    raise RecipeFailed(msg_session_not_found.format(name=name))
+def _find_session(session: 'Session', name, param: str) -> 'Session':
+    """The open session called ``name``, or ``name`` itself in a script (the
+    rule of :mod:`astrocook.recipes._sessions`, phase 6-quater, PR 9);
+    RecipeFailed if there is none."""
+    return open_session(session, name, param)
 
 
 class RecipeFlux:
@@ -358,14 +356,30 @@ class RecipeFlux:
         Returns
         -------
         Session
-            A new session with the scaled flux. 
+            A new session with the scaled flux, in the unit of its flux (an
+            arbitrary flux scaled to a physical one takes the unit of the
+            reference).
+
+        Raises
+        ------
+        RecipeFailed
+            If the reference is not an open session, its axis cannot be
+            compared with this one (a velocity against a wavelength), or a
+            flux is normalized and the other is not (phase 6-quater, PR 9,
+            F138: the values were compared as they were, so an axis in Å
+            against one in nm was not scaled, and a flux per Å against one
+            per nm came out off by their ratio).
         """
         if reference_session in ['None', '']:
             raise RecipeFailed("No reference session is selected.")
-        ref_hist = _find_session(self._session, reference_session)
-        new_spec = spec_of(self._session).equalize_to_reference(
-            ref_hist.current_state.spec, order=order
-        )
+        reference = _find_session(self._session, reference_session, 'reference_session')
+        spec, ref = spec_of(self._session), spec_of(reference)
+        ref_name = reference.name if is_session(reference_session) else reference_session
+        check_axes(spec.x.unit, ref.x.unit, self._session.name, ref_name)
+        how = flux_relation(spec.y.unit, ref.y.unit, self._session.name, ref_name, scaled=True)
+        new_spec = spec.equalize_to_reference(ref, order=order)
+        if how == 'declare':
+            new_spec = new_spec.with_flux_unit(ref.y.unit)
         return self._session.with_new_spectrum(new_spec)
     
     @typed_recipe
@@ -391,7 +405,7 @@ class RecipeFlux:
         """
         if target_session in ['None', '']:
             raise RecipeFailed("No target session is selected.")
-        target_spec = _find_session(self._session, target_session).current_state.spec
+        target_spec = _find_session(self._session, target_session, 'target_session').spec
         if target_spec is None:
             raise RecipeFailed(f"The session '{target_session}' has no spectrum.")
         new_spec_v2 = spec_of(self._session).resample_on_grid(target_grid_spec=target_spec)

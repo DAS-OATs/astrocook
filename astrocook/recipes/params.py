@@ -101,12 +101,30 @@ def _choice(param, text: str) -> str:
     raise InvalidParameter(f"{param.name}: {text!r} is not one of {allowed}")
 
 
+def _sessions(param, value):
+    """A session given as itself, in a script (kept for the recipe), or a
+    list of sessions (names, or sessions) for a parameter of kind
+    ``sessions``: the names joined by commas, as the dialogs and the logs
+    write them (phase 6-quater, PR 9); None for the other values."""
+    from astrocook.recipes._sessions import is_session, split_names
+    if is_session(value):
+        return value
+    if param.kind == 'sessions' and isinstance(value, (list, tuple)):
+        items = split_names(value)
+        return ", ".join(items) if all(isinstance(v, str) for v in items) else items
+    return None
+
+
 def convert(param, value: Any) -> Any:
     """``value`` converted to the type of ``param`` (a
     :class:`~astrocook.recipes.registry.ParamSpec`) and checked against its
     bounds; :class:`InvalidParameter` if it cannot be."""
     if isinstance(value, str) and value in param.keep:
         return value  # a special value, such as '_current_'
+    if param.kind in ('session', 'sessions'):
+        sessions = _sessions(param, value)
+        if sessions is not None:
+            return sessions
     if param.optional and param.type is not str and (
             value is None or (isinstance(value, str) and (
                 value.strip() == NONE_STRING
@@ -167,9 +185,14 @@ def resolve_params(name: str, params: Mapping[str, Any]) -> Dict[str, Any]:
     if spec is None:
         return dict(params)
     params = spec.canonical(params)
+    from astrocook.recipes._sessions import session_names
     resolved = {}
     for p in spec.params:
         resolved[p.name] = convert(p, params[p.name]) if p.name in params else p.default
+        if p.kind in ('session', 'sessions'):
+            # The log holds names: a session given as itself in a script
+            # could not be replayed (phase 6-quater, PR 9)
+            resolved[p.name] = session_names(resolved[p.name])
     resolved.update({k: v for k, v in params.items() if k not in resolved})
     return resolved
 

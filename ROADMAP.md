@@ -333,6 +333,7 @@ without a change of the numerical results except where Guido decided it
   | Recipe | Old name | New name | PR |
   |---|---|---|---|
   | `file.export_ascii` | `path` | `folder` | 6-quater, PR 7 |
+  | `edit.trim_common` | `others_names` | `other_sessions` | 6-quater, PR 9 |
 
 - *Prerequisites of the recipes* (proposed in phase 6, PR 5c, after an
   analysis asked by Guido, November 2026; to be refined with him before
@@ -1301,7 +1302,7 @@ its own, except the smallest; the model of each PR proposed by the rule
 | 7 | Review of the recipes of file and flux (8 recipes) | Opus | half a day (done, 11 November 2026: see below) |
 | 8 | Review of edit, columns and expressions (`set_properties`, `x_convert`, `y_convert`, `apply_expression`, `mask_expression`, `smooth_column`), with F120 (one set of column names) | Opus | half a day to a day (done, 12 November 2026: see below) |
 | 8-bis | The units of the flux and the CSV files (agreed with Guido on PR 8, 12 November 2026): a loader assigns a physical unit to the flux only when it reads it (`BUNIT`, `TUNIT` or a known descriptor of the format), otherwise an Astrocook unit of arbitrary flux (`def_unit`, registered so that the archives and the FITS files read it back); a way to declare the unit of the flux without converting it (`y_convert` converts); `export_ascii` writes the names of the GUI in ASCII (`lam`, `lammin`, `lammax`, `F`, `dF`, ...) and the units, read back by the CSV loader (`x`, `y`, `dy` and the old files still read), and `import_ascii` skips `lam` as it skips `x`; F129 (found on PR 8: the CSV files hold no units, the loader assumes nm and `erg/(Å s cm2)`, so a spectrum exported after `y_convert` or with the axis in km/s comes back with the wrong unit, and `cont` is lost). Today `astrocook_fits`, `simple_csv`, `ascii_telluric_model`, `xshooter_fits` and the V1 archives assign `erg/(Å s cm2)` always, PypeIt, ESPRESSO S2D and `ascii_resvel_header` dimensionless; the iso-magnitude grid is drawn for an uncalibrated spectrum labelled `erg/(Å s cm2)`. Values unchanged (only units), so no number of the continuum, the fits or the identification moves; sample files of the formats needed for the specific loaders | Opus | 3-4 h (done, 12 November 2026: see below) |
-| 9 | Review of edit, several spectra (`delete`, `split`, `extract_preset`, `trim_common`, `stitch`, `equalize_and_stitch` with its complexity of 31, `coadd`, `import_systems`, `import_systems_ascii`) | Opus | 2-3 h |
+| 9 | Review of edit, several spectra (`delete`, `split`, `extract_preset`, `trim_common`, `stitch`, `equalize_and_stitch` with its complexity of 31, `coadd`, `import_systems`, `import_systems_ascii`) | Opus | 2-3 h (done, 12 November 2026, about 4 h with F132-F134: see below) |
 | 10 | Review of the manual fits (`add_component`, `update_component(s)`, `delete_component`, `detect_anchor`, `fit_component`, `update_constraint(s)` with F117, `add_linked_system`, `optimize_system`, `fit_bayesian`); possibly split in two | Opus | 3-5 h (two PRs if split) |
 | 11 | F107: the labels of the menus of the GUI from the registry (and the screenshots) | Sonnet | 1 h |
 | 12 | MCP server: the descriptions of the shared parameters shorter, a paragraph of typical workflows in the instructions, the banner of a followed session with the pid and the version of the marker | Sonnet | 1 h |
@@ -1611,6 +1612,88 @@ its own, except the smallest; the model of each PR proposed by the rule
   - New `tests/test_recipe_review_file_flux.py` (the behaviour kept and
     the behaviour changed, each test saying what it was), new cases in
     `test_recipe_inputs.py`; `test_mcp_schemas.py` follows `folder`.
+- *Result of PR 9* (review of edit on several spectra; 12 November 2026;
+  the table of the 27 parameters of the 9 recipes and the decisions agreed
+  with Guido in the conversation of the PR): one parameter renamed, two
+  defaults removed, one type changed; the numbers of a valid call with the
+  sessions in one unit do not move (fingerprints taken on master before the
+  change, `test_valid_results_unchanged`), those with units mixed are fixed
+  (F132-F134 and F138, agreed); no recipe of the continuum, the fits or the
+  identification is touched, so no benchmark and no slow test.
+  - *One rule for the sessions* (left by PR 7; `recipes/_sessions.py`): a
+    parameter of kind `session` (one) or `sessions` (several,
+    comma-separated; a new kind of the registry, declared to the agents as
+    `x-astrocook-kind`, not used by the dialogs) takes names of open
+    sessions, the GUI's list or the store of the MCP server; the name of
+    the session the recipe runs on is that session also without a GUI; in
+    a script also the sessions themselves (`Session` objects), and
+    `resolve_params` writes their names in the log. A name not found fails
+    naming it, with "In a script, pass the session itself." without a GUI
+    (F135, the crash, and F136). Used by `import_systems`, `trim_common`,
+    `stitch`, `equalize_and_stitch`, `coadd`, and by `equalize`,
+    `resample` (flux) and `detect_anchor` (absorbers), which had the same
+    lookup. `stitch.other_sessions` from `list` to `str` of kind
+    `sessions` (a list of names is joined; the old logs, a list or its
+    string, replay with the same result); `trim_common.others_names`
+    renamed `other_sessions` (alias), as in `stitch` and
+    `equalize_and_stitch`.
+  - *Units* (Guido's rule, F132-F134): the sessions are combined in the
+    units of a reference (this session for `stitch`, the bluest arm for
+    `equalize_and_stitch`, the first named for `coadd`), the others
+    converted to its axis and flux before they are scaled (nothing done
+    when the units are the same, hence the same bits); `arb_flux` with a
+    physical flux only when scaled (it takes the unit of the reference), a
+    normalized flux never with one that is not; an axis in velocity against
+    a wavelength refused (`x_convert` first). The rule is in
+    `recipes/_combine.py`. F138 (`flux.equalize` and the core of
+    `equalize_to_reference` and `coadd`, the same faults), found in the
+    PR and fixed before the merge (Guido): the core compares in the units
+    of the spectrum scaled (a script gets the right numbers too),
+    `flux.equalize` keeps the unit of its flux (an arbitrary one takes
+    that of the reference); fingerprints of `equalize` (orders 0, 1, -1)
+    and of the core `coadd` taken before.
+  - *F123* (option A): `equalize_order` of `coadd` `Optional[int]`, None
+    no scaling, 0-5 (the maximum measured: `polyfit` is poorly conditioned
+    from order 6-7 on overlaps of 20-50 nm, the reason written next to the
+    parameter); -1 read as None, silently and for good (the old logs).
+  - *Refused before the recipe runs* (`InvalidParameter`, each
+    characterized before): `coadd` with a list without this session
+    (F137), `xstart` not below `xend` (0 pixels, as F124), `xunit` neither
+    a velocity nor a wavelength, `equalize_order` below -1 or above 5;
+    `equalize_and_stitch` with cuts not increasing or an arm without pixels
+    between its cuts, factors not positive (0 zeroed the flux), a range
+    with its start not below its end (all "Split expression resulted in an
+    empty spectrum" before, or nothing); `delete` with nothing, a column
+    of every spectrum or a column not in the spectrum (a WARNING and a
+    state recorded as done); `split` with an empty expression; 
+    `extract_preset` with an unknown region (skipped with a WARNING among
+    valid ones); `trim_common` with an unknown transition or not one
+    transition per session.
+  - *Defaults*: `expression` of `split` removed (it was
+    `(λ > 400) & (λ < 500)`, an arbitrary cut for an agent that omitted
+    it); `source_session` of `import_systems` `'None'` → `""` (required,
+    as `reference_session` in PR 7; `'None'` fails as before). In the
+    registry a default `""` is "required": the method has none, the dialog
+    starts empty, the MCP schema lists it in `required`.
+  - *Complexity*: `equalize_and_stitch` 23 (mccabe; 31 radon) and `stitch`
+    12 → at most 10 for each function of `recipes/edit.py`, with helpers
+    (`_numbers`, `_ranges`, `_blue_to_red`, `_arm_part`, `_equalize_arm`,
+    and `in_units_of` of `recipes/_combine.py`), covered by the
+    fingerprints.
+  - *Kept*: `append`, `refit` of the imports (`refit_all` with 20 km/s and
+    `max_nfev` 100, fixed), `sort` of `stitch`, `alias_map` of `split`
+    (GUI only), `'auto'` of `equalize_ranges` and `manual_factors`,
+    `window_kms`, `kappa`, `dx`.
+  - *Docs*: the tutorial of Edit (the sessions by name or as objects,
+    the units of the combination, the limits above), of Flux (the units
+    of *Equalize*), *Using Astrocook from
+    an AI Agent* (the tools that read several sessions), the CHANGELOG. No
+    screenshot: no dialog of a scene changed (the coadd dialog of the
+    scenes is filled by the GUI with this session first).
+  - New `tests/test_recipe_review_edit_sessions.py` (the behaviour kept and
+    the behaviour changed, each test saying what it was); the batteries of
+    `test_recipe_inputs_edit.py` and `test_recipes_edit_flux.py` follow
+    (each case changed says what it was).
 - *Result of PR 8-bis* (the units of the flux and the CSV files, with F129
   and F130; 12 November 2026; the analysis and the decisions agreed with
   Guido in the conversation of the PR): no value of the flux changes, only
@@ -2011,8 +2094,8 @@ Exception: anything that loses user data or crashes is reported at once.
 | F120 | names of the columns (expression recipes, MCP reads) | `edit_apply_expression` and `edit_mask_expression` document the columns by the names of the GUI (`λ`, `F`, `dF`, `cont`), `file_export_ascii` too (`F, dF, cont`); `spectrum_read` and `spectrum_plot` want `x`, `y`, `dy`. In trial 3 of PR 7 a read with `F`, `dF` failed (the error listed the valid names) | cosmetic, output | — | open; decided (Guido, on PR 7): `spectrum_read` and `spectrum_plot` also accept the names of the GUI (`λ`, `F`, `dF`, ...) as aliases, fixed in PR 7-ter (`SpectrumV2.columns_in_range`, values under the name asked; `spectrum_plot` takes no columns); the one set of names in phase 6-quater. Fixed in phase 6-quater, PR 8 (Guido, 12 November 2026): the names of the GUI everywhere a column is named (`core/column_names.py`), `lam` (`lammin`, `lammax`) its ASCII spelling, the names of the data (`x`, ..., `dy`) silent and permanent aliases; two cases that failed found there: `calculate_running_std` did not find `F` (the button of its dialog), and wrote a column `F` that no expression could read |
 | F121 | `metals_auto` (acceptance of a trial ion) | `metals_auto` kept a trial ion if its fit gave logN >= 12 and 2 <= b <= 50 km/s; `aic_penalty` was accepted and not used, while its description, the `details` of the registry and the methods text said that an ion is kept if it decreases the AIC by it. Once the ions found were kept (F111), the criterion kept 192 ions of 239 on J0103-1305, 67 of them with b = 50 km/s (the bound), 9 with logN = 19 (the bound), 30 with an AIC change above -5; on the mock of trial 1 a spurious SiIV at z = 1.83 (logN 12.80, b = 50.0) | behaviour | — | partly fixed (Guido's choice, PR 7-quater): an ion is not kept with b or logN at the bounds of the fit (within 0.1 per cent) nor with an AIC change above `-aic_penalty` (against the same model without it, on the pixels of its fit), and each ion tried is reported with the reason (`tried`). Open (phase 6-quater or 7): on the mock of trial 1 a spurious CII at z = 1.83 in the forest is still kept (logN 12.58, b 18, AIC change -33); a trial ion that absorbs a Lyman-alpha line improves the AIC anyway, and the model without it keeps the neighbours refitted with it (a bias towards keeping): the comparison with the alternative identification (Lyman-alpha) is for phase 7; measured on the mocks (the benchmark does not run `metals_auto`). Measured on J0103-1305 raw with the code of master after #747 (November 2026; `edit.set_properties` z_em = 4.07, R = 45000, `continuum.estimate_auto`, `doublets_auto`: 65 components, then `metals_auto` on the six default ions, through `recipes.result.run`): 320 trials built (64 redshifts), 81 not tried for their lines outside the spectrum (as before), 239 fitted, **82 kept** (CII 12, CIV 5, NV 17, OVI 18, SiIV 30; against 192 with the old criterion, 67 of them at b = 50 km/s; none now), 157 not kept: b at its bound 108, logN below 12 29, AIC change above -5 7, b below 2 km/s 7, logN at its bound (19) 6. Time: the trials 386 s (6.4 min) and the final `refit_all` 121 s, 507.5 s the recipe, against 26.7 min for the 239 trials of the old criterion; the whole chain 8.9 min; 147 components at the end. The run interrupted at 70 per cent with the rules of F121 kept 60 of 182 tried (33 per cent), the complete one 82 of 239 (34 per cent) |
 | F122 | `calculate_running_std` (`output_col`) | With `output_col` empty or the name of a column of every spectrum (`x`, `xmin`, `xmax`, `y`, `dy`) the result went to an auxiliary column of that name, which the table, the dialogs and the reads do not show (the column of the spectrum unchanged): the result was lost without a word. Found in the review of PR 7 (phase 6-quater) | behaviour | `tests/test_recipe_review_file_flux.py` | fixed (Guido, PR 7 of 6-quater): `InvalidParameter` before the recipe runs |
-| F123 | `equalize` and `coadd` (`order = -1`) | `-1` means two things: a spline in `flux.equalize` (`order`), no scaling in `edit.coadd` (`equalize_order`). Found in the review of PR 7 (phase 6-quater) | cosmetic, interface | — | open: PR 9 of 6-quater (`coadd`); `equalize` keeps -1 as its lowest value (PR 7) |
-| F124 | `rebin` (`xstart`, `xend`) | With `xstart` not below `xend` the recipe gave a spectrum without pixels, without a word. Found in the review of PR 7 (phase 6-quater) | behaviour | `tests/test_recipe_review_file_flux.py` | fixed (Guido, PR 7 of 6-quater): `InvalidParameter`; the same check for the range of `coadd` in PR 9 |
+| F123 | `equalize` and `coadd` (`order = -1`) | `-1` means two things: a spline in `flux.equalize` (`order`), no scaling in `edit.coadd` (`equalize_order`). Found in the review of PR 7 (phase 6-quater) | cosmetic, interface | `test_coadd_minus_one_is_none` | fixed in PR 9 of 6-quater (Guido, option A): `equalize_order` of `coadd` is `Optional[int]`, None no scaling (as `kappa` None no clipping), 0-5; -1, of the old logs, is read as None (silent and permanent), below -1 refused; `equalize` keeps -1 (a spline) as its lowest value (PR 7) |
+| F124 | `rebin` (`xstart`, `xend`) | With `xstart` not below `xend` the recipe gave a spectrum without pixels, without a word. Found in the review of PR 7 (phase 6-quater) | behaviour | `tests/test_recipe_review_file_flux.py` | fixed (Guido, PR 7 of 6-quater): `InvalidParameter`; the same check for the range of `coadd` in PR 9 (done, `test_coadd_refused`) |
 | F125 | GUI, the *Help* button of the dialogs | The `url` of the recipes in the registry are relative names of pages of the V1 documentation (`file_cb.html#export`, `edit_cb.html#rebin`, ...; some marked "Placeholder URL"), which `webbrowser.open` cannot open as pages of the documentation; some recipes have none. All the recipes. Found in the review of PR 7 (phase 6-quater) | cosmetic | — | open: PR 11 of 6-quater (F107, the menus from the registry): the pages of `docs/` |
 | F126 | `apply_expression` (units) | A new column made by an expression is dimensionless whatever the expression: `F_corr = F * 2` loses the unit of the flux (`erg/(nm s cm2)`); a column replaced keeps its unit, also when the expression changes it (`F = F / cont`). Found in the review of PR 8 (phase 6-quater) | behaviour | — | open (Guido, PR 8: registered, not changed; a unit from the expression would need the units of NumExpr's operations); documented in the tutorial of Edit |
 | F127 | expression recipes (the axis) | `apply_expression`, `mask_expression` and `smooth_column` wrote the columns of the axis: `λ = λ * 0 + 1` replaced the wavelengths (without `λmin` and `λmax`), a mask put NaN in them, the smoothing smoothed them. Found in the review of PR 8 (phase 6-quater) | behaviour | `test_the_axis_is_not_written` | fixed in PR 8 (Guido's choice): refused (`InvalidParameter`), the axis is changed by `x_convert`; a correction of the wavelengths (`λ * (1 + v/c)`, air to vacuum) would need the three columns together, a recipe of its own if wanted |
@@ -2020,6 +2103,13 @@ Exception: anything that loses user data or crashes is reported at once.
 | F129 | CSV files (`export_ascii`, the CSV loader) | The CSV files of `export_ascii` held no units, and the loader of CSV files took the first three columns as wavelength in nm, flux and error in `erg/(Å s cm2)`: a spectrum exported after `y_convert` or with the axis in km/s came back with the wrong unit, `cont` was lost, and the file of the whole spectrum (`targets='spec'`: `x,xmin,xmax,y,dy,...`) came back with `xmin` as the flux. `import_ascii` read a column `F` as a new column `F`. Found on PR 8 (phase 6-quater); the last two in the characterization of PR 8-bis | behaviour, data | `tests/test_flux_units.py` | fixed in PR 8-bis of 6-quater (Guido): ECSV with the units and z_em, the names of the GUI in ASCII (`lam`, `F`, `dF`, ...), read back by name; the old files by name (`x`, `y`, `dy`), the flux in arbitrary units; `import_ascii` translates the names and keeps the units |
 | F130 | `y_convert` (columns without a unit) | `convert_y_axis` converted only the auxiliary columns whose unit is equivalent to that of the flux: in an archive whose `cont` and `model` have no unit and the flux has one (J0103-1305 of `tests/data`), `y_convert` from Å to nm multiplied the flux by 10 and left the continuum, so the normalized flux changed by 10. Found in the analysis of PR 8-bis (phase 6-quater) | behaviour, numbers | `test_y_convert_converts_the_continuum` | fixed in PR 8-bis of 6-quater (Guido): `cont`, `model`, `cont_pl` without a unit are in the unit of the flux, both when an archive is read and in the conversion |
 | F131 | `calibrate` (unit of the result) | `Spectrum.calibrate` multiplies the values by a curve computed in the unit of the flux, and labels the result `erg/(Å s cm2)`: a flux in `erg/(nm s cm2)` is calibrated in erg/nm and labelled per Å, 10 times brighter than it says (SDSS_g = 15.0 for 17.5 asked). `test_spectrum_calibrate` (`tests/test_photometry.py`) recorded it ("the unit is relabelled"). A flux without a unit or in `arb_flux` is read as `erg/(Å s cm2)`, and its result is right. Found in PR 8-bis (phase 6-quater) | behaviour, units | `test_calibrated_spectrum_has_the_magnitude_asked_for` | fixed in PR 8-bis of 6-quater (Guido): the unit of a physical flux is kept, `erg/(Å s cm2)` for an arbitrary one or one without a unit; the values unchanged |
+| F132 | `equalize_and_stitch` (units of the flux) | The arms were equalized on the values of their flux, then joined by `stitch`, which converts to the unit of the bluest: an arm in another physical unit (per nm against per Å) came out off by the ratio of the units (10 times too faint). With `manual_factors` the result was right (the factor applies to the values in the unit of the arm). Found in the analysis of PR 9 (phase 6-quater) | behaviour, units | `test_equalize_and_stitch_converts_the_flux_before_scaling` | fixed in PR 9 of 6-quater (Guido): the arms converted to the units of the bluest before the scaling; same results with arms in one unit (the fingerprints of `test_valid_results_unchanged`) |
+| F133 | `coadd` (units of the flux) | The values of the flux were co-added as they were and labelled with the unit of the first session: with `equalize_order = -1` a session per nm was 10 times too bright against one per Å, with the scaling right by chance (the factor absorbs the ratio); a flux in arbitrary units or normalized was co-added with a physical one without a word. Found in the analysis of PR 9 (phase 6-quater) | behaviour, units | `test_coadd_converts_the_flux` | fixed in PR 9 of 6-quater (Guido): converted to the units of the first; an arbitrary flux with a physical one only when scaled (it takes the unit of the reference), a normalized one with one that is not refused |
+| F134 | `coadd`, `equalize_and_stitch` (units of the axis) | The overlap for the scaling was looked for in the values of the axis (`compute_flux_scaling` takes values): a session in Å against one in nm had none, so it was not scaled, without a word; `equalize_and_stitch` also applied the cuts and the ranges (nm) in the unit of each arm (an arm in Å kept whole, its pixels twice in the overlap) and ordered the arms by the values of their axis (an arm in Å after one in nm, a part lost). Found in the analysis of PR 9 (phase 6-quater) | behaviour, units | `test_an_arm_in_angstrom_is_equalized`, `test_equalize_and_stitch_orders_the_arms_in_one_unit` | fixed in PR 9 of 6-quater (Guido): the axis converted to the unit of the reference, the arms ordered in nm, the cuts and ranges converted to the unit of the axis; an axis in velocity against one in wavelength refused (`x_convert` first) |
+| F135 | recipes that read other sessions, without a GUI | In a script (a session of `load_session_from_file` with `gui=None`) `coadd`, `equalize_and_stitch`, `import_systems` and `trim_common` failed with an `AttributeError` (`None.session_histories`): a crash, reported to Guido at once (PR 9); `stitch` worked only with sessions given as objects, and its log held their `repr`. Found in the analysis of PR 9 (phase 6-quater) | crash | `test_without_a_gui_a_name_fails_with_a_hint`, `test_in_a_script_the_sessions_themselves` | fixed in PR 9 of 6-quater: one rule for the parameters of kind `session` and `sessions` (`recipes/_sessions.py`): names, or in a script the sessions themselves; the name of the session the recipe runs on is that session; the log records names |
+| F136 | recipes that read other sessions (a name not found) | Each did its own: `coadd` skipped a name not found without a word (and co-added the others), `stitch` with a WARNING, `trim_common` with a WARNING and then "no range in common" (or "N sessions and M transitions"); `trim_common` also gave "no range in common" for an unknown transition of its session and ignored one of another session (an infinite range). Found in the analysis of PR 9 (phase 6-quater) | behaviour | `test_a_name_not_found_fails_naming_it`, `test_refused` | fixed in PR 9 of 6-quater: `RecipeFailed` naming it; an unknown transition `InvalidParameter` |
+| F137 | `coadd` (this session) | The sessions co-added are those named: without this session in the list, the result held the others only, in a new state of this session (its name, its systems), while the description said "with this one"; the first named, not this session, is the reference (units, scaling). Found in the analysis of PR 9 (phase 6-quater) | behaviour, interface | `test_coadd_refused` | fixed in PR 9 of 6-quater (Guido): a list without this session refused; the first named stays the reference (described) |
+| F138 | `flux.equalize` (units) | The same as F132 and F134 in `Spectrum.equalize_to_reference`, used by `flux.equalize`: a session per nm equalized to one per Å kept its unit with the values of the other (10 times too faint); a session with the axis in Å was not scaled to one in nm (no overlap of the values), without a word. The core of `Spectrum.coadd`, called by a script, had F133 and F134 too. Found in PR 9 (phase 6-quater) | behaviour, units | `test_equalize_compares_the_flux_in_one_unit`, `test_equalize_compares_the_axis_in_one_unit`, `test_the_core_in_a_script` | fixed in PR 9 of 6-quater (Guido, added before the merge): the core compares in the units of this spectrum (`_in_units_of_this` of `core/spectrum_combine.py`: the reference converted for the scaling, the result in the unit of this flux; an axis in velocity against a wavelength a `ValueError`), `coadd` of the core converts the flux to the unit of the reference; `flux.equalize` applies the rule of `recipes/_combine.py` (an arbitrary flux takes the unit of the reference, a normalized one refused); same results with one unit (fingerprints) |
 
 Closed findings (fixed or accepted: all the others, F1 to F106 and F108 to F110) are in `ROADMAP_HISTORY.md`, "3.2 Findings register", one row each, to be found by number (`grep "^| F52 "`).
 
@@ -2421,5 +2511,5 @@ One line per concluded phase; the long rows are in `ROADMAP_HISTORY.md`, "7. Pro
 | 6 – Error handling | done (November 2026), PRs #691-#701; release 2.4.0 |
 | 6-bis – Recipe API | done (November 2026), PRs #705-#723; release 2.5.0 |
 | 6-ter – Full MCP server | done (November 2026), PRs #726-#747 and the closing PR 8; release 2.6.0 published on GitHub on 10 November 2026 (PR 9, #751: version, CHANGELOG, `switcher.json`); plan of the phase agreed (PR 0, #726); the tools generated from the registry, F106 found (PR 1, #729); F106 fixed (PR 1-bis, #730); the tools of the sessions, undo and redo (PR 2, #731); the tools of inspection (PR 3, #732); progress notifications (PR 4, #733); the agent's decisions in the log (PR 5a); the gaps of the recipes (PR 5b); the log as the text of a methods section (PR 5c); the GUI following a session of the server, F109 found (PR 5-bis); the headless Docker image, F110 found (PR 6, not published); trials with fresh agents, F111-F116 found (PR 7, report in section 4.3); heartbeat and reads during a recipe, F113 in part (PR 7-bis); trial 3, the editing tools, F117-F120 found (PR 7); the outputs of trial 3 (PR 7-ter); F111 and the cancellation, F113 closed, F121 found (PR 7-quater) |
-| 6-quater – Review of the recipe parameters | in progress (November 2026): plan of the phase agreed (in PR 1, ruff `B`); PR 2, the aliases of the renamed parameters; PR 3-4-bis, mypy on the whole package; PR 5, `SessionV2` and `SessionHistory` into `astrocook/session/`; PR 6, the `V2` suffixes dropped (#759); PR 7, the review of file and flux, F122-F125 found (#761); PR 8, the review of edit on columns and expressions, F120 fixed (one set of names of the columns), F126-F128 found, F127 fixed; PR 8-bis, the units of the flux (`arb_flux`) and the CSV files in ECSV, F129-F131 fixed |
+| 6-quater – Review of the recipe parameters | in progress (November 2026): plan of the phase agreed (in PR 1, ruff `B`); PR 2, the aliases of the renamed parameters; PR 3-4-bis, mypy on the whole package; PR 5, `SessionV2` and `SessionHistory` into `astrocook/session/`; PR 6, the `V2` suffixes dropped (#759); PR 7, the review of file and flux, F122-F125 found (#761); PR 8, the review of edit on columns and expressions, F120 fixed (one set of names of the columns), F126-F128 found, F127 fixed; PR 8-bis, the units of the flux (`arb_flux`) and the CSV files in ECSV, F129-F131 fixed; PR 9, the review of edit on several spectra, one rule for the sessions, F123 and F132-F138 fixed |
 | 7 – Robust components | not started |

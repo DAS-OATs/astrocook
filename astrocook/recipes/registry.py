@@ -54,8 +54,10 @@ as they are, e.g. ``'_current_'``), ``min`` and ``max`` (bounds of a
 number, included), ``gt`` (a bound excluded: the value must be above it),
 ``allow_nan`` (NaN is a value; infinities never are), ``choices`` (the
 values allowed, for a string: a list in the GUI and for the agents),
-``kind`` (what a string names: ``'session'``, an open session, or
-``'column'``, a column of the spectrum; phase 6-bis, PR 6c), ``agents`` (False:
+``kind`` (what a string names: ``'session'``, an open session,
+``'sessions'``, several, comma-separated (phase 6-quater, PR 9: the rule of
+both in :mod:`astrocook.recipes._sessions`), or ``'column'``, a column of
+the spectrum; phase 6-bis, PR 6c), ``agents`` (False:
 not offered to agents, which get the default: the options of debug and the
 questions of the GUI, phase 6-bis, PR 6; every recipe is offered, Guido:
 the basic ones are blocks of new recipes), ``aliases`` (the old names of a
@@ -101,7 +103,7 @@ _PARAM_KEYS = {'name', 'type', 'default', 'doc', 'gui_hidden', 'optional', 'keep
                'aliases'}
 
 #: What a string parameter can name (the key ``kind``)
-KINDS = frozenset({'session', 'column'})
+KINDS = frozenset({'session', 'sessions', 'column'})
 
 
 @dataclass(frozen=True)

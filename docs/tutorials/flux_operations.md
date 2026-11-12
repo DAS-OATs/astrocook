@@ -63,8 +63,10 @@ Sometimes the flux calibration between two exposures or arms of a spectrograph d
     * `-1` (Spline): Fits a smooth curve to match the shape (the lowest value allowed).
     * `1` or higher: Fits a polynomial of that order.
 
+The two sessions are compared in the units of the current one: the axis of the reference is converted to the unit of this axis (e.g. nm to Å), and its flux to the unit of this flux (e.g. per Å to per nm), so the scaled flux keeps its unit. A flux in arbitrary units takes the unit of the reference once scaled to it; a normalized flux is not scaled to one that is not, and an axis in velocity is converted to wavelengths first with *Convert X axis*.
+
 :::{note}
-Here `-1` means a spline; in **Co-add** (`equalize_order`) it means no scaling.
+Here `-1` means a spline; in **Co-add**, `equalize_order` is `None` for no scaling (the logs written before version 2.7 say `-1` there, read as `None`).
 :::
 
 ## 5. Resampling
