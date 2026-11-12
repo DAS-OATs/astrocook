@@ -229,6 +229,14 @@ To run a Bayesian fit:
 3. Select **Refit Bayesian (MCMC)**. 
 4. The sampling will run as a batch process, with progress tracked in the main window's progress bar. The first steps of the chain (up to 200, and at most half of the chain) are discarded as burn-in; use enough steps (the default is 500) for the chain to converge.
 
+The prior is flat: the redshift within ±20 km/s of its current value, $\log N$ and $b$ within the bounds of the fits (10–23 and 1–300 km/s). The components get the medians of the posterior, and its standard deviations as errors. The MCMC runs 32 walkers, or twice the free parameters when these are more than 16 (emcee needs at least that many).
+
+In scripts and for agents, `fit_bayesian` also offers nested sampling (`engine='nested'`, with dynesty): `nlive` live points (default 250, at least 10 per free parameter). Its time varies a lot from run to run (from a few seconds to a minute on one component). `seed` makes either sampling repeatable:
+
+```python
+session = session.absorbers.fit_bayesian([uuid], engine='nested', nlive=250, seed=1)
+```
+
 **Visualizing Posteriors (Corner Plots)**
 Once a Bayesian fit completes, Astrocook stores the posterior samples in the session metadata. You can visualize these directly:
 * Right-click a Bayesian-fitted component and select **Show Corner Plot**.

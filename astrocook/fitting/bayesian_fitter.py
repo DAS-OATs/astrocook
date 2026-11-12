@@ -1,5 +1,7 @@
-import numpy as np
 import logging
+import warnings
+
+import numpy as np
 from typing import Collection, Dict, Any, Optional
 from .voigt_fitter import VoigtFitter
 
@@ -34,6 +36,20 @@ def require_bayes_engine(engine: str = 'mcmc') -> None:
         raise ImportError(
             f"The Bayesian fit needs {name}, which is not installed. "
             f"Install the optional dependencies with: {BAYES_INSTALL_HINT}")
+
+def _log_warnings(caught: list) -> None:
+    """The warnings caught while sampling, to the log: those of dynesty as
+    WARNING lines, once each; the others raised again as they were."""
+    seen = set()
+    for w in caught:
+        if 'dynesty' in str(w.filename):
+            text = str(w.message)
+            if text not in seen:
+                seen.add(text)
+                logger.warning(f"dynesty: {text}")
+        else:
+            warnings.warn_explicit(w.message, w.category, w.filename, w.lineno)
+
 
 class BayesianVoigtFitter:
     """
@@ -154,8 +170,9 @@ class BayesianVoigtFitter:
             return -np.inf
         return lp + self.ln_likelihood(p_free)
 
-    def run_mcmc(self, nwalkers: int = 32, nsteps: int = 1000, 
-                 burn_in: Optional[int] = None, progress: bool = True) -> Dict[str, Any]:
+    def run_mcmc(self, nwalkers: Optional[int] = None, nsteps: int = 1000,
+                 burn_in: Optional[int] = None, progress: bool = True,
+                 seed: Optional[int] = None) -> Dict[str, Any]:
         """
         Execute Markov Chain Monte Carlo (MCMC) sampling using ``emcee``.
 
@@ -165,7 +182,11 @@ class BayesianVoigtFitter:
         Parameters
         ----------
         nwalkers : int, optional
-            Number of MCMC walkers. Defaults to ``32``.
+            Number of MCMC walkers. Defaults to ``max(32, 2 * ndim)``: emcee
+            needs at least twice as many walkers as free parameters, so the
+            32 walkers of before were enough up to 16 free parameters only
+            (F141, phase 6-quater, PR 10-bis); up to 16 the sampling is the
+            same as before. A value below ``2 * ndim`` is refused.
         nsteps : int, optional
             Number of sampling steps per walker. Defaults to ``1000``.
         burn_in : int, optional
@@ -174,6 +195,10 @@ class BayesianVoigtFitter:
             kept. Must be smaller than ``nsteps``.
         progress : bool, optional
             If True, pipes progress percentage to the logger. Defaults to ``True``.
+        seed : int, optional
+            Seed of the random numbers (the starting walkers and the moves),
+            for a sampling that can be repeated. Defaults to ``None``: the
+            global generator of NumPy, as before the parameter existed.
 
         Returns
         -------
@@ -189,10 +214,17 @@ class BayesianVoigtFitter:
         ImportError
             If the ``emcee`` package is not installed.
         ValueError
-            If ``nsteps < 1`` or ``burn_in`` is not smaller than ``nsteps``
-            (the chain left after the burn-in would be empty).
+            If ``nsteps < 1``, ``burn_in`` is not smaller than ``nsteps``
+            (the chain left after the burn-in would be empty), or
+            ``nwalkers`` is less than twice the free parameters.
         """
         require_bayes_engine('mcmc')
+        if nwalkers is None:
+            nwalkers = max(32, 2 * self.ndim)
+        if nwalkers < 2 * self.ndim:
+            raise ValueError(
+                f"nwalkers ({nwalkers}) must be at least twice the free "
+                f"parameters ({self.ndim}).")
         if nsteps < 1:
             raise ValueError(f"nsteps must be at least 1 (got {nsteps}).")
         if burn_in is None:
@@ -204,14 +236,19 @@ class BayesianVoigtFitter:
             
         # Initialize walkers in a small cluster around the best-fit / initial guess
         # We add some noise but stay within bounds
+        # Without a seed, the global generator of NumPy (emcee copies its
+        # state), as before the parameter existed
+        rng = np.random.RandomState(seed) if seed is not None else np.random
         pos: Any = []
         for _ in range(nwalkers):
-            p = self.p_initial + 1e-4 * np.random.randn(self.ndim)
+            p = self.p_initial + 1e-4 * rng.randn(self.ndim)
             p = np.clip(p, self.lower_bounds + 1e-8, self.upper_bounds - 1e-8)
             pos.append(p)
         pos = np.array(pos)
         
         sampler = emcee.EnsembleSampler(nwalkers, self.ndim, self.ln_posterior)
+        if seed is not None:
+            sampler.random_state = rng.get_state()
         
         logger.info(f"Sampling with emcee: {nwalkers} walkers, {nsteps} steps.")
         if progress:
@@ -240,7 +277,8 @@ class BayesianVoigtFitter:
             'std': np.std(flat_samples, axis=0)
         }
 
-    def run_nested(self, nlive: int = 250, progress: bool = True) -> Dict[str, Any]:
+    def run_nested(self, nlive: int = 250, progress: bool = True,
+                   seed: Optional[int] = None) -> Dict[str, Any]:
         """
         Execute Nested Sampling using ``dynesty``.
 
@@ -253,6 +291,9 @@ class BayesianVoigtFitter:
             Number of live points for the nested sampler. Defaults to ``250``.
         progress : bool, optional
             If True, pipes progress (dLogZ) to the logger. Defaults to ``True``.
+        seed : int, optional
+            Seed of the random numbers of the sampler, for a sampling that
+            can be repeated. Defaults to ``None`` (not repeatable).
 
         Returns
         -------
@@ -261,9 +302,19 @@ class BayesianVoigtFitter:
             - ``'results'``: The raw ``dynesty`` results object.
             - ``'logz'``: The estimated log-evidence.
             - ``'logzerr'``: The error on the log-evidence.
-            - ``'samples'``: The posterior samples (np.ndarray).
-            - ``'medians'``: The median values for each parameter (np.ndarray).
-            - ``'std'``: The standard deviations for each parameter (np.ndarray).
+            - ``'samples'``: Samples of the posterior with equal weights
+              (``samples_equal`` of dynesty), e.g. for a corner plot.
+            - ``'medians'``: The weighted medians of the parameters (np.ndarray).
+            - ``'std'``: The weighted standard deviations of the parameters
+              (np.ndarray).
+
+        Notes
+        -----
+        The points of a nested sampling are not a sample of the posterior:
+        each has its importance weight. The medians and standard deviations
+        were taken from the points without the weights, and came out too
+        wide (on a CIV component, 1.7 in logN and 42 km/s in b instead of
+        0.005 and 0.14, which the MCMC gives): F140, phase 6-quater, PR 10-bis.
 
         Raises
         ------
@@ -276,45 +327,59 @@ class BayesianVoigtFitter:
             """Transform uniform unit cube to physical bounds."""
             return self.lower_bounds + (self.upper_bounds - self.lower_bounds) * u
 
-        dsampler = dynesty.NestedSampler(self.ln_likelihood, prior_transform, self.ndim, nlive=nlive)
-        
-        logger.info(f"Nested sampling with dynesty: {nlive} live points.")
-        if progress:
-            import time
-            last_log_time = time.time()
-            
-            # Start manual sampling to safely pipe progress to GUI
-            # We target dlogz=0.1 which is dynesty's standard default
-            target_dlogz = 0.1
-            for i, res in enumerate(dsampler.sample(dlogz=target_dlogz)):
-                if time.time() - last_log_time > 0.5:
-                    dlogz = getattr(dsampler, 'dlogz', None)
-                    if dlogz is None and isinstance(res, tuple) and len(res) > 3:
-                        dlogz = res[-1]  # fallback for some old dynesty versions
-                    
-                    if dlogz is not None:
-                        logger.info(f"Nested sampling, iteration {i}: dlogZ {dlogz:.2f} "
-                                    f"(target {target_dlogz}).")
-                    else:
-                        logger.info(f"Nested sampling, iteration {i}.")
-                    last_log_time = time.time()
-            
-            # Finalize remaining live points
-            logger.debug("Adding the final live points.")
-            dsampler.add_live_points()
-        else:
-            dsampler.run_nested(print_progress=False)
-        
-        res = dsampler.results
+        rstate = np.random.default_rng(seed) if seed is not None else None
+        # dynesty warns about the efficiency of its bounds (and other
+        # things the user should know): to the log, once each, not as
+        # warnings that a script or a test would turn into errors
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            dsampler = dynesty.NestedSampler(self.ln_likelihood, prior_transform,
+                                             self.ndim, nlive=nlive, rstate=rstate)
+
+            logger.info(f"Nested sampling with dynesty: {nlive} live points.")
+            if progress:
+                import time
+                last_log_time = time.time()
+
+                # Start manual sampling to safely pipe progress to GUI
+                # We target dlogz=0.1 which is dynesty's standard default
+                target_dlogz = 0.1
+                for i, it in enumerate(dsampler.sample(dlogz=target_dlogz)):
+                    if time.time() - last_log_time > 0.5:
+                        # The remaining evidence of this iteration (F139:
+                        # dsampler.dlogz, read before, is a dict in dynesty 3)
+                        dlogz = getattr(it, 'delta_logz', None)
+                        if isinstance(dlogz, (int, float, np.floating)):
+                            logger.info(f"Nested sampling, iteration {i}: dlogZ {dlogz:.2f} "
+                                        f"(target {target_dlogz}).")
+                        else:
+                            logger.info(f"Nested sampling, iteration {i}.")
+                        last_log_time = time.time()
+
+                # Finalize remaining live points
+                logger.debug("Adding the final live points.")
+                dsampler.add_live_points()
+            else:
+                dsampler.run_nested(print_progress=False)
+
+            res = dsampler.results
+            weights = res.importance_weights()
+            equal = res.samples_equal(rstate=rstate)
+        _log_warnings(caught)
+
         samples = res.samples
-        
+        medians = np.array([dynesty.utils.quantile(samples[:, k], [0.5], weights=weights)[0]
+                            for k in range(samples.shape[1])])
+        mean = np.average(samples, axis=0, weights=weights)
+        std = np.sqrt(np.average((samples - mean) ** 2, axis=0, weights=weights))
+
         return {
             'results': res,
             'logz': res.logz[-1],
             'logzerr': res.logzerr[-1],
-            'samples': samples,
-            'medians': np.median(samples, axis=0),
-            'std': np.std(samples, axis=0)
+            'samples': equal,
+            'medians': medians,
+            'std': std
         }
 
     def apply_results(self, res: Dict[str, Any]) -> Any:

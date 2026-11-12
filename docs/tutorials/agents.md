@@ -424,7 +424,9 @@ know, not how:
 Slow recipes are the pipelines (`absorbers_doublets_auto`, `absorbers_lya_auto`,
 `absorbers_forest_auto`, `absorbers_metals_auto`, `absorbers_refit_all`,
 `absorbers_fit_bayesian`): the agent knows
-that they report their progress and can be cancelled. A recipe changes the
+that they report their progress and can be cancelled. The Bayesian fit
+draws random numbers: give it a `seed` when the result must be repeatable
+(a log replayed without one gives other values, within the errors). A recipe changes the
 session it runs on, except those that open new sessions; in doubt, ask the
 agent to `session_duplicate` first: nothing is lost either way, because
 every state is kept.

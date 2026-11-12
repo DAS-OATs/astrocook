@@ -174,7 +174,8 @@ def _methods_optimize_system(p):
             f"only if it decreased the Akaike information criterion by at least "
             f"{p['aic_penalty']} (at most {p['max_components']} components, stopping "
             f"after {p['patience']} tries without an improvement; group depth "
-            f"{p['group_depth']}; Cupani et al. 2026){p.menu}")
+            f"{p['group_depth']}; at most {p['max_nfev']} evaluations of the model "
+            f"per fit; Cupani et al. 2026){p.menu}")
 
 
 def _methods_fit_bayesian(p):
@@ -188,8 +189,10 @@ def _methods_fit_bayesian(p):
         p.raw('nlive')
         how = (f"MCMC (emcee; Foreman-Mackey et al. 2013), with {p['nsteps']} steps "
                f"per walker")
+    seed = p.raw('seed')
+    seeded = f", seed {seed}" if seed is not None else ""
     return (f"The posterior of the parameters of {group} (group depth "
-            f"{p['group_depth']}) was sampled with {how}{p.menu}")
+            f"{p['group_depth']}{seeded}) was sampled with {how}{p.menu}")
 
 
 def _methods_refit_all(p):
@@ -475,13 +478,14 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "details": "Adds components to a system one at a time where the residuals are significant, keeping each only if it improves the fit by the AIC penalty.",
         "params": [
             {"name": "uuid", "type": str, "default": "", "doc": "Identifier of a component of the system.", "gui_hidden": True},
-            {"name": "max_components", "type": int, "default": 5, "min": 0, "doc": "Maximum number of components to add."},
+            {"name": "max_components", "type": int, "default": 5, "min": 0, "doc": "Maximum number of candidate components tried (each counts, also one rejected or too close to another)."},
             {"name": "threshold_sigma", "type": float, "default": 2.5, "gt": 0, "doc": "Residual (in sigma) above which a new component is tried."},
             {"name": "aic_penalty", "type": float, "default": 5.0, "min": 0, "doc": "Decrease of the AIC needed to keep a new component."},
-            {"name": "z_window_kms", "type": float, "default": 100.0, "gt": 0, "doc": "Half-width of the velocity window around the system that is analysed (km/s)."},
+            {"name": "z_window_kms", "type": float, "default": 100.0, "gt": 0, "doc": "Half-width of the velocity window around the first line of the system (km/s): where the residuals are searched and the AIC is computed, and how far the redshifts can move in the fits."},
             {"name": "min_dv", "type": float, "default": 10.0, "min": 0, "doc": "Minimum separation of a new component from the others (km/s); lower to resolve blends."},
             {"name": "group_depth", "type": int, "default": 2, "min": 0, "doc": "How far the group extends: 0 the component alone, 1 the components blended with it, 2 also those blended with them."},
-            {"name": "patience", "type": int, "default": 2, "min": 0, "doc": "Number of tries without an improvement before stopping."}
+            {"name": "patience", "type": int, "default": 2, "min": 0, "doc": "Number of tries without an improvement before stopping."},
+            {"name": "max_nfev", "type": int, "default": 1000, "min": 1, "doc": "Maximum number of evaluations of the model in each fit; a fit that reaches it counts as failed (its candidate is rejected)."}
         ],
         "url": "absorbers_cb.html#optimize_system"
     },
@@ -490,13 +494,14 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "references": ("emcee", "dynesty"),
         "brief": "Fit Bayesian.",
         "requires": ("resolution", "continuum"),
-        "details": "Samples the posterior of the parameters of a group of components, with MCMC (emcee) or nested sampling (dynesty); needs the [bayes] extra.",
+        "details": "Samples the posterior of the parameters of a group of components, with MCMC (emcee) or nested sampling (dynesty), and gives the components its medians, with its standard deviations as errors; the prior is flat, z within +-20 km/s of its current value, logN and b within the bounds of the fit. Needs the [bayes] extra.",
         "params": [
-            {"name": "uuids", "type": list, "default": None, "optional": True, "gui_hidden": True, "doc": "Identifiers of the components of the group."},
+            {"name": "uuids", "type": list, "default": None, "gui_hidden": True, "doc": "Identifiers of the components of the group."},
             {"name": "engine", "type": str, "default": "mcmc", "doc": "Sampler: 'mcmc' (emcee) or 'nested' (dynesty).", "choices": ["mcmc", "nested"]},
-            {"name": "nsteps", "type": int, "default": 500, "min": 1, "doc": "Number of steps of each walker (MCMC)."},
-            {"name": "nlive", "type": int, "default": 250, "min": 1, "doc": "Number of live points (nested sampling)."},
-            {"name": "group_depth", "type": int, "default": 2, "min": 0, "doc": "How far the group extends: 0 the components alone, 1 the components blended with them, 2 also those blended with these."}
+            {"name": "nsteps", "type": int, "default": 500, "min": 1, "doc": "Number of steps of each walker (MCMC; 32 walkers, or twice the free parameters if more than 16; the first min(200, nsteps/2) steps are discarded)."},
+            {"name": "nlive", "type": int, "default": 250, "min": 10, "doc": "Number of live points (nested sampling): at least 10 per free parameter."},
+            {"name": "group_depth", "type": int, "default": 2, "min": 0, "doc": "How far the group extends: 0 the components alone, 1 the components blended with them, 2 also those blended with these."},
+            {"name": "seed", "type": int, "default": None, "optional": True, "min": 0, "doc": "Seed of the random numbers, for a sampling that can be repeated (None: not repeatable)."}
         ],
         "gui_hidden": True
     },
@@ -699,6 +704,11 @@ def _fit_cancelled() -> bool:
     that a long fit stops too (phase 6-ter, PR 7-quater)."""
     check_cancelled()
     return False
+
+
+#: The live points of nested sampling needed per free parameter (with fewer
+#: dynesty fails or does not end; phase 6-quater, PR 10-bis, Guido)
+NLIVE_PER_PARAMETER = 10
 
 
 def _warn_if_unconvolved(spec) -> None:
@@ -2065,7 +2075,8 @@ class RecipeAbsorbers:
     def optimize_system(self, uuid: str, max_components: int = 5,
                         threshold_sigma: float = 2.5, aic_penalty: float = 5.0,
                         z_window_kms: float = 100.0, min_dv: float = 10.0,
-                        group_depth: int = 2, patience: int = 2) -> 'Session':
+                        group_depth: int = 2, patience: int = 2,
+                        max_nfev: int = 1000) -> 'Session':
         """
         Optimize system (Iterative Fit).
 
@@ -2078,7 +2089,8 @@ class RecipeAbsorbers:
         uuid : str
             Target Component UUID (seed).
         max_components : int, optional
-            Max extra components to try. Defaults to ``5``.
+            Max candidate components to try: each counts, also one rejected
+            by the AIC or too close to another (``min_dv``). Defaults to ``5``.
         threshold_sigma : float, optional
             Residual threshold (sigma) to trigger new component. Defaults to ``2.5``.
         aic_penalty : float, optional
@@ -2086,13 +2098,22 @@ class RecipeAbsorbers:
             counts 2 per free parameter; 5 asks for substantial support).
             Defaults to ``5.0``.
         z_window_kms : float, optional
-            Velocity window (km/s) to analyze. Defaults to ``100.0``.
+            Half-width (km/s) of the window around the first line of the
+            system where the residuals are searched and the AIC is
+            computed; it is also how far the redshifts can move in the fits
+            (``z_window_kms`` of :meth:`fit_component`). Defaults to ``100.0``.
         min_dv : float, optional
             Min separation (km/s). Defaults to ``10.0``.
         group_depth : int, optional
             Grouping depth. Defaults to ``2``.
         patience : int, optional
             Trials allowed without AIC improvement. Defaults to ``2``.
+        max_nfev : int, optional
+            Max evaluations of the model in each fit (the starting one and
+            one per candidate). A fit that reaches it counts as failed: its
+            candidate is rejected, and if the starting fit fails no
+            component is added (F149). Defaults to ``1000``, the value that
+            was fixed before phase 6-quater, PR 10-bis.
 
         Returns
         -------
@@ -2104,6 +2125,7 @@ class RecipeAbsorbers:
 
         if not self._session.systs or not self._session.systs.components:
             raise RecipeFailed("There are no components to optimize.")
+        check_uuids(self._session, [uuid], 'uuid')
 
         current_session = self._session
 
@@ -2120,6 +2142,7 @@ class RecipeAbsorbers:
             min_dv=min_dv_f,
             group_depth=depth,
             patience=pat,
+            max_nfev=max_nfev,
             trace=trace
         )
         # What the search tried and why it stopped, for the result (F118)
@@ -2138,25 +2161,38 @@ class RecipeAbsorbers:
         return current_session.with_new_spectrum(new_spec).with_new_system_list(new_systs)
                         
     @typed_recipe
-    def fit_bayesian(self, uuids: Optional[list[str]] = None, engine: str = 'mcmc',
+    def fit_bayesian(self, uuids: list[str], engine: str = 'mcmc',
                      nsteps: int = 500, nlive: int = 250,
-                     group_depth: int = 2) -> 'Session':
+                     group_depth: int = 2, seed: Optional[int] = None) -> 'Session':
         """
         Run Bayesian sampling (MCMC or Nested) on a group of components.
 
+        The prior is flat: z within ±20 km/s of its current value, logN and
+        b within the bounds of the constraint model (10-23 and 1-300 km/s).
+        The components get the medians of the posterior, and its standard
+        deviations as errors.
+
         Parameters
         ----------
-        uuids : list of str, optional
-            A list of component UUIDs to fit. If not provided, a single component 
-            must be specified via other means (not supported here).
+        uuids : list of str
+            The UUIDs of the components to fit (their group, by
+            ``group_depth``, is sampled).
         engine : {'mcmc', 'nested'}, optional
             The sampling engine to use (default: 'mcmc').
         nsteps : int, optional
-            Number of MCMC steps (default: 500).
+            Number of MCMC steps of each walker (default: 500). The walkers
+            are 32, or twice the free parameters when these are more than
+            16; the first ``min(200, nsteps // 2)`` steps are discarded
+            (burn-in).
         nlive : int, optional
-            Number of live points for Nested Sampling (default: 250).
+            Number of live points for Nested Sampling (default: 250); at
+            least 10 per free parameter (with fewer the sampler fails or
+            does not end).
         group_depth : int, optional
             Depth of connected group search (FoF) to define the fitting group (default: 2).
+        seed : int, optional
+            Seed of the random numbers, for a sampling that can be repeated
+            (default: None, not repeatable).
 
         Raises
         ------
@@ -2164,9 +2200,11 @@ class RecipeAbsorbers:
             If the sampler of ``engine`` is not installed (optional
             dependencies: ``pip install "astrocook[bayes]"``).
         """
+        if not self._session.systs or not self._session.systs.components:
+            raise RecipeFailed("There are no components to fit.")
         if not uuids:
-            raise RecipeFailed("No components are selected.")
-        if isinstance(uuids, str): uuids = [uuids] # Fallback for single uuid string
+            raise InvalidParameter("uuids: give at least one component")
+        check_uuids(self._session, uuids, 'uuids')
 
         from ..fitting.bayesian_fitter import BayesianVoigtFitter, require_bayes_engine
         # Raised, not turned into a return value of 0 like the other
@@ -2174,22 +2212,32 @@ class RecipeAbsorbers:
         require_bayes_engine(str(engine))
 
         nsteps_i, nlive_i, depth_i = nsteps, nlive, group_depth
-            
-        if not self._session.systs or not self._session.systs.components:
-            raise RecipeFailed("There are no components to fit.")
         current_session = self._session
         _warn_if_unconvolved(current_session.spec)
 
         with current_session.systs.fitting_context(uuids, group_depth=depth_i,
                                                    spec=current_session.spec):
             b_fitter = BayesianVoigtFitter(current_session.spec, current_session.systs)
-                
-            if engine.lower() == 'nested':
-                logger.debug(f"Running nested sampling (nlive={nlive_i}).")
-                res = b_fitter.run_nested(nlive=nlive_i)
-            else:
-                logger.debug(f"Running MCMC (nsteps={nsteps_i}).")
-                res = b_fitter.run_mcmc(nsteps=nsteps_i)
+
+            try:
+                if engine.lower() == 'nested':
+                    # With fewer live points dynesty fails (nlive 1 and 3
+                    # with 3 free parameters) or does not end (4 and 7):
+                    # phase 6-quater, PR 10-bis (Guido)
+                    if nlive_i < NLIVE_PER_PARAMETER * b_fitter.ndim:
+                        raise InvalidParameter(
+                            f"nlive: at least {NLIVE_PER_PARAMETER} live points per free "
+                            f"parameter are needed, {NLIVE_PER_PARAMETER * b_fitter.ndim} "
+                            f"for the {b_fitter.ndim} of this group (got {nlive_i})")
+                    logger.debug(f"Running nested sampling (nlive={nlive_i}).")
+                    res = b_fitter.run_nested(nlive=nlive_i, seed=seed)
+                else:
+                    logger.debug(f"Running MCMC (nsteps={nsteps_i}).")
+                    res = b_fitter.run_mcmc(nsteps=nsteps_i, seed=seed)
+            except RuntimeError as e:
+                # An error of the sampler (e.g. emcee with too few walkers,
+                # F141) is a failure of the recipe, not a bug
+                raise RecipeFailed(f"The sampler failed: {e}") from e
 
             # Never overwrite the components with non-finite values
             if not np.all(np.isfinite(res['medians'])):
