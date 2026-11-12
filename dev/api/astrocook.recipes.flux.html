@@ -436,6 +436,7 @@
   <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Data structures and operations</span></p>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1 has-children"><a class="reference internal" href="astrocook.core.html">astrocook.core package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.column_names.html">astrocook.core.column_names module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.debug_hooks.html">astrocook.core.debug_hooks module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.resolution.html">astrocook.core.resolution module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.session.html">astrocook.core.session module</a></li>
@@ -553,7 +554,8 @@
 <dt class="sig sig-object py" id="astrocook.recipes.flux.CORE_COLUMNS">
 <span class="sig-prename descclassname"><span class="pre">astrocook.recipes.flux.</span></span><span class="sig-name descname"><span class="pre">CORE_COLUMNS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('x',</span> <span class="pre">'xmin',</span> <span class="pre">'xmax',</span> <span class="pre">'y',</span> <span class="pre">'dy')</span></span><a class="headerlink" href="#astrocook.recipes.flux.CORE_COLUMNS" title="Link to this definition">#</a></dt>
 <dd><p>not a name for a column written by a recipe
-(phase 6-quater, PR 7: the result went to a column that nothing shows)</p>
+(phase 6-quater, PR 7: the result went to a column that nothing shows),
+by the names of the data; those of the GUI (λ, F, dF, …) too since PR 8</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>The columns of every spectrum</p>
@@ -575,7 +577,7 @@ logic to <a class="reference internal" href="astrocook.core.spectrum.html#astroc
 
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.recipes.flux.RecipeFlux.calculate_running_std">
-<span class="sig-name descname"><span class="pre">calculate_running_std</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'y'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'running_std'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_pix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">21</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.session.session.html#astrocook.session.session.Session" title="astrocook.session.session.Session"><span class="pre">Session</span></a></span></span><a class="reference internal" href="../modules/astrocook/recipes/flux.html#RecipeFlux.calculate_running_std"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.flux.RecipeFlux.calculate_running_std" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">calculate_running_std</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'F'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'running_std'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_pix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">21</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.session.session.html#astrocook.session.session.Session" title="astrocook.session.session.Session"><span class="pre">Session</span></a></span></span><a class="reference internal" href="../modules/astrocook/recipes/flux.html#RecipeFlux.calculate_running_std"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.flux.RecipeFlux.calculate_running_std" title="Link to this definition">#</a></dt>
 <dd><p>Calculate running standard deviation.</p>
 <p>Calculates a running Root-Mean-Square (RMS) on a specific column to estimate
 local error or variability.
@@ -583,11 +585,15 @@ Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#as
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>input_col</strong> (<em>str</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – The column to use for StdDev calculation (e.g., <code class="docutils literal notranslate"><span class="pre">'y'</span></code>). Defaults to <code class="docutils literal notranslate"><span class="pre">'y'</span></code>.</p></li>
+<li><p><strong>input_col</strong> (<em>str</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – The column to use for StdDev calculation, by the names of the GUI
+(<code class="docutils literal notranslate"><span class="pre">'F'</span></code>, <code class="docutils literal notranslate"><span class="pre">'dF'</span></code>, <code class="docutils literal notranslate"><span class="pre">'cont'</span></code>, …; <code class="docutils literal notranslate"><span class="pre">'y'</span></code>, <code class="docutils literal notranslate"><span class="pre">'dy'</span></code> are
+accepted). Defaults to <code class="docutils literal notranslate"><span class="pre">'F'</span></code> (<code class="docutils literal notranslate"><span class="pre">'y'</span></code> until phase 6-quater,
+PR 8: the same column).</p></li>
 <li><p><strong>output_col</strong> (<em>str</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Name of the column to write (e.g., <code class="docutils literal notranslate"><span class="pre">'running_std'</span></code>): a new
 column, or an auxiliary one to replace; not empty, nor one of
-the columns of every spectrum (<code class="docutils literal notranslate"><span class="pre">x</span></code>, <code class="docutils literal notranslate"><span class="pre">xmin</span></code>, <code class="docutils literal notranslate"><span class="pre">xmax</span></code>, <code class="docutils literal notranslate"><span class="pre">y</span></code>,
-<code class="docutils literal notranslate"><span class="pre">dy</span></code>). Defaults to <code class="docutils literal notranslate"><span class="pre">'running_std'</span></code>.</p></li>
+the columns of every spectrum (<code class="docutils literal notranslate"><span class="pre">λ</span></code>, <code class="docutils literal notranslate"><span class="pre">λmin</span></code>, <code class="docutils literal notranslate"><span class="pre">λmax</span></code>, <code class="docutils literal notranslate"><span class="pre">F</span></code>,
+<code class="docutils literal notranslate"><span class="pre">dF</span></code>, or their names in the data, <code class="docutils literal notranslate"><span class="pre">x</span></code>, …, <code class="docutils literal notranslate"><span class="pre">dy</span></code>).
+Defaults to <code class="docutils literal notranslate"><span class="pre">'running_std'</span></code>.</p></li>
 <li><p><strong>window_pix</strong> (<em>int</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Total window size in pixels (should be odd: an even one is
 increased by 1, and one below 3 is 3). Defaults to <code class="docutils literal notranslate"><span class="pre">21</span></code>.</p></li>
 </ul>
@@ -601,7 +607,8 @@ increased by 1, and one below 3 is 3). Defaults to <code class="docutils literal
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><p><a class="reference internal" href="astrocook.recipes.errors.html#astrocook.recipes.errors.InvalidParameter" title="astrocook.recipes.errors.InvalidParameter"><strong>InvalidParameter</strong></a> – If <code class="docutils literal notranslate"><span class="pre">output_col</span></code> is empty or the name of a column of every
     spectrum (phase 6-quater, PR 7: the result went to a hidden
-    column, findings register F122).</p>
+    column, findings register F122; PR 8: also by the names of the
+    GUI, which made a column that no expression could name).</p>
 </dd>
 </dl>
 </dd></dl>

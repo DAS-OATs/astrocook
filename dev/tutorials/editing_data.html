@@ -522,10 +522,10 @@
 <li><p>Go to <strong>Edit &gt; Set Properties…</strong>.</p></li>
 <li><p>A dialog will appear, showing the current values. Here you can update:</p>
 <ul class="simple">
-<li><p><strong>Name:</strong> The label used in the list.</p></li>
+<li><p><strong>Name:</strong> The label used in the list (it cannot be empty).</p></li>
 <li><p><strong>Object:</strong> The target name (often from the FITS header).</p></li>
 <li><p><strong>Emission Redshift (<span class="math notranslate nohighlight">\(z_\mathrm{em}\)</span>):</strong> Set this carefully!</p></li>
-<li><p><strong>Resolution (<span class="math notranslate nohighlight">\(R\)</span>):</strong> You can enter a resolving power (e.g., <code class="docutils literal notranslate"><span class="pre">50000</span></code>) or a pixel width (e.g., <code class="docutils literal notranslate"><span class="pre">3px</span></code>). The resolution is stored in the <code class="docutils literal notranslate"><span class="pre">resol</span></code> column of the spectrum, one value per pixel, and the fits use the value of each pixel. If the resolution varies with wavelength (e.g. after co-adding spectra of different resolution), the field is left empty, with the median as a hint, and the column is kept: if you type a value there, Astrocook asks whether to replace the column with it.</p></li>
+<li><p><strong>Resolution (<span class="math notranslate nohighlight">\(R\)</span>):</strong> You can enter a resolving power (e.g., <code class="docutils literal notranslate"><span class="pre">50000</span></code>) or a pixel width (e.g., <code class="docutils literal notranslate"><span class="pre">3px</span></code>, with the x axis in wavelength). The resolution is stored in the <code class="docutils literal notranslate"><span class="pre">resol</span></code> column of the spectrum, one value per pixel, and the fits use the value of each pixel. If the resolution varies with wavelength (e.g. after co-adding spectra of different resolution), the field is left empty, with the median as a hint, and the column is kept: if you type a value there, Astrocook asks whether to replace the column with it.</p></li>
 </ul>
 <p>A field left empty keeps the current value.</p>
 </li>
@@ -535,15 +535,20 @@
 <section id="editing-arithmetic">
 <span id="arithmetic-on-columns"></span><h2>3. Arithmetic on Columns<a class="headerlink" href="#editing-arithmetic" title="Link to this heading">#</a></h2>
 <p>Astrocook allows you to perform mathematical operations on <strong>any</strong> data column (Flux <code class="docutils literal notranslate"><span class="pre">F</span></code>, Error <code class="docutils literal notranslate"><span class="pre">dF</span></code>, Wavelength <code class="docutils literal notranslate"><span class="pre">λ</span></code>, etc.) using NumPy-style syntax.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>The names of the columns.</strong> Everywhere a column is named (expressions, the fields of the recipes, scripts, the MCP server) the names are those of the table of the GUI: <code class="docutils literal notranslate"><span class="pre">λ</span></code>, <code class="docutils literal notranslate"><span class="pre">λmin</span></code>, <code class="docutils literal notranslate"><span class="pre">λmax</span></code>, <code class="docutils literal notranslate"><span class="pre">F</span></code>, <code class="docutils literal notranslate"><span class="pre">dF</span></code>, and the other columns by their own name (<code class="docutils literal notranslate"><span class="pre">cont</span></code>, <code class="docutils literal notranslate"><span class="pre">model</span></code>, <code class="docutils literal notranslate"><span class="pre">resol</span></code>, …). Where a plain ASCII name is handier, <code class="docutils literal notranslate"><span class="pre">λ</span></code> can be written <code class="docutils literal notranslate"><span class="pre">lam</span></code> (<code class="docutils literal notranslate"><span class="pre">lammin</span></code>, <code class="docutils literal notranslate"><span class="pre">lammax</span></code>). The names that the data have in the archives and in the CSV files of <em>Export ASCII</em>, <code class="docutils literal notranslate"><span class="pre">x</span></code>, <code class="docutils literal notranslate"><span class="pre">xmin</span></code>, <code class="docutils literal notranslate"><span class="pre">xmax</span></code>, <code class="docutils literal notranslate"><span class="pre">y</span></code>, <code class="docutils literal notranslate"><span class="pre">dy</span></code>, are accepted too, so the logs and the scripts written with them still work.</p>
+</div>
 <section id="general-arithmetic">
 <h3>General Arithmetic<a class="headerlink" href="#general-arithmetic" title="Link to this heading">#</a></h3>
 <p>You can modify existing columns or create new ones.</p>
 <ol class="arabic simple">
 <li><p>Go to <strong>Edit &gt; Apply Expression…</strong>.</p></li>
-<li><p><strong>Target Column:</strong> Enter the name of the column to overwrite (e.g., <code class="docutils literal notranslate"><span class="pre">F</span></code>) or create (e.g., <code class="docutils literal notranslate"><span class="pre">F_corr</span></code>).</p></li>
+<li><p><strong>Target Column:</strong> Enter the name of the column to overwrite (e.g., <code class="docutils literal notranslate"><span class="pre">F</span></code>) or create (e.g., <code class="docutils literal notranslate"><span class="pre">F_corr</span></code>): letters, digits and <code class="docutils literal notranslate"><span class="pre">_</span></code>, not starting with a digit. The two fields start empty.</p></li>
 <li><p><strong>Expression:</strong> Enter your formula (e.g., <code class="docutils literal notranslate"><span class="pre">F</span> <span class="pre">*</span> <span class="pre">1e17</span></code>).</p></li>
 <li><p>Click <strong>Run</strong>.</p></li>
 </ol>
+<p>The expressions are evaluated by <a class="reference external" href="https://numexpr.readthedocs.io">NumExpr</a>: the arithmetic operators, the comparisons, and its functions (<code class="docutils literal notranslate"><span class="pre">sqrt</span></code>, <code class="docutils literal notranslate"><span class="pre">exp</span></code>, <code class="docutils literal notranslate"><span class="pre">log</span></code>, <code class="docutils literal notranslate"><span class="pre">log10</span></code>, <code class="docutils literal notranslate"><span class="pre">abs</span></code>, <code class="docutils literal notranslate"><span class="pre">sin</span></code>, <code class="docutils literal notranslate"><span class="pre">cos</span></code>, <code class="docutils literal notranslate"><span class="pre">where</span></code>, and <code class="docutils literal notranslate"><span class="pre">sum</span></code>, <code class="docutils literal notranslate"><span class="pre">prod</span></code>, <code class="docutils literal notranslate"><span class="pre">min</span></code>, <code class="docutils literal notranslate"><span class="pre">max</span></code>, which reduce the whole column to one number). The axis (<code class="docutils literal notranslate"><span class="pre">λ</span></code>, <code class="docutils literal notranslate"><span class="pre">λmin</span></code>, <code class="docutils literal notranslate"><span class="pre">λmax</span></code>) cannot be the target: use <strong>Convert X axis</strong> to change its unit. A new column has no unit, whatever the expression.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>The recipe dialog features <strong>toolbars</strong> above the input fields. Click buttons like <code class="docutils literal notranslate"><span class="pre">F</span></code>, <code class="docutils literal notranslate"><span class="pre">λ</span></code>, <code class="docutils literal notranslate"><span class="pre">log10</span></code>, or <code class="docutils literal notranslate"><span class="pre">sqrt</span></code> to instantly insert them into your expression syntax error-free.</p>
@@ -568,10 +573,21 @@
 <p>To exclude bad data points (e.g., dead pixels or negative errors) without deleting rows:</p>
 <ol class="arabic simple">
 <li><p>Go to <strong>Edit &gt; Mask by Expression…</strong>.</p></li>
-<li><p><strong>Target Column:</strong> The column to mask (e.g., <code class="docutils literal notranslate"><span class="pre">F</span></code>).</p></li>
+<li><p><strong>Target Column:</strong> The column to mask (e.g., <code class="docutils literal notranslate"><span class="pre">F</span></code>); not the axis (<code class="docutils literal notranslate"><span class="pre">λ</span></code>, <code class="docutils literal notranslate"><span class="pre">λmin</span></code>, <code class="docutils literal notranslate"><span class="pre">λmax</span></code>).</p></li>
 <li><p><strong>Expression:</strong> A boolean condition (e.g., <code class="docutils literal notranslate"><span class="pre">dF</span> <span class="pre">&lt;=</span> <span class="pre">0</span></code> or <code class="docutils literal notranslate"><span class="pre">λ</span> <span class="pre">&lt;</span> <span class="pre">350</span></code>).</p></li>
 <li><p>Values satisfying this condition will be set to <code class="docutils literal notranslate"><span class="pre">NaN</span></code>.</p></li>
 </ol>
+</section>
+<section id="converting-the-axes">
+<h3>Converting the Axes<a class="headerlink" href="#converting-the-axes" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><strong>Edit &gt; Convert X axis…</strong>: converts the axis to another unit of wavelength (<code class="docutils literal notranslate"><span class="pre">nm</span></code>, <code class="docutils literal notranslate"><span class="pre">Angstrom</span></code>) or to velocity (<code class="docutils literal notranslate"><span class="pre">km/s</span></code>). The zero of the velocity is the Lyman-α emission at the reference redshift, 121.567 nm × (1 + <code class="docutils literal notranslate"><span class="pre">z_ref</span></code>); <code class="docutils literal notranslate"><span class="pre">z_ref</span></code> is <span class="math notranslate nohighlight">\(z_\mathrm{em}\)</span> if left at <code class="docutils literal notranslate"><span class="pre">_current_</span></code>.</p></li>
+<li><p><strong>Edit &gt; Convert Y axis…</strong>: converts the flux, its error and the columns in the same unit (<code class="docutils literal notranslate"><span class="pre">cont</span></code>, <code class="docutils literal notranslate"><span class="pre">model</span></code>, …) to another unit of flux density per unit wavelength, e.g. <code class="docutils literal notranslate"><span class="pre">erg/(Angstrom</span> <span class="pre">s</span> <span class="pre">cm^2)</span></code>. A unit per frequency (<code class="docutils literal notranslate"><span class="pre">Jy</span></code>) is not converted.</p></li>
+</ul>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The spectrum does not remember the <code class="docutils literal notranslate"><span class="pre">z_ref</span></code> of a conversion to velocity: to go back to wavelength, convert with the same <code class="docutils literal notranslate"><span class="pre">z_ref</span></code>, and without changing <span class="math notranslate nohighlight">\(z_\mathrm{em}\)</span> in between if <code class="docutils literal notranslate"><span class="pre">z_ref</span></code> was left at <code class="docutils literal notranslate"><span class="pre">_current_</span></code>; otherwise the wavelengths come back shifted.</p>
+</div>
 </section>
 <section id="smoothing-single-columns">
 <h3>Smoothing Single Columns<a class="headerlink" href="#smoothing-single-columns" title="Link to this heading">#</a></h3>
@@ -753,6 +769,7 @@ If the stitched spectra <strong>overlap</strong>, the pixels of the overlap regi
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#advanced-operations">4. Advanced Operations</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#masking-data">Masking Data</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#converting-the-axes">Converting the Axes</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#smoothing-single-columns">Smoothing Single Columns</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#deleting-elements">Deleting Elements</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#importing-systems">Importing Systems</a></li>

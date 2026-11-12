@@ -477,6 +477,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.column_names</span><span class="w"> </span><span class="kn">import</span> <span class="n">CORE_COLUMNS</span> <span class="k">as</span> <span class="n">CORE_COLUMN_NAMES</span><span class="p">,</span> <span class="n">internal_column</span><span class="p">,</span> <span class="n">is_core_column</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.photometry</span><span class="w"> </span><span class="kn">import</span> <span class="n">STANDARD_FILTERS</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.errors</span><span class="w"> </span><span class="kn">import</span> <span class="n">InvalidParameter</span><span class="p">,</span> <span class="n">RecipeFailed</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.messages</span><span class="w"> </span><span class="kn">import</span> <span class="n">msg_session_not_found</span>
@@ -525,8 +526,9 @@
 
 
 <span class="c1">#: The columns of every spectrum: not a name for a column written by a recipe</span>
-<span class="c1">#: (phase 6-quater, PR 7: the result went to a column that nothing shows)</span>
-<span class="n">CORE_COLUMNS</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'x'</span><span class="p">,</span> <span class="s1">'xmin'</span><span class="p">,</span> <span class="s1">'xmax'</span><span class="p">,</span> <span class="s1">'y'</span><span class="p">,</span> <span class="s1">'dy'</span><span class="p">)</span>
+<span class="c1">#: (phase 6-quater, PR 7: the result went to a column that nothing shows),</span>
+<span class="c1">#: by the names of the data; those of the GUI (λ, F, dF, ...) too since PR 8</span>
+<span class="n">CORE_COLUMNS</span> <span class="o">=</span> <span class="n">CORE_COLUMN_NAMES</span>
 
 
 <span class="n">FLUX_RECIPES_SCHEMAS</span> <span class="o">=</span> <span class="p">{</span>
@@ -535,8 +537,8 @@
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Calculate running standard deviation."</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Computes the standard deviation of a column in a running window, e.g. to estimate the local noise of the flux; written in a new column."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
-            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"input_col"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"y"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Column of which the standard deviation is computed, e.g. 'y' (the flux)."</span><span class="p">,</span> <span class="s2">"kind"</span><span class="p">:</span> <span class="s2">"column"</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"output_col"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"running_std"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Name of the column to write (a new one, or one to replace; not x, xmin, xmax, y, dy)."</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"input_col"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"F"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Column of which the standard deviation is computed, e.g. 'F' (the flux)."</span><span class="p">,</span> <span class="s2">"kind"</span><span class="p">:</span> <span class="s2">"column"</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"output_col"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"running_std"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Name of the column to write (a new one, or one to replace; not λ, λmin, λmax, F, dF)."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"window_pix"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mi">21</span><span class="p">,</span> <span class="s2">"gt"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Width of the window (pixels): an odd number; an even one is increased by 1, and one below 3 is 3."</span><span class="p">}</span>
         <span class="p">],</span>
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"edit_cb.html#calculate_running_std"</span> <span class="c1"># Placeholder URL</span>
@@ -665,7 +667,7 @@
 <a class="viewcode-back" href="../../../api/astrocook.recipes.flux.html#astrocook.recipes.flux.RecipeFlux.calculate_running_std">[docs]</a>
     <span class="nd">@typed_recipe</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">calculate_running_std</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                              <span class="n">input_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'y'</span><span class="p">,</span>
+                              <span class="n">input_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'F'</span><span class="p">,</span>
                               <span class="n">output_col</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'running_std'</span><span class="p">,</span>
                               <span class="n">window_pix</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">21</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'Session'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
@@ -678,12 +680,16 @@
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        input_col : str, optional</span>
-<span class="sd">            The column to use for StdDev calculation (e.g., ``'y'``). Defaults to ``'y'``.</span>
+<span class="sd">            The column to use for StdDev calculation, by the names of the GUI</span>
+<span class="sd">            (``'F'``, ``'dF'``, ``'cont'``, ...; ``'y'``, ``'dy'`` are</span>
+<span class="sd">            accepted). Defaults to ``'F'`` (``'y'`` until phase 6-quater,</span>
+<span class="sd">            PR 8: the same column).</span>
 <span class="sd">        output_col : str, optional</span>
 <span class="sd">            Name of the column to write (e.g., ``'running_std'``): a new</span>
 <span class="sd">            column, or an auxiliary one to replace; not empty, nor one of</span>
-<span class="sd">            the columns of every spectrum (``x``, ``xmin``, ``xmax``, ``y``,</span>
-<span class="sd">            ``dy``). Defaults to ``'running_std'``.</span>
+<span class="sd">            the columns of every spectrum (``λ``, ``λmin``, ``λmax``, ``F``,</span>
+<span class="sd">            ``dF``, or their names in the data, ``x``, ..., ``dy``).</span>
+<span class="sd">            Defaults to ``'running_std'``.</span>
 <span class="sd">        window_pix : int, optional</span>
 <span class="sd">            Total window size in pixels (should be odd: an even one is</span>
 <span class="sd">            increased by 1, and one below 3 is 3). Defaults to ``21``.</span>
@@ -698,15 +704,18 @@
 <span class="sd">        InvalidParameter</span>
 <span class="sd">            If ``output_col`` is empty or the name of a column of every</span>
 <span class="sd">            spectrum (phase 6-quater, PR 7: the result went to a hidden</span>
-<span class="sd">            column, findings register F122).</span>
+<span class="sd">            column, findings register F122; PR 8: also by the names of the</span>
+<span class="sd">            GUI, which made a column that no expression could name).</span>
 <span class="sd">        """</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">output_col</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="ow">or</span> <span class="n">output_col</span> <span class="ow">in</span> <span class="n">CORE_COLUMNS</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">output_col</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="ow">or</span> <span class="n">is_core_column</span><span class="p">(</span><span class="n">output_col</span><span class="o">.</span><span class="n">strip</span><span class="p">()):</span>
             <span class="k">raise</span> <span class="n">InvalidParameter</span><span class="p">(</span><span class="sa">f</span><span class="s2">"output_col: </span><span class="si">{</span><span class="n">output_col</span><span class="si">!r}</span><span class="s2"> is not a name for a new "</span>
-                                   <span class="sa">f</span><span class="s2">"column (nor one of </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">CORE_COLUMNS</span><span class="p">)</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
+                                   <span class="sa">f</span><span class="s2">"column (nor one of λ, λmin, λmax, F, dF)"</span><span class="p">)</span>
         <span class="n">window_pix_i</span> <span class="o">=</span> <span class="n">_window_used</span><span class="p">(</span><span class="n">window_pix</span><span class="p">)</span>
 
         <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="n">spec_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span><span class="o">.</span><span class="n">calculate_running_std</span><span class="p">(</span>
-            <span class="n">input_col</span><span class="o">=</span><span class="n">input_col</span><span class="p">,</span>
+            <span class="c1"># The names of the GUI to those of the data (F120, PR 8: 'F',</span>
+            <span class="c1"># offered by the dialog, was not found)</span>
+            <span class="n">input_col</span><span class="o">=</span><span class="n">internal_column</span><span class="p">(</span><span class="n">input_col</span><span class="o">.</span><span class="n">strip</span><span class="p">()),</span>
             <span class="n">output_col</span><span class="o">=</span><span class="n">output_col</span><span class="p">,</span>
             <span class="n">window_pix</span><span class="o">=</span><span class="n">window_pix_i</span>
         <span class="p">)</span>

@@ -7,9 +7,9 @@ Once you've loaded your data and set the basic properties, you might need to pro
 Sometimes you need to estimate the noise level directly from the data itself (e.g., if the error column is missing or unreliable).
 
 1. Go to **Flux > Calculate Running StdDev...**.
-2. **Input Column:** Usually `y` (the flux).
+2. **Input Column:** Usually `F` (the flux, the default).
 3. **Window Size:** The number of pixels to use for the sliding window (e.g., `21`). The window is an odd number of pixels: an even one is increased by 1, and one below 3 is 3.
-4. **Output Column:** Name for the new error column (default: `running_std`). An existing auxiliary column of that name is replaced; the columns of every spectrum (`x`, `xmin`, `xmax`, `y`, `dy`) cannot be used.
+4. **Output Column:** Name for the new error column (default: `running_std`). An existing auxiliary column of that name is replaced; the columns of every spectrum (`λ`, `λmin`, `λmax`, `F`, `dF`) cannot be used.
 
 This creates a new auxiliary column containing the local Root-Mean-Square (RMS) variations, which you can then visualize or use as a mask.
 

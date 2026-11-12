@@ -165,7 +165,7 @@ Three tools let the agent look into a session, without changing it:
 | Tool | What it does |
 |---|---|
 | `components_list` | The absorption components, by redshift, with their errors, the reduced chi2 and flags of their last fit, their fit group (the components fitted together, as *Refit All* groups them), their velocity from the first of the group and their constraints (fixed or linked parameters); filters by series, redshift and flags, in pages. |
-| `spectrum_read` | The columns of the spectrum in a range, as numbers; a long range is averaged in blocks of pixels (for reading only). |
+| `spectrum_read` | The columns of the spectrum in a range, as numbers; a long range is averaged in blocks of pixels (for reading only). The columns have the names of the GUI (`λ`, `F`, `dF`, `cont`, `model`, ...), as in the expressions of the recipes; `λ` can be written `lam`, and the names in the data (`x`, `y`, `dy`) are accepted. |
 | `spectrum_plot` | A plot of a range (PNG): the flux and its error, the continuum, the model, and a tick at each line of each component. |
 
 And one shows a session to you, in the GUI:
