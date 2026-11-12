@@ -5,7 +5,8 @@ Characterization first (the previous commit): the unit that each loader
 assigned to the flux, the conversion of the flux, the CSV files of
 ``export_ascii`` and ``import_ascii``; each test says what it was. No value
 changes, only units, except the continuum converted with the flux (F130)
-and the columns of a CSV file read by name (F129).
+and the columns of a CSV file read by name (F129); with F131 the
+calibration keeps the unit of a physical flux.
 """
 import astropy.units as au
 import numpy as np
@@ -467,3 +468,12 @@ def test_label_of_the_unit():
     from astrocook.gui.plot_style import flux_unit_label
     assert flux_unit_label(ARB) == "arbitrary units"
     assert flux_unit_label(FLAM) == "erg s\u207b\u00b9 cm\u207b\u00b2 \u00c5\u207b\u00b9"
+
+
+@pytest.mark.parametrize("unit", [FLAM, FLAM_NM, 1e-17 * FLAM])
+def test_calibration_keeps_a_physical_unit(unit):
+    # F131: the result was labelled erg/(Angstrom s cm2) whatever the unit
+    from astrocook.core.photometry import calculate_synthetic_ab_mag
+    out = _wide_session(unit).flux.calibrate_from_magnitudes(magnitudes='SDSS_r=17.0')
+    assert out.spec.y.unit == unit
+    assert calculate_synthetic_ab_mag(out.spec.x, out.spec.y, "SDSS_r") == pytest.approx(17.0)

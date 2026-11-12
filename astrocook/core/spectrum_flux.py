@@ -16,7 +16,7 @@ from astrocook.core.photometry import generate_calibration_curve
 from astrocook.core.spectrum_operations import running_std, smooth_spectrum
 from astrocook.core.structures import DataColumn, SpectrumData
 from astrocook.core._spectrum_host import HostBase
-from astrocook.core.units import FLUX_AUX_COLUMNS, has_no_unit
+from astrocook.core.units import FLAM, FLUX_AUX_COLUMNS, has_no_unit, is_arbitrary_flux
 
 logger = logging.getLogger(__name__)
 
@@ -359,8 +359,16 @@ class FluxMixin(HostBase):
             self.x, self.y, magnitudes
         )
 
-        # 2. Define standard physical unit
-        new_unit = au.erg / (au.cm**2 * au.s * au.Angstrom)
+        # 2. The unit of the result: the curve scales the values in their
+        #    own unit, so a physical unit is kept; a flux without one (or in
+        #    arb_flux), read as erg/(Angstrom s cm2) by the photometry, takes
+        #    it (F131: the result was always labelled erg/(Angstrom s cm2),
+        #    so a flux in erg/(nm s cm2) came out 10 times brighter than it said)
+        old_unit = self._data.y.unit
+        if has_no_unit(old_unit) or is_arbitrary_flux(old_unit):
+            new_unit = FLAM
+        else:
+            new_unit = old_unit
 
         # 3. Helper to apply curve and unit to a column
         def apply_corr(col: DataColumn) -> DataColumn:
