@@ -1011,12 +1011,23 @@ polynomial of the given order. Defaults to <code class="docutils literal notrans
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A new instance with scaled flux.</p>
+<dd class="field-even"><p>A new instance with scaled flux, in the unit of this spectrum.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#astrocook.core.spectrum.Spectrum" title="astrocook.core.spectrum.Spectrum">Spectrum</a></p>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>The two spectra are compared in the units of this one (F138, phase
+6-quater, PR 9): the axis of the reference converted to the unit of
+this axis, its flux to the unit of this flux when they are of one
+kind. Before, the values were compared as they were, so a reference
+with the axis in Å against this one in nm had no overlap (no
+scaling), and one per Å against this one per nm gave a flux off by
+their ratio. A flux of another kind (arbitrary, against a physical
+one) is compared by its values: the scaling calibrates it, and the
+recipe declares the unit. Nothing is converted when the units are
+the same.</p>
 </dd></dl>
 
 <dl class="py method">

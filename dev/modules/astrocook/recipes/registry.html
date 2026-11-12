@@ -527,8 +527,10 @@
 <span class="sd">number, included), ``gt`` (a bound excluded: the value must be above it),</span>
 <span class="sd">``allow_nan`` (NaN is a value; infinities never are), ``choices`` (the</span>
 <span class="sd">values allowed, for a string: a list in the GUI and for the agents),</span>
-<span class="sd">``kind`` (what a string names: ``'session'``, an open session, or</span>
-<span class="sd">``'column'``, a column of the spectrum; phase 6-bis, PR 6c), ``agents`` (False:</span>
+<span class="sd">``kind`` (what a string names: ``'session'``, an open session,</span>
+<span class="sd">``'sessions'``, several, comma-separated (phase 6-quater, PR 9: the rule of</span>
+<span class="sd">both in :mod:`astrocook.recipes._sessions`), or ``'column'``, a column of</span>
+<span class="sd">the spectrum; phase 6-bis, PR 6c), ``agents`` (False:</span>
 <span class="sd">not offered to agents, which get the default: the options of debug and the</span>
 <span class="sd">questions of the GUI, phase 6-bis, PR 6; every recipe is offered, Guido:</span>
 <span class="sd">the basic ones are blocks of new recipes), ``aliases`` (the old names of a</span>
@@ -574,7 +576,7 @@
                <span class="s1">'aliases'</span><span class="p">}</span>
 
 <span class="c1">#: What a string parameter can name (the key ``kind``)</span>
-<span class="n">KINDS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="s1">'session'</span><span class="p">,</span> <span class="s1">'column'</span><span class="p">})</span>
+<span class="n">KINDS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="s1">'session'</span><span class="p">,</span> <span class="s1">'sessions'</span><span class="p">,</span> <span class="s1">'column'</span><span class="p">})</span>
 
 
 <div class="viewcode-block" id="ParamSpec">

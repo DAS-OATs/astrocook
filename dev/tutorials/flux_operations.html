@@ -565,9 +565,10 @@
 </ul>
 </li>
 </ol>
+<p>The two sessions are compared in the units of the current one: the axis of the reference is converted to the unit of this axis (e.g. nm to Å), and its flux to the unit of this flux (e.g. per Å to per nm), so the scaled flux keeps its unit. A flux in arbitrary units takes the unit of the reference once scaled to it; a normalized flux is not scaled to one that is not, and an axis in velocity is converted to wavelengths first with <em>Convert X axis</em>.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Here <code class="docutils literal notranslate"><span class="pre">-1</span></code> means a spline; in <strong>Co-add</strong> (<code class="docutils literal notranslate"><span class="pre">equalize_order</span></code>) it means no scaling.</p>
+<p>Here <code class="docutils literal notranslate"><span class="pre">-1</span></code> means a spline; in <strong>Co-add</strong>, <code class="docutils literal notranslate"><span class="pre">equalize_order</span></code> is <code class="docutils literal notranslate"><span class="pre">None</span></code> for no scaling (the logs written before version 2.7 say <code class="docutils literal notranslate"><span class="pre">-1</span></code> there, read as <code class="docutils literal notranslate"><span class="pre">None</span></code>).</p>
 </div>
 </section>
 <section id="resampling">

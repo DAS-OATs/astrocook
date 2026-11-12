@@ -866,7 +866,13 @@ archive is not your save: save the session with <code class="docutils literal no
 folder <code class="docutils literal notranslate"><span class="pre">folder</span></code> (called <code class="docutils literal notranslate"><span class="pre">path</span></code> until 2.6.0, a name still accepted), named
 after <code class="docutils literal notranslate"><span class="pre">prefix</span></code>, and does not replace files that exist unless asked
 (<code class="docutils literal notranslate"><span class="pre">overwrite=true</span></code>). The tools that read another session
-(<code class="docutils literal notranslate"><span class="pre">flux_equalize</span></code>, <code class="docutils literal notranslate"><span class="pre">flux_resample</span></code>) require its <code class="docutils literal notranslate"><span class="pre">session_id</span></code>.</p>
+(<code class="docutils literal notranslate"><span class="pre">flux_equalize</span></code>, <code class="docutils literal notranslate"><span class="pre">flux_resample</span></code>, <code class="docutils literal notranslate"><span class="pre">edit_import_systems</span></code>) require its
+<code class="docutils literal notranslate"><span class="pre">session_id</span></code>; those that read several (<code class="docutils literal notranslate"><span class="pre">edit_stitch</span></code>,
+<code class="docutils literal notranslate"><span class="pre">edit_equalize_and_stitch</span></code>, <code class="docutils literal notranslate"><span class="pre">edit_coadd</span></code>, <code class="docutils literal notranslate"><span class="pre">edit_trim_common</span></code>; their
+schema says <code class="docutils literal notranslate"><span class="pre">x-astrocook-kind:</span> <span class="pre">sessions</span></code>) take their <code class="docutils literal notranslate"><span class="pre">session_id</span></code>s
+separated by commas, and <code class="docutils literal notranslate"><span class="pre">edit_coadd</span></code> the id of the session it runs on
+among them (the first is the reference of the units and of the flux). A
+<code class="docutils literal notranslate"><span class="pre">session_id</span></code> not found stops the tool.</p>
 <p>The sessions live in the server while the client is running: save the
 result with <code class="docutils literal notranslate"><span class="pre">session_save</span></code> before closing the client.</p>
 </section>

@@ -487,8 +487,8 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.params</span><span class="w"> </span><span class="kn">import</span> <span class="n">typed_recipe</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.progress</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_cancelled</span><span class="p">,</span> <span class="n">progress</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.result</span><span class="w"> </span><span class="kn">import</span> <span class="n">report</span><span class="p">,</span> <span class="n">report_removed</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.messages</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">msg_no_resolution</span><span class="p">,</span> <span class="n">msg_session_not_found</span><span class="p">,</span>
-                                       <span class="n">msg_z_em_unset</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.messages</span><span class="w"> </span><span class="kn">import</span> <span class="n">msg_no_resolution</span><span class="p">,</span> <span class="n">msg_z_em_unset</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes._sessions</span><span class="w"> </span><span class="kn">import</span> <span class="n">open_session</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.session.session</span><span class="w"> </span><span class="kn">import</span> <span class="n">Session</span>
@@ -2256,20 +2256,14 @@
 <span class="sd">        float</span>
 <span class="sd">            The detected redshift.</span>
 <span class="sd">        """</span>
-        <span class="n">sibling_session</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="c1"># Without the GUI (a script) there are no other sessions: it failed</span>
-        <span class="c1"># with an AttributeError, hidden by a broad except until phase 6-bis</span>
-        <span class="n">gui</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">,</span> <span class="s1">'_gui'</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">hist</span> <span class="ow">in</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">gui</span><span class="p">,</span> <span class="s1">'session_histories'</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[]:</span>
-            <span class="k">if</span> <span class="n">hist</span><span class="o">.</span><span class="n">display_name</span> <span class="o">==</span> <span class="n">sibling_name</span><span class="p">:</span>
-                <span class="n">sibling_session</span> <span class="o">=</span> <span class="n">hist</span><span class="o">.</span><span class="n">current_state</span>
-                <span class="k">break</span>
+        <span class="c1"># The rule of the sessions (phase 6-quater, PR 9): a name among the</span>
+        <span class="c1"># open sessions, or in a script the session itself (without the GUI</span>
+        <span class="c1"># it failed with an AttributeError, hidden by a broad except until</span>
+        <span class="c1"># phase 6-bis)</span>
+        <span class="n">sibling_session</span> <span class="o">=</span> <span class="n">open_session</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">,</span> <span class="n">sibling_name</span><span class="p">,</span> <span class="s1">'sibling_name'</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">sibling_session</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">RecipeFailed</span><span class="p">(</span><span class="n">msg_session_not_found</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">sibling_name</span><span class="p">))</span>
-            
         <span class="n">z_found</span> <span class="o">=</span> <span class="n">spec_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span><span class="o">.</span><span class="n">detect_doublet_z</span><span class="p">(</span>
-            <span class="n">sibling_session</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="n">trans_self</span><span class="p">,</span> <span class="n">trans_sibling</span>
+            <span class="n">spec_of</span><span class="p">(</span><span class="n">sibling_session</span><span class="p">),</span> <span class="n">trans_self</span><span class="p">,</span> <span class="n">trans_sibling</span>
         <span class="p">)</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Anchor redshift: z = </span><span class="si">{</span><span class="n">z_found</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">z_found</span></div>

@@ -603,7 +603,7 @@
 <ul class="simple">
 <li><p><strong>Edit &gt; Delete Elements…</strong>: Enter a comma-separated list of items to remove.</p>
 <ul>
-<li><p>Column names (e.g., <code class="docutils literal notranslate"><span class="pre">cont</span></code>, <code class="docutils literal notranslate"><span class="pre">snr</span></code>) to remove data arrays.</p></li>
+<li><p>Column names (e.g., <code class="docutils literal notranslate"><span class="pre">cont</span></code>, <code class="docutils literal notranslate"><span class="pre">snr</span></code>) to remove data arrays. The columns of every spectrum (<code class="docutils literal notranslate"><span class="pre">λ</span></code>, <code class="docutils literal notranslate"><span class="pre">λmin</span></code>, <code class="docutils literal notranslate"><span class="pre">λmax</span></code>, <code class="docutils literal notranslate"><span class="pre">F</span></code>, <code class="docutils literal notranslate"><span class="pre">dF</span></code>) cannot be removed, and a name that is not a column of the spectrum stops the recipe (the message lists the columns).</p></li>
 <li><p>Keywords <code class="docutils literal notranslate"><span class="pre">lines</span></code> or <code class="docutils literal notranslate"><span class="pre">systems</span></code> to clear the entire absorption system list.</p></li>
 </ul>
 </li>
@@ -614,7 +614,7 @@
 <p>If you have analyzed the same object in a different session (e.g., a different exposure), you can copy its absorption lines to the current one.</p>
 <ol class="arabic simple">
 <li><p>Go to <strong>File &gt; Import Systems from Session…</strong>.</p></li>
-<li><p><strong>Source Session:</strong> Select the other open session by name.</p></li>
+<li><p><strong>Source Session:</strong> Select the other open session by name (required).</p></li>
 <li><p><strong>Append:</strong> Check this to add to your current list; uncheck to replace it entirely.</p></li>
 </ol>
 </section>
@@ -627,7 +627,7 @@
 <p>To extract a custom range into a <em>new</em> session:</p>
 <ol class="arabic simple">
 <li><p>Go to <strong>Edit &gt; Split Out Region…</strong>.</p></li>
-<li><p>Enter a boolean expression. Use the dialog <strong>toolbar</strong> to insert the wavelength variable <code class="docutils literal notranslate"><span class="pre">λ</span></code>.</p>
+<li><p>Enter a boolean expression (the field starts empty). Use the dialog <strong>toolbar</strong> to insert the wavelength variable <code class="docutils literal notranslate"><span class="pre">λ</span></code>.</p>
 <ul class="simple">
 <li><p>Example: <code class="docutils literal notranslate"><span class="pre">(λ</span> <span class="pre">&gt;</span> <span class="pre">400)</span> <span class="pre">&amp;</span> <span class="pre">(λ</span> <span class="pre">&lt;</span> <span class="pre">500)</span></code></p></li>
 </ul>
@@ -641,7 +641,7 @@
 <p>Astrocook knows standard quasar regions. If your <span class="math notranslate nohighlight">\(z_\mathrm{em}\)</span> is set:</p>
 <ol class="arabic simple">
 <li><p>Go to <strong>Edit &gt; Extract Preset Region…</strong>.</p></li>
-<li><p><strong>Region:</strong> Choose a preset (e.g., <code class="docutils literal notranslate"><span class="pre">lya_forest</span></code>) or enter multiple presets separated by commas to extract them all at once (e.g., <code class="docutils literal notranslate"><span class="pre">lya_forest,</span> <span class="pre">red_side</span></code>).</p></li>
+<li><p><strong>Region:</strong> Choose a preset (<code class="docutils literal notranslate"><span class="pre">lya_forest</span></code>, <code class="docutils literal notranslate"><span class="pre">all_ly_forest</span></code>, <code class="docutils literal notranslate"><span class="pre">red_side</span></code>) or enter multiple presets separated by commas to extract them all at once (e.g., <code class="docutils literal notranslate"><span class="pre">lya_forest,</span> <span class="pre">red_side</span></code>). A name that is not a preset stops the recipe.</p></li>
 <li><p>The software automatically calculates the observed bounds and creates new sessions for each region.</p></li>
 </ol>
 <div class="admonition note">
@@ -653,6 +653,8 @@
 <section id="combining-sessions-stitch-co-add">
 <h2>6. Combining Sessions (Stitch &amp; Co-add)<a class="headerlink" href="#combining-sessions-stitch-co-add" title="Link to this heading">#</a></h2>
 <p>If you have multiple exposures of the same object, you can combine them directly from the Session List.</p>
+<p>The recipes that combine sessions name the other sessions by the names of the Session List, separated by commas; a name that is not that of an open session stops the recipe. In a Python script, where no other session is open, give the sessions themselves (e.g. <code class="docutils literal notranslate"><span class="pre">session.edit.stitch([red,</span> <span class="pre">nir])</span></code>, <code class="docutils literal notranslate"><span class="pre">session.edit.coadd([session,</span> <span class="pre">other])</span></code>); the session log records their names.</p>
+<p><strong>Units.</strong> The sessions are combined in the units of one of them, the <em>reference</em> (this session for <em>Stitch</em>, the bluest arm for <em>Equalize and Stitch</em>, the first session listed for <em>Co-add</em>): the others are converted to the unit of its axis (e.g. Å to nm) and of its flux (e.g. erg cm⁻² s⁻¹ nm⁻¹ to erg cm⁻² s⁻¹ Å⁻¹) before they are scaled or joined. A flux in arbitrary units (<code class="docutils literal notranslate"><span class="pre">arb_flux</span></code>, see <a class="reference internal" href="#editing-properties">Setting Session Properties</a>) cannot be converted to a physical one: it is combined with it only when it is scaled to it (by <em>Equalize and Stitch</em>, or by <em>Co-add</em> with <code class="docutils literal notranslate"><span class="pre">equalize_order</span></code> not None), and then takes its unit. A normalized flux (no unit) is never combined with one that is not. An axis in velocity is converted to wavelengths first with <em>Convert X axis</em>.</p>
 <section id="co-adding-spectra">
 <h3>Co-adding Spectra<a class="headerlink" href="#co-adding-spectra" title="Link to this heading">#</a></h3>
 <p>This operation defines common grid and rebins all spectra at once into it (weighting the contributions by their inverse variance and the amount of overlap with the final bins). The errors are those of the weighted mean, and the optional <code class="docutils literal notranslate"><span class="pre">kappa</span></code> clipping rejects only upward outliers (spikes), as in <strong>Flux &gt; Rebin Spectrum</strong> (see <a class="reference internal" href="flux_operations.html"><span class="std std-doc">Flux Operations</span></a>).</p>
@@ -661,12 +663,13 @@
 <li><p>In the <strong>Session List</strong>, hold <code class="docutils literal notranslate"><span class="pre">Ctrl</span></code> (or <code class="docutils literal notranslate"><span class="pre">Cmd</span></code> on Mac) and click to select multiple sessions.</p></li>
 <li><p>Right-click on the selection.</p></li>
 <li><p>Choose <strong>Co-add N sessions…</strong>.</p></li>
-<li><p>A dialog will ask for the grid parameters (e.g., step size <code class="docutils literal notranslate"><span class="pre">dx</span></code>).</p></li>
+<li><p>A dialog will ask for the grid parameters (e.g., step size <code class="docutils literal notranslate"><span class="pre">dx</span></code>; <code class="docutils literal notranslate"><span class="pre">xstart</span></code> must be below <code class="docutils literal notranslate"><span class="pre">xend</span></code>).</p></li>
 <li><p>A new, combined session will be created.</p></li>
 </ol>
+<p>The first session listed is the reference: the others are scaled to its flux by a polynomial of order <code class="docutils literal notranslate"><span class="pre">equalize_order</span></code> (0, a constant factor, the default, up to 5), or not scaled if it is <code class="docutils literal notranslate"><span class="pre">None</span></code> (the session logs written before version 2.7 say <code class="docutils literal notranslate"><span class="pre">-1</span></code>, which is the same).</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>You can also access this tool via <strong>Edit &gt; Co-add Spectra…</strong>. This opens a dialog where you can manually type the names of the sessions to combine (comma-separated), which is useful for scripting.</p>
+<p>You can also access this tool via <strong>Edit &gt; Co-add Spectra…</strong>. This opens a dialog where you can manually type the names of the sessions to combine (comma-separated, this session among them), which is useful for scripting.</p>
 </div>
 </section>
 <section id="stitching">
@@ -693,9 +696,9 @@ If the stitched spectra <strong>overlap</strong>, the pixels of the overlap regi
 <li><p>Right-click and choose <strong>Equalize and Stitch N Arms…</strong>.</p></li>
 <li><p>A dialog will appear asking for exact parameters to guide the combination:</p>
 <ul class="simple">
-<li><p><strong>stitch_wavelengths</strong>: Enter the precise wavelengths (in nm) where one arm should stop and the next should begin (e.g., <code class="docutils literal notranslate"><span class="pre">550,</span> <span class="pre">1000</span></code>). You must provide exactly <span class="math notranslate nohighlight">\(N-1\)</span> values.</p></li>
+<li><p><strong>stitch_wavelengths</strong>: Enter the precise wavelengths (in nm) where one arm should stop and the next should begin (e.g., <code class="docutils literal notranslate"><span class="pre">550,</span> <span class="pre">1000</span></code>), increasing. You must provide exactly <span class="math notranslate nohighlight">\(N-1\)</span> values, and each arm must have pixels between its cuts.</p></li>
 <li><p><strong>equalize_ranges</strong>: (Optional) Specify the exact overlap window (e.g., <code class="docutils literal notranslate"><span class="pre">545-555,</span> <span class="pre">995-1005</span></code>) Astrocook should use to calculate the flux scaling factor. Leave as <code class="docutils literal notranslate"><span class="pre">auto</span></code> to attempt a global match.</p></li>
-<li><p><strong>manual_factors</strong>: (Optional) If you already know the exact flux multipliers, enter them here to override automatic calculation.</p></li>
+<li><p><strong>manual_factors</strong>: (Optional) If you already know the exact flux multipliers (positive), enter them here to override automatic calculation.</p></li>
 </ul>
 </li>
 </ol>

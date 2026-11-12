@@ -574,6 +574,20 @@
     <span class="k">raise</span> <span class="n">InvalidParameter</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">param</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">text</span><span class="si">!r}</span><span class="s2"> is not one of </span><span class="si">{</span><span class="n">allowed</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_sessions</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""A session given as itself, in a script (kept for the recipe), or a</span>
+<span class="sd">    list of sessions (names, or sessions) for a parameter of kind</span>
+<span class="sd">    ``sessions``: the names joined by commas, as the dialogs and the logs</span>
+<span class="sd">    write them (phase 6-quater, PR 9); None for the other values."""</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes._sessions</span><span class="w"> </span><span class="kn">import</span> <span class="n">is_session</span><span class="p">,</span> <span class="n">split_names</span>
+    <span class="k">if</span> <span class="n">is_session</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">value</span>
+    <span class="k">if</span> <span class="n">param</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s1">'sessions'</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+        <span class="n">items</span> <span class="o">=</span> <span class="n">split_names</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">items</span><span class="p">)</span> <span class="k">else</span> <span class="n">items</span>
+    <span class="k">return</span> <span class="kc">None</span>
+
+
 <div class="viewcode-block" id="convert">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.params.html#astrocook.recipes.params.convert">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">convert</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
@@ -582,6 +596,10 @@
 <span class="sd">    bounds; :class:`InvalidParameter` if it cannot be."""</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">param</span><span class="o">.</span><span class="n">keep</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">value</span>  <span class="c1"># a special value, such as '_current_'</span>
+    <span class="k">if</span> <span class="n">param</span><span class="o">.</span><span class="n">kind</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">'session'</span><span class="p">,</span> <span class="s1">'sessions'</span><span class="p">):</span>
+        <span class="n">sessions</span> <span class="o">=</span> <span class="n">_sessions</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">sessions</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">sessions</span>
     <span class="k">if</span> <span class="n">param</span><span class="o">.</span><span class="n">optional</span> <span class="ow">and</span> <span class="n">param</span><span class="o">.</span><span class="n">type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">str</span> <span class="ow">and</span> <span class="p">(</span>
             <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span>
                 <span class="n">value</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="n">NONE_STRING</span>
@@ -648,9 +666,14 @@
     <span class="k">if</span> <span class="n">spec</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
     <span class="n">params</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">canonical</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes._sessions</span><span class="w"> </span><span class="kn">import</span> <span class="n">session_names</span>
     <span class="n">resolved</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">spec</span><span class="o">.</span><span class="n">params</span><span class="p">:</span>
         <span class="n">resolved</span><span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">convert</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">name</span><span class="p">])</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">params</span> <span class="k">else</span> <span class="n">p</span><span class="o">.</span><span class="n">default</span>
+        <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">kind</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">'session'</span><span class="p">,</span> <span class="s1">'sessions'</span><span class="p">):</span>
+            <span class="c1"># The log holds names: a session given as itself in a script</span>
+            <span class="c1"># could not be replayed (phase 6-quater, PR 9)</span>
+            <span class="n">resolved</span><span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">session_names</span><span class="p">(</span><span class="n">resolved</span><span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">name</span><span class="p">])</span>
     <span class="n">resolved</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">resolved</span><span class="p">})</span>
     <span class="k">return</span> <span class="n">resolved</span></div>
 

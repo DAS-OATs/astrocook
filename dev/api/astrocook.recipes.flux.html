@@ -691,10 +691,20 @@ Defaults to <code class="docutils literal notranslate"><span class="pre">0</span
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A new session with the scaled flux.</p>
+<dd class="field-even"><p>A new session with the scaled flux, in the unit of its flux (an
+arbitrary flux scaled to a physical one takes the unit of the
+reference).</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="astrocook.session.session.html#astrocook.session.session.Session" title="astrocook.session.session.Session">Session</a></p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="astrocook.recipes.errors.html#astrocook.recipes.errors.RecipeFailed" title="astrocook.recipes.errors.RecipeFailed"><strong>RecipeFailed</strong></a> – If the reference is not an open session, its axis cannot be
+    compared with this one (a velocity against a wavelength), or a
+    flux is normalized and the other is not (phase 6-quater, PR 9,
+    F138: the values were compared as they were, so an axis in Å
+    against one in nm was not scaled, and a flux per Å against one
+    per nm came out off by their ratio).</p>
 </dd>
 </dl>
 </dd></dl>
