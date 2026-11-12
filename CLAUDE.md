@@ -132,6 +132,14 @@ Current version: 2.6.0. Python ≥3.12.
   so); coverage with `pytest --cov=astrocook` (86%, the GUI 85%, the core
   92%, after phase 6-bis): before changing production code, add
   characterization tests for the behaviour involved.
+- Which tests to run locally (agreed with Guido, November 2026): the test
+  files of the change and those of the code it touches (e.g. the recipes
+  changed: their review, inputs, errors, registry and MCP schema tests),
+  plus `ruff check .` and `mypy`; the full suite is left to the CI of the
+  PR (in the cloud sessions it takes about 25 minutes on 4 cores, not 3).
+  Run it in full only for a change across the package (a rename, a moved
+  module, a shared mechanism such as `typed_recipe` or the registry). Say
+  in the PR which tests were run.
 - Warnings are errors in the tests (`filterwarnings = ["error"]` in
   `pyproject.toml`, phase 6): a test that expects a warning says so
   (`pytest.warns`, or `warnings.catch_warnings` with a local filter); a
@@ -176,7 +184,10 @@ Current version: 2.6.0. Python ≥3.12.
   fast suite is enough: say in the PR why the numbers cannot change, and
   leave the slow tests to the CI job after the merge. When the benchmark
   cannot measure a fix (e.g. F55: no absorption beyond z_em in the mocks),
-  a targeted test replaces it.
+  a targeted test replaces it; the same when no slow test and no pipeline
+  goes through the code changed (check with `grep` first, e.g. PR 10-bis
+  of 6-quater: nothing calls `fit_bayesian`): say so in the PR and skip
+  them.
 
 ## Direction
 - v2: consolidation (tests and CI, cleanup, decoupling from legacy,
