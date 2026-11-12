@@ -109,7 +109,8 @@ def test_the_old_and_the_new_name_together_are_refused(params):
 
 #: The parameters of the package renamed, as in the table of the renamed
 #: parameters of ROADMAP.md: (recipe, new name) -> old names
-RENAMED = {("export_ascii", "folder"): ("path",)}  # phase 6-quater, PR 7
+RENAMED = {("export_ascii", "folder"): ("path",),  # phase 6-quater, PR 7
+           ("trim_common", "other_sessions"): ("others_names",)}  # PR 9
 
 
 def test_the_renamed_parameters_of_the_package():

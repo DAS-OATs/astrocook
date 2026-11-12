@@ -333,6 +333,7 @@ without a change of the numerical results except where Guido decided it
   | Recipe | Old name | New name | PR |
   |---|---|---|---|
   | `file.export_ascii` | `path` | `folder` | 6-quater, PR 7 |
+  | `edit.trim_common` | `others_names` | `other_sessions` | 6-quater, PR 9 |
 
 - *Prerequisites of the recipes* (proposed in phase 6, PR 5c, after an
   analysis asked by Guido, November 2026; to be refined with him before
