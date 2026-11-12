@@ -1299,11 +1299,14 @@ its own, except the smallest; the model of each PR proposed by the rule
 | 5 | `SessionV2` (and `SessionHistory`) out of `core/`, e.g. into `astrocook/session/`, the old import kept as an alias | Sonnet | 2-3 h (done, 11 November 2026: see below) |
 | 6 | The `V2` suffixes dropped, with the aliases of PR 2 (code, tests, docs) | Sonnet | half a day (done, 11 November 2026: see below) |
 | 7 | Review of the recipes of file and flux (8 recipes) | Opus | half a day (done, 11 November 2026: see below) |
-| 8 | Review of edit, columns and expressions (`set_properties`, `x_convert`, `y_convert`, `apply_expression`, `mask_expression`, `smooth_column`), with F120 (one set of column names) | Opus | half a day to a day |
-| 9 | Review of edit, several spectra (`delete`, `split`, `extract_preset`, `trim_common`, `stitch`, `equalize_and_stitch` with its complexity of 31, `coadd`, `import_systems`, `import_systems_ascii`) | Opus | a day |
-| 10 | Review of the manual fits (`add_component`, `update_component(s)`, `delete_component`, `detect_anchor`, `fit_component`, `update_constraint(s)` with F117, `add_linked_system`, `optimize_system`, `fit_bayesian`); possibly split in two | Opus | a day to a day and a half |
-| 11 | F107: the labels of the menus of the GUI from the registry (and the screenshots) | Sonnet | 2-4 h |
-| 12 | MCP server: the descriptions of the shared parameters shorter, a paragraph of typical workflows in the instructions, the banner of a followed session with the pid and the version of the marker | Sonnet | 2-3 h |
+| 8 | Review of edit, columns and expressions (`set_properties`, `x_convert`, `y_convert`, `apply_expression`, `mask_expression`, `smooth_column`), with F120 (one set of column names) | Opus | half a day to a day (done, 12 November 2026: see below) |
+| 8-bis | The units of the flux and the CSV files (agreed with Guido on PR 8, 12 November 2026): a loader assigns a physical unit to the flux only when it reads it (`BUNIT`, `TUNIT` or a known descriptor of the format), otherwise an Astrocook unit of arbitrary flux (`def_unit`, registered so that the archives and the FITS files read it back); a way to declare the unit of the flux without converting it (`y_convert` converts); `export_ascii` writes the names of the GUI in ASCII (`lam`, `lammin`, `lammax`, `F`, `dF`, ...) and the units, read back by the CSV loader (`x`, `y`, `dy` and the old files still read), and `import_ascii` skips `lam` as it skips `x`; F129 (found on PR 8: the CSV files hold no units, the loader assumes nm and `erg/(Å s cm2)`, so a spectrum exported after `y_convert` or with the axis in km/s comes back with the wrong unit, and `cont` is lost). Today `astrocook_fits`, `simple_csv`, `ascii_telluric_model`, `xshooter_fits` and the V1 archives assign `erg/(Å s cm2)` always, PypeIt, ESPRESSO S2D and `ascii_resvel_header` dimensionless; the iso-magnitude grid is drawn for an uncalibrated spectrum labelled `erg/(Å s cm2)`. Values unchanged (only units), so no number of the continuum, the fits or the identification moves; sample files of the formats needed for the specific loaders | Opus | 3-4 h |
+| 9 | Review of edit, several spectra (`delete`, `split`, `extract_preset`, `trim_common`, `stitch`, `equalize_and_stitch` with its complexity of 31, `coadd`, `import_systems`, `import_systems_ascii`) | Opus | 2-3 h |
+| 10 | Review of the manual fits (`add_component`, `update_component(s)`, `delete_component`, `detect_anchor`, `fit_component`, `update_constraint(s)` with F117, `add_linked_system`, `optimize_system`, `fit_bayesian`); possibly split in two | Opus | 3-5 h (two PRs if split) |
+| 11 | F107: the labels of the menus of the GUI from the registry (and the screenshots) | Sonnet | 1 h |
+| 12 | MCP server: the descriptions of the shared parameters shorter, a paragraph of typical workflows in the instructions, the banner of a followed session with the pid and the version of the marker | Sonnet | 1 h |
+| 13 | Closing of the phase (added on PR 8, Guido): "Result of the phase" in this section, the progress table, "Rules and decisions in force" (what of the phase still holds: the aliases, the one set of names of the columns, the units of the flux), `CLAUDE.md`; the concluded detail moved to `ROADMAP_HISTORY.md` | Sonnet | 1 h |
+| 14 | Release 2.7.0 (added on PR 8, Guido): the version, the CHANGELOG (the summary of the phase and the numerical results: unchanged on the benchmark), the "preferred" entry of `switcher.json`; the release and the macOS app published by Guido | Sonnet | 1 h |
 
 - *Result of PR 3* (type checker, step 1; 11 November 2026): `mypy`
   (`[tool.mypy]` in `pyproject.toml`, `files` = `recipes/` and
@@ -1424,6 +1427,12 @@ its own, except the smallest; the model of each PR proposed by the rule
   6-bis: 19 PRs in about 3 days; 6-ter: about 15 in 5); 2-3 weeks of
   calendar, the bottleneck being one PR at a time and Guido's review of
   the tables of PRs 7-10.
+  *Recalibrated on PR 8* (Guido, 12 November 2026): PRs 1-7 took one
+  working day in all, so the estimates above were 4-8 times too long (the
+  estimates of PRs 1-8 are left as written, as a record). The PRs left,
+  with 8-bis, 13 (closing) and 14 (release 2.7.0) added on PR 8: about
+  12-16 h of the sessions, two working days; the calendar is set by
+  Guido's review of the tables of 8-bis, 9 and 10.
 - *Open decisions*, to be taken in the PR concerned:
   - ~~an old name (parameter or class): a silent alias, or a
     `DeprecationWarning` with a version of removal (the tests treat
@@ -1602,6 +1611,79 @@ its own, except the smallest; the model of each PR proposed by the rule
   - New `tests/test_recipe_review_file_flux.py` (the behaviour kept and
     the behaviour changed, each test saying what it was), new cases in
     `test_recipe_inputs.py`; `test_mcp_schemas.py` follows `folder`.
+- *Result of PR 8* (review of edit on columns and expressions, with F120;
+  12 November 2026; the table of the parameters and the set of names
+  agreed with Guido in the conversation of the PR): of the 17 parameters
+  of the 6 recipes (and `input_col`, `output_col` of
+  `calculate_running_std`, `targets` of `export_ascii`, left by PR 7) none
+  renamed, two defaults removed, one changed; no result of a valid call
+  changes, so no benchmark and no slow test.
+  - *F120, one set of names*: those of the GUI (`λ`, `λmin`, `λmax`, `F`,
+    `dF`, the other columns by their own name), wherever a column is
+    named: the values of the parameters of kind `column`, the expressions,
+    the defaults, the descriptions, the messages, the MCP tools, the docs.
+    Chosen because the GUI, the tutorials and the expressions that the GUI
+    writes in the logs (the regions, `(λ > ...) & (λ < ...)`) already used
+    them; `λ` was chosen for its look (Guido), so `lam`, `lammin`,
+    `lammax` are its ASCII spelling (not `lambda`, a keyword of Python:
+    `df.lambda` fails in pandas; Guido). The names of the data (`x`, ...,
+    `dy`) stay those of the archives, of the CSV files of `export_ascii`
+    and of the attributes `Spectrum.x`, `.y`, `.dy`, and are accepted
+    everywhere as silent and permanent aliases: the logs, the saved
+    expressions and the scripts are not translated (the values are not
+    parameters, so `ParamSpec.aliases` does not apply: the translation is
+    where a recipe reads a column). The names of the parameters that name
+    an axis keep `x` and `y` (`xunit`, `xstart`, `x_min` of the tools,
+    `x_convert`). One module, `core/column_names.py` (`internal_column`,
+    `internal_expression`, `display_column`, `is_core_column`,
+    `is_axis_column`), replaces the five copies of the mapping (edit,
+    `export_ascii`, `columns_in_range`, the recipe dialog, the data
+    inspector); `GUI_COLUMN_NAMES` is still importable from
+    `core/spectrum.py`. Found there: `calculate_running_std` did not find
+    `F` (the button of its dialog) and wrote a column `F` that the
+    expressions read as `y`. MCP: `spectrum_read` reads `F`, `dF`, `cont`,
+    `model` by default and gives the axis as `λ`, or under the name asked
+    for it (`columns_in_range` returns `axis`); `session_describe` lists
+    the columns by these names; a paragraph of the instructions says it.
+  - *Defaults*: `target_col` and `expression` of `apply_expression`
+    removed (required, `""`; they were `F` and `F / dF`, which replaced
+    the flux with its S/N from the GUI or the MCP server; the method had
+    no default already); `input_col` of `calculate_running_std` `'y'` →
+    `'F'` (the same column).
+  - *Refused before the recipe runs* (`InvalidParameter`, characterized
+    before the change): a target of `apply_expression` that is not an
+    identifier (`''`, `'a b'` made columns no expression could name); the
+    axis as the target of `apply_expression`, `mask_expression`,
+    `smooth_column` (F127); a column to mask or smooth that does not exist
+    (the message lists the columns; it blamed the expression); `name` of
+    `set_properties` empty (ignored without a word); `xunit` neither a
+    wavelength nor a velocity, `yunit` not convertible from the unit of the
+    flux (both failed in the conversion, the same outcome); `output_col` of
+    `calculate_running_std` with a name of the GUI of a core column.
+  - *Kept*: `object` of `set_properties` (it hides the builtin in the
+    method, but it is clear to a user and an agent: not worth an alias),
+    the `_current_` of `z_em`, `resol` and `z_ref`, the defaults of
+    `mask_expression` (`F`, `dF <= 0`: a sensible cleaning) and of
+    `smooth_column` (`dF`, 100 km/s), `alias_map` (out of the registry, the
+    GUI only, as `norm` of `rebin`).
+  - *Descriptions*: the zero of the velocity axis of `x_convert` (the
+    Lyman-alpha emission at 121.567 nm (1 + z_ref)), `yunit` per unit
+    wavelength, `resol` in pixels with the axis in wavelength, the
+    functions of NumExpr; the message of a function NumExpr does not have
+    (F128).
+  - *Left*: F84 (`x_convert` does not keep `z_ref`; a round trip with
+    z_em changed in between gives shifted wavelengths, checked again here)
+    to phase 7 (Guido: for order), documented as a warning in the
+    tutorial of Edit; F126 (the unit of a new column) and F128 (the
+    functions of the expressions) registered, not changed.
+  - *Docs*: the tutorial of Edit (the names of the columns, the functions,
+    the axis not a target, a new section on the conversion of the axes
+    with the warning of F84), of Flux (`F`), *Using Astrocook from an AI
+    Agent* (`spectrum_read`), the CHANGELOG. No screenshot changed: the
+    scenes give their values (`flux_running_std` now passes `F`, the same
+    image).
+  - New `tests/test_recipe_review_edit_columns.py` (the behaviour kept and
+    the behaviour changed, each test saying what it was).
 - *Decisions of PR 2* (old names; proposed in the conversation of PR 2,
   agreed with Guido, 11 November 2026):
   - *A renamed parameter*: its old names are `aliases` of the parameter in
@@ -1870,12 +1952,15 @@ Exception: anything that loses user data or crashes is reported at once.
 | F117 | `update_constraint` (description and checks) | The description of `expression` gives `'p["z"]'` as its example; the expressions that work name the target, `p['<uuid>'].z` (the docstrings of the method and of `SystemListV2` say so). With the example, the constraint is stored with a warning ("the linked z could not be computed") and the next fit ignores it: in trial 3 of PR 7 the SiIV kept its own z after a refit, and `components_list` showed `linked: p["z"]`. `target_uuid` is stored next to the expression but not used to evaluate it. An expression that cannot be evaluated is kept, not refused | doc, behaviour | — | open; decided (Guido, on PR 7, November 2026): the example corrected (`p['<uuid>'].z`) and an expression that cannot be evaluated refused (`InvalidParameter`, nothing stored), not stored with a warning; `target_uuid` not used to expand a bare name. fixed in PR 7-ter (the check runs also with `is_free` left out, where the link was stored unchecked and kept frozen by the fit with an ERROR line; the example corrected) |
 | F118 | `optimize_system` (stop criterion, output) | On the mock of trial 3 (PR 7) the optimizer added nothing to a single CIV that hides two components 9.4 km/s apart, where a second component added by hand lowers the chi2 on fixed pixels from 55.4 to 37.1 (dAIC -12): it tries a component only where a residual pixel exceeds `threshold_sigma` (2.5), and the deepest was 2.1 sigma (the reason is an INFO line of the log, not in the result: the agent saw "1 component changed" and nothing else). A systematic misfit spread over many pixels is not seen. Related to F58 (the pipelines never add components from the residuals) | behaviour, output | — | open: the criterion to phase 7 (a heuristic, Guido's); decided (Guido, on PR 7): the reason of the stop (e.g. the deepest residual against `threshold_sigma`) and the AIC of each component tried in `RecipeResult.extra`, numbers unchanged, fixed in PR 7-ter (`details.optimization`: `start_aic`, `tried`, `stopped`), the criterion open: phase 7 |
 | F119 | `doublets_auto` (scoring of the candidates) | The SiIV doublet of the z = 2.2 system of the mock of trial 3 (logN 12.9, b 9, S/N 50; depths 0.55 and 0.33) is found as a kinematic candidate but scored R^2 = 0.483, below the threshold of 0.5, and dropped; 0.485 with the true continuum, so the continuum (on the wing of the NV emission) is not the cause. The candidates dropped are not in the result: the agent found the SiIV by eye | behaviour, output | — | open: the scoring to phase 7 (identification); decided (Guido, on PR 7): the candidates dropped, with their score, in `RecipeResult.extra`, fixed in PR 7-ter (`details.dropped_candidates`: series, z, score, threshold, x range; not the forest doublets, which no score accepts), the scoring open: phase 7 |
-| F120 | names of the columns (expression recipes, MCP reads) | `edit_apply_expression` and `edit_mask_expression` document the columns by the names of the GUI (`λ`, `F`, `dF`, `cont`), `file_export_ascii` too (`F, dF, cont`); `spectrum_read` and `spectrum_plot` want `x`, `y`, `dy`. In trial 3 of PR 7 a read with `F`, `dF` failed (the error listed the valid names) | cosmetic, output | — | open; decided (Guido, on PR 7): `spectrum_read` and `spectrum_plot` also accept the names of the GUI (`λ`, `F`, `dF`, ...) as aliases, fixed in PR 7-ter (`SpectrumV2.columns_in_range`, values under the name asked; `spectrum_plot` takes no columns); the one set of names in phase 6-quater |
+| F120 | names of the columns (expression recipes, MCP reads) | `edit_apply_expression` and `edit_mask_expression` document the columns by the names of the GUI (`λ`, `F`, `dF`, `cont`), `file_export_ascii` too (`F, dF, cont`); `spectrum_read` and `spectrum_plot` want `x`, `y`, `dy`. In trial 3 of PR 7 a read with `F`, `dF` failed (the error listed the valid names) | cosmetic, output | — | open; decided (Guido, on PR 7): `spectrum_read` and `spectrum_plot` also accept the names of the GUI (`λ`, `F`, `dF`, ...) as aliases, fixed in PR 7-ter (`SpectrumV2.columns_in_range`, values under the name asked; `spectrum_plot` takes no columns); the one set of names in phase 6-quater. Fixed in phase 6-quater, PR 8 (Guido, 12 November 2026): the names of the GUI everywhere a column is named (`core/column_names.py`), `lam` (`lammin`, `lammax`) its ASCII spelling, the names of the data (`x`, ..., `dy`) silent and permanent aliases; two cases that failed found there: `calculate_running_std` did not find `F` (the button of its dialog), and wrote a column `F` that no expression could read |
 | F121 | `metals_auto` (acceptance of a trial ion) | `metals_auto` kept a trial ion if its fit gave logN >= 12 and 2 <= b <= 50 km/s; `aic_penalty` was accepted and not used, while its description, the `details` of the registry and the methods text said that an ion is kept if it decreases the AIC by it. Once the ions found were kept (F111), the criterion kept 192 ions of 239 on J0103-1305, 67 of them with b = 50 km/s (the bound), 9 with logN = 19 (the bound), 30 with an AIC change above -5; on the mock of trial 1 a spurious SiIV at z = 1.83 (logN 12.80, b = 50.0) | behaviour | — | partly fixed (Guido's choice, PR 7-quater): an ion is not kept with b or logN at the bounds of the fit (within 0.1 per cent) nor with an AIC change above `-aic_penalty` (against the same model without it, on the pixels of its fit), and each ion tried is reported with the reason (`tried`). Open (phase 6-quater or 7): on the mock of trial 1 a spurious CII at z = 1.83 in the forest is still kept (logN 12.58, b 18, AIC change -33); a trial ion that absorbs a Lyman-alpha line improves the AIC anyway, and the model without it keeps the neighbours refitted with it (a bias towards keeping): the comparison with the alternative identification (Lyman-alpha) is for phase 7; measured on the mocks (the benchmark does not run `metals_auto`). Measured on J0103-1305 raw with the code of master after #747 (November 2026; `edit.set_properties` z_em = 4.07, R = 45000, `continuum.estimate_auto`, `doublets_auto`: 65 components, then `metals_auto` on the six default ions, through `recipes.result.run`): 320 trials built (64 redshifts), 81 not tried for their lines outside the spectrum (as before), 239 fitted, **82 kept** (CII 12, CIV 5, NV 17, OVI 18, SiIV 30; against 192 with the old criterion, 67 of them at b = 50 km/s; none now), 157 not kept: b at its bound 108, logN below 12 29, AIC change above -5 7, b below 2 km/s 7, logN at its bound (19) 6. Time: the trials 386 s (6.4 min) and the final `refit_all` 121 s, 507.5 s the recipe, against 26.7 min for the 239 trials of the old criterion; the whole chain 8.9 min; 147 components at the end. The run interrupted at 70 per cent with the rules of F121 kept 60 of 182 tried (33 per cent), the complete one 82 of 239 (34 per cent) |
 | F122 | `calculate_running_std` (`output_col`) | With `output_col` empty or the name of a column of every spectrum (`x`, `xmin`, `xmax`, `y`, `dy`) the result went to an auxiliary column of that name, which the table, the dialogs and the reads do not show (the column of the spectrum unchanged): the result was lost without a word. Found in the review of PR 7 (phase 6-quater) | behaviour | `tests/test_recipe_review_file_flux.py` | fixed (Guido, PR 7 of 6-quater): `InvalidParameter` before the recipe runs |
 | F123 | `equalize` and `coadd` (`order = -1`) | `-1` means two things: a spline in `flux.equalize` (`order`), no scaling in `edit.coadd` (`equalize_order`). Found in the review of PR 7 (phase 6-quater) | cosmetic, interface | — | open: PR 9 of 6-quater (`coadd`); `equalize` keeps -1 as its lowest value (PR 7) |
 | F124 | `rebin` (`xstart`, `xend`) | With `xstart` not below `xend` the recipe gave a spectrum without pixels, without a word. Found in the review of PR 7 (phase 6-quater) | behaviour | `tests/test_recipe_review_file_flux.py` | fixed (Guido, PR 7 of 6-quater): `InvalidParameter`; the same check for the range of `coadd` in PR 9 |
 | F125 | GUI, the *Help* button of the dialogs | The `url` of the recipes in the registry are relative names of pages of the V1 documentation (`file_cb.html#export`, `edit_cb.html#rebin`, ...; some marked "Placeholder URL"), which `webbrowser.open` cannot open as pages of the documentation; some recipes have none. All the recipes. Found in the review of PR 7 (phase 6-quater) | cosmetic | — | open: PR 11 of 6-quater (F107, the menus from the registry): the pages of `docs/` |
+| F126 | `apply_expression` (units) | A new column made by an expression is dimensionless whatever the expression: `F_corr = F * 2` loses the unit of the flux (`erg/(nm s cm2)`); a column replaced keeps its unit, also when the expression changes it (`F = F / cont`). Found in the review of PR 8 (phase 6-quater) | behaviour | — | open (Guido, PR 8: registered, not changed; a unit from the expression would need the units of NumExpr's operations); documented in the tutorial of Edit |
+| F127 | expression recipes (the axis) | `apply_expression`, `mask_expression` and `smooth_column` wrote the columns of the axis: `λ = λ * 0 + 1` replaced the wavelengths (without `λmin` and `λmax`), a mask put NaN in them, the smoothing smoothed them. Found in the review of PR 8 (phase 6-quater) | behaviour | `test_the_axis_is_not_written` | fixed in PR 8 (Guido's choice): refused (`InvalidParameter`), the axis is changed by `x_convert`; a correction of the wavelengths (`λ * (1 + v/c)`, air to vacuum) would need the three columns together, a recipe of its own if wanted |
+| F128 | expressions (functions) | `_NE_GLOBAL_DICT` (`core/spectrum_expressions.py`) offers `median`, `mean`, `std` (NumPy, NaN-aware) and `min`, `max` (`nanmin`, `nanmax`) to NumExpr, which cannot call Python functions: `median(F)`, `mean(F)`, `std(F)` failed with "'VariableNode' object is not callable", while `min(F)`, `max(F)` are NumExpr's own reductions (a NaN gives NaN), as `sum` and `prod`. The comment in the code says otherwise. Found in the review of PR 8 (phase 6-quater) | behaviour | `test_function_that_numexpr_does_not_have` | open: the message says which functions there are (PR 8); the dictionary is left as it is (removing it changes nothing, offering the NaN-aware ones would need evaluating them outside NumExpr: Guido's choice) |
 
 Closed findings (fixed or accepted: all the others, F1 to F106 and F108 to F110) are in `ROADMAP_HISTORY.md`, "3.2 Findings register", one row each, to be found by number (`grep "^| F52 "`).
 
@@ -2277,5 +2362,5 @@ One line per concluded phase; the long rows are in `ROADMAP_HISTORY.md`, "7. Pro
 | 6 – Error handling | done (November 2026), PRs #691-#701; release 2.4.0 |
 | 6-bis – Recipe API | done (November 2026), PRs #705-#723; release 2.5.0 |
 | 6-ter – Full MCP server | done (November 2026), PRs #726-#747 and the closing PR 8; release 2.6.0 published on GitHub on 10 November 2026 (PR 9, #751: version, CHANGELOG, `switcher.json`); plan of the phase agreed (PR 0, #726); the tools generated from the registry, F106 found (PR 1, #729); F106 fixed (PR 1-bis, #730); the tools of the sessions, undo and redo (PR 2, #731); the tools of inspection (PR 3, #732); progress notifications (PR 4, #733); the agent's decisions in the log (PR 5a); the gaps of the recipes (PR 5b); the log as the text of a methods section (PR 5c); the GUI following a session of the server, F109 found (PR 5-bis); the headless Docker image, F110 found (PR 6, not published); trials with fresh agents, F111-F116 found (PR 7, report in section 4.3); heartbeat and reads during a recipe, F113 in part (PR 7-bis); trial 3, the editing tools, F117-F120 found (PR 7); the outputs of trial 3 (PR 7-ter); F111 and the cancellation, F113 closed, F121 found (PR 7-quater) |
-| 6-quater – Review of the recipe parameters | in progress (November 2026): plan of the phase agreed (in PR 1, ruff `B`); PR 2, the aliases of the renamed parameters; PR 3-4-bis, mypy on the whole package; PR 5, `SessionV2` and `SessionHistory` into `astrocook/session/`; PR 6, the `V2` suffixes dropped (#759); PR 7, the review of file and flux, F122-F125 found |
+| 6-quater – Review of the recipe parameters | in progress (November 2026): plan of the phase agreed (in PR 1, ruff `B`); PR 2, the aliases of the renamed parameters; PR 3-4-bis, mypy on the whole package; PR 5, `SessionV2` and `SessionHistory` into `astrocook/session/`; PR 6, the `V2` suffixes dropped (#759); PR 7, the review of file and flux, F122-F125 found (#761); PR 8, the review of edit on columns and expressions, F120 fixed (one set of names of the columns), F126-F128 found, F127 fixed |
 | 7 – Robust components | not started |

@@ -1,12 +1,12 @@
 from astrocook._renamed import renamed
 import logging
 import os
-import re
 import numpy as np
 from astropy.io import ascii
 from astropy.table import Table
 from typing import TYPE_CHECKING, List
 
+from astrocook.core.column_names import internal_expression
 from astrocook.recipes.errors import RecipeFailed
 from astrocook.recipes._spectrum import spec_of
 from astrocook.recipes.params import typed_recipe
@@ -30,7 +30,7 @@ FILE_RECIPES_SCHEMAS = {
         "brief": "Export session data to ASCII.",
         "details": "Writes the chosen data as CSV files in a folder: the columns of the spectrum to <prefix>_spec.csv (always with the wavelength), the system list to <prefix>_systems.csv (always with the series and the redshift). Items that are neither a column nor 'spec' or 'systems' are skipped, with a warning.",
         "params": [
-            {"name": "targets", "type": str, "default": "F, cont, systems", "doc": "Comma-separated items to export: 'spec' (all the columns of the spectrum) or some of its columns (e.g. 'F, dF, cont'), and 'systems' (the system list) or some of its columns (e.g. 'z, logN')."},
+            {"name": "targets", "type": str, "default": "F, cont, systems", "doc": "Comma-separated items to export: 'spec' (all the columns of the spectrum) or some of its columns (e.g. 'F, dF, cont'; the file names them as in the data: x, y, dy), and 'systems' (the system list) or some of its columns (e.g. 'z, logN')."},
             # 'path' until phase 6-quater, PR 7 (an agent could take it for
             # the path of a file, as in session_save)
             {"name": "folder", "type": str, "default": "", "gui_hidden": True, "aliases": ["path"], "doc": "Folder where the files are written."},
@@ -185,11 +185,8 @@ class RecipeFile:
         asked for, and the targets with the names of the GUI translated.
         ``'spec'`` asks for all the columns of the spectrum.
         """
-        mapping = {'λ': 'x', 'λmin': 'xmin', 'λmax': 'xmax', 'F': 'y', 'dF': 'dy'}
-        processed_targets = targets
-        for ui_name, internal_name in mapping.items():
-            # Replace whole words only
-            processed_targets = re.sub(r'\b' + re.escape(ui_name) + r'\b', internal_name, processed_targets)
+        # The names of the GUI (λ, F, dF, ...) to those of the data (F120)
+        processed_targets = internal_expression(targets)
 
         target_list = [t.strip() for t in processed_targets.split(',') if t.strip()]
 

@@ -27,6 +27,9 @@ Guido gives each PR (except the smallest) a conversation of its own, and
 chooses its model. At the start of each phase, when its plan is written,
 say for each PR whether Sonnet is enough, with an estimate of its time,
 and write both in the plan of the phase in `ROADMAP.md`.
+Calibration (phase 6-quater): PRs 1-7 took one working day in all, about
+1 h for a mechanical PR (Sonnet) and 2-4 h for a review (Opus); the
+estimates of the plan had been 4-8 times longer.
 - Sonnet is enough for mechanical work with a criterion of success that
   a tool checks: lint and type-checker warnings, renamings with aliases,
   moving modules, wiring an existing piece of data to another place (e.g.
@@ -207,7 +210,9 @@ recipe by recipe; done so far: ruff `B`, the aliases of renamed
 parameters, the type checker (mypy on the whole package), `Session` out of
 `core/`, the `V2` suffixes dropped from the class names and the review of
 file and flux (PR 7; the first renamed parameter, `folder` of
-`export_ascii`); next, the reviews of the other recipes (PRs 8-10); its plan, with the model and the
+`export_ascii`), and of edit on columns and expressions with one set of
+names of the columns, those of the GUI (PR 8, `core/column_names.py`);
+next, the reviews of the other recipes (PRs 9-10); its plan, with the model and the
 estimate of each PR, in `ROADMAP.md`), then
 phase 7 (robust
 components, measured on the benchmark of phase 4; the real analysis of the

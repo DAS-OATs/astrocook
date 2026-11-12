@@ -83,6 +83,11 @@ spectrum_read (the columns in a range, as numbers) and spectrum_plot (a
 plot of a range, with the continuum, the model and the components). They
 change nothing.
 
+The columns have the names of the GUI everywhere (reads, expressions,
+parameters): λ (wavelength), F (flux), dF (its error), cont, model, ...;
+λ can be written lam or x, and x, y, dy (the names in the data and in
+the CSV files) are accepted too.
+
 To let the user watch the analysis, gui_open shows a session in the Astrocook
 GUI and keeps it up to date after every change (read only for the user;
 nothing they do there reaches you). It is not available where there is no

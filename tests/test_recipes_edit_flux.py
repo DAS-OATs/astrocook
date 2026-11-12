@@ -234,7 +234,9 @@ def test_smooth_column_cont_renormalises_model():
 
 @pytest.mark.parametrize("target, sigma", [("missing", "10.0"), ("F", "abc")])
 def test_smooth_column_bad_input_fails(target, sigma):
-    with pytest.raises(InvalidParameter if sigma == "abc" else RecipeFailed):
+    # A missing column: InvalidParameter since phase 6-quater, PR 8 (it
+    # was a RecipeFailed of the core)
+    with pytest.raises(InvalidParameter):
         _session().edit.smooth_column(target, sigma)
 
 

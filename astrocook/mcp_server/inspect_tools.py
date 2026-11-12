@@ -19,6 +19,7 @@ from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import BaseModel, Field
 
 from astrocook.mcp_server.outputs import _jsonable
+from astrocook.core.column_names import internal_column
 from astrocook.recipes._spectrum import spec_of
 from astrocook.mcp_server.session_tools import SESSION_ID
 from astrocook.mcp_server.sessions import SessionStore
@@ -110,11 +111,12 @@ class SpectrumRange(BaseModel):
         "reading only, the session is not rebinned."))
     columns: dict[str, list[Optional[float]]] = Field(description=(
         "The values of the columns asked, one per point; null where not "
-        "finite. 'x' is always given."))
+        "finite. The axis is always given: as 'λ', or under the name asked "
+        "for it ('x', 'lam')."))
     units: dict[str, str]
 
 
-DEFAULT_COLUMNS = ("y", "dy", "cont", "model")
+DEFAULT_COLUMNS = ("F", "dF", "cont", "model")
 
 
 def register_inspect_tools(server: MCPServer, store: SessionStore) -> None:
@@ -176,9 +178,10 @@ def register_inspect_tools(server: MCPServer, store: SessionStore) -> None:
         x_max: Annotated[Optional[float], Field(description=(
             "End of the range; null: the end of the spectrum."))] = None,
         columns: Annotated[Optional[list[str]], Field(description=(
-            "Columns to read (session_describe lists them); the names of "
-            "the GUI work too (F = y, dF = dy, λ = x); null: y, dy, cont "
-            "and model, those present."))] = None,
+            "Columns to read (session_describe lists them): F (flux), dF "
+            "(its error), cont, model, ...; λ is written lam or x in "
+            "ASCII, and x, y, dy (the names in the data) are accepted; "
+            "null: F, dF, cont and model, those present."))] = None,
         max_points: Annotated[int, Field(ge=10, le=5000, description=(
             "Maximum number of points: a longer range is averaged in blocks "
             "of pixels."))] = 200,
@@ -190,14 +193,15 @@ def register_inspect_tools(server: MCPServer, store: SessionStore) -> None:
         with store.state_lock:
             spec = spec_of(store.get(session_id).current_state)
             if columns is None:
-                columns = [c for c in DEFAULT_COLUMNS if c in spec.t.colnames]
+                columns = [c for c in DEFAULT_COLUMNS
+                           if internal_column(c) in spec.t.colnames]
             try:
                 data = spec.columns_in_range(columns, x_min, x_max, max_points)
             except KeyError as e:
                 raise ToolError(f"{e.args[0]} (session '{session_id}')") from None
             except ValueError as e:
                 raise ToolError(str(e)) from None
-            x = data["columns"]["x"]
+            x = data["columns"][data["axis"]]
             return SpectrumRange(
                 session_id=session_id, x_unit=str(spec.x.unit),
                 x_min=float(np.nanmin(x)), x_max=float(np.nanmax(x)),

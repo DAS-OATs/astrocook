@@ -17,10 +17,10 @@ Before running complex algorithms, ensure your session metadata is correct. Many
 1.  Select your session in the **Session List** (left sidebar).
 2.  Go to **Edit > Set Properties...**.
 3.  A dialog will appear, showing the current values. Here you can update:
-    * **Name:** The label used in the list.
+    * **Name:** The label used in the list (it cannot be empty).
     * **Object:** The target name (often from the FITS header).
     * **Emission Redshift ($z_\mathrm{em}$):** Set this carefully!
-    * **Resolution ($R$):** You can enter a resolving power (e.g., `50000`) or a pixel width (e.g., `3px`). The resolution is stored in the `resol` column of the spectrum, one value per pixel, and the fits use the value of each pixel. If the resolution varies with wavelength (e.g. after co-adding spectra of different resolution), the field is left empty, with the median as a hint, and the column is kept: if you type a value there, Astrocook asks whether to replace the column with it.
+    * **Resolution ($R$):** You can enter a resolving power (e.g., `50000`) or a pixel width (e.g., `3px`, with the x axis in wavelength). The resolution is stored in the `resol` column of the spectrum, one value per pixel, and the fits use the value of each pixel. If the resolution varies with wavelength (e.g. after co-adding spectra of different resolution), the field is left empty, with the median as a hint, and the column is kept: if you type a value there, Astrocook asks whether to replace the column with it.
 
     A field left empty keeps the current value.
 
@@ -34,14 +34,20 @@ Before running complex algorithms, ensure your session metadata is correct. Many
 
 Astrocook allows you to perform mathematical operations on **any** data column (Flux `F`, Error `dF`, Wavelength `λ`, etc.) using NumPy-style syntax.
 
+:::{note}
+**The names of the columns.** Everywhere a column is named (expressions, the fields of the recipes, scripts, the MCP server) the names are those of the table of the GUI: `λ`, `λmin`, `λmax`, `F`, `dF`, and the other columns by their own name (`cont`, `model`, `resol`, ...). Where a plain ASCII name is handier, `λ` can be written `lam` (`lammin`, `lammax`). The names that the data have in the archives and in the CSV files of *Export ASCII*, `x`, `xmin`, `xmax`, `y`, `dy`, are accepted too, so the logs and the scripts written with them still work.
+:::
+
 ### General Arithmetic
 
 You can modify existing columns or create new ones.
 
 1.  Go to **Edit > Apply Expression...**.
-2.  **Target Column:** Enter the name of the column to overwrite (e.g., `F`) or create (e.g., `F_corr`).
+2.  **Target Column:** Enter the name of the column to overwrite (e.g., `F`) or create (e.g., `F_corr`): letters, digits and `_`, not starting with a digit. The two fields start empty.
 3.  **Expression:** Enter your formula (e.g., `F * 1e17`).
 4.  Click **Run**.
+
+The expressions are evaluated by [NumExpr](https://numexpr.readthedocs.io): the arithmetic operators, the comparisons, and its functions (`sqrt`, `exp`, `log`, `log10`, `abs`, `sin`, `cos`, `where`, and `sum`, `prod`, `min`, `max`, which reduce the whole column to one number). The axis (`λ`, `λmin`, `λmax`) cannot be the target: use **Convert X axis** to change its unit. A new column has no unit, whatever the expression.
 
 :::{tip}
 The recipe dialog features **toolbars** above the input fields. Click buttons like `F`, `λ`, `log10`, or `sqrt` to instantly insert them into your expression syntax error-free.
@@ -68,9 +74,18 @@ The Edit menu provides specialized tools for cleaning and organizing your data s
 
 To exclude bad data points (e.g., dead pixels or negative errors) without deleting rows:
 1.  Go to **Edit > Mask by Expression...**.
-2.  **Target Column:** The column to mask (e.g., `F`).
+2.  **Target Column:** The column to mask (e.g., `F`); not the axis (`λ`, `λmin`, `λmax`).
 3.  **Expression:** A boolean condition (e.g., `dF <= 0` or `λ < 350`).
 4.  Values satisfying this condition will be set to `NaN`.
+
+### Converting the Axes
+
+* **Edit > Convert X axis...**: converts the axis to another unit of wavelength (`nm`, `Angstrom`) or to velocity (`km/s`). The zero of the velocity is the Lyman-α emission at the reference redshift, 121.567 nm × (1 + `z_ref`); `z_ref` is $z_\mathrm{em}$ if left at `_current_`.
+* **Edit > Convert Y axis...**: converts the flux, its error and the columns in the same unit (`cont`, `model`, ...) to another unit of flux density per unit wavelength, e.g. `erg/(Angstrom s cm^2)`. A unit per frequency (`Jy`) is not converted.
+
+:::{warning}
+The spectrum does not remember the `z_ref` of a conversion to velocity: to go back to wavelength, convert with the same `z_ref`, and without changing $z_\mathrm{em}$ in between if `z_ref` was left at `_current_`; otherwise the wavelengths come back shifted.
+:::
 
 ### Smoothing Single Columns
 

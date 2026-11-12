@@ -82,7 +82,7 @@ def plot_spectrum(session, x_min: Optional[float] = None, x_max: Optional[float]
 
     colours = PLOT_PALETTES.get(palette, PLOT_PALETTES["standard"])
     spec = session.spec
-    data = spec.columns_in_range(["y", "dy"], x_min, x_max)
+    data = spec.columns_in_range(["x", "y", "dy"], x_min, x_max)
     x = data["columns"]["x"]
     lo, hi = x.min(), x.max()
     sel = (spec.x.value >= lo) & (spec.x.value <= hi)
