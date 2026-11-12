@@ -1300,11 +1300,13 @@ its own, except the smallest; the model of each PR proposed by the rule
 | 6 | The `V2` suffixes dropped, with the aliases of PR 2 (code, tests, docs) | Sonnet | half a day (done, 11 November 2026: see below) |
 | 7 | Review of the recipes of file and flux (8 recipes) | Opus | half a day (done, 11 November 2026: see below) |
 | 8 | Review of edit, columns and expressions (`set_properties`, `x_convert`, `y_convert`, `apply_expression`, `mask_expression`, `smooth_column`), with F120 (one set of column names) | Opus | half a day to a day (done, 12 November 2026: see below) |
-| 8-bis | The units of the flux and the CSV files (agreed with Guido on PR 8, 12 November 2026): a loader assigns a physical unit to the flux only when it reads it (`BUNIT`, `TUNIT` or a known descriptor of the format), otherwise an Astrocook unit of arbitrary flux (`def_unit`, registered so that the archives and the FITS files read it back); a way to declare the unit of the flux without converting it (`y_convert` converts); `export_ascii` writes the names of the GUI in ASCII (`lam`, `lammin`, `lammax`, `F`, `dF`, ...) and the units, read back by the CSV loader (`x`, `y`, `dy` and the old files still read), and `import_ascii` skips `lam` as it skips `x`; F129 (found on PR 8: the CSV files hold no units, the loader assumes nm and `erg/(Å s cm2)`, so a spectrum exported after `y_convert` or with the axis in km/s comes back with the wrong unit, and `cont` is lost). Today `astrocook_fits`, `simple_csv`, `ascii_telluric_model`, `xshooter_fits` and the V1 archives assign `erg/(Å s cm2)` always, PypeIt, ESPRESSO S2D and `ascii_resvel_header` dimensionless; the iso-magnitude grid is drawn for an uncalibrated spectrum labelled `erg/(Å s cm2)`. Values unchanged (only units), so no number of the continuum, the fits or the identification moves; sample files of the formats needed for the specific loaders | Opus | a day |
-| 9 | Review of edit, several spectra (`delete`, `split`, `extract_preset`, `trim_common`, `stitch`, `equalize_and_stitch` with its complexity of 31, `coadd`, `import_systems`, `import_systems_ascii`) | Opus | a day |
-| 10 | Review of the manual fits (`add_component`, `update_component(s)`, `delete_component`, `detect_anchor`, `fit_component`, `update_constraint(s)` with F117, `add_linked_system`, `optimize_system`, `fit_bayesian`); possibly split in two | Opus | a day to a day and a half |
-| 11 | F107: the labels of the menus of the GUI from the registry (and the screenshots) | Sonnet | 2-4 h |
-| 12 | MCP server: the descriptions of the shared parameters shorter, a paragraph of typical workflows in the instructions, the banner of a followed session with the pid and the version of the marker | Sonnet | 2-3 h |
+| 8-bis | The units of the flux and the CSV files (agreed with Guido on PR 8, 12 November 2026): a loader assigns a physical unit to the flux only when it reads it (`BUNIT`, `TUNIT` or a known descriptor of the format), otherwise an Astrocook unit of arbitrary flux (`def_unit`, registered so that the archives and the FITS files read it back); a way to declare the unit of the flux without converting it (`y_convert` converts); `export_ascii` writes the names of the GUI in ASCII (`lam`, `lammin`, `lammax`, `F`, `dF`, ...) and the units, read back by the CSV loader (`x`, `y`, `dy` and the old files still read), and `import_ascii` skips `lam` as it skips `x`; F129 (found on PR 8: the CSV files hold no units, the loader assumes nm and `erg/(Å s cm2)`, so a spectrum exported after `y_convert` or with the axis in km/s comes back with the wrong unit, and `cont` is lost). Today `astrocook_fits`, `simple_csv`, `ascii_telluric_model`, `xshooter_fits` and the V1 archives assign `erg/(Å s cm2)` always, PypeIt, ESPRESSO S2D and `ascii_resvel_header` dimensionless; the iso-magnitude grid is drawn for an uncalibrated spectrum labelled `erg/(Å s cm2)`. Values unchanged (only units), so no number of the continuum, the fits or the identification moves; sample files of the formats needed for the specific loaders | Opus | 3-4 h |
+| 9 | Review of edit, several spectra (`delete`, `split`, `extract_preset`, `trim_common`, `stitch`, `equalize_and_stitch` with its complexity of 31, `coadd`, `import_systems`, `import_systems_ascii`) | Opus | 2-3 h |
+| 10 | Review of the manual fits (`add_component`, `update_component(s)`, `delete_component`, `detect_anchor`, `fit_component`, `update_constraint(s)` with F117, `add_linked_system`, `optimize_system`, `fit_bayesian`); possibly split in two | Opus | 3-5 h (two PRs if split) |
+| 11 | F107: the labels of the menus of the GUI from the registry (and the screenshots) | Sonnet | 1 h |
+| 12 | MCP server: the descriptions of the shared parameters shorter, a paragraph of typical workflows in the instructions, the banner of a followed session with the pid and the version of the marker | Sonnet | 1 h |
+| 13 | Closing of the phase (added on PR 8, Guido): "Result of the phase" in this section, the progress table, "Rules and decisions in force" (what of the phase still holds: the aliases, the one set of names of the columns, the units of the flux), `CLAUDE.md`; the concluded detail moved to `ROADMAP_HISTORY.md` | Sonnet | 1 h |
+| 14 | Release 2.7.0 (added on PR 8, Guido): the version, the CHANGELOG (the summary of the phase and the numerical results: unchanged on the benchmark), the "preferred" entry of `switcher.json`; the release and the macOS app published by Guido | Sonnet | 1 h |
 
 - *Result of PR 3* (type checker, step 1; 11 November 2026): `mypy`
   (`[tool.mypy]` in `pyproject.toml`, `files` = `recipes/` and
@@ -1421,11 +1423,16 @@ its own, except the smallest; the model of each PR proposed by the rule
   made, with characterization tests first. No PR of the phase should
   change the numbers of the benchmark: a change of a numerical default
   is said before, and checked with `validate_mocks.py --compare`.
-- *Total*: 12-13 PRs, about 6-9 working days of the sessions (14 with
-  PR 8-bis, added on PR 8, about one day more) (phase
+- *Total*: 12-13 PRs, about 6-9 working days of the sessions (phase
   6-bis: 19 PRs in about 3 days; 6-ter: about 15 in 5); 2-3 weeks of
   calendar, the bottleneck being one PR at a time and Guido's review of
   the tables of PRs 7-10.
+  *Recalibrated on PR 8* (Guido, 12 November 2026): PRs 1-7 took one
+  working day in all, so the estimates above were 4-8 times too long (the
+  estimates of PRs 1-8 are left as written, as a record). The PRs left,
+  with 8-bis, 13 (closing) and 14 (release 2.7.0) added on PR 8: about
+  12-16 h of the sessions, two working days; the calendar is set by
+  Guido's review of the tables of 8-bis, 9 and 10.
 - *Open decisions*, to be taken in the PR concerned:
   - ~~an old name (parameter or class): a silent alias, or a
     `DeprecationWarning` with a version of removal (the tests treat

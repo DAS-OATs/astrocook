@@ -27,6 +27,9 @@ Guido gives each PR (except the smallest) a conversation of its own, and
 chooses its model. At the start of each phase, when its plan is written,
 say for each PR whether Sonnet is enough, with an estimate of its time,
 and write both in the plan of the phase in `ROADMAP.md`.
+Calibration (phase 6-quater): PRs 1-7 took one working day in all, about
+1 h for a mechanical PR (Sonnet) and 2-4 h for a review (Opus); the
+estimates of the plan had been 4-8 times longer.
 - Sonnet is enough for mechanical work with a criterion of success that
   a tool checks: lint and type-checker warnings, renamings with aliases,
   moving modules, wiring an existing piece of data to another place (e.g.
