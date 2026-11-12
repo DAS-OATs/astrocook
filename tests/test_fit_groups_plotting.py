@@ -84,17 +84,18 @@ def test_columns_in_range(spec):
     sel = (x >= 449) & (x <= 450)
     assert part["binned_by"] == 1 and part["n_pixels"] == sel.sum()
     assert part["columns"]["y"] == pytest.approx(y[sel])
-    assert part["units"]["x"] == "nm"
+    # The axis as λ when it is not asked (phase 6-quater, PR 8)
+    assert part["units"]["λ"] == "nm" and part["axis"] == "λ"
     whole = spec.columns_in_range(["y", "dy"], max_points=100)
     n = whole["binned_by"]
-    assert n == int(np.ceil(len(x) / 100)) and len(whole["columns"]["x"]) <= 100
+    assert n == int(np.ceil(len(x) / 100)) and len(whole["columns"]["λ"]) <= 100
     assert whole["columns"]["y"][0] == pytest.approx(np.mean(y[:n]))
     # The error of the mean
     assert whole["columns"]["dy"][0] == pytest.approx(np.sqrt(np.sum(dy[:n] ** 2)) / n)
 
 
 def test_columns_in_range_errors(spec):
-    with pytest.raises(KeyError, match="No column nope. The columns: x"):
+    with pytest.raises(KeyError, match="No column nope. The columns: λ"):
         spec.columns_in_range(["nope"])
     with pytest.raises(ValueError, match="Empty range"):
         spec.columns_in_range(["y"], 450, 449)

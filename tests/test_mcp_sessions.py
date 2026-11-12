@@ -65,7 +65,8 @@ def test_list_and_describe(mock_archive):
     assert item["unsaved"]
     info = ok(described)
     names = [c["name"] for c in info["columns"]]
-    assert {"x", "y", "dy", "cont", "abs_mask"} <= set(names)
+    # The names of the GUI (phase 6-quater, PR 8, F120)
+    assert {"λ", "F", "dF", "cont", "abs_mask"} <= set(names)
     assert info["components_by_series"] == {}
     assert info["log_before"] == []
     assert info["spectrum"]["has_continuum"]

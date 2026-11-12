@@ -137,16 +137,18 @@ def test_spectrum_read(mock_archive):
     x, y = session.spec.x.value, session.spec.y.value
     w = ok(whole)
     assert w["n_pixels"] == len(x) and w["binned_by"] == int(np.ceil(len(x) / 100))
-    assert len(w["columns"]["x"]) <= 100
-    assert set(w["columns"]) == {"x", "y", "dy", "cont"}  # no model yet
+    # The names of the GUI by default (phase 6-quater, PR 8, F120)
+    assert len(w["columns"]["λ"]) <= 100
+    assert set(w["columns"]) == {"λ", "F", "dF", "cont"}  # no model yet
     # The mean of the first block
-    assert w["columns"]["y"][0] == pytest.approx(np.mean(y[:w["binned_by"]]))
+    assert w["columns"]["F"][0] == pytest.approx(np.mean(y[:w["binned_by"]]))
     p = ok(part)
     sel = (x >= 449) & (x <= 450)
-    assert p["binned_by"] == 1 and p["columns"]["y"] == pytest.approx(list(y[sel]))
-    assert p["x_unit"] == "nm" and p["units"]["x"] == "nm"
-    assert set(ok(cols)["columns"]) == {"x", "y"}
-    assert "No column nope" in error_text(bad_col) and "The columns: x" in error_text(bad_col)
+    assert p["binned_by"] == 1 and p["columns"]["F"] == pytest.approx(list(y[sel]))
+    assert p["x_unit"] == "nm" and p["units"]["λ"] == "nm"
+    # The axis as λ when it was not asked
+    assert set(ok(cols)["columns"]) == {"λ", "y"}
+    assert "No column nope" in error_text(bad_col) and "The columns: λ" in error_text(bad_col)
     assert "Empty range" in error_text(bad_range)
     assert "No pixel between 900" in error_text(empty)
 
@@ -158,10 +160,12 @@ def test_spectrum_read_accepts_the_names_of_the_gui(mock_archive):
         ("spectrum_read", {"session_id": "mock", "x_min": 449, "x_max": 450,
                            "columns": ["F", "dF", "cont"]}),
         ("spectrum_read", {"session_id": "mock", "x_min": 449, "x_max": 450,
-                           "columns": ["y", "dy", "cont"]}))
+                           "columns": ["x", "y", "dy", "cont"]}))
     g, i = ok(gui), ok(internal)
-    # the values under the names asked
-    assert set(g["columns"]) == {"x", "F", "dF", "cont"}
+    # the values under the names asked (the axis as λ if not asked)
+    assert set(g["columns"]) == {"λ", "F", "dF", "cont"}
+    assert set(i["columns"]) == {"x", "y", "dy", "cont"}
+    assert g["columns"]["λ"] == i["columns"]["x"]
     assert g["columns"]["F"] == i["columns"]["y"]
     assert g["columns"]["dF"] == i["columns"]["dy"]
     assert g["units"]["F"] == i["units"]["y"]

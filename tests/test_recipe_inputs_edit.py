@@ -142,7 +142,7 @@ CASES = [
     ('set_properties', 'resol', '0px', {}, REFUSED),  # 2.4.0: accepted as an infinite R
     ('set_properties', 'resol', '45000.5', {}, '45000.5'),
     ('set_properties', 'name', 'new', {}, 'new'),
-    ('set_properties', 'name', '', {}, ''),
+    ('set_properties', 'name', '', {}, REFUSED),  # 6-quater, PR 8: ignored
     ('set_properties', 'name', '_current_', {}, '_current_'),
     ('set_properties', 'name', None, {}, REFUSED),  # 2.4.0: accepted
     ('set_properties', 'name', 5, {}, '5'),  # 2.4.0: crashed (TypeError)
@@ -185,16 +185,16 @@ CASES = [
     ('x_convert', 'xunit', 'nm', {}, 'nm'),
     ('x_convert', 'xunit', 'Angstrom', {}, 'Angstrom'),
     ('x_convert', 'xunit', 'bogus', {}, REFUSED),
-    ('x_convert', 'xunit', '', {}, FAILS),
+    ('x_convert', 'xunit', '', {}, REFUSED),  # 6-quater, PR 8: failed in the conversion
     ('x_convert', 'xunit', None, {}, REFUSED),  # 2.4.0: crashed (TypeError)
-    ('x_convert', 'xunit', 5, {}, FAILS),
+    ('x_convert', 'xunit', 5, {}, REFUSED),  # 6-quater, PR 8: failed in the conversion
     ('y_convert', 'yunit', 'erg/(nm s cm^2)', {}, 'erg/(nm s cm^2)'),
     ('y_convert', 'yunit', 'erg/(Angstrom s cm^2)', {}, 'erg/(Angstrom s cm^2)'),
-    ('y_convert', 'yunit', 'Jy', {}, FAILS),
+    ('y_convert', 'yunit', 'Jy', {}, REFUSED),  # 6-quater, PR 8: failed in the conversion
     ('y_convert', 'yunit', 'bogus', {}, REFUSED),
-    ('y_convert', 'yunit', '', {}, FAILS),
+    ('y_convert', 'yunit', '', {}, REFUSED),  # 6-quater, PR 8: failed in the conversion
     ('y_convert', 'yunit', None, {}, REFUSED),  # 2.4.0: crashed (TypeError)
-    ('y_convert', 'yunit', 5, {}, FAILS),
+    ('y_convert', 'yunit', 5, {}, REFUSED),  # 6-quater, PR 8: failed in the conversion
     ('apply_expression', 'expression', 'F / cont', {'target_col': 'F'}, 'F / cont'),
     ('apply_expression', 'expression', 'F * 2.0', {'target_col': 'F'}, 'F * 2.0'),
     ('apply_expression', 'expression', '', {'target_col': 'F'}, FAILS),
@@ -204,9 +204,9 @@ CASES = [
     ('apply_expression', 'expression', 5, {'target_col': 'F'}, '5'),  # 2.4.0: crashed (AttributeError)
     ('apply_expression', 'target_col', 'F', {'expression': 'F * 2'}, 'F'),
     ('apply_expression', 'target_col', 'new', {'expression': 'F * 2'}, 'new'),
-    ('apply_expression', 'target_col', '', {'expression': 'F * 2'}, ''),
+    ('apply_expression', 'target_col', '', {'expression': 'F * 2'}, REFUSED),  # 6-quater, PR 8: a column ''
     ('apply_expression', 'target_col', None, {'expression': 'F * 2'}, REFUSED),  # 2.4.0: crashed (AttributeError)
-    ('apply_expression', 'target_col', 5, {'expression': 'F * 2'}, '5'),  # 2.4.0: crashed (AttributeError)
+    ('apply_expression', 'target_col', 5, {'expression': 'F * 2'}, REFUSED),  # 2.4.0: crashed (AttributeError); 6-quater, PR 8: a column '5'
     ('mask_expression', 'expression', 'F < 0.5', {'target_col': 'F'}, 'F < 0.5'),
     ('mask_expression', 'expression', '(λ > 400) & (λ < 410)', {'target_col': 'F'}, '(λ > 400) & (λ < 410)'),
     ('mask_expression', 'expression', '', {'target_col': 'F'}, FAILS),
@@ -243,8 +243,8 @@ CASES = [
     ('smooth_column', 'target_col', 'F', {}, 'F'),
     ('smooth_column', 'target_col', 'dF', {}, 'dF'),
     ('smooth_column', 'target_col', 'cont', {}, 'cont'),
-    ('smooth_column', 'target_col', 'nope', {}, FAILS),
-    ('smooth_column', 'target_col', '', {}, FAILS),
+    ('smooth_column', 'target_col', 'nope', {}, REFUSED),  # 6-quater, PR 8: failed in the core
+    ('smooth_column', 'target_col', '', {}, REFUSED),  # 6-quater, PR 8: failed in the core
     ('smooth_column', 'target_col', None, {}, REFUSED),  # 2.4.0: crashed (AttributeError)
     ('import_systems', 'append', 'True', {'source_session': 'blue'}, True),
     ('import_systems', 'append', 'False', {'source_session': 'blue'}, False),
