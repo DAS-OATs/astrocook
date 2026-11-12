@@ -113,7 +113,9 @@ def test_v1_columns_are_read():
         assert c.btur == row["btur"]
         assert np.array_equal(c.dbtur, row["dbtur"], equal_nan=True)
         assert c.chi2 == row["chi2r"]
-    flux = "erg / (Angstrom s cm2)"
+    # Arbitrary since PR 8-bis of phase 6-quater (Guido): the V1 archives
+    # write no TUNIT (it was erg / (Angstrom s cm2), as V1 assumed)
+    flux = "arb_flux"
     data = session.spec._data
     assert str(data.y.unit) == str(data.dy.unit) == flux
     for name, column in data.aux_cols.items():

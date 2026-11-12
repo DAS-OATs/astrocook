@@ -92,6 +92,9 @@ def flux_unit_label(unit) -> str:
     others. Astropy writes erg \u00c5\u207b\u00b9 s\u207b\u00b9 cm\u207b\u00b2, and in mathtext the \u00c5
     was drawn out of place (visual review of phase 5-bis)."""
     import astropy.units as au
+    from astrocook.core.units import is_arbitrary_flux
+    if is_arbitrary_flux(unit):
+        return "arbitrary units"  # arb_flux (PR 8-bis)
     per_s_cm2 = '\u207b\u00b9 cm\u207b\u00b2'
     scale = getattr(unit, 'scale', 1.0)
     base = unit / scale if scale != 1.0 else unit

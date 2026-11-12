@@ -22,7 +22,7 @@ class SpectrumSummary(BaseModel):
     x_min: float = Field(description="First pixel centre, in x_unit.")
     x_max: float = Field(description="Last pixel centre, in x_unit.")
     x_unit: str = Field(description="Unit of the x axis (e.g. nm).")
-    y_unit: str = Field(description="Unit of the flux.")
+    y_unit: str = Field(description="Unit of the flux; arb_flux: arbitrary units (not calibrated).")
     z_em: float = Field(description="Emission redshift; 0 if not set.")
     resol: float = Field(description=(
         "Resolving power R of the spectrum (median over the pixels, from "

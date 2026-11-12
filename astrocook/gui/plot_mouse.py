@@ -17,6 +17,7 @@ from PySide6.QtWidgets import QApplication, QMenu, QToolTip
 from typing import Optional, TYPE_CHECKING
 
 from astrocook.core.atomic_data import STANDARD_MULTIPLETS, trans_parse, xem_d
+from astrocook.core.units import is_arbitrary_flux
 
 if TYPE_CHECKING:
     from astrocook.session.session import Session
@@ -24,10 +25,17 @@ if TYPE_CHECKING:
 from ._plot_host import PlotHostBase
 from .data_inspector import DataInspectorDialog
 from .main_recipes import region_expression
-from .plot_style import SELECTION_STYLE, z_convert_inverse
+from .plot_style import SELECTION_STYLE, flux_unit_label, z_convert_inverse
+
 
 from astrocook.gui.errors import DATA_ERRORS, QT_ERRORS
 logger = logging.getLogger(__name__)
+
+
+def _unit_text(unit) -> str:
+    """The unit of the flux in the tooltip: 'arbitrary units' for arb_flux
+    (PR 8-bis), the string of astropy for the others."""
+    return flux_unit_label(unit) if is_arbitrary_flux(unit) else str(unit)
 
 
 class PlotMouseMixin(PlotHostBase):
@@ -318,23 +326,23 @@ class PlotMouseMixin(PlotHostBase):
                 if col_type == 'y':
                     raw = spec.y.value[idx]
                     if is_norm: return (raw / norm_val_at_idx), (raw / norm_val_at_idx), ""
-                    return raw, raw, str(spec.y.unit)
+                    return raw, raw, _unit_text(spec.y.unit)
                 
                 elif col_type == 'dy':
                     raw = spec.dy.value[idx]
                     if is_norm: return (raw / norm_val_at_idx), (raw / norm_val_at_idx), ""
-                    return raw, raw, str(spec.dy.unit)
+                    return raw, raw, _unit_text(spec.dy.unit)
 
                 elif col_type == 'cont':
                     if not has_norm: return None, None, ""
                     if is_norm: return 1.0, 1.0, ""
-                    return norm_val_at_idx, norm_val_at_idx, str(spec.y.unit)
+                    return norm_val_at_idx, norm_val_at_idx, _unit_text(spec.y.unit)
 
                 elif col_type == 'model':
                     if spec.model is None: return None, None, ""
                     raw = spec.model.value[idx]
                     if is_norm: return (raw / norm_val_at_idx), (raw / norm_val_at_idx), ""
-                    return raw, raw, str(spec.y.unit)
+                    return raw, raw, _unit_text(spec.y.unit)
                 return None, None, ""
 
             # Check Proximity

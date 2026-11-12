@@ -22,6 +22,8 @@ from astrocook.core.structures import (
     HistoryLog
 )
 from astrocook.core.spectrum import Spectrum 
+from astrocook.core.units import (ARBITRARY_FLUX, FLUX_AUX_COLUMNS, has_no_unit,
+                                  known_unit)
 from astrocook.core.system_list import SystemList
 
 logger = logging.getLogger(__name__)
@@ -103,10 +105,19 @@ def load_and_migrate_structure(archive_root, structure_name, gui_context, format
 def _v2_table_to_spectrum_data(spec_table: Table) -> SpectrumData:
     t = spec_table
     meta = t.meta
-    
+    for name in t.colnames:
+        # arb_flux, read by astropy as an unrecognized unit (PR 8-bis)
+        t[name].unit = known_unit(t[name].unit)
+
+    # A flux without a unit is in arbitrary units (PR 8-bis, Guido); the
+    # archive is not changed
+    y_unit = t['y'].unit
+    if has_no_unit(y_unit):
+        y_unit = ARBITRARY_FLUX
+    dy_unit = y_unit if has_no_unit(t['dy'].unit) else t['dy'].unit
     x_col = DataColumn(t['x'].value, t['x'].unit)
-    y_col = DataColumn(t['y'].value, t['y'].unit)
-    dy_col = DataColumn(t['dy'].value, t['dy'].unit)
+    y_col = DataColumn(t['y'].value, y_unit)
+    dy_col = DataColumn(t['dy'].value, dy_unit)
     xmin_col = DataColumn(t['xmin'].value, t['xmin'].unit)
     xmax_col = DataColumn(t['xmax'].value, t['xmax'].unit)
     
@@ -116,6 +127,10 @@ def _v2_table_to_spectrum_data(spec_table: Table) -> SpectrumData:
         if colname not in core_cols:
             col_data = t[colname]
             col_unit = col_data.unit if col_data.unit is not None else au.dimensionless_unscaled
+            if colname in FLUX_AUX_COLUMNS and has_no_unit(col_unit):
+                # A continuum or a model without a unit is in the unit of
+                # the flux (F130: y_convert left it as it was)
+                col_unit = y_unit
             aux_cols[colname] = DataColumn(col_data.value, col_unit, description=f"Auxiliary column: {colname}")
             
     z_em = float(meta.pop('Z_EM', 0.0))
@@ -129,7 +144,8 @@ def _v2_table_to_spectrum_data(spec_table: Table) -> SpectrumData:
     )
 
 def load_spec_data_v2_from_archive(spec_fits_path: str) -> 'Spectrum':
-    spec_table = Table.read(spec_fits_path)
+    # arb_flux is not a FITS unit: read without a warning, then by its name
+    spec_table = Table.read(spec_fits_path, unit_parse_strict='silent')
     data_core = _v2_table_to_spectrum_data(spec_table)
     return Spectrum(data=data_core)
 
@@ -287,10 +303,29 @@ def _write_fits_table(table: Table, path: str) -> None:
     """Write a table of the archive, without the warnings that only say that
     a long keyword is written as a HIERARCH card (e.g. ``series_map_json``:
     the standard way to hold it, read back as it was)."""
+    # A unit that is not of the FITS standard (arb_flux, PR 8-bis) is written
+    # in TUNITn by hand: astropy would drop it with a warning
+    custom = {}
+    for i, name in enumerate(table.colnames, start=1):
+        unit = table[name].unit
+        if unit is None:
+            continue
+        try:
+            unit.to_string('fits')
+        except ValueError:
+            custom[i] = unit.to_string()
+    if custom:
+        table = table.copy(copy_data=False)
+        for i in custom:
+            table.columns[i - 1].unit = None
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", message=r"Keyword name .* a HIERARCH card will be created",
                                 category=fits.verify.VerifyWarning)
         table.write(path, format='fits', overwrite=True)
+    if custom:
+        with fits.open(path, mode='update') as hdul:
+            for i, text in custom.items():
+                hdul[1].header[f'TUNIT{i}'] = text
 
 
 def _convert_spec_data_to_table(spec_data: SpectrumData) -> Table:

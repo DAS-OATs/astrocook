@@ -2,6 +2,8 @@
 
 import numpy as np
 import astropy.units as au
+
+from astrocook.core.units import is_arbitrary_flux
 import logging
 from scipy.integrate import trapezoid
 
@@ -55,7 +57,8 @@ def _to_flam(x: au.Quantity, y: au.Quantity):
         flux_flam = y.to(FLAM, equivalencies=au.spectral_density(wave_aa))
     except au.UnitConversionError:
         # If units are missing/arbitrary, we can't do rigorous photometry
-        if y.unit == au.dimensionless_unscaled:
+        # The arbitrary flux of the loaders (PR 8-bis) as the flux without a unit
+        if y.unit == au.dimensionless_unscaled or is_arbitrary_flux(y.unit):
              logger.warning("The flux has no unit: it is taken in erg/cm2/s/Å.")
              flux_flam = y.value * FLAM
         else:

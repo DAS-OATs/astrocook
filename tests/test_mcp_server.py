@@ -192,6 +192,8 @@ def test_save_round_trip(mock_archive, tmp_path):
     assert entries == [{"recipe_name": "set_properties",
                         "params": {"name": "_current_", "object": "_current_",
                                    "z_em": 2.1, "resol": "_current_",
+                                   # Since PR 8-bis of phase 6-quater
+                                   "yunit": "_current_",
                                    "overwrite_resol_col": False}}]
     assert session.saved_with_version == __version__
 

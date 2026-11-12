@@ -16,6 +16,7 @@ from astrocook.core.photometry import generate_calibration_curve
 from astrocook.core.spectrum_operations import running_std, smooth_spectrum
 from astrocook.core.structures import DataColumn, SpectrumData
 from astrocook.core._spectrum_host import HostBase
+from astrocook.core.units import FLUX_AUX_COLUMNS, has_no_unit
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +25,8 @@ logger = logging.getLogger(__name__)
 # the flux no unit, and then the unit cannot tell a continuum from a
 # transmission, a resolution or a quality flag.
 # Flux columns: scaled and calibrated as the flux, and smoothed.
-FLUX_AUX_COLUMNS = ('cont', 'model', 'cont_pl')
+# (FLUX_AUX_COLUMNS, defined in core/units.py since PR 8-bis, where
+# y_convert uses it too)
 # Transmissions (dimensionless, multiplied by the continuum in
 # Spectrum.norm): smoothed, as the flux they apply to, but never scaled.
 TRANSMISSION_AUX_COLUMNS = ('telluric_model',)
@@ -299,6 +301,44 @@ class FluxMixin(HostBase):
         # 8. Return a NEW Spectrum instance
         new_history = self.history + [f"Smoothed column: {target_col} (sigma={sigma_kms} km/s)"]
         return self.__class__(data=new_data_core, history=new_history)
+
+    def with_flux_unit(self, unit: au.UnitBase) -> Self:
+        """
+        Declare the unit of the flux, without converting the values (phase
+        6-quater, PR 8-bis; ``y_convert`` converts).
+
+        The unit is given to ``y``, ``dy``, the flux columns (``cont``,
+        ``model``, ``cont_pl``) in the unit of the flux or without one, and
+        the other columns in the unit of the flux when this is not
+        dimensionless (a dimensionless quality flag is not a flux).
+
+        Parameters
+        ----------
+        unit : astropy.units.Unit
+            The unit of the flux, e.g. ``erg/(Angstrom s cm2)`` or
+            ``arb_flux``.
+
+        Returns
+        -------
+        Spectrum
+            A new instance with the same values and the unit declared.
+        """
+        old = self._data.y.unit
+
+        def relabel(col: DataColumn) -> DataColumn:
+            return DataColumn(col.values, unit, col.description)
+
+        new_aux_cols = dict(self._data.aux_cols)
+        for name, col in new_aux_cols.items():
+            same = col.unit is not None and old is not None and au.Unit(col.unit) == au.Unit(old)
+            if name in FLUX_AUX_COLUMNS and (same or has_no_unit(col.unit)):
+                new_aux_cols[name] = relabel(col)
+            elif same and not has_no_unit(old):
+                new_aux_cols[name] = relabel(col)
+        new_data = dataclasses.replace(self._data, y=relabel(self._data.y),
+                                       dy=relabel(self._data.dy), aux_cols=new_aux_cols)
+        return self.__class__(data=new_data,
+                              history=self.history + [f"Flux unit declared: {unit}"])
 
     def calibrate(self, magnitudes: str) -> Self:
         """
