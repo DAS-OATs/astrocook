@@ -550,6 +550,11 @@
 <span class="sd">and their logs must replay; an old name given with the new one is an error</span>
 <span class="sd">(:class:`~astrocook.recipes.errors.InvalidParameter`), even with the same</span>
 <span class="sd">value. An alias is not in the signature of the method.</span>
+
+<span class="sd">A parameter without a default (required: the method has none, the dialog</span>
+<span class="sd">starts empty, the MCP schema lists it in ``required``) has the default</span>
+<span class="sd">``""`` (a string) or None without ``optional`` (a number, a bool, a list;</span>
+<span class="sd">phase 6-quater, PR 10).</span>
 <span class="sd">"""</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 

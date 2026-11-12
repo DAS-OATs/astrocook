@@ -983,13 +983,24 @@ two spectra covering different lines of a doublet.</p>
 <li><p><strong>other_spec</strong> (<a class="reference internal" href="#astrocook.core.spectrum.Spectrum" title="astrocook.core.spectrum.Spectrum"><em>Spectrum</em></a>) – The other spectrum object.</p></li>
 <li><p><strong>trans_self</strong> (<em>str</em>) – Transition in this spectrum (e.g., <code class="docutils literal notranslate"><span class="pre">'OVI_1031'</span></code>).</p></li>
 <li><p><strong>trans_other</strong> (<em>str</em>) – Transition in the other spectrum (e.g., <code class="docutils literal notranslate"><span class="pre">'OVI_1037'</span></code>).</p></li>
+<li><p><strong>continuum</strong> (<em>The depths are those</em><em> of </em><em>the flux normalized by the</em>)</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The detected redshift, or 0.0 on failure.</p>
+</dl>
+<p>:param (<a class="reference internal" href="#astrocook.core.spectrum.Spectrum.norm" title="astrocook.core.spectrum.Spectrum.norm"><code class="xref py py-attr docutils literal notranslate"><span class="pre">norm</span></code></a>):
+:type (<a class="reference internal" href="#astrocook.core.spectrum.Spectrum.norm" title="astrocook.core.spectrum.Spectrum.norm"><code class="xref py py-attr docutils literal notranslate"><span class="pre">norm</span></code></a>): before phase 6-quater, PR 10 they were <code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">-</span> <span class="pre">y</span></code>,
+:param right only for a flux already normalized (F145).:</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The detected redshift.</p>
 </dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>float</p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>float</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If a spectrum has no continuum and its flux is not normalized,
+    or the two transitions cover no redshift in common (0.0 was
+    returned, as if it were a redshift, until phase 6-quater, PR 10).</p>
 </dd>
 </dl>
 </dd></dl>
