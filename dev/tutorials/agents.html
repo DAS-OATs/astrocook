@@ -962,7 +962,9 @@ the tools, which it does anyway (the instructions of the server ask it);</p></li
 <p>Slow recipes are the pipelines (<code class="docutils literal notranslate"><span class="pre">absorbers_doublets_auto</span></code>, <code class="docutils literal notranslate"><span class="pre">absorbers_lya_auto</span></code>,
 <code class="docutils literal notranslate"><span class="pre">absorbers_forest_auto</span></code>, <code class="docutils literal notranslate"><span class="pre">absorbers_metals_auto</span></code>, <code class="docutils literal notranslate"><span class="pre">absorbers_refit_all</span></code>,
 <code class="docutils literal notranslate"><span class="pre">absorbers_fit_bayesian</span></code>): the agent knows
-that they report their progress and can be cancelled. A recipe changes the
+that they report their progress and can be cancelled. The Bayesian fit
+draws random numbers: give it a <code class="docutils literal notranslate"><span class="pre">seed</span></code> when the result must be repeatable
+(a log replayed without one gives other values, within the errors). A recipe changes the
 session it runs on, except those that open new sessions; in doubt, ask the
 agent to <code class="docutils literal notranslate"><span class="pre">session_duplicate</span></code> first: nothing is lost either way, because
 every state is kept.</p>

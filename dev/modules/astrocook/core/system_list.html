@@ -1574,7 +1574,8 @@
                            <span class="n">aic_penalty</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">100.0</span><span class="p">,</span>
                            <span class="n">min_dv</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">10.0</span><span class="p">,</span>  <span class="c1"># &lt;--- NEW PARAMETER</span>
                            <span class="n">group_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">patience</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
-                           <span class="n">trace</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SystemList'</span><span class="p">:</span>
+                           <span class="n">trace</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                           <span class="n">max_nfev</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SystemList'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Iteratively adds components to a system to minimize residuals using the</span>
 <span class="sd">        Akaike Information Criterion (AIC).</span>
@@ -1597,7 +1598,8 @@
 <span class="sd">            UUID of the seed component. This defines the series (e.g. CIV) and the center of the </span>
 <span class="sd">            velocity search window.</span>
 <span class="sd">        max_components : int, optional</span>
-<span class="sd">            Maximum number of additional components to attempt adding (default: 5).</span>
+<span class="sd">            Maximum number of candidates tried, each counting also when rejected or</span>
+<span class="sd">            too close to a component (default: 5).</span>
 <span class="sd">        threshold_sigma : float, optional</span>
 <span class="sd">            Significance level (in standard deviations) of the residual dip required to trigger </span>
 <span class="sd">            a new component trial (default: 2.5).</span>
@@ -1605,7 +1607,9 @@
 <span class="sd">            Minimum AIC improvement required to accept a new component (default: 0.0).</span>
 <span class="sd">            Higher values favor simpler models (Occam's razor).</span>
 <span class="sd">        z_window_kms : float, optional</span>
-<span class="sd">            The velocity window size (km/s) around the seed component to search for residuals (default: 100.0).</span>
+<span class="sd">            Half-width (km/s) of the window around the first line of the seed component,</span>
+<span class="sd">            where the residuals are searched and the AIC is computed; also passed to the</span>
+<span class="sd">            fits, where it bounds how far the redshifts can move (default: 100.0).</span>
 <span class="sd">        min_dv : float, optional</span>
 <span class="sd">            Minimum velocity separation (km/s) required between a candidate and </span>
 <span class="sd">            existing components. Lower this to de-blend close doublets (default: 10.0).</span>
@@ -1613,6 +1617,10 @@
 <span class="sd">            Depth for finding connected neighbors during the fit (default: 2).</span>
 <span class="sd">        patience : int, optional</span>
 <span class="sd">            Number of consecutive trials allowed without AIC improvement before stopping (default: 2).</span>
+<span class="sd">        max_nfev : int, optional</span>
+<span class="sd">            Maximum number of evaluations of the model in each fit (default:</span>
+<span class="sd">            1000). A fit that does not converge within it counts as failed</span>
+<span class="sd">            (AIC infinite): its candidate is rejected (F149).</span>
 <span class="sd">        trace : dict, optional</span>
 <span class="sd">            Filled with what the search did (F118, trial 3 of the MCP server):</span>
 <span class="sd">            ``start_aic``, ``tried`` (one dict per candidate: ``z``,</span>
@@ -1657,7 +1665,7 @@
         <span class="k">def</span><span class="w"> </span><span class="nf">fit_and_evaluate</span><span class="p">(</span><span class="n">systs_obj</span><span class="p">,</span> <span class="n">target_uuids</span><span class="p">):</span>
             <span class="k">with</span> <span class="n">systs_obj</span><span class="o">.</span><span class="n">fitting_context</span><span class="p">(</span><span class="n">target_uuids</span><span class="p">,</span> <span class="n">group_depth</span><span class="o">=</span><span class="n">group_depth</span><span class="p">,</span> <span class="n">spec</span><span class="o">=</span><span class="n">spec</span><span class="p">):</span>
                 <span class="n">fitter</span> <span class="o">=</span> <span class="n">VoigtFitter</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">systs_obj</span><span class="p">)</span>
-                <span class="n">new_systs</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">res</span> <span class="o">=</span> <span class="n">fitter</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">max_nfev</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="o">=</span><span class="n">z_window_kms</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">new_systs</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">res</span> <span class="o">=</span> <span class="n">fitter</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">max_nfev</span><span class="o">=</span><span class="n">max_nfev</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="o">=</span><span class="n">z_window_kms</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
                 
                 <span class="c1"># Cleanup</span>
                 <span class="k">if</span> <span class="n">new_systs</span><span class="o">.</span><span class="n">constraint_model</span><span class="p">:</span>

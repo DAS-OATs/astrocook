@@ -471,8 +471,10 @@
                 <article class="bd-article">
                   
   <h1>Source code for astrocook.fitting.bayesian_fitter</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Collection</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.voigt_fitter</span><span class="w"> </span><span class="kn">import</span> <span class="n">VoigtFitter</span>
 
@@ -509,6 +511,20 @@
         <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">"The Bayesian fit needs </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">, which is not installed. "</span>
             <span class="sa">f</span><span class="s2">"Install the optional dependencies with: </span><span class="si">{</span><span class="n">BAYES_INSTALL_HINT</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span></div>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_log_warnings</span><span class="p">(</span><span class="n">caught</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The warnings caught while sampling, to the log: those of dynesty as</span>
+<span class="sd">    WARNING lines, once each; the others raised again as they were."""</span>
+    <span class="n">seen</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">caught</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s1">'dynesty'</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">filename</span><span class="p">):</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">text</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen</span><span class="p">:</span>
+                <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"dynesty: </span><span class="si">{</span><span class="n">text</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn_explicit</span><span class="p">(</span><span class="n">w</span><span class="o">.</span><span class="n">message</span><span class="p">,</span> <span class="n">w</span><span class="o">.</span><span class="n">category</span><span class="p">,</span> <span class="n">w</span><span class="o">.</span><span class="n">filename</span><span class="p">,</span> <span class="n">w</span><span class="o">.</span><span class="n">lineno</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="BayesianVoigtFitter">
@@ -646,8 +662,9 @@
 
 <div class="viewcode-block" id="BayesianVoigtFitter.run_mcmc">
 <a class="viewcode-back" href="../../../api/astrocook.fitting.bayesian_fitter.html#astrocook.fitting.bayesian_fitter.BayesianVoigtFitter.run_mcmc">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">run_mcmc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span> <span class="n">nsteps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span> 
-                 <span class="n">burn_in</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run_mcmc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nwalkers</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">nsteps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
+                 <span class="n">burn_in</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                 <span class="n">seed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Execute Markov Chain Monte Carlo (MCMC) sampling using ``emcee``.</span>
 
@@ -657,7 +674,11 @@
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        nwalkers : int, optional</span>
-<span class="sd">            Number of MCMC walkers. Defaults to ``32``.</span>
+<span class="sd">            Number of MCMC walkers. Defaults to ``max(32, 2 * ndim)``: emcee</span>
+<span class="sd">            needs at least twice as many walkers as free parameters, so the</span>
+<span class="sd">            32 walkers of before were enough up to 16 free parameters only</span>
+<span class="sd">            (F141, phase 6-quater, PR 10-bis); up to 16 the sampling is the</span>
+<span class="sd">            same as before. A value below ``2 * ndim`` is refused.</span>
 <span class="sd">        nsteps : int, optional</span>
 <span class="sd">            Number of sampling steps per walker. Defaults to ``1000``.</span>
 <span class="sd">        burn_in : int, optional</span>
@@ -666,6 +687,10 @@
 <span class="sd">            kept. Must be smaller than ``nsteps``.</span>
 <span class="sd">        progress : bool, optional</span>
 <span class="sd">            If True, pipes progress percentage to the logger. Defaults to ``True``.</span>
+<span class="sd">        seed : int, optional</span>
+<span class="sd">            Seed of the random numbers (the starting walkers and the moves),</span>
+<span class="sd">            for a sampling that can be repeated. Defaults to ``None``: the</span>
+<span class="sd">            global generator of NumPy, as before the parameter existed.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -681,10 +706,17 @@
 <span class="sd">        ImportError</span>
 <span class="sd">            If the ``emcee`` package is not installed.</span>
 <span class="sd">        ValueError</span>
-<span class="sd">            If ``nsteps &lt; 1`` or ``burn_in`` is not smaller than ``nsteps``</span>
-<span class="sd">            (the chain left after the burn-in would be empty).</span>
+<span class="sd">            If ``nsteps &lt; 1``, ``burn_in`` is not smaller than ``nsteps``</span>
+<span class="sd">            (the chain left after the burn-in would be empty), or</span>
+<span class="sd">            ``nwalkers`` is less than twice the free parameters.</span>
 <span class="sd">        """</span>
         <span class="n">require_bayes_engine</span><span class="p">(</span><span class="s1">'mcmc'</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">nwalkers</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">nwalkers</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ndim</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">nwalkers</span> <span class="o">&lt;</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ndim</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"nwalkers (</span><span class="si">{</span><span class="n">nwalkers</span><span class="si">}</span><span class="s2">) must be at least twice the free "</span>
+                <span class="sa">f</span><span class="s2">"parameters (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ndim</span><span class="si">}</span><span class="s2">)."</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">nsteps</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"nsteps must be at least 1 (got </span><span class="si">{</span><span class="n">nsteps</span><span class="si">}</span><span class="s2">)."</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">burn_in</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -696,14 +728,19 @@
             
         <span class="c1"># Initialize walkers in a small cluster around the best-fit / initial guess</span>
         <span class="c1"># We add some noise but stay within bounds</span>
+        <span class="c1"># Without a seed, the global generator of NumPy (emcee copies its</span>
+        <span class="c1"># state), as before the parameter existed</span>
+        <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span> <span class="k">if</span> <span class="n">seed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span>
         <span class="n">pos</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nwalkers</span><span class="p">):</span>
-            <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p_initial</span> <span class="o">+</span> <span class="mf">1e-4</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ndim</span><span class="p">)</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p_initial</span> <span class="o">+</span> <span class="mf">1e-4</span> <span class="o">*</span> <span class="n">rng</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ndim</span><span class="p">)</span>
             <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lower_bounds</span> <span class="o">+</span> <span class="mf">1e-8</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">upper_bounds</span> <span class="o">-</span> <span class="mf">1e-8</span><span class="p">)</span>
             <span class="n">pos</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
         <span class="n">pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span>
         
         <span class="n">sampler</span> <span class="o">=</span> <span class="n">emcee</span><span class="o">.</span><span class="n">EnsembleSampler</span><span class="p">(</span><span class="n">nwalkers</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ndim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ln_posterior</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">seed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">sampler</span><span class="o">.</span><span class="n">random_state</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span>
         
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Sampling with emcee: </span><span class="si">{</span><span class="n">nwalkers</span><span class="si">}</span><span class="s2"> walkers, </span><span class="si">{</span><span class="n">nsteps</span><span class="si">}</span><span class="s2"> steps."</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">progress</span><span class="p">:</span>
@@ -735,7 +772,8 @@
 
 <div class="viewcode-block" id="BayesianVoigtFitter.run_nested">
 <a class="viewcode-back" href="../../../api/astrocook.fitting.bayesian_fitter.html#astrocook.fitting.bayesian_fitter.BayesianVoigtFitter.run_nested">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">run_nested</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nlive</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">250</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run_nested</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nlive</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">250</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                   <span class="n">seed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Execute Nested Sampling using ``dynesty``.</span>
 
@@ -748,6 +786,9 @@
 <span class="sd">            Number of live points for the nested sampler. Defaults to ``250``.</span>
 <span class="sd">        progress : bool, optional</span>
 <span class="sd">            If True, pipes progress (dLogZ) to the logger. Defaults to ``True``.</span>
+<span class="sd">        seed : int, optional</span>
+<span class="sd">            Seed of the random numbers of the sampler, for a sampling that</span>
+<span class="sd">            can be repeated. Defaults to ``None`` (not repeatable).</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -756,9 +797,19 @@
 <span class="sd">            - ``'results'``: The raw ``dynesty`` results object.</span>
 <span class="sd">            - ``'logz'``: The estimated log-evidence.</span>
 <span class="sd">            - ``'logzerr'``: The error on the log-evidence.</span>
-<span class="sd">            - ``'samples'``: The posterior samples (np.ndarray).</span>
-<span class="sd">            - ``'medians'``: The median values for each parameter (np.ndarray).</span>
-<span class="sd">            - ``'std'``: The standard deviations for each parameter (np.ndarray).</span>
+<span class="sd">            - ``'samples'``: Samples of the posterior with equal weights</span>
+<span class="sd">              (``samples_equal`` of dynesty), e.g. for a corner plot.</span>
+<span class="sd">            - ``'medians'``: The weighted medians of the parameters (np.ndarray).</span>
+<span class="sd">            - ``'std'``: The weighted standard deviations of the parameters</span>
+<span class="sd">              (np.ndarray).</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        The points of a nested sampling are not a sample of the posterior:</span>
+<span class="sd">        each has its importance weight. The medians and standard deviations</span>
+<span class="sd">        were taken from the points without the weights, and came out too</span>
+<span class="sd">        wide (on a CIV component, 1.7 in logN and 42 km/s in b instead of</span>
+<span class="sd">        0.005 and 0.14, which the MCMC gives): F140, phase 6-quater, PR 10-bis.</span>
 
 <span class="sd">        Raises</span>
 <span class="sd">        ------</span>
@@ -771,45 +822,59 @@
 <span class="w">            </span><span class="sd">"""Transform uniform unit cube to physical bounds."""</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">lower_bounds</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">upper_bounds</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">lower_bounds</span><span class="p">)</span> <span class="o">*</span> <span class="n">u</span>
 
-        <span class="n">dsampler</span> <span class="o">=</span> <span class="n">dynesty</span><span class="o">.</span><span class="n">NestedSampler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ln_likelihood</span><span class="p">,</span> <span class="n">prior_transform</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ndim</span><span class="p">,</span> <span class="n">nlive</span><span class="o">=</span><span class="n">nlive</span><span class="p">)</span>
-        
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Nested sampling with dynesty: </span><span class="si">{</span><span class="n">nlive</span><span class="si">}</span><span class="s2"> live points."</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">progress</span><span class="p">:</span>
-            <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
-            <span class="n">last_log_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-            
-            <span class="c1"># Start manual sampling to safely pipe progress to GUI</span>
-            <span class="c1"># We target dlogz=0.1 which is dynesty's standard default</span>
-            <span class="n">target_dlogz</span> <span class="o">=</span> <span class="mf">0.1</span>
-            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">res</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">dsampler</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">dlogz</span><span class="o">=</span><span class="n">target_dlogz</span><span class="p">)):</span>
-                <span class="k">if</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">last_log_time</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">:</span>
-                    <span class="n">dlogz</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">dsampler</span><span class="p">,</span> <span class="s1">'dlogz'</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">dlogz</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">res</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
-                        <span class="n">dlogz</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># fallback for some old dynesty versions</span>
-                    
-                    <span class="k">if</span> <span class="n">dlogz</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Nested sampling, iteration </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">: dlogZ </span><span class="si">{</span><span class="n">dlogz</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> "</span>
-                                    <span class="sa">f</span><span class="s2">"(target </span><span class="si">{</span><span class="n">target_dlogz</span><span class="si">}</span><span class="s2">)."</span><span class="p">)</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Nested sampling, iteration </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
-                    <span class="n">last_log_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-            
-            <span class="c1"># Finalize remaining live points</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Adding the final live points."</span><span class="p">)</span>
-            <span class="n">dsampler</span><span class="o">.</span><span class="n">add_live_points</span><span class="p">()</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">dsampler</span><span class="o">.</span><span class="n">run_nested</span><span class="p">(</span><span class="n">print_progress</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-        
-        <span class="n">res</span> <span class="o">=</span> <span class="n">dsampler</span><span class="o">.</span><span class="n">results</span>
+        <span class="n">rstate</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span> <span class="k">if</span> <span class="n">seed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="c1"># dynesty warns about the efficiency of its bounds (and other</span>
+        <span class="c1"># things the user should know): to the log, once each, not as</span>
+        <span class="c1"># warnings that a script or a test would turn into errors</span>
+        <span class="k">with</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">(</span><span class="n">record</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">as</span> <span class="n">caught</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s2">"always"</span><span class="p">)</span>
+            <span class="n">dsampler</span> <span class="o">=</span> <span class="n">dynesty</span><span class="o">.</span><span class="n">NestedSampler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ln_likelihood</span><span class="p">,</span> <span class="n">prior_transform</span><span class="p">,</span>
+                                             <span class="bp">self</span><span class="o">.</span><span class="n">ndim</span><span class="p">,</span> <span class="n">nlive</span><span class="o">=</span><span class="n">nlive</span><span class="p">,</span> <span class="n">rstate</span><span class="o">=</span><span class="n">rstate</span><span class="p">)</span>
+
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Nested sampling with dynesty: </span><span class="si">{</span><span class="n">nlive</span><span class="si">}</span><span class="s2"> live points."</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">progress</span><span class="p">:</span>
+                <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+                <span class="n">last_log_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+                <span class="c1"># Start manual sampling to safely pipe progress to GUI</span>
+                <span class="c1"># We target dlogz=0.1 which is dynesty's standard default</span>
+                <span class="n">target_dlogz</span> <span class="o">=</span> <span class="mf">0.1</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">it</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">dsampler</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">dlogz</span><span class="o">=</span><span class="n">target_dlogz</span><span class="p">)):</span>
+                    <span class="k">if</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">last_log_time</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">:</span>
+                        <span class="c1"># The remaining evidence of this iteration (F139:</span>
+                        <span class="c1"># dsampler.dlogz, read before, is a dict in dynesty 3)</span>
+                        <span class="n">dlogz</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">it</span><span class="p">,</span> <span class="s1">'delta_logz'</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dlogz</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">floating</span><span class="p">)):</span>
+                            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Nested sampling, iteration </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">: dlogZ </span><span class="si">{</span><span class="n">dlogz</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> "</span>
+                                        <span class="sa">f</span><span class="s2">"(target </span><span class="si">{</span><span class="n">target_dlogz</span><span class="si">}</span><span class="s2">)."</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Nested sampling, iteration </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+                        <span class="n">last_log_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+                <span class="c1"># Finalize remaining live points</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Adding the final live points."</span><span class="p">)</span>
+                <span class="n">dsampler</span><span class="o">.</span><span class="n">add_live_points</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">dsampler</span><span class="o">.</span><span class="n">run_nested</span><span class="p">(</span><span class="n">print_progress</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+            <span class="n">res</span> <span class="o">=</span> <span class="n">dsampler</span><span class="o">.</span><span class="n">results</span>
+            <span class="n">weights</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">importance_weights</span><span class="p">()</span>
+            <span class="n">equal</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">samples_equal</span><span class="p">(</span><span class="n">rstate</span><span class="o">=</span><span class="n">rstate</span><span class="p">)</span>
+        <span class="n">_log_warnings</span><span class="p">(</span><span class="n">caught</span><span class="p">)</span>
+
         <span class="n">samples</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">samples</span>
-        
+        <span class="n">medians</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">dynesty</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">samples</span><span class="p">[:,</span> <span class="n">k</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.5</span><span class="p">],</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">samples</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])])</span>
+        <span class="n">mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>
+        <span class="n">std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">((</span><span class="n">samples</span> <span class="o">-</span> <span class="n">mean</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">))</span>
+
         <span class="k">return</span> <span class="p">{</span>
             <span class="s1">'results'</span><span class="p">:</span> <span class="n">res</span><span class="p">,</span>
             <span class="s1">'logz'</span><span class="p">:</span> <span class="n">res</span><span class="o">.</span><span class="n">logz</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
             <span class="s1">'logzerr'</span><span class="p">:</span> <span class="n">res</span><span class="o">.</span><span class="n">logzerr</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
-            <span class="s1">'samples'</span><span class="p">:</span> <span class="n">samples</span><span class="p">,</span>
-            <span class="s1">'medians'</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
-            <span class="s1">'std'</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="s1">'samples'</span><span class="p">:</span> <span class="n">equal</span><span class="p">,</span>
+            <span class="s1">'medians'</span><span class="p">:</span> <span class="n">medians</span><span class="p">,</span>
+            <span class="s1">'std'</span><span class="p">:</span> <span class="n">std</span>
         <span class="p">}</span></div>
 
 

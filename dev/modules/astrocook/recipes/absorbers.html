@@ -647,7 +647,8 @@
             <span class="sa">f</span><span class="s2">"only if it decreased the Akaike information criterion by at least "</span>
             <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'aic_penalty'</span><span class="p">]</span><span class="si">}</span><span class="s2"> (at most </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'max_components'</span><span class="p">]</span><span class="si">}</span><span class="s2"> components, stopping "</span>
             <span class="sa">f</span><span class="s2">"after </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'patience'</span><span class="p">]</span><span class="si">}</span><span class="s2"> tries without an improvement; group depth "</span>
-            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'group_depth'</span><span class="p">]</span><span class="si">}</span><span class="s2">; Cupani et al. 2026)</span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'group_depth'</span><span class="p">]</span><span class="si">}</span><span class="s2">; at most </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'max_nfev'</span><span class="p">]</span><span class="si">}</span><span class="s2"> evaluations of the model "</span>
+            <span class="sa">f</span><span class="s2">"per fit; Cupani et al. 2026)</span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_methods_fit_bayesian</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
@@ -661,8 +662,10 @@
         <span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'nlive'</span><span class="p">)</span>
         <span class="n">how</span> <span class="o">=</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"MCMC (emcee; Foreman-Mackey et al. 2013), with </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'nsteps'</span><span class="p">]</span><span class="si">}</span><span class="s2"> steps "</span>
                <span class="sa">f</span><span class="s2">"per walker"</span><span class="p">)</span>
+    <span class="n">seed</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'seed'</span><span class="p">)</span>
+    <span class="n">seeded</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">", seed </span><span class="si">{</span><span class="n">seed</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">seed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">""</span>
     <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"The posterior of the parameters of </span><span class="si">{</span><span class="n">group</span><span class="si">}</span><span class="s2"> (group depth "</span>
-            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'group_depth'</span><span class="p">]</span><span class="si">}</span><span class="s2">) was sampled with </span><span class="si">{</span><span class="n">how</span><span class="si">}{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'group_depth'</span><span class="p">]</span><span class="si">}{</span><span class="n">seeded</span><span class="si">}</span><span class="s2">) was sampled with </span><span class="si">{</span><span class="n">how</span><span class="si">}{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_methods_refit_all</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
@@ -948,13 +951,14 @@
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Adds components to a system one at a time where the residuals are significant, keeping each only if it improves the fit by the AIC penalty."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"uuid"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">""</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Identifier of a component of the system."</span><span class="p">,</span> <span class="s2">"gui_hidden"</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_components"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span> <span class="s2">"min"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Maximum number of components to add."</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_components"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span> <span class="s2">"min"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Maximum number of candidate components tried (each counts, also one rejected or too close to another)."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"threshold_sigma"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">2.5</span><span class="p">,</span> <span class="s2">"gt"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Residual (in sigma) above which a new component is tried."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"aic_penalty"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">5.0</span><span class="p">,</span> <span class="s2">"min"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Decrease of the AIC needed to keep a new component."</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"z_window_kms"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">,</span> <span class="s2">"gt"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Half-width of the velocity window around the system that is analysed (km/s)."</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"z_window_kms"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">,</span> <span class="s2">"gt"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Half-width of the velocity window around the first line of the system (km/s): where the residuals are searched and the AIC is computed, and how far the redshifts can move in the fits."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"min_dv"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">,</span> <span class="s2">"min"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Minimum separation of a new component from the others (km/s); lower to resolve blends."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"group_depth"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">"min"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"How far the group extends: 0 the component alone, 1 the components blended with it, 2 also those blended with them."</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"patience"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">"min"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Number of tries without an improvement before stopping."</span><span class="p">}</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"patience"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">"min"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Number of tries without an improvement before stopping."</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_nfev"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span> <span class="s2">"min"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Maximum number of evaluations of the model in each fit; a fit that reaches it counts as failed (its candidate is rejected)."</span><span class="p">}</span>
         <span class="p">],</span>
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"absorbers_cb.html#optimize_system"</span>
     <span class="p">},</span>
@@ -963,13 +967,14 @@
         <span class="s2">"references"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"emcee"</span><span class="p">,</span> <span class="s2">"dynesty"</span><span class="p">),</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Fit Bayesian."</span><span class="p">,</span>
         <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"resolution"</span><span class="p">,</span> <span class="s2">"continuum"</span><span class="p">),</span>
-        <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Samples the posterior of the parameters of a group of components, with MCMC (emcee) or nested sampling (dynesty); needs the [bayes] extra."</span><span class="p">,</span>
+        <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Samples the posterior of the parameters of a group of components, with MCMC (emcee) or nested sampling (dynesty), and gives the components its medians, with its standard deviations as errors; the prior is flat, z within +-20 km/s of its current value, logN and b within the bounds of the fit. Needs the [bayes] extra."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
-            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"uuids"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"optional"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"gui_hidden"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Identifiers of the components of the group."</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"uuids"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"gui_hidden"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Identifiers of the components of the group."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"engine"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"mcmc"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Sampler: 'mcmc' (emcee) or 'nested' (dynesty)."</span><span class="p">,</span> <span class="s2">"choices"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"mcmc"</span><span class="p">,</span> <span class="s2">"nested"</span><span class="p">]},</span>
-            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"nsteps"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mi">500</span><span class="p">,</span> <span class="s2">"min"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Number of steps of each walker (MCMC)."</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"nlive"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mi">250</span><span class="p">,</span> <span class="s2">"min"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Number of live points (nested sampling)."</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"group_depth"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">"min"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"How far the group extends: 0 the components alone, 1 the components blended with them, 2 also those blended with these."</span><span class="p">}</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"nsteps"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mi">500</span><span class="p">,</span> <span class="s2">"min"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Number of steps of each walker (MCMC; 32 walkers, or twice the free parameters if more than 16; the first min(200, nsteps/2) steps are discarded)."</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"nlive"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mi">250</span><span class="p">,</span> <span class="s2">"min"</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Number of live points (nested sampling): at least 10 per free parameter."</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"group_depth"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">"min"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"How far the group extends: 0 the components alone, 1 the components blended with them, 2 also those blended with these."</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"seed"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"optional"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"min"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Seed of the random numbers, for a sampling that can be repeated (None: not repeatable)."</span><span class="p">}</span>
         <span class="p">],</span>
         <span class="s2">"gui_hidden"</span><span class="p">:</span> <span class="kc">True</span>
     <span class="p">},</span>
@@ -1175,6 +1180,11 @@
 <span class="sd">    that a long fit stops too (phase 6-ter, PR 7-quater)."""</span>
     <span class="n">check_cancelled</span><span class="p">()</span>
     <span class="k">return</span> <span class="kc">False</span>
+
+
+<span class="c1">#: The live points of nested sampling needed per free parameter (with fewer</span>
+<span class="c1">#: dynesty fails or does not end; phase 6-quater, PR 10-bis, Guido)</span>
+<span class="n">NLIVE_PER_PARAMETER</span> <span class="o">=</span> <span class="mi">10</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_warn_if_unconvolved</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -2596,7 +2606,8 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">optimize_system</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">max_components</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
                         <span class="n">threshold_sigma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">2.5</span><span class="p">,</span> <span class="n">aic_penalty</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">5.0</span><span class="p">,</span>
                         <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">100.0</span><span class="p">,</span> <span class="n">min_dv</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">10.0</span><span class="p">,</span>
-                        <span class="n">group_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">patience</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'Session'</span><span class="p">:</span>
+                        <span class="n">group_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">patience</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+                        <span class="n">max_nfev</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'Session'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Optimize system (Iterative Fit).</span>
 
@@ -2609,7 +2620,8 @@
 <span class="sd">        uuid : str</span>
 <span class="sd">            Target Component UUID (seed).</span>
 <span class="sd">        max_components : int, optional</span>
-<span class="sd">            Max extra components to try. Defaults to ``5``.</span>
+<span class="sd">            Max candidate components to try: each counts, also one rejected</span>
+<span class="sd">            by the AIC or too close to another (``min_dv``). Defaults to ``5``.</span>
 <span class="sd">        threshold_sigma : float, optional</span>
 <span class="sd">            Residual threshold (sigma) to trigger new component. Defaults to ``2.5``.</span>
 <span class="sd">        aic_penalty : float, optional</span>
@@ -2617,13 +2629,22 @@
 <span class="sd">            counts 2 per free parameter; 5 asks for substantial support).</span>
 <span class="sd">            Defaults to ``5.0``.</span>
 <span class="sd">        z_window_kms : float, optional</span>
-<span class="sd">            Velocity window (km/s) to analyze. Defaults to ``100.0``.</span>
+<span class="sd">            Half-width (km/s) of the window around the first line of the</span>
+<span class="sd">            system where the residuals are searched and the AIC is</span>
+<span class="sd">            computed; it is also how far the redshifts can move in the fits</span>
+<span class="sd">            (``z_window_kms`` of :meth:`fit_component`). Defaults to ``100.0``.</span>
 <span class="sd">        min_dv : float, optional</span>
 <span class="sd">            Min separation (km/s). Defaults to ``10.0``.</span>
 <span class="sd">        group_depth : int, optional</span>
 <span class="sd">            Grouping depth. Defaults to ``2``.</span>
 <span class="sd">        patience : int, optional</span>
 <span class="sd">            Trials allowed without AIC improvement. Defaults to ``2``.</span>
+<span class="sd">        max_nfev : int, optional</span>
+<span class="sd">            Max evaluations of the model in each fit (the starting one and</span>
+<span class="sd">            one per candidate). A fit that reaches it counts as failed: its</span>
+<span class="sd">            candidate is rejected, and if the starting fit fails no</span>
+<span class="sd">            component is added (F149). Defaults to ``1000``, the value that</span>
+<span class="sd">            was fixed before phase 6-quater, PR 10-bis.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -2635,6 +2656,7 @@
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">RecipeFailed</span><span class="p">(</span><span class="s2">"There are no components to optimize."</span><span class="p">)</span>
+        <span class="n">check_uuids</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">,</span> <span class="p">[</span><span class="n">uuid</span><span class="p">],</span> <span class="s1">'uuid'</span><span class="p">)</span>
 
         <span class="n">current_session</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
 
@@ -2651,6 +2673,7 @@
             <span class="n">min_dv</span><span class="o">=</span><span class="n">min_dv_f</span><span class="p">,</span>
             <span class="n">group_depth</span><span class="o">=</span><span class="n">depth</span><span class="p">,</span>
             <span class="n">patience</span><span class="o">=</span><span class="n">pat</span><span class="p">,</span>
+            <span class="n">max_nfev</span><span class="o">=</span><span class="n">max_nfev</span><span class="p">,</span>
             <span class="n">trace</span><span class="o">=</span><span class="n">trace</span>
         <span class="p">)</span>
         <span class="c1"># What the search tried and why it stopped, for the result (F118)</span>
@@ -2672,25 +2695,38 @@
 <div class="viewcode-block" id="RecipeAbsorbers.fit_bayesian">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbers.fit_bayesian">[docs]</a>
     <span class="nd">@typed_recipe</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">fit_bayesian</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuids</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">engine</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'mcmc'</span><span class="p">,</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit_bayesian</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">engine</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'mcmc'</span><span class="p">,</span>
                      <span class="n">nsteps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">500</span><span class="p">,</span> <span class="n">nlive</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">250</span><span class="p">,</span>
-                     <span class="n">group_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'Session'</span><span class="p">:</span>
+                     <span class="n">group_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">seed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'Session'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Run Bayesian sampling (MCMC or Nested) on a group of components.</span>
 
+<span class="sd">        The prior is flat: z within ±20 km/s of its current value, logN and</span>
+<span class="sd">        b within the bounds of the constraint model (10-23 and 1-300 km/s).</span>
+<span class="sd">        The components get the medians of the posterior, and its standard</span>
+<span class="sd">        deviations as errors.</span>
+
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        uuids : list of str, optional</span>
-<span class="sd">            A list of component UUIDs to fit. If not provided, a single component </span>
-<span class="sd">            must be specified via other means (not supported here).</span>
+<span class="sd">        uuids : list of str</span>
+<span class="sd">            The UUIDs of the components to fit (their group, by</span>
+<span class="sd">            ``group_depth``, is sampled).</span>
 <span class="sd">        engine : {'mcmc', 'nested'}, optional</span>
 <span class="sd">            The sampling engine to use (default: 'mcmc').</span>
 <span class="sd">        nsteps : int, optional</span>
-<span class="sd">            Number of MCMC steps (default: 500).</span>
+<span class="sd">            Number of MCMC steps of each walker (default: 500). The walkers</span>
+<span class="sd">            are 32, or twice the free parameters when these are more than</span>
+<span class="sd">            16; the first ``min(200, nsteps // 2)`` steps are discarded</span>
+<span class="sd">            (burn-in).</span>
 <span class="sd">        nlive : int, optional</span>
-<span class="sd">            Number of live points for Nested Sampling (default: 250).</span>
+<span class="sd">            Number of live points for Nested Sampling (default: 250); at</span>
+<span class="sd">            least 10 per free parameter (with fewer the sampler fails or</span>
+<span class="sd">            does not end).</span>
 <span class="sd">        group_depth : int, optional</span>
 <span class="sd">            Depth of connected group search (FoF) to define the fitting group (default: 2).</span>
+<span class="sd">        seed : int, optional</span>
+<span class="sd">            Seed of the random numbers, for a sampling that can be repeated</span>
+<span class="sd">            (default: None, not repeatable).</span>
 
 <span class="sd">        Raises</span>
 <span class="sd">        ------</span>
@@ -2698,9 +2734,11 @@
 <span class="sd">            If the sampler of ``engine`` is not installed (optional</span>
 <span class="sd">            dependencies: ``pip install "astrocook[bayes]"``).</span>
 <span class="sd">        """</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">RecipeFailed</span><span class="p">(</span><span class="s2">"There are no components to fit."</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">uuids</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">RecipeFailed</span><span class="p">(</span><span class="s2">"No components are selected."</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">uuids</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span> <span class="n">uuids</span> <span class="o">=</span> <span class="p">[</span><span class="n">uuids</span><span class="p">]</span> <span class="c1"># Fallback for single uuid string</span>
+            <span class="k">raise</span> <span class="n">InvalidParameter</span><span class="p">(</span><span class="s2">"uuids: give at least one component"</span><span class="p">)</span>
+        <span class="n">check_uuids</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">,</span> <span class="n">uuids</span><span class="p">,</span> <span class="s1">'uuids'</span><span class="p">)</span>
 
         <span class="kn">from</span><span class="w"> </span><span class="nn">..fitting.bayesian_fitter</span><span class="w"> </span><span class="kn">import</span> <span class="n">BayesianVoigtFitter</span><span class="p">,</span> <span class="n">require_bayes_engine</span>
         <span class="c1"># Raised, not turned into a return value of 0 like the other</span>
@@ -2708,22 +2746,32 @@
         <span class="n">require_bayes_engine</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">engine</span><span class="p">))</span>
 
         <span class="n">nsteps_i</span><span class="p">,</span> <span class="n">nlive_i</span><span class="p">,</span> <span class="n">depth_i</span> <span class="o">=</span> <span class="n">nsteps</span><span class="p">,</span> <span class="n">nlive</span><span class="p">,</span> <span class="n">group_depth</span>
-            
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">RecipeFailed</span><span class="p">(</span><span class="s2">"There are no components to fit."</span><span class="p">)</span>
         <span class="n">current_session</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span>
         <span class="n">_warn_if_unconvolved</span><span class="p">(</span><span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="p">)</span>
 
         <span class="k">with</span> <span class="n">current_session</span><span class="o">.</span><span class="n">systs</span><span class="o">.</span><span class="n">fitting_context</span><span class="p">(</span><span class="n">uuids</span><span class="p">,</span> <span class="n">group_depth</span><span class="o">=</span><span class="n">depth_i</span><span class="p">,</span>
                                                    <span class="n">spec</span><span class="o">=</span><span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="p">):</span>
             <span class="n">b_fitter</span> <span class="o">=</span> <span class="n">BayesianVoigtFitter</span><span class="p">(</span><span class="n">current_session</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="n">current_session</span><span class="o">.</span><span class="n">systs</span><span class="p">)</span>
-                
-            <span class="k">if</span> <span class="n">engine</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">'nested'</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Running nested sampling (nlive=</span><span class="si">{</span><span class="n">nlive_i</span><span class="si">}</span><span class="s2">)."</span><span class="p">)</span>
-                <span class="n">res</span> <span class="o">=</span> <span class="n">b_fitter</span><span class="o">.</span><span class="n">run_nested</span><span class="p">(</span><span class="n">nlive</span><span class="o">=</span><span class="n">nlive_i</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Running MCMC (nsteps=</span><span class="si">{</span><span class="n">nsteps_i</span><span class="si">}</span><span class="s2">)."</span><span class="p">)</span>
-                <span class="n">res</span> <span class="o">=</span> <span class="n">b_fitter</span><span class="o">.</span><span class="n">run_mcmc</span><span class="p">(</span><span class="n">nsteps</span><span class="o">=</span><span class="n">nsteps_i</span><span class="p">)</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">engine</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">'nested'</span><span class="p">:</span>
+                    <span class="c1"># With fewer live points dynesty fails (nlive 1 and 3</span>
+                    <span class="c1"># with 3 free parameters) or does not end (4 and 7):</span>
+                    <span class="c1"># phase 6-quater, PR 10-bis (Guido)</span>
+                    <span class="k">if</span> <span class="n">nlive_i</span> <span class="o">&lt;</span> <span class="n">NLIVE_PER_PARAMETER</span> <span class="o">*</span> <span class="n">b_fitter</span><span class="o">.</span><span class="n">ndim</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">InvalidParameter</span><span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">"nlive: at least </span><span class="si">{</span><span class="n">NLIVE_PER_PARAMETER</span><span class="si">}</span><span class="s2"> live points per free "</span>
+                            <span class="sa">f</span><span class="s2">"parameter are needed, </span><span class="si">{</span><span class="n">NLIVE_PER_PARAMETER</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">b_fitter</span><span class="o">.</span><span class="n">ndim</span><span class="si">}</span><span class="s2"> "</span>
+                            <span class="sa">f</span><span class="s2">"for the </span><span class="si">{</span><span class="n">b_fitter</span><span class="o">.</span><span class="n">ndim</span><span class="si">}</span><span class="s2"> of this group (got </span><span class="si">{</span><span class="n">nlive_i</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Running nested sampling (nlive=</span><span class="si">{</span><span class="n">nlive_i</span><span class="si">}</span><span class="s2">)."</span><span class="p">)</span>
+                    <span class="n">res</span> <span class="o">=</span> <span class="n">b_fitter</span><span class="o">.</span><span class="n">run_nested</span><span class="p">(</span><span class="n">nlive</span><span class="o">=</span><span class="n">nlive_i</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Running MCMC (nsteps=</span><span class="si">{</span><span class="n">nsteps_i</span><span class="si">}</span><span class="s2">)."</span><span class="p">)</span>
+                    <span class="n">res</span> <span class="o">=</span> <span class="n">b_fitter</span><span class="o">.</span><span class="n">run_mcmc</span><span class="p">(</span><span class="n">nsteps</span><span class="o">=</span><span class="n">nsteps_i</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">RuntimeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="c1"># An error of the sampler (e.g. emcee with too few walkers,</span>
+                <span class="c1"># F141) is a failure of the recipe, not a bug</span>
+                <span class="k">raise</span> <span class="n">RecipeFailed</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The sampler failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
 
             <span class="c1"># Never overwrite the components with non-finite values</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">res</span><span class="p">[</span><span class="s1">'medians'</span><span class="p">])):</span>
