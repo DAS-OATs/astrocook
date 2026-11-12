@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 
 from astrocook.core.atomic_data import ATOM_DATA, get_multiplet_velocity_lags, STANDARD_MULTIPLETS, xem_d
 from astrocook.core.structures import DataColumn, SpectrumData 
+from astrocook.core.units import FLUX_AUX_COLUMNS, has_no_unit
 from astrocook.core.debug_hooks import request_debug_plot
 
 if TYPE_CHECKING:
@@ -107,24 +108,21 @@ def convert_y_axis(spec_data: SpectrumData, yunit: au.Unit
     new_aux_cols = {}
     original_y_unit = spec_data.y.unit # The unit of the data before conversion
 
-    # Iterate over all auxiliary columns
     for name, data_col in spec_data.aux_cols.items():
-        
-        # Check if the column is flux-like (shares the same unit as the main Y-axis)
-        if data_col.unit.is_equivalent(original_y_unit):
-            
-            # Apply standard Astropy conversion
+        if name in FLUX_AUX_COLUMNS and has_no_unit(data_col.unit):
+            # A continuum or a model without a unit is in the unit of the flux
+            # (F130: it was left as it was, and the flux divided by the
+            # continuum changed by the factor of the conversion)
+            converted_quantity = au.Quantity(data_col.values, original_y_unit).to(yunit)
+        elif data_col.unit.is_equivalent(original_y_unit):
+            # Flux-like (equivalent to the unit of the flux)
             converted_quantity = data_col.quantity.to(yunit)
-            
-            # Create a new DataColumn entry
-            new_aux_cols[name] = DataColumn(
-                converted_quantity.value, 
-                yunit, 
-                description=data_col.description
-            )
         else:
-            # If the column unit is different (e.g., quality flags, resolution), copy it directly
+            # Another unit (quality flags, resolution): copied as it is
             new_aux_cols[name] = data_col
+            continue
+        new_aux_cols[name] = DataColumn(
+            converted_quantity.value, yunit, description=data_col.description)
 
     return new_y, new_dy, new_aux_cols
 

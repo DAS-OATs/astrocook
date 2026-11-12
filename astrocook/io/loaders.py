@@ -9,6 +9,8 @@ from typing import Callable, Dict, Optional, Tuple
 
 # Import V2 structures from the core
 from astrocook.core.structures import SpectrumData, DataColumn
+from astrocook.core.units import (ARBITRARY_FLUX, FLUX_AUX_COLUMNS, known_unit,
+                                  parse_flux_unit)
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +58,20 @@ def _x_unit_heuristics(x_arr: np.ndarray) -> au.Unit:
         x_arr = x_arr / 10.0
         x_unit = au.nm
     return x_arr, x_unit
+
+def _flux_unit(text, where: str):
+    """The unit of the flux read in a header (``BUNIT``, ``TUNITn``), or the
+    arbitrary flux of Astrocook if there is none or it cannot be read (phase
+    6-quater, PR 8-bis: the loaders gave a physical unit, or none, whatever
+    the file said)."""
+    unit = parse_flux_unit(text)
+    if unit is None:
+        if text is not None and str(text).strip():
+            logger.info(f"The unit of the flux in {where} ({text!r}) cannot be "
+                        "read: the flux is in arbitrary units.")
+        return ARBITRARY_FLUX
+    return unit
+
 
 def detect_file_format(file_path: str) -> str:
     path_lower = file_path.lower()
@@ -138,7 +154,8 @@ def load_astrocook_fits(file_path: str, **kwargs) -> SpectrumData:
     Expects columns: 'x' (Wave), 'y' (Flux), 'dy' (Error).
     """
     # Load the table (Astrocook saves to the first extension)
-    t = Table.read(file_path, format='fits')
+    # The units are read without a warning, arb_flux included (PR 8-bis)
+    t = Table.read(file_path, format='fits', unit_parse_strict='silent')
 
     # 1. Identify Core Columns
     # Astrocook saves data as 'x', 'y', 'dy'.
@@ -150,6 +167,7 @@ def load_astrocook_fits(file_path: str, **kwargs) -> SpectrumData:
     else: 
         raise ValueError("Astrocook FITS must have 'x' or 'wave' column.")
 
+    flux_name = 'y' if 'y' in t.colnames else 'flux'
     if 'y' in t.colnames: 
         y = t['y'].data
     elif 'flux' in t.colnames: 
@@ -171,8 +189,10 @@ def load_astrocook_fits(file_path: str, **kwargs) -> SpectrumData:
     if hasattr(t['x'], 'unit') and t['x'].unit == au.Angstrom:
          x = x / 10.0
 
-    # Standard Flux unit
-    y_unit = au.erg / (au.cm**2 * au.s * au.Angstrom)
+    # The unit of the file (PR 8-bis: it was always erg/(Angstrom s cm2))
+    y_unit = known_unit(t[flux_name].unit)
+    if y_unit is None or y_unit == au.dimensionless_unscaled:
+        y_unit = ARBITRARY_FLUX
 
     # 3. Handle Auxiliary Columns
     # Automatically load 'cont', 'model', or other columns
@@ -266,7 +286,9 @@ def load_pypeit_coadd(file_path: str, **kwargs) -> SpectrumData:
 
     # 3. Units
     x, x_unit = _x_unit_heuristics(x)
-    y_unit = au.dimensionless_unscaled
+    # Arbitrary (PR 8-bis: dimensionless); the unit of a fluxed spectrum
+    # (FLUXED) waits for a sample file
+    y_unit = ARBITRARY_FLUX
 
     # 4. Build Structure
     x_col = DataColumn(x, x_unit, "Wavelength")
@@ -358,7 +380,9 @@ def load_pypeit_spec1d_multi(file_path: str, **kwargs) -> SpectrumData:
 
     # Units
     x, x_unit = _x_unit_heuristics(x)        
-    y_unit = au.dimensionless_unscaled
+    # Arbitrary (PR 8-bis: dimensionless); OPT_FLAM of a fluxed spectrum
+    # waits for a sample file
+    y_unit = ARBITRARY_FLUX
 
     # Build structure
     x_col = DataColumn(x, x_unit, "Wavelength")
@@ -396,7 +420,7 @@ def load_pypeit_stack(file_path: str, **kwargs) -> SpectrumData:
 
     # 2. Flux
     y = row['flux_stack']
-    y_unit = au.dimensionless_unscaled
+    y_unit = ARBITRARY_FLUX  # PR 8-bis: dimensionless
 
     # 3. Error
     if 'sigma_stack' in t.columns:
@@ -478,7 +502,8 @@ def load_pypeit_tellmodel(file_path: str, **kwargs) -> SpectrumData:
 
         # Stash the Quasar/Object model as an auxiliary column
         aux_cols = {
-            'obj_model': DataColumn(obj_model, y_unit, "Object Model")
+            # A flux (PR 8-bis: dimensionless, as the transmission)
+            'obj_model': DataColumn(obj_model, ARBITRARY_FLUX, "Object Model")
         }
 
         meta = dict(hdul[0].header)
@@ -508,21 +533,49 @@ def _first_line_is_numeric(file_path: str) -> bool:
     return False
 
 
+def _is_ecsv(file_path: str) -> bool:
+    """Whether the file is an ECSV file (``# %ECSV`` on the first line), as
+    ``export_ascii`` writes since phase 6-quater, PR 8-bis."""
+    with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
+        return f.readline().startswith('# %ECSV')
+
+
+# The names of the columns of every spectrum in a CSV file with a header: the
+# ASCII spelling of the GUI (export_ascii since PR 8-bis) or the names of the
+# data (export_ascii before)
+_CSV_CORE_NAMES = {'lam': 'x', 'lammin': 'xmin', 'lammax': 'xmax', 'F': 'y', 'dF': 'dy',
+                   'x': 'x', 'xmin': 'xmin', 'xmax': 'xmax', 'y': 'y', 'dy': 'dy'}
+
+
 @register_loader("simple_csv")
 def load_simple_csv(file_path: str, **kwargs) -> SpectrumData:
     """
-    Loader of CSV files: the first three columns are x (nm), y and dy.
+    Loader of CSV files.
 
-    The file may have a header, with any names, or not (F100: the first line
-    was always taken as the names, and the columns asked for by the names
-    ``col1``, ``col2``, ``col3``, so a file of numbers only did not open).
-    The columns are taken by position.
+    - The files of ``export_ascii`` (ECSV, phase 6-quater, PR 8-bis): the
+      columns by name (``lam``, ``lammin``, ``lammax``, ``F``, ``dF``, or
+      ``x``, ..., ``dy``), with their units and the emission redshift; the
+      other columns (``cont``, ...) are read too (F129: they were lost, and
+      the units assumed).
+    - A file whose header names ``x``, ``y`` and ``dy`` (written by
+      ``export_ascii`` before PR 8-bis): the columns by name, the axis in
+      nm, the flux in arbitrary units (F129: by position, so the file of the
+      whole spectrum, ``x,xmin,xmax,y,dy,...``, gave ``xmin`` as the flux).
+    - Any other: the first three columns are x (nm), y and dy, by position,
+      with a header of any names or without one (F100: the first line was
+      always taken as the names, and a file of numbers only did not open);
+      the flux in arbitrary units (PR 8-bis: erg/(Angstrom s cm2) was
+      assumed).
     """
+    if _is_ecsv(file_path):
+        return _load_named_csv(Table.read(file_path, format='ascii.ecsv'), file_path)
     if _first_line_is_numeric(file_path):
         data = Table.read(file_path, format='ascii.no_header', delimiter=',',
                           comment='#')
     else:
         data = Table.read(file_path, format='ascii.csv', comment='#')
+        if {'x', 'y', 'dy'} <= set(data.colnames):
+            return _load_named_csv(data, file_path)
     if len(data.colnames) < 3:
         raise ValueError(f"The file has {len(data.colnames)} columns: three are "
                          "needed (x, y, dy).")
@@ -532,7 +585,7 @@ def load_simple_csv(file_path: str, **kwargs) -> SpectrumData:
 
     # 2. Define Units (You can pass these in kwargs if dynamic)
     x_unit = au.nm
-    y_unit = au.erg / (au.cm**2 * au.s * au.Angstrom)
+    y_unit = ARBITRARY_FLUX  # PR 8-bis: erg/(Angstrom s cm2) was assumed
 
     # 3. Create Data Columns
     x_col = DataColumn(x, x_unit, "Wavelength")
@@ -554,6 +607,48 @@ def load_simple_csv(file_path: str, **kwargs) -> SpectrumData:
     )
 
 
+def _load_named_csv(table: Table, file_path: str) -> SpectrumData:
+    """A CSV file whose columns are known by name (see :func:`load_simple_csv`):
+    without a unit, the axis is in nm and the flux in arbitrary units."""
+    core = {}
+    aux_cols = {}
+    for name in table.colnames:
+        unit = known_unit(table[name].unit)
+        values = np.asarray(table[name])
+        if name in _CSV_CORE_NAMES and _CSV_CORE_NAMES[name] not in core:
+            core[_CSV_CORE_NAMES[name]] = (values, unit)
+        else:
+            aux_cols[name] = (values, unit)
+    missing = [n for n in ('x', 'y', 'dy') if n not in core]
+    if missing:
+        raise ValueError(f"The file has no column {', '.join(missing)} (or lam, F, dF).")
+
+    x, x_unit = core['x']
+    x_unit = x_unit or au.nm
+    y, y_unit = core['y']
+    y_unit = y_unit if y_unit is not None and y_unit != au.dimensionless_unscaled \
+        else ARBITRARY_FLUX
+    dy, dy_unit = core['dy']
+    x_col = DataColumn(np.asarray(x, dtype=float), x_unit, "Wavelength")
+    if 'xmin' in core and 'xmax' in core:
+        xmin_col = DataColumn(np.asarray(core['xmin'][0], dtype=float), core['xmin'][1] or x_unit)
+        xmax_col = DataColumn(np.asarray(core['xmax'][0], dtype=float), core['xmax'][1] or x_unit)
+    else:
+        xmin_col, xmax_col = _auto_limits(np.asarray(x, dtype=float), x_unit)
+    aux = {}
+    for name, (values, unit) in aux_cols.items():
+        if unit is None:
+            # A flux column without a unit is in the unit of the flux
+            unit = y_unit if name in FLUX_AUX_COLUMNS else au.dimensionless_unscaled
+        aux[name] = DataColumn(values, unit)
+    return SpectrumData(
+        x=x_col, xmin=xmin_col, xmax=xmax_col,
+        y=DataColumn(np.asarray(y, dtype=float), y_unit, "Flux"),
+        dy=DataColumn(np.asarray(dy, dtype=float), dy_unit or y_unit, "Error"),
+        aux_cols=aux, meta={'ORIGIN': 'simple_csv_loader', 'FILE': file_path},
+        z_em=float(table.meta.get('z_em', 0.0)))
+
+
 @register_loader("ascii_telluric_model")
 def load_ascii_telluric_model(file_path: str, **kwargs) -> SpectrumData:
     """
@@ -565,7 +660,7 @@ def load_ascii_telluric_model(file_path: str, **kwargs) -> SpectrumData:
     # 1. Define Units
     # Based on data range ~380.0, this is likely Nanometers
     x_unit = au.nm 
-    y_unit = au.erg / (au.cm**2 * au.s * au.Angstrom) 
+    y_unit = ARBITRARY_FLUX  # PR 8-bis: erg/(Angstrom s cm2) was assumed
 
     # 2. Extract Data
     # Column names are lowercased by astropy automatically
@@ -675,7 +770,7 @@ def load_ascii_with_resvel_header(file_path: str, **kwargs) -> SpectrumData:
         logger.info("Wavelengths read in nm (median below 500).")
         x_unit = au.nm
 
-    y_unit = au.dimensionless_unscaled
+    y_unit = ARBITRARY_FLUX  # PR 8-bis: dimensionless
 
     # 6. Build Columns
     x_col = DataColumn(x, x_unit, "Wavelength")
@@ -721,6 +816,10 @@ def load_espresso_s2d_fits(file_path: str, **kwargs) -> SpectrumData:
         if wave_data is None: wave_data = get_data('WAVEDATA_AIR') # Fallback
 
         sci_data = get_data('SCIDATA')
+        # BUNIT of the flux, per pixel: divided by the width of the pixel in
+        # Angstrom below (PR 8-bis: dimensionless)
+        bunit = (hdul['SCIDATA'].header.get('BUNIT') if 'SCIDATA' in hdul else None) \
+            or header.get('BUNIT')
         err_data = get_data('ERRDATA')
         qual_data = get_data('QUALDATA')
         tell_data = get_data('TELLURIC_CORRECTION') 
@@ -788,7 +887,9 @@ def load_espresso_s2d_fits(file_path: str, **kwargs) -> SpectrumData:
 
         # 7. Units and Columns
         x_unit = au.nm
-        y_unit = au.dimensionless_unscaled
+        y_unit = _flux_unit(bunit, 'BUNIT')
+        if y_unit != ARBITRARY_FLUX:
+            y_unit = y_unit / au.Angstrom
 
         # DO NOT call _auto_limits(x). Use our pre-computed columns.
         xmin_col = DataColumn(xmin, x_unit)
@@ -856,7 +957,12 @@ def load_xshooter_fits(file_path: str, **kwargs) -> SpectrumData:
 
         # 2. Units 
         x, x_unit = _x_unit_heuristics(x)
-        y_unit = au.erg / (au.cm**2 * au.s * au.Angstrom)
+        # The TUNIT of FLUX, unless FLUXCAL says that it is not calibrated
+        # (PR 8-bis: always erg/(Angstrom s cm2))
+        if str(header.get('FLUXCAL', '')).strip().upper() == 'UNCALIBRATED':
+            y_unit = ARBITRARY_FLUX
+        else:
+            y_unit = _flux_unit(data.columns['FLUX'].unit, 'TUNIT of FLUX')
 
         # 3. Build Columns
         x_col = DataColumn(x, x_unit)
@@ -946,10 +1052,13 @@ def load_generic_spectrum(file_path: str, **kwargs) -> SpectrumData:
             raise ValueError("Could not find Wavelength column (WAVE, LAMBDA, LOGLAM).")
 
         # -- Flux --
-        if 'FLUX' in cols: y = data[cols['FLUX']]
-        elif 'SCI' in cols: y = data[cols['SCI']]
-        elif 'DATA' in cols: y = data[cols['DATA']]
+        if 'FLUX' in cols: flux_name = cols['FLUX']
+        elif 'SCI' in cols: flux_name = cols['SCI']
+        elif 'DATA' in cols: flux_name = cols['DATA']
         else: raise ValueError("Could not find Flux column (FLUX, SCI, DATA).")
+        y = data[flux_name]
+        # PR 8-bis: dimensionless whatever the file said
+        y_unit = _flux_unit(data.columns[flux_name].unit, f"the TUNIT of {flux_name}")
 
         # -- Error --
         if 'ERR' in cols: dy = data[cols['ERR']]
@@ -982,8 +1091,8 @@ def load_generic_spectrum(file_path: str, **kwargs) -> SpectrumData:
 
         # 6. Build Structure
         x_col = DataColumn(x, x_unit, "Wavelength")
-        y_col = DataColumn(y, au.dimensionless_unscaled, "Flux")
-        dy_col = DataColumn(dy, au.dimensionless_unscaled, "Error")
+        y_col = DataColumn(y, y_unit, "Flux")
+        dy_col = DataColumn(dy, y_unit, "Error")
         xmin_col, xmax_col = _auto_limits(x, x_unit)
 
         meta = dict(header)

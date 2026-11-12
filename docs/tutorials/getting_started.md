@@ -4,7 +4,12 @@ Welcome to Astrocook V2! This guide will walk you through the basics of the inte
 
 ## 1. Loading a Spectrum
 
-Let's begin by loading some data. Astrocook supports various formats, including standard FITS files and its own archive formats (`.acs`, `.acs2`). A `.csv` file is read as three columns, by position: wavelength (nm), flux and its error (erg cm⁻² s⁻¹ Å⁻¹), with or without a line of names on top; further columns are ignored.
+Let's begin by loading some data. Astrocook supports various formats, including standard FITS files and its own archive formats (`.acs`, `.acs2`). A `.csv` file written by **File > Export to ASCII...** is read back with its columns and units (see [below](#getting-started-export)); any other `.csv` file is read as three columns, by position: wavelength (nm), flux and its error, with or without a line of names on top, and further columns are ignored.
+
+(getting-started-flux-unit)=
+:::{note}
+**The unit of the flux.** A spectrum gets a physical unit of the flux only when the file says it: the `BUNIT` or `TUNIT` keyword of a FITS file (e.g. `erg cm**(-2) s**(-1) angstrom**(-1)` in an ESO X-Shooter product, unless its `FLUXCAL` is `UNCALIBRATED`), the units of an exported CSV file, or the archives. Otherwise the flux is in **arbitrary units**, the unit `arb_flux` of Astrocook: the plot says "arbitrary units", the iso-magnitude grid is not drawn, and **Convert Y axis** refuses to convert it. If you know the unit, declare it with **Edit > Set Properties...** (the field *yunit*, e.g. `1e-17 erg/(Angstrom s cm^2)`): the values are not changed. **Flux > Calibrate from Magnitudes** gives the flux a physical unit by calibrating it. The archives of Astrocook 1 and the archives whose flux has no unit open in arbitrary units; an archive with a unit keeps it.
+:::
 
 1.  Launch Astrocook. The window opens with the size and position you left it with, and shows the welcome screen, with the buttons **Open Session...** and **Open Recent** (a drop-down menu of the files you opened last).
 2.  Click **Open Session...**, or select **File > Open Session...** in the menu bar (or press `Ctrl+O` / `Cmd+O`). **File > Open Recent** lists the files opened last; you can also drop files on the window.
@@ -211,6 +216,7 @@ When you have finished your analysis (or if you want to save your progress):
 :align: center
 ```
 
+(getting-started-export)=
 ## 5. Exporting and Importing Data
 
 Astrocook allows you to easily exchange data with external tools (like spreadsheet managers, Topcat, or custom Python scripts) using standard CSV files.
@@ -218,8 +224,10 @@ Astrocook allows you to easily exchange data with external tools (like spreadshe
 ### Export to ASCII
 To save your current data in a human-readable format, go to **File > Export to ASCII...**. 
 A dialog will appear allowing you to select exactly what to export:
-* **Spectrum (spec)**: Saves the Wavelength ($x$), Flux ($y$), Error ($dy$), Continuum ($cont$), and any other active spectral columns into a `_spec.csv` file.
+* **Spectrum (spec)**: Saves the wavelength (`lam`), its pixel edges (`lammin`, `lammax`), the flux (`F`), its error (`dF`), the continuum (`cont`) and any other column of the spectrum into a `_spec.csv` file. The wavelength is always written; the other columns can be chosen one by one.
 * **System List (systems)**: Saves your identified absorption lines (including Redshift, Column Density, Doppler Parameter, etc.) into a `_systems.csv` file.
+
+The `_spec.csv` file is in [ECSV](https://docs.astropy.org/en/stable/io/ascii/ecsv.html), the CSV format of astropy: a header of lines starting with `#` gives the unit of each column and the emission redshift, then come the names of the columns and the values, separated by commas. Opened again in Astrocook (**File > Open Session...**), it gives back the columns, their units and $z_\mathrm{em}$; astropy reads it with `Table.read(path, format="ascii.ecsv")`, pandas with `pandas.read_csv(path, comment="#")`. The files written by earlier versions (columns `x`, `y`, `dy`, ..., no units) are read by the names of their columns, with the flux in arbitrary units.
 
 You can choose to export entire structures or pick individual columns. The suggested filename will automatically adjust based on your selection, and Astrocook will warn you if you are about to overwrite existing files. An item that is neither a column nor `spec` or `systems` (e.g. `cont` before a continuum is estimated) is skipped, and a warning in the log names it.
 
@@ -244,7 +252,7 @@ so for those steps.
 
 ### Import from ASCII
 If you have manipulated your exported `_spec.csv` data externally, you can bring it back into Astrocook by going to **File > Import from ASCII...**.
-* Astrocook will match the column headers in your CSV to the columns in the active session and overwrite them. A column `x` is not read: the grid of the spectrum is kept.
+* Astrocook will match the column headers in your CSV to the columns in the active session and overwrite them; the names of the GUI (`F`, `dF`, ...) and those of the data (`y`, `dy`, ...) are both understood. The wavelength (`lam`, `lammin`, `lammax`, or `x`, `xmin`, `xmax`) is not read: the grid of the spectrum is kept. A column with a unit in the file keeps it; a flux or an error in a unit different from that of the session is refused.
 * **Safety first:** The imported file must have the exact same number of rows (pixels) as your current spectrum. Because this operates through the recipe pipeline, the import is fully undoable via the Log Scripter or `Ctrl+Z` (`Cmd+Z`).
 
 ## 6. When Something Goes Wrong

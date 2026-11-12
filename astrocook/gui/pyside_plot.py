@@ -16,6 +16,7 @@ from typing import Any, Dict, List, NamedTuple, Optional, Set, TYPE_CHECKING, ca
 
 from astrocook.core.atomic_data import STANDARD_MULTIPLETS, trans_parse, xem_d
 from astrocook.core.spectrum_operations import convert_axis_velocity
+from astrocook.core.units import is_arbitrary_flux
 
 # Use TYPE_CHECKING to avoid circular import errors at runtime
 if TYPE_CHECKING:
@@ -1038,7 +1039,8 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
             y_label_text = f"Signal-to-Noise Ratio ({SYM_FLUX} / {view.snr_col})"
         else:
             # Check if we have a real physical unit
-            if spec.y.unit is None or spec.y.unit == au.dimensionless_unscaled:
+            if spec.y.unit is None or spec.y.unit == au.dimensionless_unscaled \
+                    or is_arbitrary_flux(spec.y.unit):
                 y_label_text = f"Flux ({SYM_FLUX}, arbitrary units)"
             else:
                 # Use Astropy's pretty formatter for the unit string
@@ -1170,17 +1172,23 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
             except QT_ERRORS: pass
         self.isomag_artists = []
 
-        if not self._show_isomag_grid:
-            return
-
         # 2. Get data and perform checks
-        if not self.main_window.active_history: return
-        spec = self.main_window.active_history.current_state.spec
-        if not spec: return
-
+        history = self.main_window.active_history
+        spec = history.current_state.spec if history else None
         standard_flux = au.erg / (au.cm**2 * au.s * au.Angstrom)
-        if spec.y.unit is None or not spec.y.unit.is_equivalent(standard_flux):
-             return
+        physical = bool(spec) and spec.y.unit is not None \
+            and spec.y.unit.is_equivalent(standard_flux)
+        # Only for a flux in physical units (PR 8-bis: it was drawn for the
+        # uncalibrated spectra that the loaders labelled erg/(Angstrom s cm2))
+        checkbox = getattr(self.main_window, 'isomag_checkbox', None)
+        if checkbox is not None and spec:
+            checkbox.setEnabled(physical)
+            checkbox.setToolTip(
+                "Show lines of constant AB magnitude" if physical else
+                "The flux is not in a physical unit: declare it (Edit > Set "
+                "Properties) or calibrate it (Flux > Calibrate from Magnitudes)")
+        if not self._show_isomag_grid or not physical:
+            return
 
         # 3. SAVE CURRENT LIMITS (The secret to acting like a passive grid)
         current_xlim = self.canvas.axes.get_xlim()

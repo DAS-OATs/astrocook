@@ -97,8 +97,22 @@ def test_spectrum_calibrate():
         aux_cols={"cont": DataColumn(y.value, FLUX_NM)}, z_em=3.0)
     spec = Spectrum(data)
     new = spec.calibrate("SDSS_g=17.5")
-    assert new.y.unit == FLAM and new.get_column("cont").unit == FLAM
-    # The values are multiplied by the curve; the unit is relabelled
+    # The unit of the flux is kept (F131, phase 6-quater PR 8-bis: it was
+    # relabelled erg/(Angstrom s cm2), with the values in erg/(nm s cm2))
+    assert new.y.unit == FLUX_NM and new.get_column("cont").unit == FLUX_NM
+    # The values are multiplied by the curve
     curve = generate_calibration_curve(spec.x, spec.y, "SDSS_g=17.5")
     np.testing.assert_array_equal(new.y.value, spec.y.value * curve)
     assert new.history[-1] == "Flux calibrated with: SDSS_g=17.5"
+
+
+def test_calibrated_spectrum_has_the_magnitude_asked_for():
+    # F131: in erg/(nm s cm2), the result labelled erg/(Angstrom s cm2) gave
+    # a magnitude 2.5 brighter than asked for (15.0 for 17.5)
+    x, y = _flat_fnu()
+    data = SpectrumData(
+        x=DataColumn(x.value, au.nm), xmin=DataColumn(x.value - 0.05, au.nm),
+        xmax=DataColumn(x.value + 0.05, au.nm), y=DataColumn(y.value, FLUX_NM),
+        dy=DataColumn(0.01 * y.value, FLUX_NM), z_em=3.0)
+    new = Spectrum(data).calibrate("SDSS_g=17.5")
+    assert calculate_synthetic_ab_mag(new.x, new.y, "SDSS_g") == pytest.approx(17.5, abs=1e-9)

@@ -6,6 +6,10 @@ import numpy as np
 from typing import Any, Dict, List, Optional, Tuple
 import uuid
 
+# Enables the unit arb_flux in astropy (PR 8-bis): every structure of the
+# data imports this module
+import astrocook.core.units  # noqa: F401
+
 logger = logging.getLogger(__name__)
 
 

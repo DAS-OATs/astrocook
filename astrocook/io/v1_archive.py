@@ -24,6 +24,7 @@ import astropy.units as au
 import numpy as np
 from astropy.io import fits
 
+from astrocook.core.units import ARBITRARY_FLUX
 from astrocook.core.structures import (
     ComponentData, DataColumn, SpectrumData, SystemListData,
 )
@@ -35,9 +36,10 @@ _SPEC_CORE = ['x', 'xmin', 'xmax', 'y', 'dy']
 # V1 placed these columns first, in this order, then the others in the
 # order of the file ('dx' was skipped)
 _SPEC_FIRST = ['cont', 'conv', 'line_mask', 'model', 'deabs', 'resol']
-# Flux unit of the V1 spectrum table (as in the V2 'astrocook_fits'
-# loader); V1 gave it also to these auxiliary columns
-_V1_FLUX_UNIT = au.erg / (au.cm**2 * au.s * au.Angstrom)
+# Flux unit of the V1 spectrum table, given also to these auxiliary
+# columns: arbitrary, since the V1 archives write no TUNIT (phase 6-quater,
+# PR 8-bis, Guido; it was erg/(Angstrom s cm2), as V1 assumed)
+_V1_FLUX_UNIT = ARBITRARY_FLUX
 _SPEC_FLUX_COLS = ['cont', 'conv', 'model', 'deabs']
 # Voigt parameters by their lower-case name, as V1 may write them
 _V2_PARAMS = {p.lower(): p for p in ('z', 'logN', 'b', 'btur')}
@@ -111,7 +113,7 @@ def read_v1_spectrum(path: str) -> SpectrumData:
     -------
     SpectrumData
         x, xmin, xmax in nm; y, dy, cont, conv, model and deabs in
-        erg/(cm2 s Angstrom), the other columns without units; ``z_em`` 0
+        arbitrary units (``arb_flux``), the other columns without units; ``z_em`` 0
         (V1 did not store it in the table). If the table has no ``resol``
         column, one filled with NaN comes first among the auxiliary
         columns.

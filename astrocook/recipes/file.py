@@ -3,10 +3,12 @@ import logging
 import os
 import numpy as np
 from astropy.io import ascii
-from astropy.table import Table
+import astropy.units as au
+from astropy.table import Column, Table
 from typing import TYPE_CHECKING, List
 
-from astrocook.core.column_names import internal_expression
+from astrocook.core.column_names import internal_column, internal_expression, is_axis_column
+from astrocook.core.units import known_unit
 from astrocook.recipes.errors import RecipeFailed
 from astrocook.recipes._spectrum import spec_of
 from astrocook.recipes.params import typed_recipe
@@ -53,6 +55,26 @@ FILE_RECIPES_SCHEMAS = {
     }
 }
 
+#: The names of the columns of every spectrum in the CSV files: those of the
+#: GUI, in ASCII (phase 6-quater, PR 8-bis; x, xmin, xmax, y, dy before)
+_CSV_NAMES = {'x': 'lam', 'xmin': 'lammin', 'xmax': 'lammax', 'y': 'F', 'dy': 'dF'}
+
+
+def _spectrum_table(spec, columns) -> Table:
+    """The columns of the spectrum as a table for a CSV file: the names of
+    the GUI in ASCII, the units, and z_em in the metadata (F129: the files
+    had neither, and the loader assumed nm and erg/(Angstrom s cm2))."""
+    table = Table()
+    for name in columns:
+        q = spec.t[name]
+        unit = getattr(q, 'unit', None)
+        table[_CSV_NAMES.get(name, name)] = Column(
+            np.asarray(getattr(q, 'value', q)),
+            unit=None if unit == au.dimensionless_unscaled else unit)
+    table.meta['z_em'] = float(spec._data.z_em)
+    return table
+
+
 class RecipeFile:
     """
     Recipes for file input/output operations.
@@ -73,9 +95,18 @@ class RecipeFile:
 
         Generates distinct files for spectrum data (`_spec.csv`) and system 
         lists (`_systems.csv`) based on the requested targets. Spectrum 
-        exports automatically include the wavelength array (`x`), while 
+        exports automatically include the wavelength array (``lam``), while 
         system exports automatically include the transition name (`series`) 
         and redshift (`z`).
+
+        The spectrum is written as ECSV (the CSV format of astropy, phase
+        6-quater, PR 8-bis, F129): a header of comment lines with the unit
+        of each column and the emission redshift, then the names and the
+        values separated by commas (``pandas.read_csv(path, comment='#')``
+        reads it). The columns have the names of the GUI in ASCII: ``lam``,
+        ``lammin``, ``lammax``, ``F``, ``dF`` and the others by their own
+        name (before: ``x``, ``xmin``, ``xmax``, ``y``, ``dy``, without
+        units). Opened again, the file gives the same columns and units.
 
         Parameters
         ----------
@@ -124,10 +155,10 @@ class RecipeFile:
         saved_any = False
 
         if spec_req:
-            valid_cols = ['x'] + spec_req
-            raw_data = {c: spec_of(self._session).t[c] for c in valid_cols}
+            spec = spec_of(self._session)
             out_path = os.path.join(folder, f"{prefix}_spec.csv")
-            ascii.write(Table(raw_data), out_path, format='csv', overwrite=True)
+            ascii.write(_spectrum_table(spec, ['x'] + spec_req), out_path,
+                        format='ecsv', delimiter=',', overwrite=True)
             saved_any = True
 
         # 2. Systems Export (Refined)
@@ -242,15 +273,28 @@ class RecipeFile:
         imported_cols = []
 
         # 3. Iterate through columns in the ASCII file
-        for col_name in table.colnames:
-            # We skip 'x' to prevent grid misalignment, but use everything else
-            if col_name.lower() == 'x':
+        for file_name_col in table.colnames:
+            # The names of the GUI (F, dF, lam, ...) are those of the data
+            # (PR 8-bis: F made a column F)
+            col_name = internal_column(file_name_col)
+            # The axis is skipped to prevent grid misalignment (x, and since
+            # PR 8-bis lam, xmin, xmax and their other names)
+            if col_name.lower() == 'x' or is_axis_column(col_name):
                 continue
-            
-            values = np.array(table[col_name])
-            # Update the column (this handles both core y/dy and aux columns)
-            new_spec = new_spec.update_column(col_name, values)
-            imported_cols.append(col_name)
+
+            values = np.array(table[file_name_col])
+            unit = table[file_name_col].unit
+            if col_name in ('y', 'dy') and unit is not None:
+                unit = known_unit(unit)
+                if unit != new_spec.y.unit:
+                    raise RecipeFailed(f"The column {file_name_col} of the file is in {unit}, "
+                                       f"the flux of the session in {new_spec.y.unit}: "
+                                       "they must be the same.")
+            # Update the column (this handles both core y/dy and aux
+            # columns); the unit of the file, if it has one (PR 8-bis)
+            new_spec = new_spec.update_column(col_name, values,
+                                              unit=None if unit is None else known_unit(unit))
+            imported_cols.append(file_name_col)
 
         logger.info(f"Columns imported: {', '.join(imported_cols)}.")
         return self._session.with_new_spectrum(new_spec)

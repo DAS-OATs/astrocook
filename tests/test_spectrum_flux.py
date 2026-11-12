@@ -144,13 +144,15 @@ MAGS = "SDSS_g=17.5, SDSS_r=17.0"
 def test_calibrate(spec):
     curve = generate_calibration_curve(spec.x, spec.y, MAGS)
     new = spec.calibrate(MAGS)
+    # The unit of the flux is kept (F131, phase 6-quater PR 8-bis: it was
+    # relabelled FLAM, the values in the unit of the flux)
     for name in ("y", "dy"):
         col = getattr(new, name)
         np.testing.assert_array_equal(col.value, getattr(spec, name).value * curve)
-        assert col.unit == FLAM
+        assert col.unit == spec.y.unit
     for name in ("cont", "model", "cont_pl"):
         np.testing.assert_array_equal(_col(new, name).value, _col(spec, name).value * curve)
-        assert _col(new, name).unit == FLAM
+        assert _col(new, name).unit == spec.y.unit
     assert new.history[-1] == f"Flux calibrated with: {MAGS}"
 
 

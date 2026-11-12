@@ -29,11 +29,13 @@ def test_export_ascii_writes_spectrum_columns(tmp_path):
                                       prefix="qso")
 
     assert saved is True
-    table = ascii.read(tmp_path / "qso_spec.csv", format="csv")
-    assert table.colnames == ["x", "y", "dy"]
-    np.testing.assert_allclose(table["x"], session.spec.x.value)
-    np.testing.assert_allclose(table["y"], session.spec.y.value)
-    np.testing.assert_allclose(table["dy"], session.spec.dy.value)
+    # ECSV, with the names of the GUI in ASCII since PR 8-bis of phase
+    # 6-quater (x, y, dy before)
+    table = ascii.read(tmp_path / "qso_spec.csv", format="ecsv")
+    assert table.colnames == ["lam", "F", "dF"]
+    np.testing.assert_allclose(table["lam"], session.spec.x.value)
+    np.testing.assert_allclose(table["F"], session.spec.y.value)
+    np.testing.assert_allclose(table["dF"], session.spec.dy.value)
 
 
 def test_export_ascii_maps_ui_names_on_whole_words_only(tmp_path):
@@ -44,8 +46,8 @@ def test_export_ascii_maps_ui_names_on_whole_words_only(tmp_path):
                                       prefix="qso")
 
     assert saved is True
-    table = ascii.read(tmp_path / "qso_spec.csv", format="csv")
-    assert table.colnames == ["x", "xmin", "xmax"]
+    table = ascii.read(tmp_path / "qso_spec.csv", format="ecsv")
+    assert table.colnames == ["lam", "lammin", "lammax"]
 
 
 def test_export_ascii_outputs(tmp_path):
@@ -67,8 +69,8 @@ def test_export_ascii_whole_spectrum(tmp_path):
     # nothing before F82 was fixed)
     session = _make_session()
     assert session.file.export_ascii(targets="spec", path=str(tmp_path), prefix="qso")
-    table = ascii.read(tmp_path / "qso_spec.csv", format="csv")
-    assert table.colnames == ["x", "xmin", "xmax", "y", "dy"]
+    table = ascii.read(tmp_path / "qso_spec.csv", format="ecsv")
+    assert table.colnames == ["lam", "lammin", "lammax", "F", "dF"]
 
 
 def test_export_ascii_does_not_overwrite_unless_asked(tmp_path):

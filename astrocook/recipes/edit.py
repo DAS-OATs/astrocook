@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING, Dict, cast, Optional, Union, List, Tuple
 from astrocook.core.column_names import (display_columns, internal_column,
                                          internal_expression, is_axis_column)
 from astrocook.core.structures import SystemListData
+from astrocook.core.units import (has_no_unit, is_arbitrary_flux,
+                                  is_flux_density_per_wavelength)
 from astrocook.core.system_list import SystemList
 from astrocook.recipes.errors import (InvalidParameter, RecipeError, RecipeFailed,
                                       reason_of)
@@ -41,6 +43,10 @@ def _methods_set_properties(p):
             except ValueError:
                 pass
             parts.append(f"the resolving power to R = {resol}")
+    if p.given('yunit'):
+        unit = str(p['yunit'])
+        parts.append("the flux was declared in arbitrary units" if unit.strip() == 'arb_flux'
+                     else f"the unit of the flux was declared as {unit}, the values unchanged")
     p.raw('overwrite_resol_col')
     if not parts:
         return f"The properties of the session were left as they were{p.menu}"
@@ -149,7 +155,7 @@ EDIT_RECIPES_SCHEMAS = {
         "methods": _methods_set_properties,
         "brief": "Set session properties.",
         "provides": ("z_em", "resolution"),
-        "details": "Sets the name of the session, the name of the object, the emission redshift and the resolution of the spectrum. A field left at '_current_' keeps its value.",
+        "details": "Sets the name of the session, the name of the object, the emission redshift, the resolution of the spectrum and the unit of its flux (a flux density per unit wavelength, declared, not converted: y_convert converts). A field left at '_current_' keeps its value.",
         "params": [
             {"name": "name", "type": str, "default": "_current_", "keep": ("_current_",), "doc": "Name of the session, as shown in the session list (not empty)."},
             {"name": "object", "type": str, "default": "_current_", "keep": ("_current_",), "doc": "Name of the object (the OBJECT keyword of the header)."},
@@ -159,6 +165,9 @@ EDIT_RECIPES_SCHEMAS = {
             {"name": "resol", "type": str, "default": "_current_", "keep": ("_current_",), "doc": "Resolution of the spectrum: the resolving power R (e.g. '50000'), or the FWHM of the line spread function in pixels (e.g. '3px', with the x axis in wavelength); written in the 'resol' column."},
             # Replace a resolution column that varies with wavelength by a
             # flat one; False (#526) keeps it. The GUI asks the user
+            # Declared, not converted (PR 8-bis, Guido: a parameter of
+            # set_properties, as z_em and resol); y_convert converts
+            {"name": "yunit", "type": str, "default": "_current_", "keep": ("_current_",), "doc": "Unit of the flux, declared without converting the values, e.g. 'erg/(Angstrom s cm^2)', or 'arb_flux' (arbitrary units)."},
             {"name": "overwrite_resol_col", "type": bool, "default": False, "gui_hidden": True, "doc": "Replace an existing 'resol' column that varies along the spectrum (asked by the GUI)."}
         ],
         "url": "edit_cb.html#set_properties"
@@ -517,7 +526,8 @@ class RecipeEdit:
     @typed_recipe
     def set_properties(self, name: str = '_current_', object: str = '_current_',
                        z_em: Union[float, str] = '_current_', resol: str = '_current_',
-                       overwrite_resol_col: bool = False) -> Optional['Session']:
+                       overwrite_resol_col: bool = False,
+                       yunit: str = '_current_') -> Optional['Session']:
         """
         Set session properties.
 
@@ -542,6 +552,12 @@ class RecipeEdit:
             kept (a flat or missing column is always set). Defaults to
             ``False`` (#526: before, a variable column was flattened even
             with ``resol='_current_'``).
+        yunit : str, optional
+            The unit of the flux, declared without converting the values
+            (phase 6-quater, PR 8-bis): a flux density per unit wavelength
+            (e.g. ``'erg/(Angstrom s cm^2)'``) or ``'arb_flux'``, the
+            arbitrary units of Astrocook. Defaults to ``'_current_'`` (no
+            change). :meth:`y_convert` converts a flux that has a unit.
 
         Returns
         -------
@@ -552,6 +568,16 @@ class RecipeEdit:
             # An empty name was ignored without a word (PR 8)
             raise InvalidParameter("name: the name of a session cannot be empty "
                                    "('_current_' keeps it)")
+        yunit_obj = None
+        if str(yunit) != '_current_':
+            try:
+                yunit_obj = au.Unit(str(yunit))
+            except ValueError:
+                raise InvalidParameter(f"yunit: {yunit!r} is not a unit") from None
+            if not (is_arbitrary_flux(yunit_obj) or is_flux_density_per_wavelength(yunit_obj)):
+                raise InvalidParameter(f"yunit: {yunit!r} is not a flux density per unit "
+                                       "wavelength (e.g. 'erg/(Angstrom s cm^2)') nor "
+                                       "'arb_flux' (arbitrary units)")
         # 1. Parse numerical inputs (z_em, resol)
         try:
             if str(z_em) == '_current_':
@@ -581,6 +607,9 @@ class RecipeEdit:
             object_name=new_object,
             overwrite_resol_col=overwrite_resol_col 
         )
+
+        if yunit_obj is not None:
+            new_spec = new_spec.with_flux_unit(yunit_obj)
 
         # 4. Handle Session Name (Lives on the Session wrapper)
         new_session = self._session.with_new_spectrum(new_spec)
@@ -656,6 +685,12 @@ class RecipeEdit:
         except ValueError:
             raise InvalidParameter(f"yunit: {yunit!r} is not a unit") from None
         y_unit = spec_of(self._session).y.unit
+        if is_arbitrary_flux(y_unit) or has_no_unit(y_unit):
+            # PR 8-bis: the message says how to give the flux a unit
+            raise InvalidParameter("yunit: the flux is in arbitrary units and cannot be "
+                                   "converted: declare its unit with set_properties "
+                                   "(yunit), or calibrate it with "
+                                   "calibrate_from_magnitudes")
         if not yunit_obj.is_equivalent(y_unit):
             # It failed in the conversion, with the same outcome (PR 8)
             raise InvalidParameter(f"yunit: the flux ({y_unit}) cannot be converted to "

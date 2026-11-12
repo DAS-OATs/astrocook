@@ -22,7 +22,7 @@ INTERFACE = {
     'remove_meta_keys', 'resample_on_grid', 'resolution',
     'sanitize_legacy_tellurics', 'scale_flux', 'smooth', 'smooth_column',
     'split', 'stitch', 't', 'update_column', 'update_continuum_from_knots',
-    'update_model', 'with_properties', 'x', 'x_convert', 'xmax', 'xmin', 'y',
+    'update_model', 'with_flux_unit', 'with_properties', 'x', 'x_convert', 'xmax', 'xmin', 'y',
     'y_convert',
 }
 

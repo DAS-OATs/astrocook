@@ -211,7 +211,10 @@ parameters, the type checker (mypy on the whole package), `Session` out of
 `core/`, the `V2` suffixes dropped from the class names and the review of
 file and flux (PR 7; the first renamed parameter, `folder` of
 `export_ascii`), and of edit on columns and expressions with one set of
-names of the columns, those of the GUI (PR 8, `core/column_names.py`);
+names of the columns, those of the GUI (PR 8, `core/column_names.py`),
+and the units of the flux with the CSV files (PR 8-bis: `arb_flux` of
+`core/units.py` for a flux whose unit the file does not say, ECSV for
+`export_ascii`);
 next, the reviews of the other recipes (PRs 9-10); its plan, with the model and the
 estimate of each PR, in `ROADMAP.md`), then
 phase 7 (robust

@@ -112,8 +112,8 @@ def test_export_ascii_both_sets_of_names(session, tmp_path):
     session.file.export_ascii(targets="y, dy", folder=str(tmp_path / "b"), prefix="p")
     a = (tmp_path / "a" / "p_spec.csv").read_text()
     assert a == (tmp_path / "b" / "p_spec.csv").read_text()
-    # The file keeps the names of the data
-    assert a.splitlines()[0] == "x,y,dy"
+    # The names of the GUI in ASCII since PR 8-bis (x,y,dy before)
+    assert [line for line in a.splitlines() if not line.startswith("#")][0] == "lam,F,dF"
 
 
 def test_delete_and_split_with_the_names_of_the_gui(session):

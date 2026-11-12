@@ -1300,7 +1300,7 @@ its own, except the smallest; the model of each PR proposed by the rule
 | 6 | The `V2` suffixes dropped, with the aliases of PR 2 (code, tests, docs) | Sonnet | half a day (done, 11 November 2026: see below) |
 | 7 | Review of the recipes of file and flux (8 recipes) | Opus | half a day (done, 11 November 2026: see below) |
 | 8 | Review of edit, columns and expressions (`set_properties`, `x_convert`, `y_convert`, `apply_expression`, `mask_expression`, `smooth_column`), with F120 (one set of column names) | Opus | half a day to a day (done, 12 November 2026: see below) |
-| 8-bis | The units of the flux and the CSV files (agreed with Guido on PR 8, 12 November 2026): a loader assigns a physical unit to the flux only when it reads it (`BUNIT`, `TUNIT` or a known descriptor of the format), otherwise an Astrocook unit of arbitrary flux (`def_unit`, registered so that the archives and the FITS files read it back); a way to declare the unit of the flux without converting it (`y_convert` converts); `export_ascii` writes the names of the GUI in ASCII (`lam`, `lammin`, `lammax`, `F`, `dF`, ...) and the units, read back by the CSV loader (`x`, `y`, `dy` and the old files still read), and `import_ascii` skips `lam` as it skips `x`; F129 (found on PR 8: the CSV files hold no units, the loader assumes nm and `erg/(Å s cm2)`, so a spectrum exported after `y_convert` or with the axis in km/s comes back with the wrong unit, and `cont` is lost). Today `astrocook_fits`, `simple_csv`, `ascii_telluric_model`, `xshooter_fits` and the V1 archives assign `erg/(Å s cm2)` always, PypeIt, ESPRESSO S2D and `ascii_resvel_header` dimensionless; the iso-magnitude grid is drawn for an uncalibrated spectrum labelled `erg/(Å s cm2)`. Values unchanged (only units), so no number of the continuum, the fits or the identification moves; sample files of the formats needed for the specific loaders | Opus | 3-4 h |
+| 8-bis | The units of the flux and the CSV files (agreed with Guido on PR 8, 12 November 2026): a loader assigns a physical unit to the flux only when it reads it (`BUNIT`, `TUNIT` or a known descriptor of the format), otherwise an Astrocook unit of arbitrary flux (`def_unit`, registered so that the archives and the FITS files read it back); a way to declare the unit of the flux without converting it (`y_convert` converts); `export_ascii` writes the names of the GUI in ASCII (`lam`, `lammin`, `lammax`, `F`, `dF`, ...) and the units, read back by the CSV loader (`x`, `y`, `dy` and the old files still read), and `import_ascii` skips `lam` as it skips `x`; F129 (found on PR 8: the CSV files hold no units, the loader assumes nm and `erg/(Å s cm2)`, so a spectrum exported after `y_convert` or with the axis in km/s comes back with the wrong unit, and `cont` is lost). Today `astrocook_fits`, `simple_csv`, `ascii_telluric_model`, `xshooter_fits` and the V1 archives assign `erg/(Å s cm2)` always, PypeIt, ESPRESSO S2D and `ascii_resvel_header` dimensionless; the iso-magnitude grid is drawn for an uncalibrated spectrum labelled `erg/(Å s cm2)`. Values unchanged (only units), so no number of the continuum, the fits or the identification moves; sample files of the formats needed for the specific loaders | Opus | 3-4 h (done, 12 November 2026: see below) |
 | 9 | Review of edit, several spectra (`delete`, `split`, `extract_preset`, `trim_common`, `stitch`, `equalize_and_stitch` with its complexity of 31, `coadd`, `import_systems`, `import_systems_ascii`) | Opus | 2-3 h |
 | 10 | Review of the manual fits (`add_component`, `update_component(s)`, `delete_component`, `detect_anchor`, `fit_component`, `update_constraint(s)` with F117, `add_linked_system`, `optimize_system`, `fit_bayesian`); possibly split in two | Opus | 3-5 h (two PRs if split) |
 | 11 | F107: the labels of the menus of the GUI from the registry (and the screenshots) | Sonnet | 1 h |
@@ -1611,6 +1611,62 @@ its own, except the smallest; the model of each PR proposed by the rule
   - New `tests/test_recipe_review_file_flux.py` (the behaviour kept and
     the behaviour changed, each test saying what it was), new cases in
     `test_recipe_inputs.py`; `test_mcp_schemas.py` follows `folder`.
+- *Result of PR 8-bis* (the units of the flux and the CSV files, with F129
+  and F130; 12 November 2026; the analysis and the decisions agreed with
+  Guido in the conversation of the PR): no value of the flux changes, only
+  units, except F130 (the continuum converted with the flux) and the old
+  CSV files read by name (F129); F131 changes a unit, not a value; the continuum, the fits and the
+  identification do not read the unit, so no benchmark and no slow test.
+  - *`arb_flux`*: `core/units.py` (`ARBITRARY_FLUX`, enabled in astropy
+    when `core/structures.py` is imported; `parse_flux_unit`, `known_unit`,
+    `FLUX_AUX_COLUMNS` moved there from `spectrum_flux.py`). A unit of its
+    own, not `represents=dimensionless` (tried: it is `== dimensionless`,
+    so it cannot be told from a normalized flux, and the FITS writer drops
+    it without a warning). Not a FITS unit: `_write_fits_table` writes it
+    in `TUNITn` by hand (astropy dropped it with a warning), the archives
+    are read with `unit_parse_strict='silent'` and `known_unit`; Astrocook
+    2.6.0 reads it with a `UnitsWarning`.
+  - *Loaders*: physical unit only when read (`_flux_unit`): `astrocook_fits`
+    (`TUNIT` of `y`), `xshooter_fits` (`TUNIT` of `FLUX`, arbitrary with
+    `FLUXCAL = 'UNCALIBRATED'`), `generic_spectrum` (`TUNIT` of the flux),
+    `espresso_s2d_fits` (`BUNIT` / Å); arbitrary: PypeIt (the descriptor
+    `FLUXED` / `OPT_FLAM` waits for a sample file, Guido), `simple_csv`
+    without units, `ascii_telluric_model`, `ascii_resvel_header`, the V1
+    archives (no `TUNIT`; Guido: arbitrary; the snapshots of
+    `test_v1_archive` regenerated, the strings of the units only). The
+    transmission of `pypeit_tellmodel` stays dimensionless, its object
+    model is arbitrary. Archives: a flux without a unit is read as
+    arbitrary, a flux with a unit keeps it (Guido asked whether the
+    `erg/(Å s cm2)` of the archives should become arbitrary too, as most
+    were given by default: not done, an archive cannot tell a default from
+    a calibration, e.g. `calibrate_from_magnitudes` or an X-Shooter
+    product; a few lines in `_v2_table_to_spectrum_data` if wanted).
+  - *Declared*: `yunit` of `set_properties` (`_current_`; Guido's choice
+    over a recipe of its own): a flux density per unit wavelength or
+    `arb_flux`, given to `y`, `dy`, `cont`, `model`, `cont_pl` and to the
+    columns in the unit of the flux, without converting
+    (`Spectrum.with_flux_unit`). `y_convert` refuses an arbitrary flux and
+    names `set_properties` and the calibration; `calibrate_from_magnitudes`
+    reads it as `erg/(Å s cm2)`, as a dimensionless one (it failed).
+  - *GUI*: the axis and the tooltip say "arbitrary units"; the check box of
+    the iso-magnitude grid is disabled, with a tooltip, unless the flux is
+    per unit wavelength (it drew the grid for the uncalibrated spectra
+    labelled `erg/(Å s cm2)`). The screenshot of *Set Properties*
+    (`editing_set_properties`) rebuilt, with the new field; the spectra
+    of the scenes are in `erg/(Å s cm2)` and keep it, so no other scene
+    changes.
+  - *CSV (F129)*: `export_ascii` writes ECSV with `,` (units, z_em in the
+    metadata), the names `lam`, `lammin`, `lammax`, `F`, `dF`; the CSV
+    loader reads it by name with all its columns; a file with a header
+    `x`, `y`, `dy` (the old export) by name too, with the flux arbitrary;
+    other files by position as before. `import_ascii` translates the names
+    (`internal_column`), skips the axis, keeps the units of the file and
+    refuses `F`/`dF` in another unit than the flux.
+  - *Found*: F130 (fixed), F131 (`calibrate` labelled per Å a flux
+    calibrated in its own unit, 2.5 mag brighter than asked for in nm;
+    fixed, Guido: the unit of a physical flux is kept).
+  - New `tests/test_flux_units.py` (characterization first, then the
+    change, each test saying what it was).
 - *Result of PR 8* (review of edit on columns and expressions, with F120;
   12 November 2026; the table of the parameters and the set of names
   agreed with Guido in the conversation of the PR): of the 17 parameters
@@ -1961,6 +2017,9 @@ Exception: anything that loses user data or crashes is reported at once.
 | F126 | `apply_expression` (units) | A new column made by an expression is dimensionless whatever the expression: `F_corr = F * 2` loses the unit of the flux (`erg/(nm s cm2)`); a column replaced keeps its unit, also when the expression changes it (`F = F / cont`). Found in the review of PR 8 (phase 6-quater) | behaviour | — | open (Guido, PR 8: registered, not changed; a unit from the expression would need the units of NumExpr's operations); documented in the tutorial of Edit |
 | F127 | expression recipes (the axis) | `apply_expression`, `mask_expression` and `smooth_column` wrote the columns of the axis: `λ = λ * 0 + 1` replaced the wavelengths (without `λmin` and `λmax`), a mask put NaN in them, the smoothing smoothed them. Found in the review of PR 8 (phase 6-quater) | behaviour | `test_the_axis_is_not_written` | fixed in PR 8 (Guido's choice): refused (`InvalidParameter`), the axis is changed by `x_convert`; a correction of the wavelengths (`λ * (1 + v/c)`, air to vacuum) would need the three columns together, a recipe of its own if wanted |
 | F128 | expressions (functions) | `_NE_GLOBAL_DICT` (`core/spectrum_expressions.py`) offers `median`, `mean`, `std` (NumPy, NaN-aware) and `min`, `max` (`nanmin`, `nanmax`) to NumExpr, which cannot call Python functions: `median(F)`, `mean(F)`, `std(F)` failed with "'VariableNode' object is not callable", while `min(F)`, `max(F)` are NumExpr's own reductions (a NaN gives NaN), as `sum` and `prod`. The comment in the code says otherwise. Found in the review of PR 8 (phase 6-quater) | behaviour | `test_function_that_numexpr_does_not_have` | open: the message says which functions there are (PR 8); the dictionary is left as it is (removing it changes nothing, offering the NaN-aware ones would need evaluating them outside NumExpr: Guido's choice) |
+| F129 | CSV files (`export_ascii`, the CSV loader) | The CSV files of `export_ascii` held no units, and the loader of CSV files took the first three columns as wavelength in nm, flux and error in `erg/(Å s cm2)`: a spectrum exported after `y_convert` or with the axis in km/s came back with the wrong unit, `cont` was lost, and the file of the whole spectrum (`targets='spec'`: `x,xmin,xmax,y,dy,...`) came back with `xmin` as the flux. `import_ascii` read a column `F` as a new column `F`. Found on PR 8 (phase 6-quater); the last two in the characterization of PR 8-bis | behaviour, data | `tests/test_flux_units.py` | fixed in PR 8-bis of 6-quater (Guido): ECSV with the units and z_em, the names of the GUI in ASCII (`lam`, `F`, `dF`, ...), read back by name; the old files by name (`x`, `y`, `dy`), the flux in arbitrary units; `import_ascii` translates the names and keeps the units |
+| F130 | `y_convert` (columns without a unit) | `convert_y_axis` converted only the auxiliary columns whose unit is equivalent to that of the flux: in an archive whose `cont` and `model` have no unit and the flux has one (J0103-1305 of `tests/data`), `y_convert` from Å to nm multiplied the flux by 10 and left the continuum, so the normalized flux changed by 10. Found in the analysis of PR 8-bis (phase 6-quater) | behaviour, numbers | `test_y_convert_converts_the_continuum` | fixed in PR 8-bis of 6-quater (Guido): `cont`, `model`, `cont_pl` without a unit are in the unit of the flux, both when an archive is read and in the conversion |
+| F131 | `calibrate` (unit of the result) | `Spectrum.calibrate` multiplies the values by a curve computed in the unit of the flux, and labels the result `erg/(Å s cm2)`: a flux in `erg/(nm s cm2)` is calibrated in erg/nm and labelled per Å, 10 times brighter than it says (SDSS_g = 15.0 for 17.5 asked). `test_spectrum_calibrate` (`tests/test_photometry.py`) recorded it ("the unit is relabelled"). A flux without a unit or in `arb_flux` is read as `erg/(Å s cm2)`, and its result is right. Found in PR 8-bis (phase 6-quater) | behaviour, units | `test_calibrated_spectrum_has_the_magnitude_asked_for` | fixed in PR 8-bis of 6-quater (Guido): the unit of a physical flux is kept, `erg/(Å s cm2)` for an arbitrary one or one without a unit; the values unchanged |
 
 Closed findings (fixed or accepted: all the others, F1 to F106 and F108 to F110) are in `ROADMAP_HISTORY.md`, "3.2 Findings register", one row each, to be found by number (`grep "^| F52 "`).
 
@@ -2362,5 +2421,5 @@ One line per concluded phase; the long rows are in `ROADMAP_HISTORY.md`, "7. Pro
 | 6 – Error handling | done (November 2026), PRs #691-#701; release 2.4.0 |
 | 6-bis – Recipe API | done (November 2026), PRs #705-#723; release 2.5.0 |
 | 6-ter – Full MCP server | done (November 2026), PRs #726-#747 and the closing PR 8; release 2.6.0 published on GitHub on 10 November 2026 (PR 9, #751: version, CHANGELOG, `switcher.json`); plan of the phase agreed (PR 0, #726); the tools generated from the registry, F106 found (PR 1, #729); F106 fixed (PR 1-bis, #730); the tools of the sessions, undo and redo (PR 2, #731); the tools of inspection (PR 3, #732); progress notifications (PR 4, #733); the agent's decisions in the log (PR 5a); the gaps of the recipes (PR 5b); the log as the text of a methods section (PR 5c); the GUI following a session of the server, F109 found (PR 5-bis); the headless Docker image, F110 found (PR 6, not published); trials with fresh agents, F111-F116 found (PR 7, report in section 4.3); heartbeat and reads during a recipe, F113 in part (PR 7-bis); trial 3, the editing tools, F117-F120 found (PR 7); the outputs of trial 3 (PR 7-ter); F111 and the cancellation, F113 closed, F121 found (PR 7-quater) |
-| 6-quater – Review of the recipe parameters | in progress (November 2026): plan of the phase agreed (in PR 1, ruff `B`); PR 2, the aliases of the renamed parameters; PR 3-4-bis, mypy on the whole package; PR 5, `SessionV2` and `SessionHistory` into `astrocook/session/`; PR 6, the `V2` suffixes dropped (#759); PR 7, the review of file and flux, F122-F125 found (#761); PR 8, the review of edit on columns and expressions, F120 fixed (one set of names of the columns), F126-F128 found, F127 fixed |
+| 6-quater – Review of the recipe parameters | in progress (November 2026): plan of the phase agreed (in PR 1, ruff `B`); PR 2, the aliases of the renamed parameters; PR 3-4-bis, mypy on the whole package; PR 5, `SessionV2` and `SessionHistory` into `astrocook/session/`; PR 6, the `V2` suffixes dropped (#759); PR 7, the review of file and flux, F122-F125 found (#761); PR 8, the review of edit on columns and expressions, F120 fixed (one set of names of the columns), F126-F128 found, F127 fixed; PR 8-bis, the units of the flux (`arb_flux`) and the CSV files in ECSV, F129-F131 fixed |
 | 7 – Robust components | not started |

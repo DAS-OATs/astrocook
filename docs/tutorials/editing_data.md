@@ -20,6 +20,7 @@ Before running complex algorithms, ensure your session metadata is correct. Many
     * **Name:** The label used in the list (it cannot be empty).
     * **Object:** The target name (often from the FITS header).
     * **Emission Redshift ($z_\mathrm{em}$):** Set this carefully!
+    * **Flux unit (*yunit*):** The unit of the flux, declared without changing the values: a flux density per unit wavelength (e.g. `erg/(Angstrom s cm^2)`, `1e-17 erg/(Angstrom s cm^2)`), or `arb_flux` for arbitrary units. It is given to the flux, its error, the continuum and the model. Use it when the file did not say the unit (see [the unit of the flux](#getting-started-flux-unit)); to *convert* a flux that has a unit, use **Convert Y axis**.
     * **Resolution ($R$):** You can enter a resolving power (e.g., `50000`) or a pixel width (e.g., `3px`, with the x axis in wavelength). The resolution is stored in the `resol` column of the spectrum, one value per pixel, and the fits use the value of each pixel. If the resolution varies with wavelength (e.g. after co-adding spectra of different resolution), the field is left empty, with the median as a hint, and the column is kept: if you type a value there, Astrocook asks whether to replace the column with it.
 
     A field left empty keeps the current value.
@@ -35,7 +36,7 @@ Before running complex algorithms, ensure your session metadata is correct. Many
 Astrocook allows you to perform mathematical operations on **any** data column (Flux `F`, Error `dF`, Wavelength `λ`, etc.) using NumPy-style syntax.
 
 :::{note}
-**The names of the columns.** Everywhere a column is named (expressions, the fields of the recipes, scripts, the MCP server) the names are those of the table of the GUI: `λ`, `λmin`, `λmax`, `F`, `dF`, and the other columns by their own name (`cont`, `model`, `resol`, ...). Where a plain ASCII name is handier, `λ` can be written `lam` (`lammin`, `lammax`). The names that the data have in the archives and in the CSV files of *Export ASCII*, `x`, `xmin`, `xmax`, `y`, `dy`, are accepted too, so the logs and the scripts written with them still work.
+**The names of the columns.** Everywhere a column is named (expressions, the fields of the recipes, scripts, the MCP server) the names are those of the table of the GUI: `λ`, `λmin`, `λmax`, `F`, `dF`, and the other columns by their own name (`cont`, `model`, `resol`, ...). Where a plain ASCII name is handier, `λ` can be written `lam` (`lammin`, `lammax`). The names that the data have in the archives (and had in the CSV files of *Export ASCII* before version 2.7), `x`, `xmin`, `xmax`, `y`, `dy`, are accepted too, so the logs and the scripts written with them still work.
 :::
 
 ### General Arithmetic
@@ -81,7 +82,7 @@ To exclude bad data points (e.g., dead pixels or negative errors) without deleti
 ### Converting the Axes
 
 * **Edit > Convert X axis...**: converts the axis to another unit of wavelength (`nm`, `Angstrom`) or to velocity (`km/s`). The zero of the velocity is the Lyman-α emission at the reference redshift, 121.567 nm × (1 + `z_ref`); `z_ref` is $z_\mathrm{em}$ if left at `_current_`.
-* **Edit > Convert Y axis...**: converts the flux, its error and the columns in the same unit (`cont`, `model`, ...) to another unit of flux density per unit wavelength, e.g. `erg/(Angstrom s cm^2)`. A unit per frequency (`Jy`) is not converted.
+* **Edit > Convert Y axis...**: converts the flux, its error and the columns in the same unit (`cont`, `model`, ...) to another unit of flux density per unit wavelength, e.g. `erg/(Angstrom s cm^2)`. A unit per frequency (`Jy`) is not converted. A continuum or a model without a unit (in archives saved by earlier versions) is taken in the unit of the flux and converted with it. A flux in arbitrary units cannot be converted: declare its unit with **Set Properties**, or calibrate it.
 
 :::{warning}
 The spectrum does not remember the `z_ref` of a conversion to velocity: to go back to wavelength, convert with the same `z_ref`, and without changing $z_\mathrm{em}$ in between if `z_ref` was left at `_current_`; otherwise the wavelengths come back shifted.
