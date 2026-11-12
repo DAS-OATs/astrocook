@@ -401,9 +401,11 @@ def test_inspector_fit_window(loaded, monkeypatch):
     inspector.fit_window_in.setText("40")
     inspector._refit_list(comps)
     inspector._refit_all()
-    assert calls[2][1]["z_window_kms"] == "40.0"
+    # A number since phase 6-quater, PR 10 (the string "40.0" before; the
+    # log records the converted value either way)
+    assert calls[2][1]["z_window_kms"] == 40.0
     assert calls[2][1]["group_depth"] == "2"
-    assert calls[3] == ("refit_all", {"z_window_kms": "40.0"})
+    assert calls[3] == ("refit_all", {"z_window_kms": 40.0})
 
 
 def test_inspector_unfreeze_btur_with_its_column_hidden(loaded, monkeypatch):

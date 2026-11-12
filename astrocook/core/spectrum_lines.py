@@ -36,6 +36,27 @@ logger = logging.getLogger(__name__)
 Z_EM_MARGIN_KMS = 3000.0
 
 
+def _wavelength_nm(spec) -> np.ndarray:
+    """The axis of ``spec`` in nm (the same values for an axis in nm; it was
+    read as nm whatever its unit until phase 6-quater, PR 10)."""
+    try:
+        return spec.x.to_value(au.nm, equivalencies=au.spectral())
+    except au.UnitConversionError:
+        raise ValueError(f"The axis of a spectrum is in {spec.x.unit}, not a "
+                         f"wavelength: convert it first (x_convert).") from None
+
+
+def _normalized_flux(spec, which: str) -> np.ndarray:
+    """The flux of ``spec`` over its continuum (:attr:`norm`: also 1 for a
+    flux that is already normalized); ``ValueError`` if it has none."""
+    norm = spec.norm
+    if norm is None:
+        raise ValueError(f"The flux of {which} is not normalized and it has no "
+                         f"continuum.")
+    return np.asarray(spec.y.value, dtype=float) / np.asarray(
+        au.Quantity(norm).to_value(spec.y.unit), dtype=float)
+
+
 class LinesMixin(HostBase):
     """Absorbed regions and identification of the lines.
 
@@ -469,27 +490,42 @@ class LinesMixin(HostBase):
         trans_other : str
             Transition in the other spectrum (e.g., ``'OVI_1037'``).
 
+        The depths are those of the flux normalized by the continuum
+        (:attr:`norm`): before phase 6-quater, PR 10 they were ``1 - y``,
+        right only for a flux already normalized (F145).
+
         Returns
         -------
         float
-            The detected redshift, or 0.0 on failure.
+            The detected redshift.
+
+        Raises
+        ------
+        ValueError
+            If a spectrum has no continuum and its flux is not normalized,
+            or the two transitions cover no redshift in common (0.0 was
+            returned, as if it were a redshift, until phase 6-quater, PR 10).
         """
-        x1, y1 = self.x.value, self.y.value
-        x2, y2 = other_spec.x.value, other_spec.y.value
-        
-        if len(x1) == 0 or len(x2) == 0: return 0.0
+        x1, y1 = _wavelength_nm(self), _normalized_flux(self, "this spectrum")
+        x2, y2 = _wavelength_nm(other_spec), _normalized_flux(other_spec, "the other spectrum")
 
         lam1 = ATOM_DATA[trans_self]['wave'] / 10.0
         lam2 = ATOM_DATA[trans_other]['wave'] / 10.0
 
         z1 = x1 / lam1 - 1.0
         z2 = x2 / lam2 - 1.0
-        
+
+        if len(x1) == 0 or len(x2) == 0:
+            raise ValueError("A spectrum has no pixels.")
         z_min, z_max = max(z1.min(), z2.min()), min(z1.max(), z2.max())
-        if z_max <= z_min: return 0.0
+        if z_max <= z_min:
+            raise ValueError(
+                f"{trans_self} in this spectrum (z {z1.min():.4f}-{z1.max():.4f}) and "
+                f"{trans_other} in the other (z {z2.min():.4f}-{z2.max():.4f}) cover no "
+                f"redshift in common.")
         
         # Grid based on self resolution
-        dz = np.nanmedian(np.diff(z1))
+        dz = float(np.nanmedian(np.diff(z1)))
         if dz <= 0: dz = 1e-5
         z_grid = np.arange(z_min, z_max, dz)
         

@@ -77,6 +77,11 @@ silent (no warning) and permanent: the archives are not changed once saved,
 and their logs must replay; an old name given with the new one is an error
 (:class:`~astrocook.recipes.errors.InvalidParameter`), even with the same
 value. An alias is not in the signature of the method.
+
+A parameter without a default (required: the method has none, the dialog
+starts empty, the MCP schema lists it in ``required``) has the default
+``""`` (a string) or None without ``optional`` (a number, a bool, a list;
+phase 6-quater, PR 10).
 """
 from __future__ import annotations
 

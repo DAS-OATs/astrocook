@@ -167,7 +167,10 @@ class RecipeDialog(QDialog):
                 param_name = param.name
                 param_type = param.type
                 param_doc = self._param_docs.get(param_name, param.doc)
-                param_default = str(param.default)
+                # A required parameter (a default None that is not a value,
+                # e.g. z of Add component; phase 6-quater, PR 10) starts empty
+                param_default = ("" if param.default is None and not param.optional
+                                 else str(param.default))
 
                 is_current = param_default == "_current_"
                 current_hint = ""

@@ -5,7 +5,7 @@ import logging
 import numpy as np
 from typing import TYPE_CHECKING, Any, Optional
 
-from astrocook.core.atomic_data import STANDARD_MULTIPLETS, is_multiplet, series_lines
+from astrocook.core.atomic_data import ATOM_DATA, STANDARD_MULTIPLETS, is_multiplet, series_lines
 from astrocook.fitting.voigt_fitter import NoPixelsToFit, VoigtFitter
 
 from astrocook.fitting.voigt_model import LINK_ERRORS, LINK_FUNCTIONS
@@ -16,6 +16,7 @@ from astrocook.recipes.progress import check_cancelled, progress
 from astrocook.recipes.result import report, report_removed
 from astrocook.recipes.messages import msg_no_resolution, msg_z_em_unset
 from astrocook.recipes._sessions import open_session
+from astrocook.recipes._components import check_series, check_uuids, link_target
 
 if TYPE_CHECKING:
     from astrocook.session.session import Session
@@ -341,11 +342,13 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "requires": ("resolution", "continuum"),
         "details": "Adds a Voigt component of a transition or multiplet at a redshift and fits it with its neighbours.",
         "params": [
-            {"name": "series", "type": str, "default": "Ly_a", "doc": "Transition or multiplet, e.g. 'Ly_a', 'CIV'."},
-            {"name": "z", "type": float, "default": 0.0, "gt": -1, "doc": "Redshift."},
+            {"name": "series", "type": str, "default": "Ly_a", "doc": "Transition or multiplet, e.g. 'Ly_a', 'CIV', or a multiplet of its own written as its transitions, e.g. 'FeII_2586,FeII_2600' (several series at the same redshift: add_linked_system)."},
+            # Required (phase 6-quater, PR 10): the default 0.0 never
+            # fell on the spectrum, and the fit failed with "no pixels"
+            {"name": "z", "type": float, "default": None, "gt": -1, "doc": "Redshift."},
             {"name": "logN", "type": float, "default": 13.5, "min": 10, "max": 23, "doc": "Starting column density (log cm^-2)."},
             {"name": "b", "type": float, "default": 10.0, "min": 1, "max": 300, "doc": "Starting Doppler parameter (km/s)."},
-            {"name": "btur", "type": float, "default": 0.0, "min": 0, "max": 100, "doc": "Turbulent broadening (km/s)."},
+            {"name": "btur", "type": float, "default": 0.0, "min": 0, "max": 100, "doc": "Turbulent broadening (km/s); frozen in the fits unless freed."},
             {"name": "z_window_kms", "type": float, "default": 20.0, "gt": 0, "doc": "Half-width of the window in which the redshift can move in the fit (km/s)."}
         ],
         "url": "absorbers_cb.html#add_component" 
@@ -353,7 +356,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
     "update_component": {
         "methods": _methods_update_component,
         "brief": "Update component.",
-        "details": "Changes the parameters of a component; a parameter left at None keeps its value.",
+        "details": "Changes the parameters of a component; a parameter left at None keeps its value (at least one must be given).",
         "params": [
             {"name": "uuid", "type": str, "default": "", "doc": "Identifier of the component.", "gui_hidden": True},
             {"name": "z", "type": float, "default": None, "optional": True, "gt": -1, "doc": "Redshift."},
@@ -361,7 +364,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "b", "type": float, "default": None, "optional": True, "min": 1, "max": 300, "doc": "Doppler parameter (km/s)."},
             {"name": "btur", "type": float, "default": None, "optional": True, "min": 0, "max": 100, "doc": "Turbulent broadening (km/s)."},
             {"name": "series", "type": str, "default": None, "optional": True, "doc": "Transition or multiplet, e.g. 'CIV'."},
-            {"name": "resol", "type": float, "default": None, "optional": True, "gt": 0, "doc": "Resolving power R of this component (overrides the spectrum)."}
+            {"name": "resol", "type": float, "default": None, "optional": True, "min": 0, "doc": "Resolving power R of this component, instead of that of the spectrum; 0 removes it (the component follows the spectrum)."}
         ],
         "url": "absorbers_cb.html#update_component",
         "gui_hidden": True
@@ -369,20 +372,23 @@ ABSORBERS_RECIPES_SCHEMAS = {
     "update_components": {
         "methods": _methods_update_components,
         "brief": "Batch update components.",
-        "details": "Sets the same parameters on several components; a parameter left at None keeps its value.",
+        "details": "Sets the same parameters on several components; a parameter left at None keeps its value (at least one must be given).",
         "params": [
             {"name": "uuids", "type": list, "default": None, "gui_hidden": True, "doc": "Identifiers of the components."},
             {"name": "z", "type": float, "default": None, "optional": True, "gt": -1, "doc": "Redshift."},
             {"name": "logN", "type": float, "default": None, "optional": True, "min": 10, "max": 23, "doc": "Column density (log cm^-2)."},
             {"name": "b", "type": float, "default": None, "optional": True, "min": 1, "max": 300, "doc": "Doppler parameter (km/s)."},
             {"name": "btur", "type": float, "default": None, "optional": True, "min": 0, "max": 100, "doc": "Turbulent broadening (km/s)."},
-            {"name": "resol", "type": float, "default": None, "optional": True, "gt": 0, "doc": "Resolving power R of these components (overrides the spectrum)."}
+            # In the registry since phase 6-quater, PR 10 (a string,
+            # 'None' for unchanged, before)
+            {"name": "series", "type": str, "default": None, "optional": True, "doc": "Transition or multiplet, e.g. 'CIV'."},
+            {"name": "resol", "type": float, "default": None, "optional": True, "min": 0, "doc": "Resolving power R of these components, instead of that of the spectrum; 0 removes it (the components follow the spectrum)."}
         ]
     },
     "delete_component": {
         "methods": _methods_delete_component,
         "brief": "Delete component(s).",
-        "details": "Deletes one or more components and recomputes the model.",
+        "details": "Deletes one or more components (uuid, uuids, or both) and recomputes the model.",
         "params": [
             {"name": "uuid", "type": str, "default": None, "optional": True, "gui_hidden": True, "doc": "Identifier of the component to delete."},
             {"name": "uuids", "type": list, "default": None, "optional": True, "gui_hidden": True, "doc": "Identifiers of the components to delete."}
@@ -391,11 +397,13 @@ ABSORBERS_RECIPES_SCHEMAS = {
     "detect_anchor": {
         "methods": "The redshift at which {trans_self} in this session and {trans_sibling} in the session {sibling_name} overlap best was found{menu}",
         "brief": "Detect doublet anchor redshift.",
-        "details": "Finds the redshift at which a transition of this session and one of a sibling session (e.g. the two lines of a doublet, in two sessions) overlap best.",
+        "details": "Finds the redshift at which a transition of this session and one of a sibling session (e.g. the two lines of a doublet, in two sessions) overlap best, on the flux normalized by the continuum.",
         "params": [
             {"name": "sibling_name", "type": str, "default": "", "doc": "Name of the sibling session.", "kind": "session"},
-            {"name": "trans_self", "type": str, "default": "OVI_1031", "doc": "Transition in this session, e.g. 'OVI_1031'."},
-            {"name": "trans_sibling", "type": str, "default": "OVI_1037", "doc": "Transition in the sibling session, e.g. 'OVI_1037'."}
+            # Required (phase 6-quater, PR 10): the defaults of the
+            # registry were not those of the method, which had none
+            {"name": "trans_self", "type": str, "default": "", "doc": "Transition in this session, e.g. 'OVI_1031'."},
+            {"name": "trans_sibling", "type": str, "default": "", "doc": "Transition in the sibling session, e.g. 'OVI_1037'."}
         ],
         "url": "absorbers_cb.html#detect_anchor"
     },
@@ -417,13 +425,13 @@ ABSORBERS_RECIPES_SCHEMAS = {
     "update_constraint": {
         "methods": _methods_update_constraint,
         "brief": "Update constraint.",
-        "details": "Freezes or frees a parameter of a component, or links it to a parameter of another component with an expression.",
+        "details": "Freezes or frees a parameter of a component, or links it to a parameter of another component with an expression (a linked parameter is frozen; freeing it removes the link).",
         "params": [
             {"name": "uuid", "type": str, "default": "", "doc": "Identifier of the component.", "gui_hidden": True},
             {"name": "param", "type": str, "default": "", "doc": "Parameter: 'z', 'logN', 'b' or 'btur'.", "choices": ["z", "logN", "b", "btur"]},
-            {"name": "is_free", "type": bool, "default": None, "optional": True, "doc": "True: free to vary in the fits; False: frozen."},
-            {"name": "expression", "type": str, "default": None, "optional": True, "doc": "Expression that links the parameter to another component, e.g. \"p['<uuid of the other component>'].z\" (None: no link); one that cannot be evaluated is refused."},
-            {"name": "target_uuid", "type": str, "default": None, "optional": True, "doc": "Identifier of the component it is linked to."} 
+            {"name": "is_free", "type": bool, "default": None, "optional": True, "doc": "True: free to vary in the fits (and not linked); False: frozen; None: as it is (frozen if an expression is given)."},
+            {"name": "expression", "type": str, "default": None, "optional": True, "doc": "Expression that links the parameter to another component, e.g. \"p['<uuid of the other component>'].z\" (None: no link); one that cannot be evaluated, or that names the component itself, is refused."},
+            {"name": "target_uuid", "type": str, "default": None, "optional": True, "doc": "Identifier of the component it is linked to, which the fits include in its group: one named by the expression (None: the first it names)."} 
         ],
         "url": "absorbers_cb.html#update_constraint",
         "gui_hidden": True
@@ -434,7 +442,9 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "details": "Freezes or frees a parameter of all the components.",
         "params": [
             {"name": "param", "type": str, "default": "", "doc": "Parameter: 'z', 'logN', 'b' or 'btur'.", "choices": ["z", "logN", "b", "btur"]},
-            {"name": "is_free", "type": bool, "default": True, "doc": "True: free to vary in the fits; False: frozen."}
+            # Required (phase 6-quater, PR 10): the default True of the
+            # registry was not that of the method, which had none
+            {"name": "is_free", "type": bool, "default": None, "doc": "True: free to vary in the fits (the links removed); False: frozen."}
         ],
         "url": "absorbers_cb.html#update_constraints_column",
         "gui_hidden": True
@@ -446,8 +456,10 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "requires": ("resolution", "continuum"),
         "details": "Adds components of several series at the same redshift, with the redshifts linked, and fits them.",
         "params": [
-            {"name": "series_list", "type": str, "default": "CIV,SiIV", "doc": "Comma-separated series, e.g. 'CIV,SiIV'."},
-            {"name": "z", "type": float, "default": 0.0, "gt": -1, "doc": "Redshift."},
+            # Required (phase 6-quater, PR 10): the defaults of the
+            # registry were not those of the method, which had none
+            {"name": "series_list", "type": str, "default": "", "doc": "Comma-separated series, each a transition or a multiplet, e.g. 'CIV,SiIV'; the redshifts are linked to that of the first."},
+            {"name": "z", "type": float, "default": None, "gt": -1, "doc": "Redshift."},
             {"name": "logN", "type": float, "default": 13.5, "min": 10, "max": 23, "doc": "Starting column density (log cm^-2)."},
             {"name": "b", "type": float, "default": 10.0, "min": 1, "max": 300, "doc": "Starting Doppler parameter (km/s)."},
             {"name": "z_window_kms", "type": float, "default": 20.0, "gt": 0, "doc": "Half-width of the window in which the redshift can move in the fit (km/s)."}
@@ -770,6 +782,23 @@ def _log_flags(components) -> None:
     logger.warning(f"{n} component{'s' if n > 1 else ''} with fit warnings ({listed}). "
                     "A parameter at a bound has an unreliable value and error: refit "
                     "with wider bounds (e.g. Refit Selected) or check the component.")
+
+
+def _changes(**values) -> dict:
+    """The parameters of a component to change: those not None (None and
+    the string 'None' of the dialogs and the logs mean "unchanged"); a
+    resolution of 0 removes that of the component (phase 6-quater, PR 10).
+    :class:`InvalidParameter` if there is none, or the series is unknown."""
+    changes = {k: v for k, v in values.items() if v is not None}
+    if not changes:
+        # A state that changed nothing, before phase 6-quater, PR 10
+        raise InvalidParameter("give at least one parameter to change (z, logN, b, btur, "
+                               "series, resol)")
+    if 'series' in changes:
+        check_series(changes['series'], 'series')
+    if changes.get('resol') == 0:
+        changes['resol'] = None  # the component follows the spectrum
+    return changes
 
 
 class RecipeAbsorbers:
@@ -1520,7 +1549,7 @@ class RecipeAbsorbers:
         return self._session.with_new_spectrum(new_spec).with_new_system_list(running_systs)
         
     @typed_recipe
-    def add_component(self, series: str = 'Ly_a', z: float = 0.0,
+    def add_component(self, series: str = 'Ly_a', z: Optional[float] = None,
                       logN: float = 13.5, b: float = 10.0, btur: float = 0.0,
                       z_window_kms: float = 20.0) -> 'Session':
         """
@@ -1532,9 +1561,12 @@ class RecipeAbsorbers:
         Parameters
         ----------
         series : str, optional
-            Transition or Multiplet name (e.g. ``'CIV'``). Defaults to ``"Ly_a"``.
-        z : float, optional
-            Redshift. Defaults to ``0.0``.
+            Transition or multiplet (e.g. ``'CIV'``), or a multiplet of its
+            own written as its transitions (``'FeII_2586,FeII_2600'``).
+            Defaults to ``"Ly_a"``. An unknown one is refused.
+        z : float
+            Redshift (required; the default 0.0 of the registry was removed
+            in phase 6-quater, PR 10).
         logN : float, optional
             Column Density (log cm^-2). Defaults to ``13.5``.
         b : float, optional
@@ -1549,6 +1581,10 @@ class RecipeAbsorbers:
         Session
             A new :class:`~astrocook.session.session.Session` with the added component.
         """
+        if z is None:
+            # Not a default of its own: the parameter comes after series
+            raise InvalidParameter("z: a value is needed")
+        check_series(series, 'series', several='add_linked_system')
         z_f, logN_f, b_f, btur_f, z_win_f = z, logN, b, btur, z_window_kms
 
         # A custom multiplet ("FeII_2586,FeII_2600") carries its transitions in
@@ -1570,8 +1606,9 @@ class RecipeAbsorbers:
         temp_recipe = RecipeAbsorbers(temp_session)
             
         logger.info(f"Fitting the new {added_comp.series} component.")
-        final_session = temp_recipe.fit_component(added_comp.uuid, z_window_kms=str(z_win_f))
+        final_session = temp_recipe.fit_component(added_comp.uuid, z_window_kms=z_win_f)
         return final_session
+
     @typed_recipe
     def update_component(self, uuid: str, z: Optional[float] = None, logN: Optional[float] = None,
                          b: Optional[float] = None, btur: Optional[float] = None,
@@ -1594,31 +1631,25 @@ class RecipeAbsorbers:
             Doppler parameter (km/s). Defaults to None (unchanged).
         btur : float or None, optional
             Turbulent broadening (km/s). Defaults to None (unchanged).
-        series : str, optional
-            Series name. Defaults to ``'None'``.
+        series : str or None, optional
+            Transition or multiplet. Defaults to None (unchanged).
         resol : float or None, optional
-            Resolution (R or FWHM). Defaults to None (unchanged).
+            Resolving power R of the component, instead of that of the
+            spectrum; 0 removes it. Defaults to None (unchanged).
 
         Returns
         -------
         Session
             A new :class:`~astrocook.session.session.Session` with updated component.
         """
-        changes: dict[str, Any] = {}
-        # None: unchanged ('None' in the dialogs and the log)
-        if z is not None: changes['z'] = z
-        if logN is not None: changes['logN'] = logN
-        if b is not None: changes['b'] = b
-        if btur is not None: changes['btur'] = btur
-        if series is not None: changes['series'] = series
-        if resol is not None: changes['resol'] = resol
-            
+        check_uuids(self._session, [uuid], 'uuid')
+        changes = _changes(z=z, logN=logN, b=b, btur=btur, series=series, resol=resol)
         new_systs = self._session.systs.update_component(uuid, **changes)
         return self._session.with_new_system_list(new_systs)
     @typed_recipe
     def update_components(self, uuids: list, z: Optional[float] = None,
                           logN: Optional[float] = None, b: Optional[float] = None,
-                          btur: Optional[float] = None, series: str = 'None',
+                          btur: Optional[float] = None, series: Optional[str] = None,
                           resol: Optional[float] = None) -> 'Session':
         """
         Batch update component parameters.
@@ -1638,30 +1669,23 @@ class RecipeAbsorbers:
             Doppler parameter (km/s). Defaults to None (unchanged).
         btur : float or None, optional
             Turbulent broadening (km/s). Defaults to None (unchanged).
-        series : str, optional
-            Series name. Defaults to ``'None'``.
+        series : str or None, optional
+            Transition or multiplet. Defaults to None (unchanged; the
+            string ``'None'`` of the old logs too).
         resol : float or None, optional
-            Resolution (R or FWHM). Defaults to None (unchanged).
+            Resolving power R of the components, instead of that of the
+            spectrum; 0 removes it. Defaults to None (unchanged).
 
         Returns
         -------
         Session
             A new :class:`~astrocook.session.session.Session` with updated components.
         """
-        # Parse values
-        changes: dict[str, Any] = {}
-        # None: unchanged ('None' in the dialogs and the log); series is
-        # not in the registry and stays a string, 'None' for unchanged
-        if z is not None: changes['z'] = z
-        if logN is not None: changes['logN'] = logN
-        if b is not None: changes['b'] = b
-        if btur is not None: changes['btur'] = btur
-        if series not in (None, 'None'): changes['series'] = str(series)
-        if resol is not None: changes['resol'] = resol
-            
-        if not changes: return self._session
+        if not uuids:
+            raise InvalidParameter("uuids: give at least one component")
+        check_uuids(self._session, uuids, 'uuids')
+        changes = _changes(z=z, logN=logN, b=b, btur=btur, series=series, resol=resol)
 
-        # Delegate to the new bulk method
         new_systs = self._session.systs.update_components(uuids, **changes)
         return self._session.with_new_system_list(new_systs)
             
@@ -1689,7 +1713,14 @@ class RecipeAbsorbers:
             A new :class:`~astrocook.session.session.Session` with components removed.
         """
         from astrocook.fitting.voigt_fitter import VoigtFitter
-        
+
+        # Nothing to delete, or a component that is not there: refused
+        # (phase 6-quater, PR 10; a state that changed nothing, before)
+        if not uuid and not uuids:
+            raise InvalidParameter("give the component to delete (uuid or uuids)")
+        check_uuids(self._session, ([uuid] if uuid else []) + list(uuids or []),
+                    'uuids' if uuids else 'uuid')
+
         # 1. Delegate to SystemList (which we updated to handle lists)
         # We pass both arguments; SystemList handles the set logic.
         new_systs = self._session.systs.delete_component(uuid=uuid, uuids=uuids)
@@ -1740,6 +1771,9 @@ class RecipeAbsorbers:
         float
             The detected redshift.
         """
+        for name, trans in (('trans_self', trans_self), ('trans_sibling', trans_sibling)):
+            if trans not in ATOM_DATA:
+                raise InvalidParameter(f"{name}: {trans!r} is not a known transition")
         # The rule of the sessions (phase 6-quater, PR 9): a name among the
         # open sessions, or in a script the session itself (without the GUI
         # it failed with an AttributeError, hidden by a broad except until
@@ -1783,6 +1817,9 @@ class RecipeAbsorbers:
 
         if not self._session.systs or not self._session.systs.components:
             raise RecipeFailed("There are no components to fit.")
+        # An unknown component fitted nothing, and the state was recorded
+        # (phase 6-quater, PR 10, F142)
+        check_uuids(self._session, [uuid], 'uuid')
 
         current_session = self._session
 
@@ -1817,21 +1854,30 @@ class RecipeAbsorbers:
         param : str
             Parameter name (``z``, ``logN``, ``b``).
         is_free : bool, optional
-            Is the parameter free to vary?
+            True: free (and not linked); False: frozen; None: as it is,
+            frozen if an expression is given.
         expression : str, optional
             Math expression for linking (e.g., ``"p['uuid'].z"``).
         target_uuid : str, optional
-            UUID of the source component (for linking tracking).
+            UUID of the component it is linked to, which the fits put in its
+            group: one named by the expression; None: the first it names.
 
         Returns
         -------
         Session
             A new :class:`~astrocook.session.session.Session` with updated constraints.
         """
-        new_systs = self._session.systs.update_constraint(
-            uuid, param, is_free, expression, target_uuid
-        )
-            
+        is_free, expression, target_uuid = self._checked_constraint(
+            uuid, is_free, expression, target_uuid)
+        try:
+            new_systs = self._session.systs.update_constraint(
+                uuid, param, is_free, expression, target_uuid
+            )
+        except ValueError as e:
+            # The link cannot be evaluated: refused, nothing stored (F117;
+            # a RecipeFailed from the core until phase 6-quater, PR 10)
+            raise InvalidParameter(f"expression: {e}") from e
+
         if expression and not is_free:
             class CompProxy:
                 def __init__(self, c): self.c = c
@@ -1861,6 +1907,27 @@ class RecipeAbsorbers:
 
         return self._session.with_new_system_list(new_systs)
             
+    def _checked_constraint(self, uuid, is_free, expression, target_uuid):
+        """The arguments of :meth:`update_constraint`, checked (phase
+        6-quater, PR 10, F146): the components exist; something is asked;
+        a link is not freed in the same call, and is stored frozen (as the
+        fit treats it); its target is the component its expression names."""
+        check_uuids(self._session, [uuid], 'uuid')
+        expression = expression or None
+        if is_free is None and expression is None:
+            raise InvalidParameter("give is_free, or an expression to link the parameter")
+        if expression is None:
+            if target_uuid is not None:
+                raise InvalidParameter("target_uuid: there is no expression to link the "
+                                       "parameter with")
+            return is_free, None, None
+        if is_free:
+            raise InvalidParameter("is_free: a linked parameter is not free (is_free=True "
+                                   "removes the link); give one of the two")
+        if target_uuid is not None:
+            check_uuids(self._session, [target_uuid], 'target_uuid')
+        return False, expression, link_target(uuid, expression, target_uuid)
+
     @typed_recipe
     def update_constraints_column(self, param: str, is_free: bool) -> 'Session':
         """
@@ -1938,6 +2005,14 @@ class RecipeAbsorbers:
         series_names = [s.strip() for s in series_list.split(',') if s.strip()]
         if not series_names:
             raise InvalidParameter("series_list: give at least one series")
+        # Unknown and repeated series refused (phase 6-quater, PR 10, F143:
+        # an unknown one was added as a component without lines, a repeated
+        # one as a second component with the same lines and z)
+        for name in series_names:
+            check_series(name, 'series_list')
+        repeated = sorted({n for n in series_names if series_names.count(n) > 1})
+        if repeated:
+            raise InvalidParameter(f"series_list: {', '.join(repeated)} given twice")
         
         current_session = self._session
         
@@ -1982,7 +2057,7 @@ class RecipeAbsorbers:
         
         logger.info("Fitting the linked components.")
         # Fit centered on Primary
-        final_session = temp_recipe.fit_component(primary_uuid, z_window_kms=str(z_window_kms))
+        final_session = temp_recipe.fit_component(primary_uuid, z_window_kms=z_window_kms)
         
         return final_session
 

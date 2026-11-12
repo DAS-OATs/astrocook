@@ -143,7 +143,11 @@ recipes that the GUI runs from the System Inspector (e.g.
 `absorbers_fit_component`). The tools are made from the same description
 of the recipes as the dialogs of the GUI: the same parameters, defaults,
 bounds and texts, and a recipe added to Astrocook becomes a tool by
-itself. Other tools handle the sessions:
+itself. The tools of the manual fits refuse, before they run, a component
+or a series that is not in the session (the UUIDs are those of
+`components_list`), and `absorbers_update_constraint` takes the target of a
+link from its expression (see *Absorption Systems*, "Linking in Scripts and
+for Agents"). Other tools handle the sessions:
 
 | Tool | What it does |
 |---|---|

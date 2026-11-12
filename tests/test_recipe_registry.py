@@ -75,7 +75,6 @@ NOT_IN_REGISTRY = {
     ("continuum", "estimate_auto", "smooth_std"): "deprecated, kept for old scripts",
     ("continuum", "fit_continuum", "smooth_std"): "deprecated, kept for old scripts",
     ("continuum", "fit_continuum", "template"): "not offered since 6-bis; to review in 6-quater",
-    ("absorbers", "update_components", "series"): "kept a string, 'None' for unchanged",
 }
 
 

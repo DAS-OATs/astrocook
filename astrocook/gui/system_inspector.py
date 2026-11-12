@@ -856,7 +856,9 @@ class SystemInspector(QWidget):
             value = float(self.fit_window_in.text())
         except ValueError:
             return {}
-        return {"z_window_kms": str(value)} if value > 0 else {}
+        # A number, not its string (phase 6-quater, PR 10): the log records
+        # the value converted either way
+        return {"z_window_kms": value} if value > 0 else {}
 
     def _refit_list(self, comps):
         """Batch refit: Treats the entire selection as one fitting problem."""

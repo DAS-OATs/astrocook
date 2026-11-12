@@ -218,8 +218,11 @@ and the units of the flux with the CSV files (PR 8-bis: `arb_flux` of
 parameters that name other sessions, `recipes/_sessions.py`, kinds
 `session` and `sessions`; the sessions combined in the units of a
 reference);
-next, the review of the manual fits (PR 10); its plan, with the model and the
-estimate of each PR, in `ROADMAP.md`), then
+and of the manual fits, components and constraints (PR 10: the checks of
+components, series and links in `recipes/_components.py`, F142-F146);
+next, `optimize_system` and `fit_bayesian` with the bugs of the samplers
+(PR 10-bis, F139-F141); the plan, with the model and the estimate of each
+PR, in `ROADMAP.md`), then
 phase 7 (robust
 components, measured on the benchmark of phase 4; the real analysis of the
 MCP server goes there).

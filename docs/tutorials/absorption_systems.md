@@ -84,7 +84,7 @@ This table lists every component in the model.
 
 #### Understanding Resolution Priority
 Astrocook handles instrumental resolution ($R$) flexibly to support both constant-resolution survey spectra and variable-resolution echelle data. The resolution of a spectrum lives in its `resol` column (visible in the Data Inspector): resolving power $R$ if dimensionless, FWHM if in km/s. The Voigt fitting engine and the velocity plots use it according to this hierarchy:
-1. **Component-Specific Resolution (Highest Priority):** If you manually assign a resolution to a specific component (via the right-click menu in the System List), Astrocook will *always* use this value for that specific line, ignoring the column.
+1. **Component-Specific Resolution (Highest Priority):** If you manually assign a resolution to a specific component (via the right-click menu in the System List), Astrocook will *always* use this value for that specific line, ignoring the column. It is always a resolving power $R$; setting it to `0` removes it, and the component follows the spectrum again.
 2. **The `resol` Column:** Otherwise each pixel takes its own resolution. The fit computes the model on a grid finer than the pixels (uniform in velocity, with a step set by the instrumental width and by the narrowest line), convolves it for each pixel with a Gaussian of the resolution of that pixel, and averages it over the pixel. This models exactly spectra where $R$ changes with wavelength, and lines narrower than a pixel.
 3. **Setting the resolution:** **Edit > Set Properties...** writes a flat `resol` column across the entire spectrum. It asks before replacing a column that varies with wavelength.
 
@@ -182,6 +182,16 @@ Astrocook supports physical linking of parameters, which is essential for fittin
 :::{note}
 Astrocook also tracks a turbulent broadening parameter `btur` separately. It is **frozen (italic)** at 0 by default, and its column is hidden while no component uses it (all at 0 and none linked); it appears by itself when a component does. Right-click the header of the table to show or hide any column (**btur** included); **Default Columns** goes back to this behaviour. To model mixed thermal/turbulent broadening explicitly, select the components and choose **Unfreeze 'btur'** in the right-click menu of the table: it is there also while the column is hidden, and it shows the column; then refit them.
 :::
+
+### Linking in Scripts and for Agents
+
+The menu of the table builds the link for you. In a script, or from an AI agent, a link is made with `update_constraint`: the parameter, its `expression` (e.g. `p['<uuid of the other component>'].z`, or `p['<uuid>'].b * 0.7`) and, optionally, `target_uuid`, the component it is linked to. The fits put the target in the group of the linked component; when `target_uuid` is left out it is the first component the expression names (until version 2.6.0 it was left out, and the target was not fitted with it). A linked parameter is frozen: `is_free=True` removes the link, and the two cannot be given together. Refused before anything is stored, with a message that says why: an expression that cannot be evaluated, one that names the component itself, a `target_uuid` that the expression does not name, and a call that asks for nothing (neither `is_free` nor an expression).
+
+All the recipes of this section that name components (`update_component`, `update_components`, `delete_component`, `fit_component`, `update_constraint`) refuse a component that is not in the session, and those that take a series (`add_component`, `update_component(s)`, `add_linked_system`) refuse one that is not in the [atomic data](../atomic_data.md): until version 2.6.0 they recorded a step that changed nothing, or stored a component without lines. `add_component` takes one series, a transition or a multiplet (`CIV`), or a multiplet of its own written as its transitions (`FeII_2586,FeII_2600`); several series at the same redshift, with their redshifts linked, are added with `add_linked_system` (`CIV,SiIV`, each once). The redshift of `add_component` and `add_linked_system` has no default.
+
+### Doublet Anchor Across Two Sessions
+
+**Absorbers > Detect doublet anchor redshift** finds the redshift at which a transition in this session and another in a second session (e.g. the two lines of a doublet, extracted into two sessions) overlap best: the product of their absorption depths, on the flux normalized by the continuum (until version 2.6.0 the flux was taken as normalized, so a spectrum in physical units gave a wrong redshift). The two transitions must cover a range of redshift in common: otherwise the recipe stops (it returned 0).
 
 ### Uncertainties
 In the table, the uncertainty of `z` is shown as a velocity, $c\,\delta z/(1+z)$ in km/s, which compares directly with `b`; the tooltip of the row gives it also as $\delta z$. The exported tables keep $\delta z$.

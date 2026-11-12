@@ -590,8 +590,8 @@ CASES = [
     ('add_component', 'fitted', 'z_window_kms', '30', {'series': 'CIV', 'z': 1.931}, 30.0),
     ('add_component', 'fitted', 'series', 'CIV', {'z': 1.931}, 'CIV'),
     ('add_component', 'fitted', 'series', 'Ly_a', {'z': 1.931}, FAILS),  # F111: no pixel (outside the spectrum), fitted on the whole spectrum until PR 7-quater
-    ('add_component', 'fitted', 'series', 'nope', {'z': 1.931}, FAILS),  # F111: no transition, so no pixel; fitted on the whole spectrum until PR 7-quater
-    ('add_component', 'fitted', 'series', '', {'z': 1.931}, FAILS),  # F111: no transition, so no pixel; fitted on the whole spectrum until PR 7-quater
+    ('add_component', 'fitted', 'series', 'nope', {'z': 1.931}, REFUSED),  # 6-quater PR 10: unknown series (F143); was FAILS (F111: no transition, so no pixel; fitted on the whole spectrum until PR 7-quater)
+    ('add_component', 'fitted', 'series', '', {'z': 1.931}, REFUSED),  # 6-quater PR 10: unknown series (F143); was FAILS (F111: no transition, so no pixel; fitted on the whole spectrum until PR 7-quater)
     ('add_component', 'fitted', 'series', None, {'z': 1.931}, REFUSED),  # 2.4.0: crashed (TypeError)
     ('update_component', 'fitted', 'z', '2.0', {'uuid': UUID}, 2.0),
     ('update_component', 'fitted', 'z', 2.0, {'uuid': UUID}, 2.0),
@@ -599,9 +599,9 @@ CASES = [
     ('update_component', 'fitted', 'z', ' 2 ', {'uuid': UUID}, 2.0),
     ('update_component', 'fitted', 'z', '1e1', {'uuid': UUID}, 10.0),
     ('update_component', 'fitted', 'z', 'abc', {'uuid': UUID}, REFUSED),
-    ('update_component', 'fitted', 'z', '', {'uuid': UUID}, None),  # 2.4.0: refused (0)
-    ('update_component', 'fitted', 'z', 'None', {'uuid': UUID}, None),
-    ('update_component', 'fitted', 'z', None, {'uuid': UUID}, None),  # 2.4.0: refused (0)
+    ('update_component', 'fitted', 'z', '', {'uuid': UUID, 'b': 12.0}, None),  # 2.4.0: refused (0); 6-quater PR 10: with another parameter (alone: nothing to change, refused)
+    ('update_component', 'fitted', 'z', 'None', {'uuid': UUID, 'b': 12.0}, None),  # 6-quater PR 10: with another parameter (alone: nothing to change, refused)
+    ('update_component', 'fitted', 'z', None, {'uuid': UUID, 'b': 12.0}, None),  # 2.4.0: refused (0); 6-quater PR 10: with another parameter (alone: nothing to change, refused)
     ('update_component', 'fitted', 'z', 'nan', {'uuid': UUID}, REFUSED),  # 2.4.0: accepted as NaN
     ('update_component', 'fitted', 'z', 'inf', {'uuid': UUID}, REFUSED),  # 2.4.0: accepted as an infinity
     ('update_component', 'fitted', 'z', True, {'uuid': UUID}, REFUSED),  # 2.4.0: accepted as 1
@@ -614,9 +614,9 @@ CASES = [
     ('update_components', 'fitted', 'z', ' 2 ', {'uuids': [UUID]}, 2.0),
     ('update_components', 'fitted', 'z', '1e1', {'uuids': [UUID]}, 10.0),
     ('update_components', 'fitted', 'z', 'abc', {'uuids': [UUID]}, REFUSED),
-    ('update_components', 'fitted', 'z', '', {'uuids': [UUID]}, None),  # 2.4.0: refused (0)
-    ('update_components', 'fitted', 'z', 'None', {'uuids': [UUID]}, None),
-    ('update_components', 'fitted', 'z', None, {'uuids': [UUID]}, None),  # 2.4.0: refused (0)
+    ('update_components', 'fitted', 'z', '', {'uuids': [UUID], 'b': 12.0}, None),  # 2.4.0: refused (0); 6-quater PR 10: with another parameter (alone: nothing to change, refused)
+    ('update_components', 'fitted', 'z', 'None', {'uuids': [UUID], 'b': 12.0}, None),  # 6-quater PR 10: with another parameter (alone: nothing to change, refused)
+    ('update_components', 'fitted', 'z', None, {'uuids': [UUID], 'b': 12.0}, None),  # 2.4.0: refused (0); 6-quater PR 10: with another parameter (alone: nothing to change, refused)
     ('update_components', 'fitted', 'z', 'nan', {'uuids': [UUID]}, REFUSED),  # 2.4.0: accepted as NaN
     ('update_components', 'fitted', 'z', 'inf', {'uuids': [UUID]}, REFUSED),  # 2.4.0: accepted as an infinity
     ('update_components', 'fitted', 'z', True, {'uuids': [UUID]}, REFUSED),  # 2.4.0: accepted as 1
@@ -629,9 +629,9 @@ CASES = [
     ('update_component', 'fitted', 'logN', ' 2 ', {'uuid': UUID}, REFUSED),  # 2.4.0: accepted
     ('update_component', 'fitted', 'logN', '1e1', {'uuid': UUID}, 10.0),
     ('update_component', 'fitted', 'logN', 'abc', {'uuid': UUID}, REFUSED),
-    ('update_component', 'fitted', 'logN', '', {'uuid': UUID}, None),  # 2.4.0: refused (0)
-    ('update_component', 'fitted', 'logN', 'None', {'uuid': UUID}, None),
-    ('update_component', 'fitted', 'logN', None, {'uuid': UUID}, None),  # 2.4.0: refused (0)
+    ('update_component', 'fitted', 'logN', '', {'uuid': UUID, 'z': 1.9301}, None),  # 2.4.0: refused (0); 6-quater PR 10: with another parameter (alone: nothing to change, refused)
+    ('update_component', 'fitted', 'logN', 'None', {'uuid': UUID, 'z': 1.9301}, None),  # 6-quater PR 10: with another parameter (alone: nothing to change, refused)
+    ('update_component', 'fitted', 'logN', None, {'uuid': UUID, 'z': 1.9301}, None),  # 2.4.0: refused (0); 6-quater PR 10: with another parameter (alone: nothing to change, refused)
     ('update_component', 'fitted', 'logN', 'nan', {'uuid': UUID}, REFUSED),  # 2.4.0: accepted as NaN
     ('update_component', 'fitted', 'logN', 'inf', {'uuid': UUID}, REFUSED),  # 2.4.0: accepted as an infinity
     ('update_component', 'fitted', 'logN', True, {'uuid': UUID}, REFUSED),  # 2.4.0: accepted as 1
@@ -644,9 +644,9 @@ CASES = [
     ('update_components', 'fitted', 'logN', ' 2 ', {'uuids': [UUID]}, REFUSED),  # 2.4.0: accepted
     ('update_components', 'fitted', 'logN', '1e1', {'uuids': [UUID]}, 10.0),
     ('update_components', 'fitted', 'logN', 'abc', {'uuids': [UUID]}, REFUSED),
-    ('update_components', 'fitted', 'logN', '', {'uuids': [UUID]}, None),  # 2.4.0: refused (0)
-    ('update_components', 'fitted', 'logN', 'None', {'uuids': [UUID]}, None),
-    ('update_components', 'fitted', 'logN', None, {'uuids': [UUID]}, None),  # 2.4.0: refused (0)
+    ('update_components', 'fitted', 'logN', '', {'uuids': [UUID], 'z': 1.9301}, None),  # 2.4.0: refused (0); 6-quater PR 10: with another parameter (alone: nothing to change, refused)
+    ('update_components', 'fitted', 'logN', 'None', {'uuids': [UUID], 'z': 1.9301}, None),  # 6-quater PR 10: with another parameter (alone: nothing to change, refused)
+    ('update_components', 'fitted', 'logN', None, {'uuids': [UUID], 'z': 1.9301}, None),  # 2.4.0: refused (0); 6-quater PR 10: with another parameter (alone: nothing to change, refused)
     ('update_components', 'fitted', 'logN', 'nan', {'uuids': [UUID]}, REFUSED),  # 2.4.0: accepted as NaN
     ('update_components', 'fitted', 'logN', 'inf', {'uuids': [UUID]}, REFUSED),  # 2.4.0: accepted as an infinity
     ('update_components', 'fitted', 'logN', True, {'uuids': [UUID]}, REFUSED),  # 2.4.0: accepted as 1
@@ -659,9 +659,9 @@ CASES = [
     ('update_component', 'fitted', 'b', ' 2 ', {'uuid': UUID}, 2.0),
     ('update_component', 'fitted', 'b', '1e1', {'uuid': UUID}, 10.0),
     ('update_component', 'fitted', 'b', 'abc', {'uuid': UUID}, REFUSED),
-    ('update_component', 'fitted', 'b', '', {'uuid': UUID}, None),  # 2.4.0: refused (0)
-    ('update_component', 'fitted', 'b', 'None', {'uuid': UUID}, None),
-    ('update_component', 'fitted', 'b', None, {'uuid': UUID}, None),  # 2.4.0: refused (0)
+    ('update_component', 'fitted', 'b', '', {'uuid': UUID, 'z': 1.9301}, None),  # 2.4.0: refused (0); 6-quater PR 10: with another parameter (alone: nothing to change, refused)
+    ('update_component', 'fitted', 'b', 'None', {'uuid': UUID, 'z': 1.9301}, None),  # 6-quater PR 10: with another parameter (alone: nothing to change, refused)
+    ('update_component', 'fitted', 'b', None, {'uuid': UUID, 'z': 1.9301}, None),  # 2.4.0: refused (0); 6-quater PR 10: with another parameter (alone: nothing to change, refused)
     ('update_component', 'fitted', 'b', 'nan', {'uuid': UUID}, REFUSED),  # 2.4.0: accepted as NaN
     ('update_component', 'fitted', 'b', 'inf', {'uuid': UUID}, REFUSED),  # 2.4.0: accepted as an infinity
     ('update_component', 'fitted', 'b', True, {'uuid': UUID}, REFUSED),  # 2.4.0: accepted as 1
@@ -674,9 +674,9 @@ CASES = [
     ('update_components', 'fitted', 'b', ' 2 ', {'uuids': [UUID]}, 2.0),
     ('update_components', 'fitted', 'b', '1e1', {'uuids': [UUID]}, 10.0),
     ('update_components', 'fitted', 'b', 'abc', {'uuids': [UUID]}, REFUSED),
-    ('update_components', 'fitted', 'b', '', {'uuids': [UUID]}, None),  # 2.4.0: refused (0)
-    ('update_components', 'fitted', 'b', 'None', {'uuids': [UUID]}, None),
-    ('update_components', 'fitted', 'b', None, {'uuids': [UUID]}, None),  # 2.4.0: refused (0)
+    ('update_components', 'fitted', 'b', '', {'uuids': [UUID], 'z': 1.9301}, None),  # 2.4.0: refused (0); 6-quater PR 10: with another parameter (alone: nothing to change, refused)
+    ('update_components', 'fitted', 'b', 'None', {'uuids': [UUID], 'z': 1.9301}, None),  # 6-quater PR 10: with another parameter (alone: nothing to change, refused)
+    ('update_components', 'fitted', 'b', None, {'uuids': [UUID], 'z': 1.9301}, None),  # 2.4.0: refused (0); 6-quater PR 10: with another parameter (alone: nothing to change, refused)
     ('update_components', 'fitted', 'b', 'nan', {'uuids': [UUID]}, REFUSED),  # 2.4.0: accepted as NaN
     ('update_components', 'fitted', 'b', 'inf', {'uuids': [UUID]}, REFUSED),  # 2.4.0: accepted as an infinity
     ('update_components', 'fitted', 'b', True, {'uuids': [UUID]}, REFUSED),  # 2.4.0: accepted as 1
@@ -689,9 +689,9 @@ CASES = [
     ('update_component', 'fitted', 'btur', ' 2 ', {'uuid': UUID}, 2.0),
     ('update_component', 'fitted', 'btur', '1e1', {'uuid': UUID}, 10.0),
     ('update_component', 'fitted', 'btur', 'abc', {'uuid': UUID}, REFUSED),
-    ('update_component', 'fitted', 'btur', '', {'uuid': UUID}, None),  # 2.4.0: refused (0)
-    ('update_component', 'fitted', 'btur', 'None', {'uuid': UUID}, None),
-    ('update_component', 'fitted', 'btur', None, {'uuid': UUID}, None),  # 2.4.0: refused (0)
+    ('update_component', 'fitted', 'btur', '', {'uuid': UUID, 'z': 1.9301}, None),  # 2.4.0: refused (0); 6-quater PR 10: with another parameter (alone: nothing to change, refused)
+    ('update_component', 'fitted', 'btur', 'None', {'uuid': UUID, 'z': 1.9301}, None),  # 6-quater PR 10: with another parameter (alone: nothing to change, refused)
+    ('update_component', 'fitted', 'btur', None, {'uuid': UUID, 'z': 1.9301}, None),  # 2.4.0: refused (0); 6-quater PR 10: with another parameter (alone: nothing to change, refused)
     ('update_component', 'fitted', 'btur', 'nan', {'uuid': UUID}, REFUSED),  # 2.4.0: accepted as NaN
     ('update_component', 'fitted', 'btur', 'inf', {'uuid': UUID}, REFUSED),  # 2.4.0: accepted as an infinity
     ('update_component', 'fitted', 'btur', True, {'uuid': UUID}, REFUSED),  # 2.4.0: accepted as 1
@@ -704,9 +704,9 @@ CASES = [
     ('update_components', 'fitted', 'btur', ' 2 ', {'uuids': [UUID]}, 2.0),
     ('update_components', 'fitted', 'btur', '1e1', {'uuids': [UUID]}, 10.0),
     ('update_components', 'fitted', 'btur', 'abc', {'uuids': [UUID]}, REFUSED),
-    ('update_components', 'fitted', 'btur', '', {'uuids': [UUID]}, None),  # 2.4.0: refused (0)
-    ('update_components', 'fitted', 'btur', 'None', {'uuids': [UUID]}, None),
-    ('update_components', 'fitted', 'btur', None, {'uuids': [UUID]}, None),  # 2.4.0: refused (0)
+    ('update_components', 'fitted', 'btur', '', {'uuids': [UUID], 'z': 1.9301}, None),  # 2.4.0: refused (0); 6-quater PR 10: with another parameter (alone: nothing to change, refused)
+    ('update_components', 'fitted', 'btur', 'None', {'uuids': [UUID], 'z': 1.9301}, None),  # 6-quater PR 10: with another parameter (alone: nothing to change, refused)
+    ('update_components', 'fitted', 'btur', None, {'uuids': [UUID], 'z': 1.9301}, None),  # 2.4.0: refused (0); 6-quater PR 10: with another parameter (alone: nothing to change, refused)
     ('update_components', 'fitted', 'btur', 'nan', {'uuids': [UUID]}, REFUSED),  # 2.4.0: accepted as NaN
     ('update_components', 'fitted', 'btur', 'inf', {'uuids': [UUID]}, REFUSED),  # 2.4.0: accepted as an infinity
     ('update_components', 'fitted', 'btur', True, {'uuids': [UUID]}, REFUSED),  # 2.4.0: accepted as 1
@@ -719,14 +719,14 @@ CASES = [
     ('update_component', 'fitted', 'resol', ' 2 ', {'uuid': UUID}, 2.0),
     ('update_component', 'fitted', 'resol', '1e1', {'uuid': UUID}, 10.0),
     ('update_component', 'fitted', 'resol', 'abc', {'uuid': UUID}, REFUSED),
-    ('update_component', 'fitted', 'resol', '', {'uuid': UUID}, None),  # 2.4.0: refused (0)
-    ('update_component', 'fitted', 'resol', 'None', {'uuid': UUID}, None),
-    ('update_component', 'fitted', 'resol', None, {'uuid': UUID}, None),  # 2.4.0: refused (0)
+    ('update_component', 'fitted', 'resol', '', {'uuid': UUID, 'z': 1.9301}, None),  # 2.4.0: refused (0); 6-quater PR 10: with another parameter (alone: nothing to change, refused)
+    ('update_component', 'fitted', 'resol', 'None', {'uuid': UUID, 'z': 1.9301}, None),  # 6-quater PR 10: with another parameter (alone: nothing to change, refused)
+    ('update_component', 'fitted', 'resol', None, {'uuid': UUID, 'z': 1.9301}, None),  # 2.4.0: refused (0); 6-quater PR 10: with another parameter (alone: nothing to change, refused)
     ('update_component', 'fitted', 'resol', 'nan', {'uuid': UUID}, REFUSED),  # 2.4.0: accepted as NaN
     ('update_component', 'fitted', 'resol', 'inf', {'uuid': UUID}, REFUSED),  # 2.4.0: accepted as an infinity
     ('update_component', 'fitted', 'resol', True, {'uuid': UUID}, REFUSED),  # 2.4.0: accepted as 1
     ('update_component', 'fitted', 'resol', '-1', {'uuid': UUID}, REFUSED),  # 2.4.0: accepted
-    ('update_component', 'fitted', 'resol', '0', {'uuid': UUID}, REFUSED),  # 2.4.0: accepted
+    ('update_component', 'fitted', 'resol', '0', {'uuid': UUID}, 0.0),  # 6-quater PR 10: 0 removes the override of the component (refused before); was REFUSED (2.4.0: accepted)
     ('update_component', 'fitted', 'resol', '30000', {'uuid': UUID}, 30000.0),
     ('update_components', 'fitted', 'resol', '2.0', {'uuids': [UUID]}, 2.0),
     ('update_components', 'fitted', 'resol', 2.0, {'uuids': [UUID]}, 2.0),
@@ -734,33 +734,33 @@ CASES = [
     ('update_components', 'fitted', 'resol', ' 2 ', {'uuids': [UUID]}, 2.0),
     ('update_components', 'fitted', 'resol', '1e1', {'uuids': [UUID]}, 10.0),
     ('update_components', 'fitted', 'resol', 'abc', {'uuids': [UUID]}, REFUSED),
-    ('update_components', 'fitted', 'resol', '', {'uuids': [UUID]}, None),  # 2.4.0: refused (0)
-    ('update_components', 'fitted', 'resol', 'None', {'uuids': [UUID]}, None),
-    ('update_components', 'fitted', 'resol', None, {'uuids': [UUID]}, None),  # 2.4.0: refused (0)
+    ('update_components', 'fitted', 'resol', '', {'uuids': [UUID], 'z': 1.9301}, None),  # 2.4.0: refused (0); 6-quater PR 10: with another parameter (alone: nothing to change, refused)
+    ('update_components', 'fitted', 'resol', 'None', {'uuids': [UUID], 'z': 1.9301}, None),  # 6-quater PR 10: with another parameter (alone: nothing to change, refused)
+    ('update_components', 'fitted', 'resol', None, {'uuids': [UUID], 'z': 1.9301}, None),  # 2.4.0: refused (0); 6-quater PR 10: with another parameter (alone: nothing to change, refused)
     ('update_components', 'fitted', 'resol', 'nan', {'uuids': [UUID]}, REFUSED),  # 2.4.0: accepted as NaN
     ('update_components', 'fitted', 'resol', 'inf', {'uuids': [UUID]}, REFUSED),  # 2.4.0: accepted as an infinity
     ('update_components', 'fitted', 'resol', True, {'uuids': [UUID]}, REFUSED),  # 2.4.0: accepted as 1
     ('update_components', 'fitted', 'resol', '-1', {'uuids': [UUID]}, REFUSED),  # 2.4.0: accepted
-    ('update_components', 'fitted', 'resol', '0', {'uuids': [UUID]}, REFUSED),  # 2.4.0: accepted
+    ('update_components', 'fitted', 'resol', '0', {'uuids': [UUID]}, 0.0),  # 6-quater PR 10: 0 removes the override of the component (refused before); was REFUSED (2.4.0: accepted)
     ('update_components', 'fitted', 'resol', '30000', {'uuids': [UUID]}, 30000.0),
     ('update_component', 'fitted', 'series', 'CIV', {'uuid': UUID}, 'CIV'),
     ('update_component', 'fitted', 'series', 'SiIV', {'uuid': UUID}, 'SiIV'),
-    ('update_component', 'fitted', 'series', 'nope', {'uuid': UUID}, 'nope'),
-    ('update_component', 'fitted', 'series', '', {'uuid': UUID}, ''),
-    ('update_component', 'fitted', 'series', None, {'uuid': UUID}, None),  # 2.4.0: accepted, the series renamed 'None'
-    ('update_component', 'fitted', 'series', 'None', {'uuid': UUID}, None),
-    ('update_component', 'fitted', 'uuid', UUID, {}, UUID),
-    ('update_component', 'fitted', 'uuid', 'nope', {}, 'nope'),
-    ('update_component', 'fitted', 'uuid', '', {}, ''),
+    ('update_component', 'fitted', 'series', 'nope', {'uuid': UUID}, REFUSED),  # 6-quater PR 10: unknown series (F143; stored before); was 'nope'
+    ('update_component', 'fitted', 'series', '', {'uuid': UUID}, REFUSED),  # 6-quater PR 10: unknown series (F143; stored before); was ''
+    ('update_component', 'fitted', 'series', None, {'uuid': UUID, 'z': 1.9301}, None),  # 2.4.0: accepted, the series renamed 'None'; 6-quater PR 10: with another parameter (alone: nothing to change, refused)
+    ('update_component', 'fitted', 'series', 'None', {'uuid': UUID, 'z': 1.9301}, None),  # 6-quater PR 10: with another parameter (alone: nothing to change, refused)
+    ('update_component', 'fitted', 'uuid', UUID, {'z': 1.9301}, UUID),
+    ('update_component', 'fitted', 'uuid', 'nope', {'z': 1.9301}, REFUSED),  # 6-quater PR 10: unknown component (F142; a state that changed nothing, with a WARNING); was 'nope'
+    ('update_component', 'fitted', 'uuid', '', {'z': 1.9301}, REFUSED),  # 6-quater PR 10: unknown component (F142; a state that changed nothing, with a WARNING); was ''
     ('update_component', 'fitted', 'uuid', None, {}, REFUSED),  # 2.4.0: accepted
     ('delete_component', 'fitted', 'uuid', UUID, {}, UUID),
-    ('delete_component', 'fitted', 'uuid', 'nope', {}, 'nope'),
-    ('delete_component', 'fitted', 'uuid', '', {}, ''),
-    ('delete_component', 'fitted', 'uuid', None, {}, None),
+    ('delete_component', 'fitted', 'uuid', 'nope', {}, REFUSED),  # 6-quater PR 10: unknown component (F142; a state that changed nothing); was 'nope'
+    ('delete_component', 'fitted', 'uuid', '', {'uuids': [UUID]}, ''),  # 6-quater PR 10: with uuids (alone: nothing to delete, refused)
+    ('delete_component', 'fitted', 'uuid', None, {'uuids': [UUID]}, None),  # 6-quater PR 10: with another parameter (alone: nothing to change, refused)
     ('delete_component', 'fitted', 'uuids', [UUID], {}, [UUID]),
     ('delete_component', 'fitted', 'uuids', LIST_AS_TEXT, {}, [UUID]),  # 2.4.0: accepted, the text not read as a list
-    ('delete_component', 'fitted', 'uuids', [], {}, []),
-    ('delete_component', 'fitted', 'uuids', None, {}, None),
+    ('delete_component', 'fitted', 'uuids', [], {'uuid': UUID}, []),  # 6-quater PR 10: with another parameter (alone: nothing to change, refused)
+    ('delete_component', 'fitted', 'uuids', None, {'uuid': UUID}, None),  # 6-quater PR 10: with another parameter (alone: nothing to change, refused)
     ('delete_component', 'fitted', 'uuids', 'abc', {}, REFUSED),  # 2.4.0: accepted
     ('fit_component', 'fitted', 'max_nfev', '2', {'uuid': UUID}, 2),
     ('fit_component', 'fitted', 'max_nfev', 2, {'uuid': UUID}, 2),
@@ -816,9 +816,9 @@ CASES = [
     ('update_constraint', 'fitted', 'is_free', False, {'uuid': UUID, 'param': 'b'}, False),
     ('update_constraint', 'fitted', 'is_free', 1, {'uuid': UUID, 'param': 'b'}, True),
     ('update_constraint', 'fitted', 'is_free', 0, {'uuid': UUID, 'param': 'b'}, False),
-    ('update_constraint', 'fitted', 'is_free', '', {'uuid': UUID, 'param': 'b'}, None),
-    ('update_constraint', 'fitted', 'is_free', None, {'uuid': UUID, 'param': 'b'}, None),
-    ('update_constraint', 'fitted', 'is_free', 'None', {'uuid': UUID, 'param': 'b'}, None),
+    ('update_constraint', 'fitted', 'is_free', '', {'uuid': UUID, 'param': 'b', 'expression': '12.0'}, None),  # 6-quater PR 10: with another parameter (alone: nothing to change, refused)
+    ('update_constraint', 'fitted', 'is_free', None, {'uuid': UUID, 'param': 'b', 'expression': '12.0'}, None),  # 6-quater PR 10: with another parameter (alone: nothing to change, refused)
+    ('update_constraint', 'fitted', 'is_free', 'None', {'uuid': UUID, 'param': 'b', 'expression': '12.0'}, None),  # 6-quater PR 10: with another parameter (alone: nothing to change, refused)
     ('update_constraint', 'fitted', 'param', 'b', {'uuid': UUID, 'is_free': False}, 'b'),
     ('update_constraint', 'fitted', 'param', 'z', {'uuid': UUID, 'is_free': False}, 'z'),
     ('update_constraint', 'fitted', 'param', 'logN', {'uuid': UUID, 'is_free': False}, 'logN'),
@@ -908,7 +908,7 @@ CASES = [
     ('add_linked_system', 'fitted', 'z_window_kms', '30', {'series_list': 'CIV,SiIV', 'z': 1.931}, 30.0),
     ('add_linked_system', 'fitted', 'series_list', 'CIV', {'z': 1.931}, 'CIV'),
     ('add_linked_system', 'fitted', 'series_list', 'CIV,SiIV', {'z': 1.931}, 'CIV,SiIV'),
-    ('add_linked_system', 'fitted', 'series_list', 'nope', {'z': 1.931}, FAILS),  # F111: no transition, so no pixel; fitted on the whole spectrum until PR 7-quater
+    ('add_linked_system', 'fitted', 'series_list', 'nope', {'z': 1.931}, REFUSED),  # 6-quater PR 10: unknown series (F143; added without lines); was FAILS (F111: no transition, so no pixel; fitted on the whole spectrum until PR 7-quater)
     ('add_linked_system', 'fitted', 'series_list', '', {'z': 1.931}, REFUSED),
     ('add_linked_system', 'fitted', 'series_list', None, {'z': 1.931}, REFUSED),  # 2.4.0: crashed (AttributeError)
     ('optimize_system', 'fitted', 'max_components', '2', {'uuid': UUID}, 2),
