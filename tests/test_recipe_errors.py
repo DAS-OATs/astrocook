@@ -145,7 +145,9 @@ def test_nothing_to_do_is_not_a_failure(caplog):
     (lambda s: s.absorbers.fit_component("x"), "Fit component: There are no components to fit."),
     (lambda s: s.absorbers.optimize_system("x"), "There are no components to optimize."),
     (lambda s: s.absorbers.update_constraints_column("b", False), "There are no components."),
-    (lambda s: s.absorbers.fit_bayesian([]), "Fit Bayesian: No components are selected."),
+    # "No components are selected" before phase 6-quater, PR 10-bis: the
+    # session is checked first, as by the other fits
+    (lambda s: s.absorbers.fit_bayesian([]), "Fit Bayesian: There are no components to fit."),
 ])
 def test_without_components_the_reason_is_given(call, message):
     # It returned 0, logging nothing (Guido, phase 6-bis, PR 3)

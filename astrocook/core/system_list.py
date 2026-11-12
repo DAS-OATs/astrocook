@@ -1052,7 +1052,8 @@ class SystemList:
                            aic_penalty: float = 0.0, z_window_kms: float = 100.0,
                            min_dv: float = 10.0,  # <--- NEW PARAMETER
                            group_depth: int = 2, patience: int = 2,
-                           trace: Optional[dict] = None) -> 'SystemList':
+                           trace: Optional[dict] = None,
+                           max_nfev: int = 1000) -> 'SystemList':
         """
         Iteratively adds components to a system to minimize residuals using the
         Akaike Information Criterion (AIC).
@@ -1075,7 +1076,8 @@ class SystemList:
             UUID of the seed component. This defines the series (e.g. CIV) and the center of the 
             velocity search window.
         max_components : int, optional
-            Maximum number of additional components to attempt adding (default: 5).
+            Maximum number of candidates tried, each counting also when rejected or
+            too close to a component (default: 5).
         threshold_sigma : float, optional
             Significance level (in standard deviations) of the residual dip required to trigger 
             a new component trial (default: 2.5).
@@ -1083,7 +1085,9 @@ class SystemList:
             Minimum AIC improvement required to accept a new component (default: 0.0).
             Higher values favor simpler models (Occam's razor).
         z_window_kms : float, optional
-            The velocity window size (km/s) around the seed component to search for residuals (default: 100.0).
+            Half-width (km/s) of the window around the first line of the seed component,
+            where the residuals are searched and the AIC is computed; also passed to the
+            fits, where it bounds how far the redshifts can move (default: 100.0).
         min_dv : float, optional
             Minimum velocity separation (km/s) required between a candidate and 
             existing components. Lower this to de-blend close doublets (default: 10.0).
@@ -1091,6 +1095,10 @@ class SystemList:
             Depth for finding connected neighbors during the fit (default: 2).
         patience : int, optional
             Number of consecutive trials allowed without AIC improvement before stopping (default: 2).
+        max_nfev : int, optional
+            Maximum number of evaluations of the model in each fit (default:
+            1000). A fit that does not converge within it counts as failed
+            (AIC infinite): its candidate is rejected (F149).
         trace : dict, optional
             Filled with what the search did (F118, trial 3 of the MCP server):
             ``start_aic``, ``tried`` (one dict per candidate: ``z``,
@@ -1135,7 +1143,7 @@ class SystemList:
         def fit_and_evaluate(systs_obj, target_uuids):
             with systs_obj.fitting_context(target_uuids, group_depth=group_depth, spec=spec):
                 fitter = VoigtFitter(spec, systs_obj)
-                new_systs, _, res = fitter.fit(max_nfev=1000, z_window_kms=z_window_kms, verbose=0)
+                new_systs, _, res = fitter.fit(max_nfev=max_nfev, z_window_kms=z_window_kms, verbose=0)
                 
                 # Cleanup
                 if new_systs.constraint_model:

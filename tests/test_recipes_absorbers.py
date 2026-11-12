@@ -454,8 +454,12 @@ def test_fit_bayesian_without_the_extra_names_it(one_civ, monkeypatch, engine, p
 
 def test_fit_bayesian_bad_input_returns_0(one_civ):
     uuid = one_civ.systs.components[0].uuid
-    with pytest.raises(RecipeFailed, match="No components are selected"):
+    # A RecipeFailed ("No components are selected") before phase 6-quater,
+    # PR 10-bis: uuids is required
+    with pytest.raises(InvalidParameter, match="uuids: a value is needed"):
         one_civ.absorbers.fit_bayesian(None)
+    with pytest.raises(InvalidParameter, match="uuids: give at least one"):
+        one_civ.absorbers.fit_bayesian([])
     with pytest.raises(InvalidParameter):
         one_civ.absorbers.fit_bayesian([uuid], nsteps="x")
     with pytest.raises(InvalidParameter):

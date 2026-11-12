@@ -914,13 +914,9 @@ class SystemInspector(QWidget):
             
             self.main_window._on_recipe_requested(
                 "absorbers", "fit_bayesian", 
-                {
-                    "uuids": uuid_list,
-                    "engine": engine,
-                    "nsteps": "500",
-                    "nlive": "250",
-                    "group_depth": "2"
-                }, 
+                # The other parameters take the defaults of the recipe
+                # (they were passed as strings that copied them: PR 10-bis)
+                {"uuids": uuid_list, "engine": engine},
                 {}
             )
 
