@@ -112,7 +112,7 @@ class SpectrumRange(BaseModel):
     columns: dict[str, list[Optional[float]]] = Field(description=(
         "The values of the columns asked, one per point; null where not "
         "finite. The axis is always given: as 'λ', or under the name asked "
-        "for it ('x', 'lambda')."))
+        "for it ('x', 'lam')."))
     units: dict[str, str]
 
 
@@ -179,7 +179,7 @@ def register_inspect_tools(server: MCPServer, store: SessionStore) -> None:
             "End of the range; null: the end of the spectrum."))] = None,
         columns: Annotated[Optional[list[str]], Field(description=(
             "Columns to read (session_describe lists them): F (flux), dF "
-            "(its error), cont, model, ...; λ is written lambda or x in "
+            "(its error), cont, model, ...; λ is written lam or x in "
             "ASCII, and x, y, dy (the names in the data) are accepted; "
             "null: F, dF, cont and model, those present."))] = None,
         max_points: Annotated[int, Field(ge=10, le=5000, description=(

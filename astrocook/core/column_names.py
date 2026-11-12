@@ -6,8 +6,9 @@ and the other columns by their own name (``cont``, ``model``, ``resol``,
 ...). The data keep their own names, ``x``, ``xmin``, ``xmax``, ``y``,
 ``dy`` (the archives, the CSV files of ``export_ascii``, the attributes
 ``Spectrum.x``, ``.y``, ``.dy``): accepted wherever a column is named, as
-silent and permanent aliases, as ``lambda``, ``lambdamin`` and
-``lambdamax``, the ASCII spelling of ``λ`` (Guido, 12 November 2026). So
+silent and permanent aliases, as ``lam``, ``lammin`` and
+``lammax``, the ASCII spelling of ``λ`` (Guido, 12 November 2026: shorter
+than ``lambda``, which is a keyword of Python, e.g. ``df.lambda`` in pandas). So
 the logs, the saved expressions and the scripts written with either set
 still work, and nothing is translated in them.
 
@@ -24,7 +25,7 @@ GUI_COLUMN_NAMES: Dict[str, str] = {
 
 #: The ASCII spelling of the names of the axis
 ASCII_COLUMN_NAMES: Dict[str, str] = {
-    'lambda': 'x', 'lambdamin': 'xmin', 'lambdamax': 'xmax'}
+    'lam': 'x', 'lammin': 'xmin', 'lammax': 'xmax'}
 
 #: Every name accepted for a column of every spectrum, with its name in the data
 _TO_INTERNAL: Dict[str, str] = {**GUI_COLUMN_NAMES, **ASCII_COLUMN_NAMES}

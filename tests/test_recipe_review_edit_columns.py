@@ -139,7 +139,7 @@ def test_apply_expression_refuses_a_name_no_expression_can_use(session, name):
         session.edit.apply_expression(target_col=name, expression="F * 2")
 
 
-@pytest.mark.parametrize("target", ["λ", "λmin", "λmax", "x", "lambda"])
+@pytest.mark.parametrize("target", ["λ", "λmin", "λmax", "x", "lam"])
 @pytest.mark.parametrize("recipe,kw", [
     ("apply_expression", {"expression": "λ * 0 + 1"}),
     ("mask_expression", {"expression": "λ > 400"}),
@@ -192,7 +192,7 @@ def test_running_std_with_the_names_of_the_gui(session):
                           by_data.spec.t["running_std"].value, equal_nan=True)
 
 
-@pytest.mark.parametrize("name", ["F", "dF", "λ", "lambda", "y"])
+@pytest.mark.parametrize("name", ["F", "dF", "λ", "lam", "y"])
 def test_running_std_output_refuses_the_names_of_the_gui(session, name):
     # Was: 'F' made a column that the expressions read as y
     with pytest.raises(InvalidParameter, match="not a name for a new column"):
@@ -211,26 +211,26 @@ def test_columns_in_range_gives_the_axis_as_asked(session):
     assert set(session.spec.columns_in_range(["F"])["columns"]) == {"λ", "F"}
     data = session.spec.columns_in_range(["x", "y"])
     assert set(data["columns"]) == {"x", "y"} and data["axis"] == "x"
-    data = session.spec.columns_in_range(["lambda", "dF"])
-    assert data["axis"] == "lambda"
-    assert np.array_equal(data["columns"]["lambda"], session.spec.x.value)
+    data = session.spec.columns_in_range(["lam", "dF"])
+    assert data["axis"] == "lam"
+    assert np.array_equal(data["columns"]["lam"], session.spec.x.value)
 
 
 # --- One set of names, the old one accepted (F120) -----------------------------
 
-def test_lambda_is_the_ascii_spelling_of_the_axis(session):
-    a = session.edit.mask_expression(target_col="F", expression="lambda > 400")
+def test_lam_is_the_ascii_spelling_of_the_axis(session):
+    a = session.edit.mask_expression(target_col="F", expression="lam > 400")
     b = session.edit.mask_expression(target_col="F", expression="λ > 400")
     assert np.array_equal(a.spec.y.value, b.spec.y.value, equal_nan=True)
-    part = session.edit.split(expression="(lambdamin > 400) & (lambdamax < 410)")
+    part = session.edit.split(expression="(lammin > 400) & (lammax < 410)")
     assert part.spec.x.value.min() > 400
 
 
 def test_names_of_the_column_module():
     from astrocook.core.column_names import (display_column, internal_column,
                                              internal_expression)
-    assert internal_expression("(λ > 1) & (λmin < F) | dF_old + s1.F + lambda") == \
-        "(x > 1) & (xmin < y) | dF_old + s1.y + x"
+    assert internal_expression("(λ > 1) & (λmin < F) | dF_old + s1.F + lam + lambda_x") == \
+        "(x > 1) & (xmin < y) | dF_old + s1.y + x + lambda_x"
     assert [internal_column(n) for n in ("F", "dF", "y", "cont", "λmax")] == \
         ["y", "dy", "y", "cont", "xmax"]
     assert [display_column(n) for n in ("x", "dy", "cont")] == ["λ", "dF", "cont"]

@@ -85,7 +85,7 @@ change nothing.
 
 The columns have the names of the GUI everywhere (reads, expressions,
 parameters): λ (wavelength), F (flux), dF (its error), cont, model, ...;
-λ can be written lambda or x, and x, y, dy (the names in the data and in
+λ can be written lam or x, and x, y, dy (the names in the data and in
 the CSV files) are accepted too.
 
 To let the user watch the analysis, gui_open shows a session in the Astrocook

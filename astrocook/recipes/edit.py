@@ -185,7 +185,7 @@ EDIT_RECIPES_SCHEMAS = {
     "apply_expression": {
         "methods": "The column {target_col} was computed as {expression}{menu}",
         "brief": "Apply expression to columns.",
-        "details": "Evaluates an expression of the columns (NumExpr: + - * / **, comparisons, sqrt, exp, log, log10, abs, where, sum, min, max, ...) and writes it in a column, new or existing. The columns are named as in the GUI: λ (or lambda), F, dF, cont, model, ...; e.g. 'F / cont', 'F * 2.0', 'log10(F)'. The axis (λ, λmin, λmax) is not written: x_convert converts it.",
+        "details": "Evaluates an expression of the columns (NumExpr: + - * / **, comparisons, sqrt, exp, log, log10, abs, where, sum, min, max, ...) and writes it in a column, new or existing. The columns are named as in the GUI: λ (or lam), F, dF, cont, model, ...; e.g. 'F / cont', 'F * 2.0', 'log10(F)'. The axis (λ, λmin, λmax) is not written: x_convert converts it.",
         "params": [
             # Required (PR 8): with the defaults 'F' and 'F / dF' it
             # replaced the flux with its S/N
@@ -197,7 +197,7 @@ EDIT_RECIPES_SCHEMAS = {
     "mask_expression": {
         "methods": "The column {target_col} was masked where {expression}{menu}",
         "brief": "Mask column by expression.",
-        "details": "Sets a column to NaN where a boolean expression of the columns is true, e.g. '(λ < 300) | (λ > 400)' or 'dF <= 0'. The columns are named as in the GUI (λ or lambda, F, dF, cont, ...). The axis (λ, λmin, λmax) is not masked.",
+        "details": "Sets a column to NaN where a boolean expression of the columns is true, e.g. '(λ < 300) | (λ > 400)' or 'dF <= 0'. The columns are named as in the GUI (λ or lam, F, dF, cont, ...). The axis (λ, λmin, λmax) is not masked.",
         "params": [
             {"name": "target_col", "type": str, "default": "F", "doc": "Column to mask, e.g. 'F' (not the axis, λ, λmin, λmax).", "kind": "column"},
             {"name": "expression", "type": str, "default": "dF <= 0", "doc": "Boolean expression of the columns: the pixels where it is true are masked."},

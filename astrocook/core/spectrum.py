@@ -421,7 +421,7 @@ class Spectrum(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, LinesM
             for it, ``λ`` if it was not asked). The names of the GUI are
             the names of the core columns (``λ``, ``λmin``, ``λmax``,
             ``F``, ``dF``); those of the data (``x``, ``xmin``, ``xmax``,
-            ``y``, ``dy``) and ``lambda`` are accepted, and the values are
+            ``y``, ``dy``) and ``lam`` are accepted, and the values are
             given under the name asked (F120; phase 6-quater, PR 8).
         x_min, x_max : float, optional
             The range, in the unit of x; None: the start (end) of the

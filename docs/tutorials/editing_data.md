@@ -35,7 +35,7 @@ Before running complex algorithms, ensure your session metadata is correct. Many
 Astrocook allows you to perform mathematical operations on **any** data column (Flux `F`, Error `dF`, Wavelength `λ`, etc.) using NumPy-style syntax.
 
 :::{note}
-**The names of the columns.** Everywhere a column is named (expressions, the fields of the recipes, scripts, the MCP server) the names are those of the table of the GUI: `λ`, `λmin`, `λmax`, `F`, `dF`, and the other columns by their own name (`cont`, `model`, `resol`, ...). Where a plain ASCII name is handier, `λ` can be written `lambda` (`lambdamin`, `lambdamax`). The names that the data have in the archives and in the CSV files of *Export ASCII*, `x`, `xmin`, `xmax`, `y`, `dy`, are accepted too, so the logs and the scripts written with them still work.
+**The names of the columns.** Everywhere a column is named (expressions, the fields of the recipes, scripts, the MCP server) the names are those of the table of the GUI: `λ`, `λmin`, `λmax`, `F`, `dF`, and the other columns by their own name (`cont`, `model`, `resol`, ...). Where a plain ASCII name is handier, `λ` can be written `lam` (`lammin`, `lammax`). The names that the data have in the archives and in the CSV files of *Export ASCII*, `x`, `xmin`, `xmax`, `y`, `dy`, are accepted too, so the logs and the scripts written with them still work.
 :::
 
 ### General Arithmetic
