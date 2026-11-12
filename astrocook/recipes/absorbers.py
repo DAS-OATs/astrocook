@@ -222,6 +222,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "methods": _methods_components_auto,
         "references": ("C26", "SciPy"),
         "brief": "Auto-detect and fit components.",
+        "url": "tutorials/absorption_systems.html#general-detection",
         "requires": ("z_em", "resolution", "continuum"),
         "details": "Finds the absorbed regions, identifies the candidate systems of the given multiplets (Identify lines), adds them as components and fits them all (Refit all); the pipeline behind the other automatic recipes.",
         "params": [
@@ -238,13 +239,14 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "mask", "type": str, "default": "new", "doc": "Mask of the absorbed pixels used to find the regions: 'new' (made again with the defaults of Find absorbed regions) or 'session' (the 'abs_mask' already in the session, e.g. from Auto-estimate continuum with other parameters).", "choices": ["new", "session"]},
             {"name": "z_em_margin_kms", "type": float, "default": 3000.0, "min": 0, "doc": "How far beyond z_em a candidate system can lie (km/s): the associated absorbers and the uncertainty of z_em."},
         ],
-        "url": "absorbers_cb.html#components_auto"
     },
     # --- 2. WRAPPERS ---
     "doublets_auto": {
         "methods": _methods_doublets_auto,
         "references": ("C26", "SciPy"),
         "brief": "Auto-fit metal doublets (Red Side).",
+        "url": "tutorials/absorption_systems.html#metal-doublets",
+        "menu": "Absorbers > Auto-detect &Doublets",
         "requires": ("z_em", "resolution", "continuum"),
         "details": "Finds and fits metal doublets (CIV, SiIV, MgII by default) on the red side of the Lyman-alpha emission, where the forest does not confuse them; candidates are kept up to z_em_margin_kms beyond z_em.",
         "params": [
@@ -256,12 +258,13 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "mask", "type": str, "default": "new", "doc": "Mask of the absorbed pixels used to find the regions: 'new' (made again with the defaults of Find absorbed regions) or 'session' (the 'abs_mask' already in the session, e.g. from Auto-estimate continuum with other parameters).", "choices": ["new", "session"]},
             {"name": "z_em_margin_kms", "type": float, "default": 3000.0, "min": 0, "doc": "How far beyond z_em a candidate system can lie (km/s): the associated absorbers and the uncertainty of z_em."},
         ],
-        "url": "absorbers_cb.html#doublets_auto"
     },
     "lya_auto": {
         "methods": _methods_lya_auto,
         "references": ("C26", "SciPy"),
         "brief": "Auto-fit Ly-alpha forest.",
+        "url": "tutorials/absorption_systems.html#ly-alpha-forest",
+        "menu": "Absorbers > Auto-fit &Ly-alpha Forest",
         "requires": ("z_em", "resolution", "continuum"),
         "details": "Finds and fits single Lyman-alpha lines in the forest (between Ly-beta and Ly-alpha); lines narrower than min_b (metal lines or noise) are removed and the rest refitted.",
         "params": [
@@ -273,12 +276,13 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "mask", "type": str, "default": "new", "doc": "Mask of the absorbed pixels used to find the regions: 'new' (made again with the defaults of Find absorbed regions) or 'session' (the 'abs_mask' already in the session, e.g. from Auto-estimate continuum with other parameters).", "choices": ["new", "session"]},
             {"name": "z_em_margin_kms", "type": float, "default": 3000.0, "min": 0, "doc": "How far beyond z_em a candidate system can lie (km/s): the associated absorbers and the uncertainty of z_em."},
         ],
-        "url": "absorbers_cb.html#lya_auto"
     },
     "forest_auto": {
         "methods": _methods_forest_auto,
         "references": ("C26", "SciPy"),
         "brief": "Auto-fit full Lyman series.",
+        "url": "tutorials/absorption_systems.html#automated-detection-pipelines",
+        "menu": "Absorbers > Auto-fit &Full Lyman Series",
         "requires": ("z_em", "resolution", "continuum"),
         "details": "Finds Lyman-alpha lines and fits each as a Lyman series (Ly-alpha to the Lyman limit), so that the higher-order lines constrain the column density; systems narrower than min_b are removed.",
         "params": [
@@ -289,12 +293,13 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "max_logN", "type": float, "default": 19.0, "gt": 10, "max": 23, "doc": "Upper bound on logN in the fits; damped systems (logN > 19) are to be fitted by hand."},
             {"name": "z_em_margin_kms", "type": float, "default": 3000.0, "min": 0, "doc": "How far beyond z_em a candidate system can lie (km/s): the associated absorbers and the uncertainty of z_em."},
         ],
-        "url": "absorbers_cb.html#forest_auto"
     },
     "metals_auto": {
         "methods": _methods_metals_auto,
         "references": ("C26", "SciPy"),
         "brief": "Check for associated metals.",
+        "url": "tutorials/absorption_systems.html#automated-detection-pipelines",
+        "menu": "Absorbers > Check &Associated Metals",
         "requires": ("z_em", "resolution", "continuum"),
         "details": "For each system already in the list, tries to add other metal ions at its redshift and keeps each whose fit gives logN >= 12 and 2 <= b <= 50 km/s, not at the bounds of the fit, and decreases the AIC by the AIC penalty; skips the ions whose lines fall outside the spectrum; then refits all.",
         "params": [
@@ -304,12 +309,13 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "max_b", "type": float, "default": 50.0, "gt": 1, "max": 300, "doc": "Upper bound on b in the fits (km/s); components at the bound may be broader and can be refitted."},
             {"name": "max_logN", "type": float, "default": 19.0, "gt": 10, "max": 23, "doc": "Upper bound on logN in the fits; damped systems (logN > 19) are to be fitted by hand."}
         ],
-        "url": "absorbers_cb.html#metals_auto"
     },
     "identify_lines": {
         "methods": _methods_identify_lines,
         "references": ("C26",),
         "brief": "Identify likely absorption systems.",
+        "url": "tutorials/absorption_systems.html#general-detection",
+        "menu": "Absorbers > &Identify Absorption Lines",
         "requires": ("z_em", "resolution", "continuum"),
         "branching": True,
         "details": "Finds the absorbed regions from the mask, scores how well each multiplet matches them (the R^2 of the correlation of its lines) and keeps the best candidate systems; writes them in a new session, with the region and the score of each.",
@@ -323,11 +329,11 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "debug_rating", "type": bool, "default": False, "doc": "Show the plots of the scores (for debugging).", "agents": False},
             {"name": "z_em_margin_kms", "type": float, "default": 3000.0, "min": 0, "doc": "How far beyond z_em a candidate system can lie (km/s): the associated absorbers and the uncertainty of z_em."},
         ],
-        "url": "absorbers_cb.html#identify_lines"
     },
     "populate_from_identification": {
         "methods": "Components were added at the candidate systems of the identification{menu}",
         "brief": "Populate components from identification.",
+        "url": "tutorials/absorption_systems.html#general-detection",
         "requires": ("continuum",),
         "details": "Populates the system list using the regions and candidates found by 'identify_lines'.",
         "params": [
@@ -335,13 +341,13 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "series_map_json", "type": str, "default": "", "doc": "JSON object: region -> series of its candidate."},
             {"name": "z_map_json", "type": str, "default": "", "doc": "JSON object: region -> redshift of its candidate."}
         ],
-        "url": "absorbers_cb.html#populate_from_identification",
         "gui_hidden": True
     },
     "add_component": {
         "methods": _methods_add_component,
         "references": ("SciPy",),
         "brief": "Add a single component.",
+        "url": "tutorials/absorption_systems.html#adding-components",
         "requires": ("resolution", "continuum"),
         "details": "Adds a Voigt component of a transition or multiplet at a redshift and fits it with its neighbours.",
         "params": [
@@ -354,11 +360,11 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "btur", "type": float, "default": 0.0, "min": 0, "max": 100, "doc": "Turbulent broadening (km/s); frozen in the fits unless freed."},
             {"name": "z_window_kms", "type": float, "default": 20.0, "gt": 0, "doc": "Half-width of the window in which the redshift can move in the fit (km/s)."}
         ],
-        "url": "absorbers_cb.html#add_component" 
     },
     "update_component": {
         "methods": _methods_update_component,
         "brief": "Update component.",
+        "url": "tutorials/absorption_systems.html#interactive-fitting-editing",
         "details": "Changes the parameters of a component; a parameter left at None keeps its value (at least one must be given).",
         "params": [
             {"name": "uuid", "type": str, "default": "", "doc": "Identifier of the component.", "gui_hidden": True},
@@ -369,12 +375,12 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "series", "type": str, "default": None, "optional": True, "doc": "Transition or multiplet, e.g. 'CIV'."},
             {"name": "resol", "type": float, "default": None, "optional": True, "min": 0, "doc": "Resolving power R of this component, instead of that of the spectrum; 0 removes it (the component follows the spectrum)."}
         ],
-        "url": "absorbers_cb.html#update_component",
         "gui_hidden": True
     },
     "update_components": {
         "methods": _methods_update_components,
         "brief": "Batch update components.",
+        "url": "tutorials/absorption_systems.html#interactive-fitting-editing",
         "details": "Sets the same parameters on several components; a parameter left at None keeps its value (at least one must be given).",
         "params": [
             {"name": "uuids", "type": list, "default": None, "gui_hidden": True, "doc": "Identifiers of the components."},
@@ -391,6 +397,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
     "delete_component": {
         "methods": _methods_delete_component,
         "brief": "Delete component(s).",
+        "url": "tutorials/absorption_systems.html#interactive-fitting-editing",
         "details": "Deletes one or more components (uuid, uuids, or both) and recomputes the model.",
         "params": [
             {"name": "uuid", "type": str, "default": None, "optional": True, "gui_hidden": True, "doc": "Identifier of the component to delete."},
@@ -400,6 +407,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
     "detect_anchor": {
         "methods": "The redshift at which {trans_self} in this session and {trans_sibling} in the session {sibling_name} overlap best was found{menu}",
         "brief": "Detect doublet anchor redshift.",
+        "url": "tutorials/absorption_systems.html#doublet-anchor-across-two-sessions",
         "details": "Finds the redshift at which a transition of this session and one of a sibling session (e.g. the two lines of a doublet, in two sessions) overlap best, on the flux normalized by the continuum.",
         "params": [
             {"name": "sibling_name", "type": str, "default": "", "doc": "Name of the sibling session.", "kind": "session"},
@@ -408,12 +416,12 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "trans_self", "type": str, "default": "", "doc": "Transition in this session, e.g. 'OVI_1031'."},
             {"name": "trans_sibling", "type": str, "default": "", "doc": "Transition in the sibling session, e.g. 'OVI_1037'."}
         ],
-        "url": "absorbers_cb.html#detect_anchor"
     },
     "fit_component": {
         "methods": _methods_fit_component,
         "references": ("SciPy",),
         "brief": "Fit component.",
+        "url": "tutorials/absorption_systems.html#interactive-fitting-editing",
         "requires": ("resolution", "continuum"),
         "details": "Fits a component with its neighbours (the components blended with it) using the Voigt fitter.",
         "params": [
@@ -422,12 +430,12 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "z_window_kms", "type": float, "default": 20.0, "gt": 0, "doc": "Half-width of the window in which the redshift can move in the fit (km/s)."},
             {"name": "group_depth", "type": int, "default": 2, "min": 0, "doc": "How far the group extends: 0 the component alone, 1 the components blended with it, 2 also those blended with them."} 
         ],
-        "url": "absorbers_cb.html#fit_component",
         "gui_hidden": True
     },
     "update_constraint": {
         "methods": _methods_update_constraint,
         "brief": "Update constraint.",
+        "url": "tutorials/absorption_systems.html#constraints-fix-free",
         "details": "Freezes or frees a parameter of a component, or links it to a parameter of another component with an expression (a linked parameter is frozen; freeing it removes the link).",
         "params": [
             {"name": "uuid", "type": str, "default": "", "doc": "Identifier of the component.", "gui_hidden": True},
@@ -436,12 +444,12 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "expression", "type": str, "default": None, "optional": True, "doc": "Expression that links the parameter to another component, e.g. \"p['<uuid of the other component>'].z\" (None: no link); one that cannot be evaluated, or that names the component itself, is refused."},
             {"name": "target_uuid", "type": str, "default": None, "optional": True, "doc": "Identifier of the component it is linked to, which the fits include in its group: one named by the expression (None: the first it names)."} 
         ],
-        "url": "absorbers_cb.html#update_constraint",
         "gui_hidden": True
     },
     "update_constraints_column": {
         "methods": _methods_update_constraints_column,
         "brief": "Bulk update constraints.",
+        "url": "tutorials/absorption_systems.html#constraints-fix-free",
         "details": "Freezes or frees a parameter of all the components.",
         "params": [
             {"name": "param", "type": str, "default": "", "doc": "Parameter: 'z', 'logN', 'b' or 'btur'.", "choices": ["z", "logN", "b", "btur"]},
@@ -449,13 +457,13 @@ ABSORBERS_RECIPES_SCHEMAS = {
             # registry was not that of the method, which had none
             {"name": "is_free", "type": bool, "default": None, "doc": "True: free to vary in the fits (the links removed); False: frozen."}
         ],
-        "url": "absorbers_cb.html#update_constraints_column",
         "gui_hidden": True
     },
     "add_linked_system": {
         "methods": _methods_add_linked_system,
         "references": ("SciPy",),
         "brief": "Add linked system.",
+        "url": "tutorials/absorption_systems.html#parameter-linking",
         "requires": ("resolution", "continuum"),
         "details": "Adds components of several series at the same redshift, with the redshifts linked, and fits them.",
         "params": [
@@ -467,13 +475,13 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "b", "type": float, "default": 10.0, "min": 1, "max": 300, "doc": "Starting Doppler parameter (km/s)."},
             {"name": "z_window_kms", "type": float, "default": 20.0, "gt": 0, "doc": "Half-width of the window in which the redshift can move in the fit (km/s)."}
         ],
-        "url": "absorbers_cb.html#add_linked_system",
         "gui_hidden": True
     },
     "optimize_system": {
         "methods": _methods_optimize_system,
         "references": ("C26", "SciPy"),
         "brief": "Optimize system (Iterative Fit).",
+        "url": "tutorials/absorption_systems.html#refitting",
         "requires": ("resolution", "continuum"),
         "details": "Adds components to a system one at a time where the residuals are significant, keeping each only if it improves the fit by the AIC penalty.",
         "params": [
@@ -487,12 +495,12 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "patience", "type": int, "default": 2, "min": 0, "doc": "Number of tries without an improvement before stopping."},
             {"name": "max_nfev", "type": int, "default": 1000, "min": 1, "doc": "Maximum number of evaluations of the model in each fit; a fit that reaches it counts as failed (its candidate is rejected)."}
         ],
-        "url": "absorbers_cb.html#optimize_system"
     },
     "fit_bayesian": {
         "methods": _methods_fit_bayesian,
         "references": ("emcee", "dynesty"),
         "brief": "Fit Bayesian.",
+        "url": "tutorials/absorption_systems.html#bayesian-fitting-experimental",
         "requires": ("resolution", "continuum"),
         "details": "Samples the posterior of the parameters of a group of components, with MCMC (emcee) or nested sampling (dynesty), and gives the components its medians, with its standard deviations as errors; the prior is flat, z within +-20 km/s of its current value, logN and b within the bounds of the fit. Needs the [bayes] extra.",
         "params": [
@@ -509,6 +517,8 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "methods": _methods_refit_all,
         "references": ("SciPy",),
         "brief": "Refit all systems.",
+        "url": "tutorials/absorption_systems.html#refitting",
+        "menu": "Absorbers > &Refit All Systems",
         "requires": ("resolution", "continuum"),
         "details": "Fits all the components, group by group (the components blended with each other), each group on its own.",
         "params": [
@@ -521,11 +531,12 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "region_limit", "type": str, "default": "None", "doc": "Fit only the components in a region: 'red_side', 'lya_forest', 'all_ly_forest', or 'None' for all.", "choices": ["None", "lya_forest", "all_ly_forest", "red_side"]},
             {"name": "selected_uuids", "type": list, "default": None, "optional": True, "gui_hidden": True, "doc": "Fit only these components, with their groups (None: all)."}
         ],
-        "url": "absorbers_cb.html#refit_all"
     },
     "clean_negligible": {
         "methods": _methods_clean_negligible,
         "brief": "Remove unphysical/negligible components.",
+        "url": "tutorials/absorption_systems.html#cleaning-results",
+        "menu": "Absorbers > &Clean Negligible Components",
         "details": "Removes the components that are too weak, too narrow, or too broad (and weak) to be real absorbers.",
         "params": [
             {"name": "min_logN", "type": float, "default": 11.5, "doc": "Components with a lower column density (log cm^-2) are removed."},
@@ -533,7 +544,6 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "min_b", "type": float, "default": 3.0, "min": 0, "doc": "Components narrower than this (km/s) are removed."},
             {"name": "combined_check", "type": bool, "default": True, "doc": "True: remove a component broader than max_b only if it is also weak (logN < 13); False: remove all of them."}
         ],
-        "url": "absorbers_cb.html#clean_negligible"
     },
 }
 

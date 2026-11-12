@@ -12,7 +12,9 @@ import pytest
 from PySide6.QtGui import QKeySequence
 from PySide6.QtWidgets import QMessageBox
 
+from astrocook.gui.main_menus import RECIPE_LAYOUT, RECIPES_OFF_MENU
 from astrocook.gui.main_window import MainWindow
+from astrocook.recipes.registry import DOCS_URL, all_recipes, find_recipe
 
 from test_gui_smoke import SESSION_FILE, _run_recipe
 
@@ -301,3 +303,74 @@ def test_export_log_as_text(window, qtbot, monkeypatch, tmp_path):
                         staticmethod(lambda *a, **k: asked.append(a[2]) or ("", "")))
     assert dialog.save() is None
     assert asked[0].endswith("_methods.txt")
+
+
+# --- The labels come from the registry (phase 6-quater, PR 11: F107 and F125) -----------------
+
+def test_every_entry_of_a_recipe_comes_from_the_registry(empty):
+    """The label of each entry is the ``menu`` key of its recipe, in the
+    menu that key names, and no recipe with a ``menu`` is missing (but the
+    two pipelines kept out of the menu)."""
+    menus = _menus(empty)
+    in_menus = {}
+    for title, entries in menus.items():
+        for text in entries:
+            in_menus[f"{title} > {text.removesuffix('...')}"] = text
+    expected = {spec.menu_path: spec.name for spec in all_recipes() if spec.menu}
+    off = {find_recipe(name).menu_path for name in RECIPES_OFF_MENU}
+    in_recipe_menus = {path for path in in_menus
+                       if path in expected}
+    assert in_recipe_menus == set(expected) - off
+    # The recipes of the layout are the ones of the menus Edit, Flux,
+    # Continuum and Absorbers; the File ones are arranged in groups
+    laid = {name for names in RECIPE_LAYOUT.values() for name in names if name}
+    assert laid == {s.name for s in all_recipes()
+                    if s.menu and s.menu_title not in ("File",) and s.name not in RECIPES_OFF_MENU}
+    for name in laid | set(RECIPES_OFF_MENU) | {"import_systems", "import_systems_ascii",
+                                                   "import_ascii", "export_ascii"}:
+        spec = find_recipe(name)
+        action = getattr(empty, f"{name}_action")
+        assert action.text() == spec.menu_label + "..."
+
+
+def test_the_dialog_is_titled_by_its_entry(window, qtbot):
+    """F107: the title of the dialog is the label of the entry that opened
+    it, not the brief of the registry; a recipe with no entry keeps the
+    brief."""
+    from astrocook.gui.recipe_dialog import RecipeDialog
+    state = window.active_history.current_state
+    for category, name, title in (("absorbers", "doublets_auto", "Auto-detect Doublets"),
+                                  ("continuum", "estimate_auto", "Auto-estimate Continuum"),
+                                  ("edit", "set_properties", "Set Properties"),
+                                  ("edit", "x_convert", "Convert X axis")):
+        dialog = RecipeDialog(category, name, state, window)
+        qtbot.addWidget(dialog)
+        assert dialog.windowTitle() == f"Recipe: {title}", name
+
+
+def test_the_help_button_opens_the_page_of_the_docs(window, qtbot, monkeypatch):
+    """F125: the page of the documentation, from its root; a recipe always
+    has one."""
+    import webbrowser
+    from astrocook.gui.recipe_dialog import RecipeDialog
+    opened = []
+    monkeypatch.setattr(webbrowser, "open", lambda url: opened.append(url))
+    dialog = RecipeDialog("edit", "mask_expression", window.active_history.current_state, window)
+    qtbot.addWidget(dialog)
+    dialog._show_help()
+    assert opened == [DOCS_URL + "tutorials/editing_data.html#masking-data"]
+
+
+def test_the_entry_in_the_wrong_menu_is_refused(empty):
+    with pytest.raises(ValueError, match="not in 'Flux'"):
+        empty._recipe_action("split", "Flux")
+    with pytest.raises(ValueError, match="No recipe"):
+        empty._recipe_action("no_such_recipe", "Flux")
+
+
+def test_documentation_opens_the_root_of_the_docs(empty, monkeypatch):
+    from PySide6.QtGui import QDesktopServices
+    urls = []
+    monkeypatch.setattr(QDesktopServices, "openUrl", lambda url: urls.append(url.toString()))
+    empty._open_docs()
+    assert urls == [DOCS_URL]

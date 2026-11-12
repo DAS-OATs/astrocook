@@ -20,7 +20,16 @@ Keys of a recipe entry:
 ``details``
     A longer description (optional).
 ``url``
-    The page of the documentation (optional).
+    The page of the user documentation, relative to its root
+    (``tutorials/editing_data.html#masking-data``); the *Help* button of the
+    dialog joins it to :data:`DOCS_URL`.
+``menu``
+    Where the recipe is in the menus of the GUI, ``"Menu > Label"`` with
+    the mnemonic of the label marked by ``&`` (``"Edit > Set &Properties"``):
+    the only place where the label is written. The GUI builds its entry and
+    the title of its dialog from it, and the methods text names the recipe
+    by it. A recipe with no ``menu`` has no entry (it is run by the plots,
+    the System Inspector or by scripts) and no menu is named for it.
 ``params``
     The list of the parameters (keys below).
 ``gui_hidden``
@@ -101,7 +110,14 @@ CATEGORIES: Tuple[str, ...] = ('file', 'edit', 'flux', 'continuum', 'absorbers')
 #: What a recipe can require (the key ``requires``)
 REQUIREMENTS = frozenset({'z_em', 'resolution', 'continuum'})
 
-_RECIPE_KEYS = {'brief', 'details', 'url', 'params', 'gui_hidden', 'branching',
+#: The root of the user documentation (the latest release), which the
+#: ``url`` of the recipes and the *Help > Online Documentation* entry start from
+DOCS_URL = "https://das-oats.github.io/astrocook/"
+
+#: The menus of the GUI that can hold a recipe, as ``menu`` names them
+MENU_TITLES = ('File', 'Edit', 'Flux', 'Continuum', 'Absorbers')
+
+_RECIPE_KEYS = {'brief', 'details', 'url', 'menu', 'params', 'gui_hidden', 'branching',
                 'requires', 'provides', 'methods', 'references'}
 _PARAM_KEYS = {'name', 'type', 'default', 'doc', 'gui_hidden', 'optional', 'keep',
                'min', 'max', 'gt', 'allow_nan', 'agents', 'choices', 'kind',
@@ -160,8 +176,11 @@ class RecipeSpec:
     brief: str
     #: A longer description
     details: str = ""
-    #: The page of the documentation
+    #: The page of the documentation, relative to :data:`DOCS_URL`
     url: Optional[str] = None
+    #: ``"Menu > Label"`` (``&`` before the mnemonic) or "" for a recipe that
+    #: is in no menu
+    menu: str = ""
     #: The parameters, in the order of the dialog
     params: Tuple[ParamSpec, ...] = ()
     #: Not in the menus
@@ -177,6 +196,34 @@ class RecipeSpec:
     methods: Any = None
     #: The keys of the works the methods text cites
     references: Tuple[str, ...] = ()
+
+    @property
+    def menu_title(self) -> str:
+        """The menu of the recipe (``Edit``), "" if it is in none."""
+        return self.menu.split(' > ')[0] if self.menu else ""
+
+    @property
+    def menu_label(self) -> str:
+        """The label of its entry with the mnemonic (``Set &Properties``),
+        "" if it is in no menu."""
+        return self.menu.split(' > ', 1)[1] if self.menu else ""
+
+    @property
+    def menu_path(self) -> str:
+        """``Edit > Set Properties``: the menu and the label as the user reads
+        them, "" if the recipe is in no menu."""
+        return self.menu.replace('&', '')
+
+    @property
+    def title(self) -> str:
+        """What the user calls the recipe: the label of its entry, or the
+        brief without its full stop when it has none."""
+        return self.menu_path.split(' > ', 1)[1] if self.menu else self.brief.rstrip('.')
+
+    @property
+    def doc_url(self) -> Optional[str]:
+        """The full address of its page of the documentation."""
+        return DOCS_URL + self.url if self.url else None
 
     def param(self, name: str) -> ParamSpec:
         """The parameter called ``name`` (``KeyError`` if there is none)."""
@@ -257,6 +304,19 @@ def build_spec(category: str, name: str, entry: Mapping[str, Any]) -> RecipeSpec
     provides = frozenset(entry.get('provides', ()))
     if provides - REQUIREMENTS:
         raise ValueError(f"{where}: unknown provisions {sorted(provides - REQUIREMENTS)}")
+    menu = entry.get('menu', "")
+    if menu:
+        title, sep, label = str(menu).partition(' > ')
+        if (title not in MENU_TITLES or not sep or not label.replace('&', '', 1).strip()
+                or label.count('&') != 1 or entry.get('gui_hidden')):
+            # One mnemonic, a known menu, and not a recipe kept out of the menus
+            raise ValueError(f"{where}: the menu {menu!r} is not 'Menu > Label with one &' "
+                             f"of a recipe in the menus")
+    url = entry.get('url')
+    if url is not None and (url.startswith(('http:', 'https:', '/'))
+                            or not url.split('#')[0].endswith('.html')):
+        raise ValueError(f"{where}: the url {url!r} is not a page of the documentation "
+                         f"relative to its root")
     params = tuple(_param_spec(f"{where}", p) for p in entry.get('params', []))
     names = [p.name for p in params]
     if len(set(names)) != len(names):
@@ -267,7 +327,7 @@ def build_spec(category: str, name: str, entry: Mapping[str, Any]) -> RecipeSpec
         raise ValueError(f"{where}: an alias is the name or the alias of another "
                          f"parameter")
     return RecipeSpec(category=category, name=name, brief=entry['brief'],
-                      details=entry.get('details', ""), url=entry.get('url'),
+                      details=entry.get('details', ""), url=url, menu=menu,
                       params=params, gui_hidden=bool(entry.get('gui_hidden', False)),
                       branching=bool(entry.get('branching', False)),
                       requires=requires, provides=provides,
