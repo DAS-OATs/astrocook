@@ -100,6 +100,8 @@ MAIN_WINDOW |= {'_load_session', 'open_files', '_open_files_in_background', '_re
                 '_save_window_geometry', '_refresh_recent_list', 'closeEvent'}
 #: ... and View > Plot Colours (phase 5-bis)
 MAIN_WINDOW |= {'_set_plot_colours'}
+#: ... and the entries of the recipes, built from the registry (phase 6-quater, PR 11)
+MAIN_WINDOW |= {'_recipe_action', '_recipe_initial_params'}
 #: ... and File > Export Log as Text (phase 6-ter, PR 5c)
 MAIN_WINDOW |= {'_on_export_log_text'}
 #: ... and the sessions followed (an archive saved again by the MCP server;

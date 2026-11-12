@@ -8,6 +8,8 @@ code had before (``BRANCHING_RECIPES`` in ``core/utils.py`` and the two
 lists of ``gui/main_recipes.py``, as of 2.4.0).
 """
 import inspect
+import re
+from pathlib import Path
 
 import pytest
 
@@ -258,3 +260,75 @@ def test_build_spec_reads_every_key():
     told = build_spec("flux", "s", {"brief": "B.", "methods": "Done{menu}",
                                     "references": ["C26"]})
     assert (told.methods, told.references) == ("Done{menu}", ("C26",))
+
+
+# --- The menu and the documentation of a recipe (phase 6-quater, PR 11: F107, F125) -------------
+
+DOCS = Path(__file__).resolve().parent.parent / "docs"
+
+
+def _anchors(page: Path) -> set:
+    """The ids Sphinx gives to the sections of a page of the docs: the title
+    in lower case, the runs of other characters as a hyphen, no digits or
+    hyphens at the start (what docutils does)."""
+    ids = set()
+    for line in page.read_text().splitlines():
+        m = re.match(r"#{1,6} (.+)$", line)
+        if m:
+            ids.add(re.sub(r"^[^a-z]+", "", re.sub(r"[^a-z0-9]+", "-", m.group(1).lower())).strip("-"))
+    return ids
+
+
+@pytest.mark.parametrize("spec", list(registry.all_recipes()), ids=lambda s: f"{s.category}.{s.name}")
+def test_every_recipe_points_to_a_section_of_the_docs(spec):
+    """F125: the ``url`` of a recipe is a page of ``docs/`` and a section of
+    it, relative to the root of the documentation."""
+    assert spec.url, "every recipe has its page"
+    page, _, anchor = spec.url.partition("#")
+    source = DOCS / page.replace(".html", ".md")
+    assert source.is_file(), page
+    assert anchor in _anchors(source), spec.url
+    assert spec.doc_url == registry.DOCS_URL + spec.url
+
+
+def test_menu_of_every_recipe_is_well_formed():
+    """F107: ``menu`` is ``Menu > Label`` with one mnemonic; the recipes
+    kept out of the menus have none; a recipe with none is named by its
+    brief."""
+    seen = {}
+    for spec in registry.all_recipes():
+        if not spec.menu:
+            assert spec.menu_path == "" and spec.menu_title == "" and spec.menu_label == ""
+            assert spec.title == spec.brief.rstrip(".")
+            continue
+        assert not spec.gui_hidden
+        title, label = spec.menu.split(" > ")
+        assert title in registry.MENU_TITLES and label.count("&") == 1
+        assert (spec.menu_title, spec.menu_label) == (title, label)
+        assert spec.menu_path == f"{title} > {label.replace('&', '')}"
+        assert spec.title == label.replace("&", "")
+        # One entry, one recipe
+        assert spec.menu_path not in seen, (spec.name, seen[spec.menu_path])
+        seen[spec.menu_path] = spec.name
+
+
+@pytest.mark.parametrize("menu", ["Set properties", "Edit >", "Edit > Set Properties",
+                                  "Edit > Set &P&roperties", "Tools > Set &Properties",
+                                  "Edit > &"])
+def test_a_malformed_menu_is_refused(menu):
+    with pytest.raises(ValueError, match="menu"):
+        build_spec("edit", "r", {"brief": "R.", "menu": menu})
+
+
+def test_a_recipe_kept_out_of_the_menus_has_no_menu():
+    with pytest.raises(ValueError, match="menu"):
+        build_spec("edit", "r", {"brief": "R.", "menu": "Edit > &R", "gui_hidden": True})
+    spec = build_spec("edit", "r", {"brief": "R.", "menu": "Edit > Do &R"})
+    assert (spec.menu_title, spec.menu_label, spec.menu_path, spec.title) == \
+        ("Edit", "Do &R", "Edit > Do R", "Do R")
+
+
+@pytest.mark.parametrize("url", ["https://example.org/a.html", "/a.html", "a.md#x"])
+def test_a_url_is_a_page_relative_to_the_docs(url):
+    with pytest.raises(ValueError, match="url"):
+        build_spec("edit", "r", {"brief": "R.", "url": url})

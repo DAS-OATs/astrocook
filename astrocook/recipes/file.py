@@ -30,6 +30,8 @@ FILE_RECIPES_SCHEMAS = {
     "export_ascii": {
         "methods": "The data ({targets}) were exported as CSV files{menu}",
         "brief": "Export session data to ASCII.",
+        "url": "tutorials/getting_started.html#export-to-ascii",
+        "menu": "File > &Export to ASCII",
         "details": "Writes the chosen data as CSV files in a folder: the columns of the spectrum to <prefix>_spec.csv (always with the wavelength), the system list to <prefix>_systems.csv (always with the series and the redshift). Items that are neither a column nor 'spec' or 'systems' are skipped, with a warning.",
         "params": [
             {"name": "targets", "type": str, "default": "F, cont, systems", "doc": "Comma-separated items to export: 'spec' (all the columns of the spectrum) or some of its columns (e.g. 'F, dF, cont'; the file names them as in the data: x, y, dy), and 'systems' (the system list) or some of its columns (e.g. 'z, logN')."},
@@ -42,16 +44,16 @@ FILE_RECIPES_SCHEMAS = {
             # agent says it (the files were overwritten without a word)
             {"name": "overwrite", "type": bool, "default": False, "gui_hidden": True, "doc": "Replace the files if they exist; if False, the export stops and names them."}
         ],
-        "url": "file_cb.html#export"
     },
     "import_ascii": {
         "methods": _methods_import_ascii,
         "brief": "Import session data from ASCII.",
+        "url": "tutorials/getting_started.html#import-from-ascii",
+        "menu": "File > Import from &ASCII",
         "details": "Reads columns from an ASCII/CSV table with a header and adds them to the spectrum, replacing those with the same name; the table must have one row per pixel of the spectrum. A column x is not read: the grid of the spectrum is kept.",
         "params": [
             {"name": "file_path", "type": str, "default": "", "gui_hidden": True, "doc": "Path of the ASCII/CSV file to read."}
         ],
-        "url": "file_cb.html#export"
     }
 }
 

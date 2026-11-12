@@ -142,7 +142,7 @@ class RecipeDialog(QDialog):
             QTimer.singleShot(0, self.reject)
             return
 
-        self.setWindowTitle(f"Recipe: {self.schema.brief.rstrip('.')}")
+        self.setWindowTitle(f"Recipe: {self.schema.title}")
         main_layout = QVBoxLayout(self)
         main_layout.setSpacing(15) 
 
@@ -647,8 +647,8 @@ class RecipeDialog(QDialog):
         super().reject() 
 
     def _show_help(self):
-        if self.schema and self.schema.url:
-            url = self.schema.url
+        if self.schema and self.schema.doc_url:
+            url = self.schema.doc_url
             try:
                 webbrowser.open(url) 
             except (webbrowser.Error, OSError) as e:

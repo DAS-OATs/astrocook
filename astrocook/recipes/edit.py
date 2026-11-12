@@ -160,6 +160,8 @@ EDIT_RECIPES_SCHEMAS = {
     "set_properties": {
         "methods": _methods_set_properties,
         "brief": "Set session properties.",
+        "url": "tutorials/editing_data.html#setting-session-properties",
+        "menu": "Edit > Set &Properties",
         "provides": ("z_em", "resolution"),
         "details": "Sets the name of the session, the name of the object, the emission redshift, the resolution of the spectrum and the unit of its flux (a flux density per unit wavelength, declared, not converted: y_convert converts). A field left at '_current_' keeps its value.",
         "params": [
@@ -176,30 +178,31 @@ EDIT_RECIPES_SCHEMAS = {
             {"name": "yunit", "type": str, "default": "_current_", "keep": ("_current_",), "doc": "Unit of the flux, declared without converting the values, e.g. 'erg/(Angstrom s cm^2)', or 'arb_flux' (arbitrary units)."},
             {"name": "overwrite_resol_col", "type": bool, "default": False, "gui_hidden": True, "doc": "Replace an existing 'resol' column that varies along the spectrum (asked by the GUI)."}
         ],
-        "url": "edit_cb.html#set_properties"
     },
     "x_convert": {
         "methods": _methods_x_convert,
         "brief": "Convert X axis.",
+        "url": "tutorials/editing_data.html#converting-the-axes",
         "details": "Converts the x axis to another unit of wavelength (e.g. nm, Angstrom) or to velocity (e.g. km/s); the zero of the velocity is the Lyman-alpha emission at the reference redshift, 121.567 nm * (1 + z_ref).",
         "params": [
             {"name": "z_ref", "type": float, "default": "_current_", "keep": ("_current_",), "gt": -1, "doc": "Redshift of the zero of the velocity axis, the Lyman-alpha emission at 121.567 nm * (1 + z_ref) ('_current_': z_em); not used for a unit of wavelength."},
             {"name": "xunit", "type": str, "default": "km/s", "doc": "Unit of the new x axis: a wavelength (e.g. 'nm', 'Angstrom') or a velocity (e.g. 'km/s')."},
         ],
-        "url": "edit_cb.html#convert-x-axis"
     },
     "y_convert": {
         "methods": "The flux and its error were converted to {yunit}{menu}",
         "brief": "Convert Y axis units.",
+        "url": "tutorials/editing_data.html#converting-the-axes",
         "details": "Converts the flux, its error and the columns in the unit of the flux (e.g. cont, model) to another unit of flux density per unit wavelength.",
         "params": [
             {"name": "yunit", "type": str, "default": "erg/(nm s cm^2)", "doc": "Unit of flux density per unit wavelength, e.g. 'erg/(nm s cm^2)' or 'erg/(Angstrom s cm^2)'; a unit per frequency (Jy) is not converted."},
         ],
-        "url": "edit_cb.html#convert-y-axis"
     },
     "apply_expression": {
         "methods": "The column {target_col} was computed as {expression}{menu}",
         "brief": "Apply expression to columns.",
+        "url": "tutorials/editing_data.html#arithmetic-on-columns",
+        "menu": "Edit > Apply &Expression",
         "details": "Evaluates an expression of the columns (NumExpr: + - * / **, comparisons, sqrt, exp, log, log10, abs, where, sum, min, max, ...) and writes it in a column, new or existing. The columns are named as in the GUI: λ (or lam), F, dF, cont, model, ...; e.g. 'F / cont', 'F * 2.0', 'log10(F)'. The axis (λ, λmin, λmax) is not written: x_convert converts it.",
         "params": [
             # Required (PR 8): with the defaults 'F' and 'F / dF' it
@@ -207,73 +210,80 @@ EDIT_RECIPES_SCHEMAS = {
             {"name": "target_col", "type": str, "default": "", "doc": "Column to write, e.g. 'snr': replaced if it exists, created otherwise; a name of letters, digits and _ (not the axis, λ, λmin, λmax).", "kind": "column"},
             {"name": "expression", "type": str, "default": "", "doc": "Expression of the columns, e.g. 'F / dF' or 'F / cont'."},
         ],
-        "url": "edit_cb.html#apply_expression" # Placeholder URL
     },
     "mask_expression": {
         "methods": "The column {target_col} was masked where {expression}{menu}",
         "brief": "Mask column by expression.",
+        "url": "tutorials/editing_data.html#masking-data",
+        "menu": "Edit > &Mask by Expression",
         "details": "Sets a column to NaN where a boolean expression of the columns is true, e.g. '(λ < 300) | (λ > 400)' or 'dF <= 0'. The columns are named as in the GUI (λ or lam, F, dF, cont, ...). The axis (λ, λmin, λmax) is not masked.",
         "params": [
             {"name": "target_col", "type": str, "default": "F", "doc": "Column to mask, e.g. 'F' (not the axis, λ, λmin, λmax).", "kind": "column"},
             {"name": "expression", "type": str, "default": "dF <= 0", "doc": "Boolean expression of the columns: the pixels where it is true are masked."},
         ],
-        "url": "edit_cb.html#mask_expression" # Placeholder URL
     },
     "smooth_column": {
         "methods": "The column {target_col} was smoothed with a Gaussian kernel of standard deviation {sigma_kms} km/s{menu}",
         "brief": "Smooth a single column.",
+        "url": "tutorials/editing_data.html#smoothing-single-columns",
+        "menu": "Edit > Smooth &Column",
         "details": "Smooths one column of the spectrum (e.g. 'dF' or 'cont') with a Gaussian kernel; the other columns are unchanged.",
         "params": [
             {"name": "target_col", "type": str, "default": "dF", "doc": "Column to smooth, e.g. 'dF' (not the axis, λ, λmin, λmax).", "kind": "column"},
             {"name": "sigma_kms", "type": float, "default": 100.0, "gt": 0, "doc": "Standard deviation of the Gaussian kernel (km/s)."},
             {"name": "renorm_model", "type": bool, "default": False, "doc": "When smoothing 'cont', rescale the model to the new continuum (asked by the GUI).", "gui_hidden": True, "agents": False},
         ],
-        "url": "edit_cb.html#smooth_column" # Placeholder URL
     },
     "import_systems": {
         "methods": _methods_import_systems,
         "brief": "Import systems from session.",
+        "url": "tutorials/editing_data.html#importing-systems",
+        "menu": "File > Import Systems from &Session",
         "details": "Copies the absorption systems (components and constraints) of another open session into this one.",
         "params": [
             {"name": "source_session", "type": str, "default": "", "doc": "Name of the open session to copy the systems from (in a script, also the session itself).", "kind": "session"},
             {"name": "append", "type": bool, "default": True, "doc": "True: add the systems to those of this session; False: replace them."},
             {"name": "refit", "type": bool, "default": False, "doc": "Refit the systems on the spectrum of this session after copying them."}
         ],
-        "url": "absorbers_cb.html#import_systems"
     },
     "import_systems_ascii": {
         "methods": _methods_import_systems_ascii,
         "brief": "Import systems from an ASCII file.",
+        "url": "tutorials/absorption_systems.html#importing-a-line-list",
+        "menu": "File > Import Systems from &ASCII",
         "details": "Read absorption components from an ASCII/CSV table with a header (columns series, z and optionally logN, b, btur, dz, dlogN, db), e.g. the _systems.csv written by Export ASCII.",
         "params": [
             {"name": "file_path", "type": str, "default": "", "doc": "Path of the ASCII/CSV file to read.", "gui_hidden": True},
             {"name": "append", "type": bool, "default": True, "doc": "True: add the components to those of this session; False: replace them."},
             {"name": "refit", "type": bool, "default": False, "doc": "Refit the components on the spectrum after reading them."}
         ],
-        "url": "absorbers_cb.html#import_systems_ascii"
     },
     "delete": {
         "methods": _methods_delete,
         "brief": "Delete elements.",
+        "url": "tutorials/editing_data.html#deleting-elements",
+        "menu": "Edit > &Delete Elements",
         "details": "Removes columns from the spectrum, or all the components of the system list ('systems'). The columns of every spectrum (λ, λmin, λmax, F, dF) are not removed.",
         "params": [
             {"name": "targets", "type": str, "default": "", "doc": "Comma-separated items to delete: names of columns of the spectrum (e.g. 'cont, model') and/or 'systems' for the whole system list."}
         ],
-        "url": "edit_cb.html#delete"
     },
     "split": {
         "methods": "The pixels where {expression} were copied into a new session{menu}",
         "brief": "Split spectrum by expression.",
+        "url": "tutorials/editing_data.html#manual-split",
+        "menu": "Edit > S&plit Out Region",
         "branching": True,
         "details": "Copies the pixels where a boolean expression of the columns is true into a new session, e.g. '(λ > 400) & (λ < 500)'.",
         "params": [
             {"name": "expression", "type": str, "default": "", "doc": "Boolean expression of the columns, e.g. '(λ > 400) & (λ < 500)': the pixels where it is true go to the new session."}
         ],
-        "url": "edit_cb.html#split"
     },
     "extract_preset": {
         "methods": _methods_extract_preset,
         "brief": "Extract region by preset.",
+        "url": "tutorials/editing_data.html#quick-extraction-presets",
+        "menu": "Edit > Extract &Preset Region",
         "branching": True,
         "requires": ("z_em",),
         "details": "Copies a standard region into a new session, from the emission redshift: 'lya_forest' (between Ly-beta and Ly-alpha), 'all_ly_forest' (between the Lyman limit and Ly-alpha), 'red_side' (redward of Ly-alpha). Several regions, separated by commas, give one session each.",
@@ -281,11 +291,11 @@ EDIT_RECIPES_SCHEMAS = {
             # We use a string for now. Options: 'lya_forest', 'all_ly_forest', 'red_side'
             {"name": "region", "type": str, "default": "lya_forest", "doc": "Region(s) to extract, comma-separated: 'lya_forest', 'all_ly_forest', 'red_side'."}
         ],
-        "url": "edit_cb.html#extract_preset"
     },
     "trim_common": {
         "methods": _methods_trim_common,
         "brief": "Trim to common velocity coverage.",
+        "url": "tutorials/editing_data.html#combining-sessions-stitch-co-add",
         "details": "Trims this session to the velocity range around a redshift that all the given sessions cover, each with its own transition (e.g. the arms of an instrument, or the lines of a doublet).",
         "params": [
             {"name": "other_sessions", "type": str, "default": "", "kind": "sessions", "aliases": ["others_names"], "doc": "Comma-separated names of the other sessions (in a script, also a list of the sessions themselves)."},
@@ -294,11 +304,11 @@ EDIT_RECIPES_SCHEMAS = {
             {"name": "trans_others", "type": str, "default": "", "doc": "Comma-separated transitions of the other sessions, one per session, in their order."},
             {"name": "window_kms", "type": float, "default": 500.0, "gt": 0, "doc": "Half-width of the velocity range kept (km/s)."}
         ],
-        "url": "edit_cb.html#trim_common"
     },
     "stitch": {
         "methods": "This session and {other_sessions} were joined into one spectrum, without equalizing their flux{menu}",
         "brief": "Merge multiple sessions.",
+        "url": "tutorials/editing_data.html#stitching",
         "details": "Joins this session and other sessions into one spectrum, without equalizing their flux (see Equalize and stitch arms); the step that Equalize and stitch arms ends with.",
         "branching": True,
         "params": [
@@ -310,6 +320,7 @@ EDIT_RECIPES_SCHEMAS = {
     "equalize_and_stitch": {
         "methods": _methods_equalize_and_stitch,
         "brief": "Equalize and stitch arms.",
+        "url": "tutorials/editing_data.html#equalize-and-stitch-arms",
         "branching": True,
         "details": "Scales the flux of the sessions (the arms of an instrument) to match in their overlaps, then joins them into one spectrum, cutting at the given wavelengths. The arms are taken from blue to red, in any order given; their flux and axis are converted to the units of the bluest, and an arm in arbitrary units of flux takes those of the bluest once scaled.",
         "params": [
@@ -318,11 +329,12 @@ EDIT_RECIPES_SCHEMAS = {
             {"name": "equalize_ranges", "type": str, "default": "auto", "doc": "Comma-separated wavelength ranges (nm) where the flux of adjacent arms is matched (e.g. '545-555, 795-805'), or 'auto' for their overlaps."},
             {"name": "manual_factors", "type": str, "default": "auto", "doc": "Comma-separated positive factors that multiply the flux of each arm but the bluest instead of the equalization, or 'auto'."}
         ],
-        "url": "edit_cb.html#equalize-and-stitch"
     },
     "coadd": {
         "methods": _methods_coadd,
         "brief": "Co-add multiple sessions.",
+        "url": "tutorials/editing_data.html#co-adding-spectra",
+        "menu": "Edit > Co-&add Spectra",
         "branching": True,
         "details": "Combines several sessions on one new grid with a constant step, weighting each pixel with its inverse variance, in one pass. The first session is the reference: the others are converted to its units and scaled to its flux; an arbitrary flux is co-added with a physical one only when scaled.",
         "params": [
@@ -337,7 +349,6 @@ EDIT_RECIPES_SCHEMAS = {
             # before PR 9, F123) is still read as None
             {"name": "equalize_order", "type": int, "default": 0, "optional": True, "min": -1, "max": 5, "doc": "Order of the polynomial (0 to 5) that scales each session to the first before co-adding: 0 a constant factor; None no scaling (-1, of the old logs, is the same)."},
         ],
-        "url": "edit_cb.html#coadd"
     }
 }
 

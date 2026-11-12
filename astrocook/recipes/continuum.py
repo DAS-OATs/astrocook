@@ -60,6 +60,8 @@ CONTINUUM_RECIPES_SCHEMAS = {
         "methods": _methods_estimate_auto,
         "references": ("C26",),
         "brief": "Auto-estimate continuum (single-click).",
+        "url": "tutorials/continuum_fitting.html#automatic-estimation",
+        "menu": "Continuum > &Auto-estimate Continuum",
         "provides": ("continuum",),
         "requires": ("z_em",),
         "details": "Finds the absorbed pixels (as Find absorbed regions) and fits the continuum to the others (as Fit continuum to mask), in one step; writes 'abs_mask' and 'cont'.",
@@ -72,12 +74,13 @@ CONTINUUM_RECIPES_SCHEMAS = {
             {"name": "template", "type": bool, "default": False, "doc": "Trace the Lyman-alpha emission with a quasar template (needs z_em)."},
             {"name": "renorm_model", "type": bool, "default": True, "doc": "Rescale the model to the new continuum (asked by the GUI).", "gui_hidden": True, "agents": False},
         ],
-        "url": "continuum_cb.html#estimate_auto"
     },
     "find_absorbed": {
         "methods": _methods_find_absorbed,
         "references": ("C26",),
         "brief": "Find absorbed regions (V1 logic).",
+        "url": "tutorials/continuum_fitting.html#step-by-step-method",
+        "menu": "Continuum > &Find Absorbed Regions",
         "requires": ("z_em",),
         "details": "Finds the absorbed pixels with an iterative kappa-sigma clipping of the smoothed flux (the V1 'clip_flux' algorithm), with a longer smoothing in the Lyman-alpha forest; writes the 'abs_mask' column (True for the absorbed pixels).",
         "params": [
@@ -86,12 +89,13 @@ CONTINUUM_RECIPES_SCHEMAS = {
             {"name": "kappa", "type": float, "default": 2.0, "gt": 0, "doc": "Threshold (in sigma) below which a pixel is taken as absorbed."},
             {"name": "template", "type": bool, "default": False, "doc": "Not implemented: ignored."},
         ],
-        "url": "continuum_cb.html#find_absorbed"
     },
     "fit_continuum": {
         "methods": _methods_fit_continuum,
         "references": ("C26",),
         "brief": "Fit continuum to mask (V1 logic).",
+        "url": "tutorials/continuum_fitting.html#step-by-step-method",
+        "menu": "Continuum > Fit &Continuum to Mask",
         "provides": ("continuum",),
         "details": "Fits the continuum to the pixels that a mask marks as unabsorbed: interpolates them, smooths the result and optionally centres it; writes 'cont'.",
         "params": [
@@ -101,22 +105,23 @@ CONTINUUM_RECIPES_SCHEMAS = {
             {"name": "mask_col", "type": str, "default": "abs_mask", "doc": "Column of the mask (True for the absorbed pixels), e.g. 'abs_mask' of Find absorbed regions.", "kind": "column"},
             {"name": "renorm_model", "type": bool, "default": True, "doc": "Rescale the model to the new continuum (asked by the GUI).", "gui_hidden": True, "agents": False},
         ],
-        "url": "continuum_cb.html#fit_continuum"
     },
     "fit_powerlaw": {
         "methods": "A power law was fitted to the rest-frame regions {regions} nm, with a {kappa}-sigma clipping of outliers, and written in the column cont_pl{menu}",
         "brief": "Fit power-law continuum.",
+        "url": "tutorials/continuum_fitting.html#power-law-fitting",
+        "menu": "Continuum > Fit &Power-Law",
         "requires": ("z_em",),
         "details": "Fits a power law (a line in log flux vs log wavelength) to rest-frame regions free of emission and absorption, with clipping of outliers; writes 'cont_pl' (copy it to 'cont' with Apply expression to use it).",
         "params": [
             {"name": "regions", "type": str, "default": "128.0-129.0, 131.5-132.5, 134.5-136.0", "doc": "Comma-separated rest-frame wavelength ranges (nm), e.g. '128.0-129.0, 131.5-132.5'."},
             {"name": "kappa", "type": float, "default": 3.0, "gt": 0, "doc": "Threshold (in sigma) of the clipping of outliers in the regions."},
         ],
-        "url": "continuum_cb.html#fit_powerlaw" # Placeholder URL
     },
     "update_from_knots": {
         "methods": _methods_update_from_knots,
         "brief": "Update continuum from manual knots.",
+        "url": "tutorials/continuum_fitting.html#interactive-manual-editing",
         "provides": ("continuum",),
         "details": "Interpolates a spline through knots placed on the plot and writes it as the continuum.",
         "params": [

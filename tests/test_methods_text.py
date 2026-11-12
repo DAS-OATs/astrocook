@@ -82,7 +82,7 @@ def test_reason_text_changes_and_notes(history):
     # The reason first, as written (with a full stop), then the recipe with
     # its menu and its parameters, then what it changed, then the notes
     assert cont.startswith("To normalize the flux. The continuum was estimated "
-                           "automatically (Continuum > Auto-estimate continuum).")
+                           "automatically (Continuum > Auto-estimate Continuum).")
     assert "kappa = 2;" in cont and "Cupani et al. 2026" in cont
     # (the mock has its true continuum already)
     assert "This added the mask of the absorbed pixels to the spectrum. This changed " \
@@ -95,7 +95,7 @@ def test_reason_text_changes_and_notes(history):
     assert "This added a C IV component at z = 1.9" in comp
     # Three components or fewer changed: each listed
     assert refit.startswith("All the components were refitted group by group "
-                            "(Absorbers > Refit all systems).")
+                            "(Absorbers > Refit All Systems).")
     assert refit.endswith("This changed the C IV component at z = 1.90000 by less "
                           "than the digits quoted.")
     assert "SciPy (Virtanen et al. 2020)" in closing
@@ -179,7 +179,7 @@ def new_recipe(monkeypatch):
               {"name": "column", "type": str, "default": "y_scaled", "doc": "Column."},
               {"name": "hidden", "type": bool, "default": False, "gui_hidden": True}]
     flux["scale_test"] = build_spec("flux", "scale_test", {
-        "brief": "Scale the flux (test).", "params": params,
+        "brief": "Scale the flux (test).", "menu": "Flux > &Scale the Flux", "params": params,
         "methods": "The flux was multiplied by {factor}{menu}", "references": ("C26",)})
     flux["bare_test"] = build_spec("flux", "bare_test", {
         "brief": "Do something (test).", "params": params})
@@ -196,13 +196,14 @@ def test_a_new_recipe_is_described_with_no_code_here(new_recipe):
     session.log_manager.add_entry("bare_test", {"factor": 2.0, "column": "y4"})
     out = methods_text(session)
     scale, bare = (p.text for p in out.paragraphs if p.kind == "step")
-    # Its template, its menu, and the parameters it does not quote that
+    # Its template, its menu (the ``menu`` key: the label of its entry), and the parameters it does not quote that
     # differ from their defaults (not the hidden ones)
-    assert scale == ("The flux was multiplied by 3 (Flux > Scale the flux). "
+    assert scale == ("The flux was multiplied by 3 (Flux > Scale the Flux). "
                      "Other parameters: column = y3.")
     assert REFERENCES["C26"][1] in out.references
     # Without a text: a generic sentence
-    assert bare == "Do something (test) was run (Flux > Do something). Parameters: column = y4."
+    # A recipe that is in no menu names none (F107)
+    assert bare == "Do something (test) was run. Parameters: column = y4."
 
 
 @pytest.mark.parametrize("spec", list(all_recipes()), ids=lambda s: f"{s.category}.{s.name}")
@@ -225,7 +226,12 @@ def test_every_recipe_has_its_text(spec):
     session.log_manager.add_entry(spec.name, params)
     step_text = [x for x in methods_text(session).paragraphs if x.kind == "step"][0].text
     assert "Other parameters" not in step_text
-    assert ("(" + spec.category.capitalize() + " > ") in step_text or spec.gui_hidden
+    # The entry of its menu as the GUI writes it (F107), none for a recipe
+    # that is in no menu
+    if spec.menu:
+        assert f"({spec.menu_path})" in step_text
+    else:
+        assert " > " not in step_text
 
 
 def test_every_source_of_the_atomic_data_has_a_reference():

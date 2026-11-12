@@ -7,7 +7,7 @@ of ``MainWindow``.
 """
 import logging
 import os
-from typing import Any
+from typing import Any, Optional
 
 from PySide6.QtCore import QSettings, QTimer, QUrl, Qt
 from PySide6.QtGui import QAction, QActionGroup, QDesktopServices, QKeySequence
@@ -19,6 +19,7 @@ from .system_inspector import SystemInspector
 from .plot_style import PLOT_PALETTE_NAMES, plot_palette_name, set_plot_palette
 from .theme import APPEARANCES, apply_appearance
 from astrocook.gui._window_host import HostBase
+from astrocook.recipes.registry import DOCS_URL, find_recipe
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +30,53 @@ MAX_RECENT_FILES = 10
 GEOMETRY_KEY = "window_geometry"
 #: View > Plot Colours: the palette of the plots ("standard", "colorblind")
 PLOT_COLOURS_KEY = "plot_colours"
+
+
+#: The tooltips of the entries of the recipes (a longer text than the label)
+RECIPE_TOOLTIPS = {
+    'set_properties': 'Set core session properties (e.g., z_em)',
+    'apply_expression': "Apply a numerical expression to columns (e.g., 'y / 2.0')",
+    'mask_expression': "Mask a column using a boolean expression (e.g., 'x < 300')",
+    'smooth_column': 'Smooth one column of the spectrum (e.g. the continuum or an auxiliary column); Flux > Smooth Spectrum smooths the flux and the columns that go with it',
+    'delete': 'Delete columns or clear the line list',
+    'extract_preset': 'Extract standard regions (Forest, etc.) based on z_em',
+    'coadd': 'Combine multiple sessions and rebin to a single grid',
+    'calculate_running_std': 'Calculate running standard deviation on a column (e.g., y)',
+    'smooth': 'Smooth the flux and the columns that go with it (continuum, model, transmission); Edit > Smooth Column smooths one column',
+    'equalize': "Scale this spectrum to match another session's flux level.",
+    'resample': "Resample this spectrum onto another session's grid",
+    'calibrate_from_magnitudes': 'Rescale spectrum to match a photometric magnitude',
+    'estimate_auto': 'Find Absorbed regions and fit a continuum',
+    'find_absorbed': "Create a 'abs_mask' column using V1 'clip_flux' logic",
+    'fit_continuum': "Fit a continuum to the 'abs_mask' column (V1 logic)",
+    'fit_powerlaw': 'Fit a power-law to specified rest-frame regions',
+    'doublets_auto': 'Automated pipeline: Identify, populate, and fit metal doublets.',
+    'lya_auto': 'Automated pipeline: Identify, populate, and fit Ly-alpha lines.',
+    'forest_auto': 'Automated pipeline: Identify, populate, and fit the Lyman series.',
+    'metals_auto': 'Scans all existing systems and attempts to add other ions at the same redshift.',
+    'identify_lines': 'Automatically identify absorption regions using correlation signals',
+    'refit_all': 'Optimizes all components in the spectrum by fitting disjoint groups.',
+    'clean_negligible': 'Removes components with negligible column densities or broadening.',
+    'import_systems': 'Copy absorption systems from another open session.',
+    'import_systems_ascii': 'Read absorption systems from an ASCII/CSV table (series, z, logN, b, ...).',
+}
+
+#: The recipe entries of each menu, in order (``None``: a separator); the
+#: label of each is the ``menu`` key of the recipe in the registry. The File
+#: menu is arranged at the end of ``_create_menubar``.
+RECIPE_LAYOUT = {
+    "Edit": ("set_properties", None, "apply_expression", "mask_expression",
+             "smooth_column", "delete", None, "split", "extract_preset", None, "coadd"),
+    "Flux": ("calculate_running_std", None, "smooth", "rebin", "equalize", "resample",
+             None, "calibrate_from_magnitudes"),
+    "Continuum": ("estimate_auto", None, "find_absorbed", "fit_continuum", None,
+                  "fit_powerlaw"),
+    "Absorbers": ("doublets_auto", "lya_auto", None, "identify_lines", "refit_all",
+                  "clean_negligible"),
+}
+#: Recipes with an action but no entry in the menu, and no ``menu`` key in
+#: the registry (kept for when they come back)
+RECIPES_OFF_MENU = ("forest_auto", "metals_auto")
 
 
 class MainMenusMixin(HostBase):
@@ -130,6 +178,45 @@ class MainMenusMixin(HostBase):
     def _save_window_geometry(self):
         QSettings("Astrocook", "AstrocookV2").setValue(GEOMETRY_KEY, self.saveGeometry())
 
+    def _recipe_action(self, name: str, title: Optional[str], handler=None) -> QAction:
+        """The (disabled) action of the entry of recipe ``name`` in the menu
+        ``title``: its text, ``Set Properties...``, comes from the ``menu``
+        key of the registry (the only place where it is written), and its
+        action is ``self.<name>_action``. It opens the dialog of the recipe
+        unless ``handler`` says otherwise. ``ValueError`` if the registry
+        puts the recipe in another menu. With ``title=None`` (the recipes kept
+        out of the menus, which have no ``menu``) the text is the brief."""
+        spec = find_recipe(name)
+        if spec is None:
+            raise ValueError(f"No recipe {name!r}")
+        if spec.menu_title != (title or ""):
+            raise ValueError(f"{name} is in the menu {spec.menu_title!r}, not in {title!r}")
+        action = QAction((spec.menu_label or spec.brief.rstrip('.')) + "...", self)
+        if name in RECIPE_TOOLTIPS:
+            action.setToolTip(RECIPE_TOOLTIPS[name])
+        if handler is None:
+            category = spec.category
+
+            def launch():
+                initial = self._recipe_initial_params(name)
+                if initial:
+                    self._launch_recipe_dialog(category, name, initial_params=initial)
+                else:
+                    self._launch_recipe_dialog(category, name)
+            action.triggered.connect(launch)
+        else:
+            action.triggered.connect(handler)
+        action.setEnabled(False)
+        setattr(self, f"{name}_action", action)
+        return action
+
+    def _recipe_initial_params(self, name: str) -> dict:
+        """What the dialog of the recipe starts from, besides its defaults:
+        Co-add Spectra starts from the active session."""
+        if name == "coadd" and self.active_history:
+            return {'session_names': self.active_history.display_name}
+        return {}
+
     def _create_menubar(self):
         menu_bar = self.menuBar()
         
@@ -168,12 +255,10 @@ class MainMenusMixin(HostBase):
         file_menu.addAction(save_action)
         self.save_action = save_action # Assign to self
 
-        export_action = QAction("&Export to ASCII...", self)
-        export_action.triggered.connect(self._on_export_requested)
+        export_action = self._recipe_action("export_ascii", "File", self._on_export_requested)
         # Insert it after Save
         file_menu.insertAction(self.save_action, export_action) 
         self.export_action = export_action
-        self.export_action.setEnabled(False) # Default disabled
 
         # The log as the text of a methods section (phase 6-ter, PR 5c)
         methods_action = QAction("Export &Log as Text...", self)
@@ -183,12 +268,10 @@ class MainMenusMixin(HostBase):
         self.export_log_text_action = methods_action
         self.export_log_text_action.setEnabled(False)
 
-        import_action = QAction("&Import from ASCII...", self)
-        import_action.triggered.connect(self._on_import_requested)
+        import_action = self._recipe_action("import_ascii", "File", self._on_import_requested)
         # Insert it after Save
         file_menu.insertAction(self.save_action, import_action) 
         self.import_action = import_action
-        self.import_action.setEnabled(False) # Default disabled
 
         file_menu.addSeparator()
         close_action = QAction("&Close Session", self)
@@ -287,215 +370,28 @@ class MainMenusMixin(HostBase):
 
         edit_menu.addSeparator()
 
-        # RECIPES FOR 'EDIT' MENU
+        # The entries of the recipes: label from the registry (its ``menu``
+        # key), in the order of RECIPE_LAYOUT
+        for title, menu in (("Edit", edit_menu), ("Flux", flux_menu),
+                            ("Continuum", continuum_menu), ("Absorbers", absorbers_menu)):
+            for name in RECIPE_LAYOUT[title]:
+                if name is None:
+                    menu.addSeparator()
+                else:
+                    menu.addAction(self._recipe_action(name, title))
+        # Two pipelines kept out of the menu (their actions stay, enabled with the others)
+        for name in RECIPES_OFF_MENU:
+            self._recipe_action(name, None)
 
-        # set_properties Action
-        set_props_action = QAction("Set &Properties...", self)
-        set_props_action.setToolTip("Set core session properties (e.g., z_em)")
-        set_props_action.triggered.connect(lambda: self._launch_recipe_dialog("edit", "set_properties"))
-        edit_menu.addAction(set_props_action)
-        self.set_properties_action = set_props_action; self.set_properties_action.setEnabled(False)
-        edit_menu.addSeparator()
-        
-        # apply_expression Action
-        apply_expr_action = QAction("Apply &Expression...", self)
-        apply_expr_action.setToolTip("Apply a numerical expression to columns (e.g., 'y / 2.0')")
-        apply_expr_action.triggered.connect(lambda: self._launch_recipe_dialog("edit", "apply_expression"))
-        edit_menu.addAction(apply_expr_action)
-        self.apply_expression_action = apply_expr_action; self.apply_expression_action.setEnabled(False)
-        
-        # mask_expression Action
-        mask_expr_action = QAction("&Mask by Expression...", self)
-        mask_expr_action.setToolTip("Mask a column using a boolean expression (e.g., 'x < 300')")
-        mask_expr_action.triggered.connect(lambda: self._launch_recipe_dialog("edit", "mask_expression"))
-        edit_menu.addAction(mask_expr_action)
-        self.mask_expression_action = mask_expr_action; self.mask_expression_action.setEnabled(False)
-
-        # smooth_column Action
-        smooth_col_action = QAction("Smooth &Column...", self)
-        smooth_col_action.setToolTip("Smooth one column of the spectrum (e.g. the continuum or an "
-                                     "auxiliary column); Flux > Smooth Spectrum smooths the flux "
-                                     "and the columns that go with it")
-        smooth_col_action.triggered.connect(lambda: self._launch_recipe_dialog("edit", "smooth_column"))
-        edit_menu.addAction(smooth_col_action)
-        self.smooth_column_action = smooth_col_action; self.smooth_column_action.setEnabled(False)
-
-        # delete Action
-        delete_action = QAction("&Delete Elements...", self)
-        delete_action.setToolTip("Delete columns or clear the line list")
-        delete_action.triggered.connect(lambda: self._launch_recipe_dialog("edit", "delete"))
-        edit_menu.addAction(delete_action)
-        self.delete_action = delete_action; self.delete_action.setEnabled(False)
-
-        edit_menu.addSeparator()
-
-        # split Action
-        split_action = QAction("S&plit Out Region...", self)
-        split_action.triggered.connect(lambda: self._launch_recipe_dialog("edit", "split"))
-        edit_menu.addAction(split_action)
-        self.split_action = split_action; split_action.setEnabled(False)
-
-        # extract_preset Action
-        extract_preset_action = QAction("Extract &Preset Region...", self)
-        extract_preset_action.setToolTip("Extract standard regions (Forest, etc.) based on z_em")
-        extract_preset_action.triggered.connect(lambda: self._launch_recipe_dialog("edit", "extract_preset"))
-        edit_menu.addAction(extract_preset_action)
-        self.extract_preset_action = extract_preset_action; self.extract_preset_action.setEnabled(False)
-
-        edit_menu.addSeparator()
-
-        # coadd Action
-        coadd_action = QAction("Co-&add Spectra...", self)
-        coadd_action.setToolTip("Combine multiple sessions and rebin to a single grid")
-        coadd_action.triggered.connect(lambda: self._launch_recipe_dialog(
-            "edit", "coadd",
-            initial_params={'session_names': self.active_history.display_name if self.active_history else ""}
-        ))
-        edit_menu.addAction(coadd_action)
-        self.coadd_action = coadd_action; self.coadd_action.setEnabled(False)
-
-        # RECIPES FOR 'FLUX' MENU
-        
-        std_action = QAction("Calculate Running &StdDev...", self)
-        std_action.setToolTip("Calculate running standard deviation on a column (e.g., y)")
-        std_action.triggered.connect(
-            lambda: self._launch_recipe_dialog("flux", "calculate_running_std")
-        )
-        flux_menu.addAction(std_action)
-        self.calculate_running_std_action = std_action; self.calculate_running_std_action.setEnabled(False)
-
-        flux_menu.addSeparator()
-
-        # smooth Action
-        smooth_action = QAction("&Smooth Spectrum...", self)
-        smooth_action.setToolTip("Smooth the flux and the columns that go with it (continuum, "
-                                 "model, transmission); Edit > Smooth Column smooths one column")
-        smooth_action.triggered.connect(lambda: self._launch_recipe_dialog("flux", "smooth"))
-        flux_menu.addAction(smooth_action)
-        self.smooth_action = smooth_action; self.smooth_action.setEnabled(False)
-
-        # rebin Action
-        rebin_action = QAction("&Rebin Spectrum...", self)
-        rebin_action.triggered.connect(lambda: self._launch_recipe_dialog("flux", "rebin"))
-        flux_menu.addAction(rebin_action)
-        self.rebin_action = rebin_action; rebin_action.setEnabled(False)
-
-        # equalize Action
-        equalize_action = QAction("&Equalize to Reference...", self)
-        equalize_action.setToolTip("Scale this spectrum to match another session's flux level.")
-        equalize_action.triggered.connect(lambda: self._launch_recipe_dialog("flux", "equalize"))
-        flux_menu.addAction(equalize_action)
-        self.equalize_action = equalize_action; self.equalize_action.setEnabled(False)
-
-        # resample Action
-        resample_action = QAction("Re&sample on Grid...", self)
-        resample_action.setToolTip("Resample this spectrum onto another session's grid")
-        resample_action.triggered.connect(lambda: self._launch_recipe_dialog("flux", "resample"))
-        flux_menu.addAction(resample_action)
-        self.resample_action = resample_action; self.resample_action.setEnabled(False)
-
-        flux_menu.addSeparator()
-
-        # flux calibrate Action
-        calib_action = QAction("Flux &Calibrate...", self)
-        calib_action.setToolTip("Rescale spectrum to match a photometric magnitude")
-        calib_action.triggered.connect(lambda: self._launch_recipe_dialog("flux", "calibrate_from_magnitudes"))
-        flux_menu.addAction(calib_action)
-        self.calibrate_action = calib_action; self.calibrate_action.setEnabled(False)
-
-        # RECIPES FOR 'CONTINUUM' MENU
-
-        auto_cont_action = QAction("&Auto-estimate Continuum...", self)
-        auto_cont_action.setToolTip("Find Absorbed regions and fit a continuum")
-        auto_cont_action.triggered.connect(lambda: self._launch_recipe_dialog("continuum", "estimate_auto"))
-        continuum_menu.addAction(auto_cont_action)
-        self.auto_cont_action = auto_cont_action; self.auto_cont_action.setEnabled(False)
-
-        continuum_menu.addSeparator()
-
-        find_abs_action = QAction("&Find Absorbed Regions...", self)
-        find_abs_action.setToolTip("Create a 'abs_mask' column using V1 'clip_flux' logic")
-        find_abs_action.triggered.connect(lambda: self._launch_recipe_dialog("continuum", "find_absorbed"))
-        continuum_menu.addAction(find_abs_action)
-        self.find_abs_action = find_abs_action; self.find_abs_action.setEnabled(False)
-
-        fit_cont_action = QAction("Fit &Continuum to Mask...", self)
-        fit_cont_action.setToolTip("Fit a continuum to the 'abs_mask' column (V1 logic)")
-        fit_cont_action.triggered.connect(lambda: self._launch_recipe_dialog("continuum", "fit_continuum"))
-        continuum_menu.addAction(fit_cont_action)
-        self.fit_cont_action = fit_cont_action; self.fit_cont_action.setEnabled(False)
-
-        continuum_menu.addSeparator()
-
-        fit_pl_action = QAction("Fit &Power-Law...", self)
-        fit_pl_action.setToolTip("Fit a power-law to specified rest-frame regions")
-        fit_pl_action.triggered.connect(lambda: self._launch_recipe_dialog("continuum", "fit_powerlaw"))
-        continuum_menu.addAction(fit_pl_action)
-        self.fit_powerlaw_action = fit_pl_action; self.fit_powerlaw_action.setEnabled(False)
-
-        # RECIPES FOR 'ABSORBERS' MENU
-
-        # --- AUTOMATED PIPELINES (Prominent at top) ---
-        doublets_auto_action = QAction("Auto-detect &Doublets...", self)
-        doublets_auto_action.setToolTip("Automated pipeline: Identify, populate, and fit metal doublets.")
-        doublets_auto_action.triggered.connect(lambda: self._launch_recipe_dialog("absorbers", "doublets_auto"))
-        absorbers_menu.addAction(doublets_auto_action)
-        self.doublets_auto_action = doublets_auto_action; self.doublets_auto_action.setEnabled(False)
-        
-        lya_auto_action = QAction("Auto-fit &Ly-alpha Forest...", self)
-        lya_auto_action.triggered.connect(lambda: self._launch_recipe_dialog("absorbers", "lya_auto"))
-        lya_auto_action.setToolTip("Automated pipeline: Identify, populate, and fit Ly-alpha lines.")
-        absorbers_menu.addAction(lya_auto_action)
-        self.lya_auto_action = lya_auto_action; self.lya_auto_action.setEnabled(False)
-
-        forest_auto_action = QAction("Auto-fit &Full Lyman Series...", self)
-        forest_auto_action.triggered.connect(lambda: self._launch_recipe_dialog("absorbers", "forest_auto"))
-        forest_auto_action.setToolTip("Automated pipeline: Identify, populate, and fit the Lyman series.")
-        #absorbers_menu.addAction(forest_auto_action)
-        self.forest_auto_action = forest_auto_action; self.forest_auto_action.setEnabled(False)
-
-        metals_auto_action = QAction("Check &Associated Metals...", self)
-        metals_auto_action.triggered.connect(lambda: self._launch_recipe_dialog("absorbers", "metals_auto"))
-        metals_auto_action.setToolTip("Scans all existing systems and attempts to add other ions at the same redshift.")
-        #absorbers_menu.addAction(metals_auto_action)
-        self.metals_auto_action = metals_auto_action; self.metals_auto_action.setEnabled(False)
-
-        absorbers_menu.addSeparator()
-
-        identify_action = QAction("&Identify Absorption Lines...", self)
-        identify_action.setToolTip("Automatically identify absorption regions using correlation signals")
-        identify_action.triggered.connect(lambda: self._launch_recipe_dialog("absorbers", "identify_lines"))
-        absorbers_menu.addAction(identify_action)
-        self.identify_lines_action = identify_action; self.identify_lines_action.setEnabled(False)
-        
-        refit_all_action = QAction("&Refit All Systems...", self)
-        refit_all_action.setToolTip("Optimizes all components in the spectrum by fitting disjoint groups.")
-        refit_all_action.triggered.connect(lambda: self._launch_recipe_dialog("absorbers", "refit_all"))
-        absorbers_menu.addAction(refit_all_action)
-        self.refit_all_action = refit_all_action; self.refit_all_action.setEnabled(False)
-
-        clean_negligible_action = QAction("&Clean Negligible Components...", self)
-        clean_negligible_action.setToolTip("Removes components with negligible column densities or broadening.")
-        clean_negligible_action.triggered.connect(lambda: self._launch_recipe_dialog("absorbers", "clean_negligible"))
-        absorbers_menu.addAction(clean_negligible_action)
         # In File with the other imports (they were in Edit; phase 5-bis,
         # Guido), before Save
-        # import_systems Action
-        import_sys_action = QAction("Import Systems from &Session...", self)
-        import_sys_action.setToolTip("Copy absorption systems from another open session.")
-        import_sys_action.triggered.connect(lambda: self._launch_recipe_dialog("edit", "import_systems"))
+        import_sys_action = self._recipe_action("import_systems", "File")
         file_menu.insertAction(self.save_action, import_sys_action)
-        self.import_systems_action = import_sys_action; self.import_systems_action.setEnabled(False)
-
-        # import_systems_ascii Action (issue #480)
-        import_sys_ascii_action = QAction("Import Systems from &ASCII...", self)
-        import_sys_ascii_action.setToolTip("Read absorption systems from an ASCII/CSV table (series, z, logN, b, ...).")
-        import_sys_ascii_action.triggered.connect(self._import_systems_ascii)
+        import_sys_ascii_action = self._recipe_action("import_systems_ascii", "File",
+                                                      self._import_systems_ascii)
         file_menu.insertAction(import_sys_action, import_sys_ascii_action)
-        self.import_systems_ascii_action = import_sys_ascii_action
-        self.import_systems_ascii_action.setEnabled(False)
+        self._update_undo_redo_actions()
 
-        self.clean_negligible_action = clean_negligible_action; self.clean_negligible_action.setEnabled(False)
         self._update_undo_redo_actions()
 
         # --- HELP MENU ACTIONS ---
@@ -593,9 +489,7 @@ class MainMenusMixin(HostBase):
 
     def _open_docs(self):
         """Opens the online documentation in the default browser."""
-        # Replace with your actual documentation URL (e.g., ReadTheDocs or GitHub Wiki)
-        url = "https://das-oats.github.io/astrocook/" 
-        QDesktopServices.openUrl(QUrl(url))
+        QDesktopServices.openUrl(QUrl(DOCS_URL))
 
     def _on_view_system_inspector(self):
         if not hasattr(self, 'system_inspector') or self.system_inspector is None:

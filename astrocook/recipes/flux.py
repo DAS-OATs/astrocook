@@ -63,26 +63,30 @@ FLUX_RECIPES_SCHEMAS = {
     "calculate_running_std": {
         "methods": _methods_running_std,
         "brief": "Calculate running standard deviation.",
+        "url": "tutorials/flux_operations.html#calculating-running-statistics",
+        "menu": "Flux > Calculate Running &StdDev",
         "details": "Computes the standard deviation of a column in a running window, e.g. to estimate the local noise of the flux; written in a new column.",
         "params": [
             {"name": "input_col", "type": str, "default": "F", "doc": "Column of which the standard deviation is computed, e.g. 'F' (the flux).", "kind": "column"},
             {"name": "output_col", "type": str, "default": "running_std", "doc": "Name of the column to write (a new one, or one to replace; not λ, λmin, λmax, F, dF)."},
             {"name": "window_pix", "type": int, "default": 21, "gt": 0, "doc": "Width of the window (pixels): an odd number; an even one is increased by 1, and one below 3 is 3."}
         ],
-        "url": "edit_cb.html#calculate_running_std" # Placeholder URL
     },
     "smooth": {
         "methods": "The flux, its error and the columns like the flux were smoothed with a Gaussian kernel of standard deviation {sigma_kms} km/s{menu}",
         "brief": "Smooth spectrum.",
+        "url": "tutorials/flux_operations.html#smoothing",
+        "menu": "Flux > &Smooth Spectrum",
         "details": "Apply a Gaussian filter to the flux, its error and the columns like the flux (continuum, model, telluric transmission).",
         "params": [
             {"name": "sigma_kms", "type": float, "default": 100.0, "gt": 0, "doc": "Standard deviation of the Gaussian kernel (km/s)."},
         ],
-        "url": "edit_cb.html#smooth" # Placeholder URL
     },
     "rebin": {
         "methods": _methods_rebin,
         "brief": "Rebin spectrum.",
+        "url": "tutorials/flux_operations.html#rebinning",
+        "menu": "Flux > &Rebin Spectrum",
         "details": "Rebins the spectrum onto a new grid with a constant step, in velocity (uniform in log wavelength) or in wavelength; the flux of each new pixel is the inverse-variance weighted mean of the old ones.",
         "params": [
             # None (written 'None' in the dialog and the log): the data range
@@ -106,11 +110,12 @@ FLUX_RECIPES_SCHEMAS = {
             # NaN (written 'nan') is the default
             {"name": "filling", "type": float, "default": float("nan"), "allow_nan": True, "doc": "Value of the new pixels without data (NaN by default)."},
         ],
-        "url": "edit_cb.html#rebin"
     },
     "equalize": {
         "methods": _methods_equalize,
         "brief": "Equalize flux to reference.",
+        "url": "tutorials/flux_operations.html#equalizing",
+        "menu": "Flux > &Equalize to Reference",
         "details": "Scales the flux of this session to match that of another session where they overlap, compared in the units of this session; a flux in arbitrary units takes the unit of the reference once scaled, a normalized flux is not scaled to one that is not.",
         "params": [
             # Required (phase 6-quater, PR 7: the default was the string 'None',
@@ -125,22 +130,24 @@ FLUX_RECIPES_SCHEMAS = {
     "resample": {
         "methods": "The spectrum was interpolated onto the wavelength grid of the session {target_session}, into a new session{menu}",
         "brief": "Resample on another grid.",
+        "url": "tutorials/flux_operations.html#resampling",
+        "menu": "Flux > Re&sample on Grid",
         "branching": True,
         "details": "Interpolates this spectrum onto the wavelength grid of another open session, into a new session; the first step to combine two sessions pixel by pixel.",
         "params": [
             # Required, as reference_session of equalize (phase 6-quater, PR 7)
             {"name": "target_session", "type": str, "default": "", "doc": "Name of the open session whose grid is used.", "kind": "session"}
         ],
-        "url": "edit_cb.html#resample" # Placeholder URL
     },
     "calibrate_from_magnitudes": {
         "methods": "The flux was scaled, smoothly with wavelength, to match the magnitudes {magnitudes}{menu}",
         "brief": "Flux calibrate (multi-band).",
+        "url": "tutorials/flux_operations.html#flux-calibration",
+        "menu": "Flux > Flux &Calibrate",
         "details": "Scales the flux, smoothly with wavelength, to match the magnitudes of the object in one or more photometric filters.",
         "params": [
             {"name": "magnitudes", "type": str, "default": "SDSS_r=17.0", "doc": "Comma-separated 'filter=magnitude' pairs (AB magnitudes), e.g. 'SDSS_g=17.5, SDSS_r=17.0'. Filters: " + ", ".join(STANDARD_FILTERS) + "."}
         ],
-        "url": "edit_cb.html#calibrate"
     }
 }
 

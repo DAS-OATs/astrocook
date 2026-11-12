@@ -302,12 +302,10 @@ def series_name(series: str) -> str:
 
 
 def _menu(spec) -> str:
-    """`` (Continuum > Auto-estimate continuum)``, or "" for a recipe not in
-    the menus."""
-    if spec.gui_hidden:
-        return ""
-    brief = re.sub(r"\s*\([^)]*\)\s*$", "", spec.brief.rstrip('.').strip())
-    return f" ({spec.category.capitalize()} > {brief})"
+    """`` (Continuum > Auto-estimate Continuum)``: the menu entry of the
+    recipe, as its ``menu`` key in the registry says, or "" for a recipe
+    that is in no menu."""
+    return f" ({spec.menu_path})" if spec.menu else ""
 
 
 def _recipe_sentence(spec, params: Dict[str, Any], menus: bool) -> Tuple[str, List[str]]:

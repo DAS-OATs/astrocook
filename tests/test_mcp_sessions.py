@@ -374,7 +374,7 @@ def test_methods_text(mock_archive, tmp_path):
     smooth = out["paragraphs"][2]
     assert smooth.startswith("Too noisy to see the doublet. The flux, its error and the "
                              "columns like the flux were smoothed with a Gaussian kernel "
-                             "of standard deviation 40 km/s (Flux > Smooth spectrum).")
+                             "of standard deviation 40 km/s (Flux > Smooth Spectrum).")
     assert smooth.endswith("Checked by eye.")
     assert out["references"] == ["Cupani G. et al. 2020, Proc. SPIE 11452, 114521U"]
     assert " > " not in ok(plain)["text"]

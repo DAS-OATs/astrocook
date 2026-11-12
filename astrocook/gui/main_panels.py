@@ -1140,11 +1140,11 @@ class MainPanelsMixin(HostBase):
         if hasattr(self, 'rebin_action'): self.rebin_action.setEnabled(enable_recipes)
         if hasattr(self, 'equalize_action'): self.equalize_action.setEnabled(enable_recipes)
         if hasattr(self, 'resample_action'): self.resample_action.setEnabled(enable_recipes)
-        if hasattr(self, 'calibrate_action'): self.calibrate_action.setEnabled(enable_recipes)
+        if hasattr(self, 'calibrate_from_magnitudes_action'): self.calibrate_from_magnitudes_action.setEnabled(enable_recipes)
 
-        if hasattr(self, 'auto_cont_action'): self.auto_cont_action.setEnabled(enable_recipes)
-        if hasattr(self, 'find_abs_action'): self.find_abs_action.setEnabled(enable_recipes)
-        if hasattr(self, 'fit_cont_action'): self.fit_cont_action.setEnabled(enable_recipes)
+        if hasattr(self, 'estimate_auto_action'): self.estimate_auto_action.setEnabled(enable_recipes)
+        if hasattr(self, 'find_absorbed_action'): self.find_absorbed_action.setEnabled(enable_recipes)
+        if hasattr(self, 'fit_continuum_action'): self.fit_continuum_action.setEnabled(enable_recipes)
         if hasattr(self, 'fit_powerlaw_action'): self.fit_powerlaw_action.setEnabled(enable_recipes)
 
         if hasattr(self, 'doublets_auto_action'): self.doublets_auto_action.setEnabled(enable_recipes)
