@@ -533,6 +533,8 @@
         <span class="s2">"methods"</span><span class="p">:</span> <span class="n">_methods_estimate_auto</span><span class="p">,</span>
         <span class="s2">"references"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"C26"</span><span class="p">,),</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Auto-estimate continuum (single-click)."</span><span class="p">,</span>
+        <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"tutorials/continuum_fitting.html#automatic-estimation"</span><span class="p">,</span>
+        <span class="s2">"menu"</span><span class="p">:</span> <span class="s2">"Continuum &gt; &amp;Auto-estimate Continuum"</span><span class="p">,</span>
         <span class="s2">"provides"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"continuum"</span><span class="p">,),</span>
         <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"z_em"</span><span class="p">,),</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Finds the absorbed pixels (as Find absorbed regions) and fits the continuum to the others (as Fit continuum to mask), in one step; writes 'abs_mask' and 'cont'."</span><span class="p">,</span>
@@ -545,12 +547,13 @@
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"template"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Trace the Lyman-alpha emission with a quasar template (needs z_em)."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"renorm_model"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Rescale the model to the new continuum (asked by the GUI)."</span><span class="p">,</span> <span class="s2">"gui_hidden"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"agents"</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
         <span class="p">],</span>
-        <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"continuum_cb.html#estimate_auto"</span>
     <span class="p">},</span>
     <span class="s2">"find_absorbed"</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">"methods"</span><span class="p">:</span> <span class="n">_methods_find_absorbed</span><span class="p">,</span>
         <span class="s2">"references"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"C26"</span><span class="p">,),</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Find absorbed regions (V1 logic)."</span><span class="p">,</span>
+        <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"tutorials/continuum_fitting.html#step-by-step-method"</span><span class="p">,</span>
+        <span class="s2">"menu"</span><span class="p">:</span> <span class="s2">"Continuum &gt; &amp;Find Absorbed Regions"</span><span class="p">,</span>
         <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"z_em"</span><span class="p">,),</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Finds the absorbed pixels with an iterative kappa-sigma clipping of the smoothed flux (the V1 'clip_flux' algorithm), with a longer smoothing in the Lyman-alpha forest; writes the 'abs_mask' column (True for the absorbed pixels)."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
@@ -559,12 +562,13 @@
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"kappa"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">2.0</span><span class="p">,</span> <span class="s2">"gt"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Threshold (in sigma) below which a pixel is taken as absorbed."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"template"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Not implemented: ignored."</span><span class="p">},</span>
         <span class="p">],</span>
-        <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"continuum_cb.html#find_absorbed"</span>
     <span class="p">},</span>
     <span class="s2">"fit_continuum"</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">"methods"</span><span class="p">:</span> <span class="n">_methods_fit_continuum</span><span class="p">,</span>
         <span class="s2">"references"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"C26"</span><span class="p">,),</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Fit continuum to mask (V1 logic)."</span><span class="p">,</span>
+        <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"tutorials/continuum_fitting.html#step-by-step-method"</span><span class="p">,</span>
+        <span class="s2">"menu"</span><span class="p">:</span> <span class="s2">"Continuum &gt; Fit &amp;Continuum to Mask"</span><span class="p">,</span>
         <span class="s2">"provides"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"continuum"</span><span class="p">,),</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Fits the continuum to the pixels that a mask marks as unabsorbed: interpolates them, smooths the result and optionally centres it; writes 'cont'."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
@@ -574,22 +578,23 @@
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"mask_col"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"abs_mask"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Column of the mask (True for the absorbed pixels), e.g. 'abs_mask' of Find absorbed regions."</span><span class="p">,</span> <span class="s2">"kind"</span><span class="p">:</span> <span class="s2">"column"</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"renorm_model"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Rescale the model to the new continuum (asked by the GUI)."</span><span class="p">,</span> <span class="s2">"gui_hidden"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"agents"</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
         <span class="p">],</span>
-        <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"continuum_cb.html#fit_continuum"</span>
     <span class="p">},</span>
     <span class="s2">"fit_powerlaw"</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">"methods"</span><span class="p">:</span> <span class="s2">"A power law was fitted to the rest-frame regions </span><span class="si">{regions}</span><span class="s2"> nm, with a </span><span class="si">{kappa}</span><span class="s2">-sigma clipping of outliers, and written in the column cont_pl</span><span class="si">{menu}</span><span class="s2">"</span><span class="p">,</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Fit power-law continuum."</span><span class="p">,</span>
+        <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"tutorials/continuum_fitting.html#power-law-fitting"</span><span class="p">,</span>
+        <span class="s2">"menu"</span><span class="p">:</span> <span class="s2">"Continuum &gt; Fit &amp;Power-Law"</span><span class="p">,</span>
         <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"z_em"</span><span class="p">,),</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Fits a power law (a line in log flux vs log wavelength) to rest-frame regions free of emission and absorption, with clipping of outliers; writes 'cont_pl' (copy it to 'cont' with Apply expression to use it)."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"regions"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"128.0-129.0, 131.5-132.5, 134.5-136.0"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Comma-separated rest-frame wavelength ranges (nm), e.g. '128.0-129.0, 131.5-132.5'."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"kappa"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">3.0</span><span class="p">,</span> <span class="s2">"gt"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Threshold (in sigma) of the clipping of outliers in the regions."</span><span class="p">},</span>
         <span class="p">],</span>
-        <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"continuum_cb.html#fit_powerlaw"</span> <span class="c1"># Placeholder URL</span>
     <span class="p">},</span>
     <span class="s2">"update_from_knots"</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">"methods"</span><span class="p">:</span> <span class="n">_methods_update_from_knots</span><span class="p">,</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Update continuum from manual knots."</span><span class="p">,</span>
+        <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"tutorials/continuum_fitting.html#interactive-manual-editing"</span><span class="p">,</span>
         <span class="s2">"provides"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"continuum"</span><span class="p">,),</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Interpolates a spline through knots placed on the plot and writes it as the continuum."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>

@@ -503,6 +503,8 @@
     <span class="s2">"export_ascii"</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">"methods"</span><span class="p">:</span> <span class="s2">"The data (</span><span class="si">{targets}</span><span class="s2">) were exported as CSV files</span><span class="si">{menu}</span><span class="s2">"</span><span class="p">,</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Export session data to ASCII."</span><span class="p">,</span>
+        <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"tutorials/getting_started.html#export-to-ascii"</span><span class="p">,</span>
+        <span class="s2">"menu"</span><span class="p">:</span> <span class="s2">"File &gt; &amp;Export to ASCII"</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Writes the chosen data as CSV files in a folder: the columns of the spectrum to &lt;prefix&gt;_spec.csv (always with the wavelength), the system list to &lt;prefix&gt;_systems.csv (always with the series and the redshift). Items that are neither a column nor 'spec' or 'systems' are skipped, with a warning."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"targets"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"F, cont, systems"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Comma-separated items to export: 'spec' (all the columns of the spectrum) or some of its columns (e.g. 'F, dF, cont'; the file names them as in the data: x, y, dy), and 'systems' (the system list) or some of its columns (e.g. 'z, logN')."</span><span class="p">},</span>
@@ -515,16 +517,16 @@
             <span class="c1"># agent says it (the files were overwritten without a word)</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"overwrite"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">"gui_hidden"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Replace the files if they exist; if False, the export stops and names them."</span><span class="p">}</span>
         <span class="p">],</span>
-        <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"file_cb.html#export"</span>
     <span class="p">},</span>
     <span class="s2">"import_ascii"</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">"methods"</span><span class="p">:</span> <span class="n">_methods_import_ascii</span><span class="p">,</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Import session data from ASCII."</span><span class="p">,</span>
+        <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"tutorials/getting_started.html#import-from-ascii"</span><span class="p">,</span>
+        <span class="s2">"menu"</span><span class="p">:</span> <span class="s2">"File &gt; Import from &amp;ASCII"</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Reads columns from an ASCII/CSV table with a header and adds them to the spectrum, replacing those with the same name; the table must have one row per pixel of the spectrum. A column x is not read: the grid of the spectrum is kept."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"file_path"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">""</span><span class="p">,</span> <span class="s2">"gui_hidden"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Path of the ASCII/CSV file to read."</span><span class="p">}</span>
         <span class="p">],</span>
-        <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"file_cb.html#export"</span>
     <span class="p">}</span>
 <span class="p">}</span>
 

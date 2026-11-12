@@ -817,12 +817,10 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_menu</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""`` (Continuum &gt; Auto-estimate continuum)``, or "" for a recipe not in</span>
-<span class="sd">    the menus."""</span>
-    <span class="k">if</span> <span class="n">spec</span><span class="o">.</span><span class="n">gui_hidden</span><span class="p">:</span>
-        <span class="k">return</span> <span class="s2">""</span>
-    <span class="n">brief</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\s*\([^)]*\)\s*$"</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">brief</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">'.'</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
-    <span class="k">return</span> <span class="sa">f</span><span class="s2">" (</span><span class="si">{</span><span class="n">spec</span><span class="o">.</span><span class="n">category</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span><span class="si">}</span><span class="s2"> &gt; </span><span class="si">{</span><span class="n">brief</span><span class="si">}</span><span class="s2">)"</span>
+<span class="w">    </span><span class="sd">"""`` (Continuum &gt; Auto-estimate Continuum)``: the menu entry of the</span>
+<span class="sd">    recipe, as its ``menu`` key in the registry says, or "" for a recipe</span>
+<span class="sd">    that is in no menu."""</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">" (</span><span class="si">{</span><span class="n">spec</span><span class="o">.</span><span class="n">menu_path</span><span class="si">}</span><span class="s2">)"</span> <span class="k">if</span> <span class="n">spec</span><span class="o">.</span><span class="n">menu</span> <span class="k">else</span> <span class="s2">""</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_recipe_sentence</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">menus</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>

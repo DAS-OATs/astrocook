@@ -493,7 +493,16 @@
 <span class="sd">``details``</span>
 <span class="sd">    A longer description (optional).</span>
 <span class="sd">``url``</span>
-<span class="sd">    The page of the documentation (optional).</span>
+<span class="sd">    The page of the user documentation, relative to its root</span>
+<span class="sd">    (``tutorials/editing_data.html#masking-data``); the *Help* button of the</span>
+<span class="sd">    dialog joins it to :data:`DOCS_URL`.</span>
+<span class="sd">``menu``</span>
+<span class="sd">    Where the recipe is in the menus of the GUI, ``"Menu &gt; Label"`` with</span>
+<span class="sd">    the mnemonic of the label marked by ``&amp;`` (``"Edit &gt; Set &amp;Properties"``):</span>
+<span class="sd">    the only place where the label is written. The GUI builds its entry and</span>
+<span class="sd">    the title of its dialog from it, and the methods text names the recipe</span>
+<span class="sd">    by it. A recipe with no ``menu`` has no entry (it is run by the plots,</span>
+<span class="sd">    the System Inspector or by scripts) and no menu is named for it.</span>
 <span class="sd">``params``</span>
 <span class="sd">    The list of the parameters (keys below).</span>
 <span class="sd">``gui_hidden``</span>
@@ -574,7 +583,14 @@
 <span class="c1">#: What a recipe can require (the key ``requires``)</span>
 <span class="n">REQUIREMENTS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="s1">'z_em'</span><span class="p">,</span> <span class="s1">'resolution'</span><span class="p">,</span> <span class="s1">'continuum'</span><span class="p">})</span>
 
-<span class="n">_RECIPE_KEYS</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'brief'</span><span class="p">,</span> <span class="s1">'details'</span><span class="p">,</span> <span class="s1">'url'</span><span class="p">,</span> <span class="s1">'params'</span><span class="p">,</span> <span class="s1">'gui_hidden'</span><span class="p">,</span> <span class="s1">'branching'</span><span class="p">,</span>
+<span class="c1">#: The root of the user documentation (the latest release), which the</span>
+<span class="c1">#: ``url`` of the recipes and the *Help &gt; Online Documentation* entry start from</span>
+<span class="n">DOCS_URL</span> <span class="o">=</span> <span class="s2">"https://das-oats.github.io/astrocook/"</span>
+
+<span class="c1">#: The menus of the GUI that can hold a recipe, as ``menu`` names them</span>
+<span class="n">MENU_TITLES</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'File'</span><span class="p">,</span> <span class="s1">'Edit'</span><span class="p">,</span> <span class="s1">'Flux'</span><span class="p">,</span> <span class="s1">'Continuum'</span><span class="p">,</span> <span class="s1">'Absorbers'</span><span class="p">)</span>
+
+<span class="n">_RECIPE_KEYS</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'brief'</span><span class="p">,</span> <span class="s1">'details'</span><span class="p">,</span> <span class="s1">'url'</span><span class="p">,</span> <span class="s1">'menu'</span><span class="p">,</span> <span class="s1">'params'</span><span class="p">,</span> <span class="s1">'gui_hidden'</span><span class="p">,</span> <span class="s1">'branching'</span><span class="p">,</span>
                 <span class="s1">'requires'</span><span class="p">,</span> <span class="s1">'provides'</span><span class="p">,</span> <span class="s1">'methods'</span><span class="p">,</span> <span class="s1">'references'</span><span class="p">}</span>
 <span class="n">_PARAM_KEYS</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'name'</span><span class="p">,</span> <span class="s1">'type'</span><span class="p">,</span> <span class="s1">'default'</span><span class="p">,</span> <span class="s1">'doc'</span><span class="p">,</span> <span class="s1">'gui_hidden'</span><span class="p">,</span> <span class="s1">'optional'</span><span class="p">,</span> <span class="s1">'keep'</span><span class="p">,</span>
                <span class="s1">'min'</span><span class="p">,</span> <span class="s1">'max'</span><span class="p">,</span> <span class="s1">'gt'</span><span class="p">,</span> <span class="s1">'allow_nan'</span><span class="p">,</span> <span class="s1">'agents'</span><span class="p">,</span> <span class="s1">'choices'</span><span class="p">,</span> <span class="s1">'kind'</span><span class="p">,</span>
@@ -638,8 +654,11 @@
     <span class="n">brief</span><span class="p">:</span> <span class="nb">str</span>
     <span class="c1">#: A longer description</span>
     <span class="n">details</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span>
-    <span class="c1">#: The page of the documentation</span>
+    <span class="c1">#: The page of the documentation, relative to :data:`DOCS_URL`</span>
     <span class="n">url</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1">#: ``"Menu &gt; Label"`` (``&amp;`` before the mnemonic) or "" for a recipe that</span>
+    <span class="c1">#: is in no menu</span>
+    <span class="n">menu</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span>
     <span class="c1">#: The parameters, in the order of the dialog</span>
     <span class="n">params</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">ParamSpec</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
     <span class="c1">#: Not in the menus</span>
@@ -655,6 +674,34 @@
     <span class="n">methods</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="c1">#: The keys of the works the methods text cites</span>
     <span class="n">references</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">menu_title</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The menu of the recipe (``Edit``), "" if it is in none."""</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">menu</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">' &gt; '</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">menu</span> <span class="k">else</span> <span class="s2">""</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">menu_label</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The label of its entry with the mnemonic (``Set &amp;Properties``),</span>
+<span class="sd">        "" if it is in no menu."""</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">menu</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">' &gt; '</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">menu</span> <span class="k">else</span> <span class="s2">""</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">menu_path</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""``Edit &gt; Set Properties``: the menu and the label as the user reads</span>
+<span class="sd">        them, "" if the recipe is in no menu."""</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">menu</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">'&amp;'</span><span class="p">,</span> <span class="s1">''</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">title</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""What the user calls the recipe: the label of its entry, or the</span>
+<span class="sd">        brief without its full stop when it has none."""</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">menu_path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">' &gt; '</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">menu</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">brief</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">'.'</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">doc_url</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""The full address of its page of the documentation."""</span>
+        <span class="k">return</span> <span class="n">DOCS_URL</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">url</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">url</span> <span class="k">else</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="RecipeSpec.param">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.registry.html#astrocook.recipes.registry.RecipeSpec.param">[docs]</a>
@@ -750,6 +797,19 @@
     <span class="n">provides</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'provides'</span><span class="p">,</span> <span class="p">()))</span>
     <span class="k">if</span> <span class="n">provides</span> <span class="o">-</span> <span class="n">REQUIREMENTS</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2">: unknown provisions </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">provides</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">REQUIREMENTS</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">menu</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'menu'</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">menu</span><span class="p">:</span>
+        <span class="n">title</span><span class="p">,</span> <span class="n">sep</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">menu</span><span class="p">)</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s1">' &gt; '</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">title</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">MENU_TITLES</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">sep</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">label</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">'&amp;'</span><span class="p">,</span> <span class="s1">''</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                <span class="ow">or</span> <span class="n">label</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s1">'&amp;'</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'gui_hidden'</span><span class="p">)):</span>
+            <span class="c1"># One mnemonic, a known menu, and not a recipe kept out of the menus</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2">: the menu </span><span class="si">{</span><span class="n">menu</span><span class="si">!r}</span><span class="s2"> is not 'Menu &gt; Label with one &amp;' "</span>
+                             <span class="sa">f</span><span class="s2">"of a recipe in the menus"</span><span class="p">)</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'url'</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">url</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="p">(</span><span class="n">url</span><span class="o">.</span><span class="n">startswith</span><span class="p">((</span><span class="s1">'http:'</span><span class="p">,</span> <span class="s1">'https:'</span><span class="p">,</span> <span class="s1">'/'</span><span class="p">))</span>
+                            <span class="ow">or</span> <span class="ow">not</span> <span class="n">url</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">'#'</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">'.html'</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2">: the url </span><span class="si">{</span><span class="n">url</span><span class="si">!r}</span><span class="s2"> is not a page of the documentation "</span>
+                         <span class="sa">f</span><span class="s2">"relative to its root"</span><span class="p">)</span>
     <span class="n">params</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">_param_spec</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'params'</span><span class="p">,</span> <span class="p">[]))</span>
     <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">params</span><span class="p">]</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">names</span><span class="p">))</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">):</span>
@@ -760,7 +820,7 @@
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2">: an alias is the name or the alias of another "</span>
                          <span class="sa">f</span><span class="s2">"parameter"</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">RecipeSpec</span><span class="p">(</span><span class="n">category</span><span class="o">=</span><span class="n">category</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">brief</span><span class="o">=</span><span class="n">entry</span><span class="p">[</span><span class="s1">'brief'</span><span class="p">],</span>
-                      <span class="n">details</span><span class="o">=</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'details'</span><span class="p">,</span> <span class="s2">""</span><span class="p">),</span> <span class="n">url</span><span class="o">=</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'url'</span><span class="p">),</span>
+                      <span class="n">details</span><span class="o">=</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'details'</span><span class="p">,</span> <span class="s2">""</span><span class="p">),</span> <span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">,</span> <span class="n">menu</span><span class="o">=</span><span class="n">menu</span><span class="p">,</span>
                       <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span> <span class="n">gui_hidden</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'gui_hidden'</span><span class="p">,</span> <span class="kc">False</span><span class="p">)),</span>
                       <span class="n">branching</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'branching'</span><span class="p">,</span> <span class="kc">False</span><span class="p">)),</span>
                       <span class="n">requires</span><span class="o">=</span><span class="n">requires</span><span class="p">,</span> <span class="n">provides</span><span class="o">=</span><span class="n">provides</span><span class="p">,</span>

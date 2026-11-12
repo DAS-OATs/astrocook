@@ -536,26 +536,30 @@
     <span class="s2">"calculate_running_std"</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">"methods"</span><span class="p">:</span> <span class="n">_methods_running_std</span><span class="p">,</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Calculate running standard deviation."</span><span class="p">,</span>
+        <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"tutorials/flux_operations.html#calculating-running-statistics"</span><span class="p">,</span>
+        <span class="s2">"menu"</span><span class="p">:</span> <span class="s2">"Flux &gt; Calculate Running &amp;StdDev"</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Computes the standard deviation of a column in a running window, e.g. to estimate the local noise of the flux; written in a new column."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"input_col"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"F"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Column of which the standard deviation is computed, e.g. 'F' (the flux)."</span><span class="p">,</span> <span class="s2">"kind"</span><span class="p">:</span> <span class="s2">"column"</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"output_col"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"running_std"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Name of the column to write (a new one, or one to replace; not λ, λmin, λmax, F, dF)."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"window_pix"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mi">21</span><span class="p">,</span> <span class="s2">"gt"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Width of the window (pixels): an odd number; an even one is increased by 1, and one below 3 is 3."</span><span class="p">}</span>
         <span class="p">],</span>
-        <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"edit_cb.html#calculate_running_std"</span> <span class="c1"># Placeholder URL</span>
     <span class="p">},</span>
     <span class="s2">"smooth"</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">"methods"</span><span class="p">:</span> <span class="s2">"The flux, its error and the columns like the flux were smoothed with a Gaussian kernel of standard deviation </span><span class="si">{sigma_kms}</span><span class="s2"> km/s</span><span class="si">{menu}</span><span class="s2">"</span><span class="p">,</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Smooth spectrum."</span><span class="p">,</span>
+        <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"tutorials/flux_operations.html#smoothing"</span><span class="p">,</span>
+        <span class="s2">"menu"</span><span class="p">:</span> <span class="s2">"Flux &gt; &amp;Smooth Spectrum"</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Apply a Gaussian filter to the flux, its error and the columns like the flux (continuum, model, telluric transmission)."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"sigma_kms"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">,</span> <span class="s2">"gt"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Standard deviation of the Gaussian kernel (km/s)."</span><span class="p">},</span>
         <span class="p">],</span>
-        <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"edit_cb.html#smooth"</span> <span class="c1"># Placeholder URL</span>
     <span class="p">},</span>
     <span class="s2">"rebin"</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">"methods"</span><span class="p">:</span> <span class="n">_methods_rebin</span><span class="p">,</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Rebin spectrum."</span><span class="p">,</span>
+        <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"tutorials/flux_operations.html#rebinning"</span><span class="p">,</span>
+        <span class="s2">"menu"</span><span class="p">:</span> <span class="s2">"Flux &gt; &amp;Rebin Spectrum"</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Rebins the spectrum onto a new grid with a constant step, in velocity (uniform in log wavelength) or in wavelength; the flux of each new pixel is the inverse-variance weighted mean of the old ones."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
             <span class="c1"># None (written 'None' in the dialog and the log): the data range</span>
@@ -579,11 +583,12 @@
             <span class="c1"># NaN (written 'nan') is the default</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"filling"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="s2">"nan"</span><span class="p">),</span> <span class="s2">"allow_nan"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Value of the new pixels without data (NaN by default)."</span><span class="p">},</span>
         <span class="p">],</span>
-        <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"edit_cb.html#rebin"</span>
     <span class="p">},</span>
     <span class="s2">"equalize"</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">"methods"</span><span class="p">:</span> <span class="n">_methods_equalize</span><span class="p">,</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Equalize flux to reference."</span><span class="p">,</span>
+        <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"tutorials/flux_operations.html#equalizing"</span><span class="p">,</span>
+        <span class="s2">"menu"</span><span class="p">:</span> <span class="s2">"Flux &gt; &amp;Equalize to Reference"</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Scales the flux of this session to match that of another session where they overlap, compared in the units of this session; a flux in arbitrary units takes the unit of the reference once scaled, a normalized flux is not scaled to one that is not."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
             <span class="c1"># Required (phase 6-quater, PR 7: the default was the string 'None',</span>
@@ -598,22 +603,24 @@
     <span class="s2">"resample"</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">"methods"</span><span class="p">:</span> <span class="s2">"The spectrum was interpolated onto the wavelength grid of the session </span><span class="si">{target_session}</span><span class="s2">, into a new session</span><span class="si">{menu}</span><span class="s2">"</span><span class="p">,</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Resample on another grid."</span><span class="p">,</span>
+        <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"tutorials/flux_operations.html#resampling"</span><span class="p">,</span>
+        <span class="s2">"menu"</span><span class="p">:</span> <span class="s2">"Flux &gt; Re&amp;sample on Grid"</span><span class="p">,</span>
         <span class="s2">"branching"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Interpolates this spectrum onto the wavelength grid of another open session, into a new session; the first step to combine two sessions pixel by pixel."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
             <span class="c1"># Required, as reference_session of equalize (phase 6-quater, PR 7)</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"target_session"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">""</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Name of the open session whose grid is used."</span><span class="p">,</span> <span class="s2">"kind"</span><span class="p">:</span> <span class="s2">"session"</span><span class="p">}</span>
         <span class="p">],</span>
-        <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"edit_cb.html#resample"</span> <span class="c1"># Placeholder URL</span>
     <span class="p">},</span>
     <span class="s2">"calibrate_from_magnitudes"</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">"methods"</span><span class="p">:</span> <span class="s2">"The flux was scaled, smoothly with wavelength, to match the magnitudes </span><span class="si">{magnitudes}{menu}</span><span class="s2">"</span><span class="p">,</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Flux calibrate (multi-band)."</span><span class="p">,</span>
+        <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"tutorials/flux_operations.html#flux-calibration"</span><span class="p">,</span>
+        <span class="s2">"menu"</span><span class="p">:</span> <span class="s2">"Flux &gt; Flux &amp;Calibrate"</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Scales the flux, smoothly with wavelength, to match the magnitudes of the object in one or more photometric filters."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"magnitudes"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"SDSS_r=17.0"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Comma-separated 'filter=magnitude' pairs (AB magnitudes), e.g. 'SDSS_g=17.5, SDSS_r=17.0'. Filters: "</span> <span class="o">+</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">STANDARD_FILTERS</span><span class="p">)</span> <span class="o">+</span> <span class="s2">"."</span><span class="p">}</span>
         <span class="p">],</span>
-        <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"edit_cb.html#calibrate"</span>
     <span class="p">}</span>
 <span class="p">}</span>
 

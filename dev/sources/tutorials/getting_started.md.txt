@@ -255,7 +255,11 @@ If you have manipulated your exported `_spec.csv` data externally, you can bring
 * Astrocook will match the column headers in your CSV to the columns in the active session and overwrite them; the names of the GUI (`F`, `dF`, ...) and those of the data (`y`, `dy`, ...) are both understood. The wavelength (`lam`, `lammin`, `lammax`, or `x`, `xmin`, `xmax`) is not read: the grid of the spectrum is kept. A column with a unit in the file keeps it; a flux or an error in a unit different from that of the session is refused.
 * **Safety first:** The imported file must have the exact same number of rows (pixels) as your current spectrum. Because this operates through the recipe pipeline, the import is fully undoable via the Log Scripter or `Ctrl+Z` (`Cmd+Z`).
 
-## 6. When Something Goes Wrong
+## 6. The Dialog of a Recipe
+
+Every entry of the menus *Edit*, *Flux*, *Continuum* and *Absorbers* that ends in `...` opens the dialog of a recipe, titled with the label of the entry (*Absorbers > Auto-detect Doublets...* opens *Recipe: Auto-detect Doublets*). The dialog describes the recipe and its parameters; the **Help** button opens the page of this documentation that explains it (the section of the tutorial for the recipe, e.g. *Masking Data* for *Mask by Expression*). The session log and the text of the methods (*File > Export Log as Text...*) name the recipe by the same label.
+
+## 7. When Something Goes Wrong
 
 A recipe that cannot run says why: in the status bar, in a dialog, and in the log written to the terminal (or to the window of the long recipes). A recipe that gives a result but has something to say about it (a parameter at a bound, a step done with its defaults) lists its warnings at the end.
 
