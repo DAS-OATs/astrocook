@@ -4,9 +4,12 @@
 ``delete_component``, ``detect_anchor``, ``fit_component``,
 ``update_constraint``, ``update_constraints_column``,
 ``add_linked_system``: the behaviour kept and the behaviour changed, each
-test saying what it was. The fingerprints of the valid results were taken
-on master before the change: the numbers of a valid call do not move,
-except where a finding says so (F145, F146).
+test saying what it was. The values of the valid results were taken on
+master before the change (``tests/snapshots/manual_fits_*.npz``): the
+numbers of a valid call do not move, except where a finding says so (F145,
+F146). They are compared with a relative tolerance of 1e-6, not to the
+bit: the fits give the last digits differently on different processors
+(an md5 of the values, as in PR 9, failed on a runner of the CI).
 """
 import hashlib
 import re
@@ -24,10 +27,43 @@ def _quiet(run):
         return run()
 
 
+def _values(session):
+    """The components (values, errors, resolution: an array, NaN for None,
+    and the series), the constraints (strings) and the model of a session,
+    for a snapshot, with the UUIDs replaced by the positions of the
+    components (a new component has a new random UUID)."""
+    comps = session.systs.components if session.systs else []
+    index = {c.uuid: str(i) for i, c in enumerate(comps)}
+
+    def plain(text):
+        if text is None:
+            return "None"
+        return re.sub(r"[0-9a-f]{8}-[0-9a-f-]{27}", lambda m: index.get(m.group(), "?"), text)
+
+    numbers = np.array([[np.nan if v is None else float(v)
+                         for v in (c.z, c.dz, c.logN, c.dlogN, c.b, c.db, c.btur, c.dbtur,
+                                   getattr(c, "resol", None))] for c in comps]).reshape(-1, 9)
+    cons = sorted(f"{index.get(u, '?')} {p} {k.is_free} {plain(k.expression)} "
+                  f"{plain(k.target_uuid)}"
+                  for (u, p), k in (session.systs.parsed_constraints.items()
+                                    if session.systs else []))
+    values = {"components": numbers, "series": np.array([c.series for c in comps], dtype=str),
+              "constraints": np.array(cons, dtype=str)}
+    if session.spec.has_aux_column("model"):
+        values["model"] = np.asarray(session.spec.t["model"], dtype=float)
+    return values
+
+
+def _check(snapshot, case, session):
+    snapshot.check(f"manual_fits_{case}", _values(session), rtol=1e-6, atol=1e-12)
+
+
 def _fingerprint(session):
     """The components (values, errors, resolution), the constraints and the
     model of a session, with the UUIDs replaced by the positions of the
-    components (a new component has a new random UUID)."""
+    components (a new component has a new random UUID), as an md5: to
+    compare two sessions of the same run only (across processors the last
+    digits of a fit differ: :func:`_values` and the snapshots)."""
     comps = session.systs.components if session.systs else []
     index = {c.uuid: str(i) for i, c in enumerate(comps)}
 
@@ -113,41 +149,15 @@ KEPT = {
         "CIV", 1.931, logN=13.0, b=12.0, z_window_kms=30.0),
 }
 
-FINGERPRINTS = {
-    "add_component": "f8d2dc34194a4d87c8a771dc43675bff",
-    "add_component_custom": "ec13762c37461f96c5ef4f27b8035cb1",
-    "add_component_strings": "f8d2dc34194a4d87c8a771dc43675bff",
-    "add_component_typed": "a23ff0e347430aa4573614acd327ead4",
-    "add_linked_system": "bff326baa8545f06916ca4d18de48947",
-    "add_linked_system_one": "3785c6201f703b97bcaf2bd676b58969",
-    "delete_both": "627ce184e915b90c69f9b5b8518d6ec5",
-    "delete_component": "f891f55c60baabc7663cb841086575dc",
-    "delete_components": "30149d000d79c9ed863649cc5104a313",
-    "fit_component": "c3df43f3ba7e464ade09fc7660c68b6b",
-    "fit_component_options": "6b464d33f10262a300da88735e855f81",
-    "free_btur": "8da507d3ab33dba98fda8819ef072fb4",
-    "free_column": "f787ea5af9cc1922715bde2d00e8fffd",
-    "freeze": "397f1d494793583eb3e5e1642add23b4",
-    "freeze_column": "61a4cfcd06a9cf6f184dacf30526a9e3",
-    "link_gui": "a3a2076d8c085eca0e94cdd5f39b6cb9",
-    "link_gui_fitted": "cd925dea0e279f7d75d5f1ac3d9dbaaa",
-    "link_then_delete_target": "8f1c43a39c64499e75cab6e97a4c2370",
-    "unlink": "04f86bf667925c62c59c78d35fa9cfab",
-    "update_component": "8f53ac8f875d4cf2d821bec1b15a42e1",
-    "update_component_resol": "764bb5a36ee6b46db8605f4dab134be9",
-    "update_component_series": "322c8b3408ff8a1a0a27dfbf4e3af7b0",
-    "update_components": "671811cbcbee1329f4775a5dc0464b50",
-    "update_components_series": "43e31765c602db13a19cda09d1029246",
-}
 
 
 @pytest.mark.parametrize("case", sorted(KEPT))
-def test_valid_results_unchanged(case):
+def test_valid_results_unchanged(case, snapshot):
     """The checks added by PR 10 leave the results of the valid calls as
-    they were, to the bit."""
+    they were (to the bit here, within 1e-6 on another processor)."""
     sessions, u, lya = _ids()
     result = _quiet(lambda: KEPT[case](sessions, u, lya))
-    assert _fingerprint(result) == FINGERPRINTS[case]
+    _check(snapshot, case, result)
 
 
 def test_detect_anchor_on_a_normalized_flux_unchanged():
@@ -155,7 +165,7 @@ def test_detect_anchor_on_a_normalized_flux_unchanged():
     sessions, u, lya = _ids()
     fitted = sessions["fitted"]
     z = fitted.absorbers.detect_anchor(fitted, "CIV_1548", "CIV_1550")
-    assert z == pytest.approx(DETECT_ANCHOR_Z, abs=0, rel=0)
+    assert z == pytest.approx(DETECT_ANCHOR_Z, abs=0, rel=1e-6)
 
 
 DETECT_ANCHOR_Z = 1.930000147166357  # master, 12 November 2026
@@ -163,13 +173,13 @@ DETECT_ANCHOR_Z = 1.930000147166357  # master, 12 November 2026
 
 # --- Kept: the old logs ---------------------------------------------------
 
-def test_update_components_series_none_string_is_unchanged():
+def test_update_components_series_none_string_is_unchanged(snapshot):
     # 'None' of the old logs is "unchanged", as before (series was not in
     # the registry, a string); with another parameter, the same result
     sessions, u, lya = _ids()
     fitted = sessions["fitted"]
     old = _quiet(lambda: fitted.absorbers.update_components(lya, b=20.0, series="None"))
-    assert _fingerprint(old) == FINGERPRINTS["update_components"]
+    _check(snapshot, "update_components", old)
 
 
 def test_typed_recipe_defaults_are_those_of_the_signature():
@@ -341,14 +351,14 @@ def test_resol_zero_removes_the_override():
     assert both.systs.get_component_by_uuid(u).resol is None
 
 
-def test_link_without_target_takes_that_of_the_expression():
+def test_link_without_target_takes_that_of_the_expression(snapshot):
     # F146: without target_uuid the target was not stored, and the fits
     # left it out of the group of the component; now it is the component
     # the expression names, as the GUI gives it
     sessions, u, lya = _ids()
     fitted = sessions["fitted"]
     new = fitted.absorbers.update_constraint(lya[1], "b", expression=f"p['{lya[0]}'].b")
-    assert _fingerprint(new) == FINGERPRINTS["link_gui"]
+    _check(snapshot, "link_gui", new)
     constraint = new.systs.parsed_constraints[(lya[1], "b")]
     # stored frozen, as the fit treats it (it was stored free, with the
     # expression, when is_free was left out)
@@ -393,7 +403,7 @@ def test_detect_anchor_reads_the_normalized_flux():
     # "absorbed", and the anchor was the start of the common range
     session = _anchor_session(scale=1e-16)
     z = session.absorbers.detect_anchor(session, "CIV_1548", "CIV_1550")
-    assert z == pytest.approx(DETECT_ANCHOR_Z, abs=0, rel=0)
+    assert z == pytest.approx(DETECT_ANCHOR_Z, abs=0, rel=1e-6)
 
 
 def test_detect_anchor_without_a_continuum_fails():
