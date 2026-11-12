@@ -1652,8 +1652,9 @@ its own, except the smallest; the model of each PR proposed by the rule
     the iso-magnitude grid is disabled, with a tooltip, unless the flux is
     per unit wavelength (it drew the grid for the uncalibrated spectra
     labelled `erg/(Å s cm2)`). The screenshot of *Set Properties*
-    (`editing_set_properties`) has a new field: not rebuilt here (the
-    spectra are in `astrocook-data`, not reachable from the session).
+    (`editing_set_properties`) rebuilt, with the new field; the spectra
+    of the scenes are in `erg/(Å s cm2)` and keep it, so no other scene
+    changes.
   - *CSV (F129)*: `export_ascii` writes ECSV with `,` (units, z_em in the
     metadata), the names `lam`, `lammin`, `lammax`, `F`, `dF`; the CSV
     loader reads it by name with all its columns; a file with a header

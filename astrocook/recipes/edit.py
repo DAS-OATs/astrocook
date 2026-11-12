@@ -155,7 +155,7 @@ EDIT_RECIPES_SCHEMAS = {
         "methods": _methods_set_properties,
         "brief": "Set session properties.",
         "provides": ("z_em", "resolution"),
-        "details": "Sets the name of the session, the name of the object, the emission redshift, the resolution of the spectrum and the unit of its flux (declared, not converted). A field left at '_current_' keeps its value.",
+        "details": "Sets the name of the session, the name of the object, the emission redshift, the resolution of the spectrum and the unit of its flux (a flux density per unit wavelength, declared, not converted: y_convert converts). A field left at '_current_' keeps its value.",
         "params": [
             {"name": "name", "type": str, "default": "_current_", "keep": ("_current_",), "doc": "Name of the session, as shown in the session list (not empty)."},
             {"name": "object", "type": str, "default": "_current_", "keep": ("_current_",), "doc": "Name of the object (the OBJECT keyword of the header)."},
@@ -167,7 +167,7 @@ EDIT_RECIPES_SCHEMAS = {
             # flat one; False (#526) keeps it. The GUI asks the user
             # Declared, not converted (PR 8-bis, Guido: a parameter of
             # set_properties, as z_em and resol); y_convert converts
-            {"name": "yunit", "type": str, "default": "_current_", "keep": ("_current_",), "doc": "Unit of the flux, declared without converting the values: a flux density per unit wavelength (e.g. 'erg/(Angstrom s cm^2)', '1e-17 erg/(Angstrom s cm^2)') or 'arb_flux' (arbitrary units). y_convert converts a flux that has a unit."},
+            {"name": "yunit", "type": str, "default": "_current_", "keep": ("_current_",), "doc": "Unit of the flux, declared without converting the values, e.g. 'erg/(Angstrom s cm^2)', or 'arb_flux' (arbitrary units)."},
             {"name": "overwrite_resol_col", "type": bool, "default": False, "gui_hidden": True, "doc": "Replace an existing 'resol' column that varies along the spectrum (asked by the GUI)."}
         ],
         "url": "edit_cb.html#set_properties"
