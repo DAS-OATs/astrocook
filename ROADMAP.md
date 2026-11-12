@@ -1623,7 +1623,10 @@ its own, except the smallest; the model of each PR proposed by the rule
   do not move (seven valid calls taken on master before the change, the
   MCMC with the global generator of NumPy seeded: snapshots
   `optimize_bayesian_*.npz` of `test_valid_results_unchanged`, the
-  tolerances of PR 10); those of nested sampling are new (it crashed, F139)
+  tolerances of PR 10 for `optimize_system`; the MCMC to the bit here, but
+  on the CI, Python 3.12, the chain of 500 steps took another move and b
+  came out 0.0013 km/s away, 0.01 of its error: the MCMC is compared within
+  0.2 of its errors, the errors within 20%, the model within 1e-3); those of nested sampling are new (it crashed, F139)
   and weighted (F140). No fit of the benchmark, of the automatic pipelines
   or of the slow tests goes through these recipes (none calls them), so
   neither the slow tests nor the benchmark can measure the change: the
