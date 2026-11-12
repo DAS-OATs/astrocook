@@ -282,7 +282,6 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "references": ("C26", "SciPy"),
         "brief": "Auto-fit full Lyman series.",
         "url": "tutorials/absorption_systems.html#automated-detection-pipelines",
-        "menu": "Absorbers > Auto-fit &Full Lyman Series",
         "requires": ("z_em", "resolution", "continuum"),
         "details": "Finds Lyman-alpha lines and fits each as a Lyman series (Ly-alpha to the Lyman limit), so that the higher-order lines constrain the column density; systems narrower than min_b are removed.",
         "params": [
@@ -299,7 +298,6 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "references": ("C26", "SciPy"),
         "brief": "Check for associated metals.",
         "url": "tutorials/absorption_systems.html#automated-detection-pipelines",
-        "menu": "Absorbers > Check &Associated Metals",
         "requires": ("z_em", "resolution", "continuum"),
         "details": "For each system already in the list, tries to add other metal ions at its redshift and keeps each whose fit gives logN >= 12 and 2 <= b <= 50 km/s, not at the bounds of the fit, and decreases the AIC by the AIC penalty; skips the ions whose lines fall outside the spectrum; then refits all.",
         "params": [

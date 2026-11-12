@@ -1629,9 +1629,11 @@ its own, except the smallest; the model of each PR proposed by the rule
   label (`RecipeSpec.title`), and the methods text names the recipe by it
   (`RecipeSpec.menu_path`), instead of deriving `Category > brief`. The
   `brief` stays what it was (log, status bar, MCP descriptions): a sentence,
-  not a label. The 29 recipes of the menus have a `menu`; the others
+  not a label. The 27 recipes of the menus have a `menu`; the others
   (`x_convert`, `trim_common`, `components_auto`, ... run from the plots, the
-  System Inspector or scripts) have none, and the methods text names no menu
+  System Inspector or scripts; `forest_auto` and `metals_auto`, whose entries
+  are commented out of the menu, kept as actions in `RECIPES_OFF_MENU`: Guido,
+  after the PR, took their `menu` away until they come back) have none, and the methods text names no menu
   for them (it named `Edit > Convert X axis`, an entry that does not
   exist; and `Edit > Import Systems from Session` for an entry of File).
   The labels did not change (the documentation, the tests and the

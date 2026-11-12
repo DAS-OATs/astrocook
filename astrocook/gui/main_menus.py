@@ -7,7 +7,7 @@ of ``MainWindow``.
 """
 import logging
 import os
-from typing import Any
+from typing import Any, Optional
 
 from PySide6.QtCore import QSettings, QTimer, QUrl, Qt
 from PySide6.QtGui import QAction, QActionGroup, QDesktopServices, QKeySequence
@@ -74,7 +74,8 @@ RECIPE_LAYOUT = {
     "Absorbers": ("doublets_auto", "lya_auto", None, "identify_lines", "refit_all",
                   "clean_negligible"),
 }
-#: Recipes with an action but no entry in the menu (kept for when they come back)
+#: Recipes with an action but no entry in the menu, and no ``menu`` key in
+#: the registry (kept for when they come back)
 RECIPES_OFF_MENU = ("forest_auto", "metals_auto")
 
 
@@ -177,19 +178,20 @@ class MainMenusMixin(HostBase):
     def _save_window_geometry(self):
         QSettings("Astrocook", "AstrocookV2").setValue(GEOMETRY_KEY, self.saveGeometry())
 
-    def _recipe_action(self, name: str, title: str, handler=None) -> QAction:
+    def _recipe_action(self, name: str, title: Optional[str], handler=None) -> QAction:
         """The (disabled) action of the entry of recipe ``name`` in the menu
         ``title``: its text, ``Set Properties...``, comes from the ``menu``
         key of the registry (the only place where it is written), and its
         action is ``self.<name>_action``. It opens the dialog of the recipe
         unless ``handler`` says otherwise. ``ValueError`` if the registry
-        puts the recipe in another menu."""
+        puts the recipe in another menu. With ``title=None`` (the recipes kept
+        out of the menus, which have no ``menu``) the text is the brief."""
         spec = find_recipe(name)
         if spec is None:
             raise ValueError(f"No recipe {name!r}")
-        if spec.menu_title != title:
+        if spec.menu_title != (title or ""):
             raise ValueError(f"{name} is in the menu {spec.menu_title!r}, not in {title!r}")
-        action = QAction(spec.menu_label + "...", self)
+        action = QAction((spec.menu_label or spec.brief.rstrip('.')) + "...", self)
         if name in RECIPE_TOOLTIPS:
             action.setToolTip(RECIPE_TOOLTIPS[name])
         if handler is None:
@@ -379,7 +381,7 @@ class MainMenusMixin(HostBase):
                     menu.addAction(self._recipe_action(name, title))
         # Two pipelines kept out of the menu (their actions stay, enabled with the others)
         for name in RECIPES_OFF_MENU:
-            self._recipe_action(name, "Absorbers")
+            self._recipe_action(name, None)
 
         # In File with the other imports (they were in Edit; phase 5-bis,
         # Guido), before Save

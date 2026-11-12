@@ -309,28 +309,31 @@ def test_export_log_as_text(window, qtbot, monkeypatch, tmp_path):
 
 def test_every_entry_of_a_recipe_comes_from_the_registry(empty):
     """The label of each entry is the ``menu`` key of its recipe, in the
-    menu that key names, and no recipe with a ``menu`` is missing (but the
-    two pipelines kept out of the menu)."""
+    menu that key names, and no recipe with a ``menu`` is missing. The two
+    pipelines kept out of the menu have no ``menu``: they have an action
+    (enabled with the others) and no entry."""
     menus = _menus(empty)
     in_menus = {}
     for title, entries in menus.items():
         for text in entries:
             in_menus[f"{title} > {text.removesuffix('...')}"] = text
     expected = {spec.menu_path: spec.name for spec in all_recipes() if spec.menu}
-    off = {find_recipe(name).menu_path for name in RECIPES_OFF_MENU}
-    in_recipe_menus = {path for path in in_menus
-                       if path in expected}
-    assert in_recipe_menus == set(expected) - off
+    assert all(not find_recipe(name).menu for name in RECIPES_OFF_MENU)
+    in_recipe_menus = {path for path in in_menus if path in expected}
+    assert in_recipe_menus == set(expected)
     # The recipes of the layout are the ones of the menus Edit, Flux,
     # Continuum and Absorbers; the File ones are arranged in groups
     laid = {name for names in RECIPE_LAYOUT.values() for name in names if name}
     assert laid == {s.name for s in all_recipes()
-                    if s.menu and s.menu_title not in ("File",) and s.name not in RECIPES_OFF_MENU}
-    for name in laid | set(RECIPES_OFF_MENU) | {"import_systems", "import_systems_ascii",
-                                                   "import_ascii", "export_ascii"}:
+                    if s.menu and s.menu_title not in ("File",)}
+    for name in laid | {"import_systems", "import_systems_ascii",
+                        "import_ascii", "export_ascii"}:
         spec = find_recipe(name)
-        action = getattr(empty, f"{name}_action")
-        assert action.text() == spec.menu_label + "..."
+        assert getattr(empty, f"{name}_action").text() == spec.menu_label + "..."
+    # Out of the menu: the action, with the brief for its text
+    for name in RECIPES_OFF_MENU:
+        spec = find_recipe(name)
+        assert getattr(empty, f"{name}_action").text() == spec.brief.rstrip(".") + "..."
 
 
 def test_the_dialog_is_titled_by_its_entry(window, qtbot):
