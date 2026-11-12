@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QIntValidator, QDoubleValidator
 from PySide6.QtCore import Qt, QLocale, Signal, QEvent
 
+from astrocook.core.column_names import display_columns, is_core_column
 from astrocook.session.session import Session
 from astrocook.recipes.registry import get_recipe
 from .theme import (ACCENT, BUTTON_BACKGROUND, BUTTON_BORDER, BUTTON_PRESSED, DANGER, FOCUS_BORDER,
@@ -112,15 +113,7 @@ class RecipeDialog(QDialog):
         if not self.session or not self.session.spec:
             return []
         try:
-            internal_cols = self.session.spec.t.colnames
-            pretty_mapping = {
-                'x': 'λ', 
-                'xmin': 'λmin', 
-                'xmax': 'λmax', 
-                'y': 'F', 
-                'dy': 'dF'
-            }
-            return [pretty_mapping.get(c, c) for c in internal_cols]
+            return display_columns(self.session.spec.t.colnames)
         except AttributeError:
             return []
             
@@ -377,8 +370,7 @@ class RecipeDialog(QDialog):
             current_col_idx = 0; current_row_idx = 0
 
             # Define core columns using their UI names as returned by _get_available_columns()
-            core_ui_cols = {'λ', 'λmin', 'λmax', 'F', 'dF'}
-            filtered_cols = [c for c in available_cols if c not in core_ui_cols]
+            filtered_cols = [c for c in available_cols if not is_core_column(c)]
             items_to_show = ["systems"] + filtered_cols
 
             # Define standard columns that get filled with NaNs instead of removed

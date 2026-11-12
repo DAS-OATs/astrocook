@@ -17,9 +17,10 @@ from astrocook.core.spectrum_flux import FluxMixin
 from astrocook.core.spectrum_lines import LinesMixin
 
 
-#: The names of the core columns in the GUI and in the expressions of its
-#: dialogs, and the ones in the table (the MCP reads accept both, F120)
-GUI_COLUMN_NAMES = {'λ': 'x', 'λmin': 'xmin', 'λmax': 'xmax', 'F': 'y', 'dF': 'dy'}
+# The names of the core columns in the GUI and in the expressions, and
+# the ones in the data: one module, column_names (F120; phase 6-quater, PR 8)
+from astrocook.core.column_names import (  # noqa: F401 (GUI_COLUMN_NAMES: an old import)
+    GUI_COLUMN_NAMES, display_columns, internal_column)
 
 
 def _block_means(values: np.ndarray, n: int, error: bool = False) -> np.ndarray:
@@ -416,10 +417,12 @@ class Spectrum(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, LinesM
         Parameters
         ----------
         names : list of str
-            The columns (``x`` is always given). The names of the GUI are
-            accepted for the core ones (``λ``, ``λmin``, ``λmax``, ``F``,
-            ``dF``: ``x``, ``xmin``, ``xmax``, ``y``, ``dy``) and the values
-            are given under the name asked (F120).
+            The columns (the axis is always given: under the name asked
+            for it, ``λ`` if it was not asked). The names of the GUI are
+            the names of the core columns (``λ``, ``λmin``, ``λmax``,
+            ``F``, ``dF``); those of the data (``x``, ``xmin``, ``xmax``,
+            ``y``, ``dy``) and ``lambda`` are accepted, and the values are
+            given under the name asked (F120; phase 6-quater, PR 8).
         x_min, x_max : float, optional
             The range, in the unit of x; None: the start (end) of the
             spectrum.
@@ -430,6 +433,7 @@ class Spectrum(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, LinesM
         -------
         dict
             ``columns`` (name -> ndarray), ``units`` (name -> str),
+            ``axis`` (the name under which the axis is given),
             ``n_pixels`` (pixels in the range), ``binned_by``.
 
         Raises
@@ -441,11 +445,13 @@ class Spectrum(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, LinesM
         """
         table = self.t
         available = table.colnames
-        internal = {n: GUI_COLUMN_NAMES.get(n, n) for n in names}
+        internal = {n: internal_column(n) for n in names}
         missing = [n for n in names if internal[n] not in available]
         if missing:
             raise KeyError(f"No column {', '.join(missing)}. The columns: "
-                           f"{', '.join(available)}.")
+                           f"{', '.join(display_columns(available))}.")
+        axis = next((n for n in names if internal[n] == 'x'), 'λ')
+        internal[axis] = 'x'
         x = self.x.value
         lo = np.nanmin(x) if x_min is None else x_min
         hi = np.nanmax(x) if x_max is None else x_max
@@ -460,12 +466,12 @@ class Spectrum(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, LinesM
                              f"{self.x.unit}.")
         binned_by = 1 if not max_points else max(1, int(np.ceil(n / max_points)))
         columns, units = {}, {}
-        for name in ["x", *[c for c in names if c != "x"]]:
-            col = internal.get(name, name)
+        for name in [axis, *[c for c in names if c != axis]]:
+            col = internal[name]
             values = np.asarray(table[col].value, dtype=float)[sel]
             columns[name] = _block_means(values, binned_by, error=col.startswith("d"))
             units[name] = str(table[col].unit or "")
-        return {"columns": columns, "units": units, "n_pixels": n,
+        return {"columns": columns, "units": units, "axis": axis, "n_pixels": n,
                 "binned_by": binned_by}
 
     def get_column(self, name: str) -> Optional[au.Quantity]:

@@ -4,6 +4,7 @@ import logging
 import numpy as np
 from typing import TYPE_CHECKING, Optional, Union
 
+from astrocook.core.column_names import CORE_COLUMNS as CORE_COLUMN_NAMES, internal_column, is_core_column
 from astrocook.core.photometry import STANDARD_FILTERS
 from astrocook.recipes.errors import InvalidParameter, RecipeFailed
 from astrocook.recipes.messages import msg_session_not_found
@@ -52,8 +53,9 @@ def _methods_running_std(p):
 
 
 #: The columns of every spectrum: not a name for a column written by a recipe
-#: (phase 6-quater, PR 7: the result went to a column that nothing shows)
-CORE_COLUMNS = ('x', 'xmin', 'xmax', 'y', 'dy')
+#: (phase 6-quater, PR 7: the result went to a column that nothing shows),
+#: by the names of the data; those of the GUI (λ, F, dF, ...) too since PR 8
+CORE_COLUMNS = CORE_COLUMN_NAMES
 
 
 FLUX_RECIPES_SCHEMAS = {
@@ -62,8 +64,8 @@ FLUX_RECIPES_SCHEMAS = {
         "brief": "Calculate running standard deviation.",
         "details": "Computes the standard deviation of a column in a running window, e.g. to estimate the local noise of the flux; written in a new column.",
         "params": [
-            {"name": "input_col", "type": str, "default": "y", "doc": "Column of which the standard deviation is computed, e.g. 'y' (the flux).", "kind": "column"},
-            {"name": "output_col", "type": str, "default": "running_std", "doc": "Name of the column to write (a new one, or one to replace; not x, xmin, xmax, y, dy)."},
+            {"name": "input_col", "type": str, "default": "F", "doc": "Column of which the standard deviation is computed, e.g. 'F' (the flux).", "kind": "column"},
+            {"name": "output_col", "type": str, "default": "running_std", "doc": "Name of the column to write (a new one, or one to replace; not λ, λmin, λmax, F, dF)."},
             {"name": "window_pix", "type": int, "default": 21, "gt": 0, "doc": "Width of the window (pixels): an odd number; an even one is increased by 1, and one below 3 is 3."}
         ],
         "url": "edit_cb.html#calculate_running_std" # Placeholder URL
@@ -185,7 +187,7 @@ class RecipeFlux:
 
     @typed_recipe
     def calculate_running_std(self,
-                              input_col: str = 'y',
+                              input_col: str = 'F',
                               output_col: str = 'running_std',
                               window_pix: int = 21) -> 'Session':
         """
@@ -198,12 +200,16 @@ class RecipeFlux:
         Parameters
         ----------
         input_col : str, optional
-            The column to use for StdDev calculation (e.g., ``'y'``). Defaults to ``'y'``.
+            The column to use for StdDev calculation, by the names of the GUI
+            (``'F'``, ``'dF'``, ``'cont'``, ...; ``'y'``, ``'dy'`` are
+            accepted). Defaults to ``'F'`` (``'y'`` until phase 6-quater,
+            PR 8: the same column).
         output_col : str, optional
             Name of the column to write (e.g., ``'running_std'``): a new
             column, or an auxiliary one to replace; not empty, nor one of
-            the columns of every spectrum (``x``, ``xmin``, ``xmax``, ``y``,
-            ``dy``). Defaults to ``'running_std'``.
+            the columns of every spectrum (``λ``, ``λmin``, ``λmax``, ``F``,
+            ``dF``, or their names in the data, ``x``, ..., ``dy``).
+            Defaults to ``'running_std'``.
         window_pix : int, optional
             Total window size in pixels (should be odd: an even one is
             increased by 1, and one below 3 is 3). Defaults to ``21``.
@@ -218,15 +224,18 @@ class RecipeFlux:
         InvalidParameter
             If ``output_col`` is empty or the name of a column of every
             spectrum (phase 6-quater, PR 7: the result went to a hidden
-            column, findings register F122).
+            column, findings register F122; PR 8: also by the names of the
+            GUI, which made a column that no expression could name).
         """
-        if not output_col.strip() or output_col in CORE_COLUMNS:
+        if not output_col.strip() or is_core_column(output_col.strip()):
             raise InvalidParameter(f"output_col: {output_col!r} is not a name for a new "
-                                   f"column (nor one of {', '.join(CORE_COLUMNS)})")
+                                   f"column (nor one of λ, λmin, λmax, F, dF)")
         window_pix_i = _window_used(window_pix)
 
         new_spec_v2 = spec_of(self._session).calculate_running_std(
-            input_col=input_col,
+            # The names of the GUI to those of the data (F120, PR 8: 'F',
+            # offered by the dialog, was not found)
+            input_col=internal_column(input_col.strip()),
             output_col=output_col,
             window_pix=window_pix_i
         )

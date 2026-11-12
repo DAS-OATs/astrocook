@@ -653,7 +653,7 @@ def flux_smooth(s: Studio):
 @scene
 def flux_running_std(s: Studio):
     w = s.new_window("My other QSO")
-    s.run("flux", "calculate_running_std", input_col="y", output_col="running_std",
+    s.run("flux", "calculate_running_std", input_col="F", output_col="running_std",
           window_pix=21)
     s.open_panel("right")
     w.aux_col_combo.setCurrentText("running_std")

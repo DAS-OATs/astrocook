@@ -10,6 +10,7 @@ from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (QAbstractItemView, QDialog, QDialogButtonBox, QHeaderView,
                                QTableWidget, QTableWidgetItem, QVBoxLayout)
 from .theme import SELECTION
+from astrocook.core.column_names import display_column
 from astrocook.gui.errors import DATA_ERRORS
 
 
@@ -86,15 +87,7 @@ class DataInspectorDialog(QDialog):
         self.cols = ['x', 'xmin', 'xmax', 'y', 'dy', 'cont', 'model']
 
         # Define Display Labels
-        self.display_labels = {
-            'x': 'λ',
-            'xmin': 'λmin',
-            'xmax': 'λmax',
-            'y': 'F',
-            'dy': 'dF',
-            'cont': 'cont',
-            'model': 'model'
-        }
+        self.display_labels = {c: display_column(c) for c in self.cols}
         
         if hasattr(self.spec, '_data') and self.spec._data.aux_cols:
             for c in self.spec._data.aux_cols:
@@ -152,10 +145,7 @@ class DataInspectorDialog(QDialog):
         
         # 2. Re-evaluate columns in case one was added or removed
         self.cols = ['x', 'xmin', 'xmax', 'y', 'dy', 'cont', 'model']
-        self.display_labels = {
-            'x': 'λ', 'xmin': 'λmin', 'xmax': 'λmax', 
-            'y': 'F', 'dy': 'dF', 'cont': 'cont', 'model': 'model'
-        }
+        self.display_labels = {c: display_column(c) for c in self.cols}
         
         if hasattr(self.spec, '_data') and self.spec._data.aux_cols:
             for c in self.spec._data.aux_cols:

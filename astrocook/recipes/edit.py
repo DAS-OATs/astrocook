@@ -6,7 +6,9 @@ import numpy as np
 import re
 from typing import TYPE_CHECKING, Dict, cast, Optional, Union, List, Tuple
 
-from astrocook.core.structures import SystemListData  # <<< *** ADD THIS IMPORT ***
+from astrocook.core.column_names import (display_columns, internal_column,
+                                         internal_expression, is_axis_column)
+from astrocook.core.structures import SystemListData
 from astrocook.core.system_list import SystemList
 from astrocook.recipes.errors import (InvalidParameter, RecipeError, RecipeFailed,
                                       reason_of)
@@ -149,12 +151,12 @@ EDIT_RECIPES_SCHEMAS = {
         "provides": ("z_em", "resolution"),
         "details": "Sets the name of the session, the name of the object, the emission redshift and the resolution of the spectrum. A field left at '_current_' keeps its value.",
         "params": [
-            {"name": "name", "type": str, "default": "_current_", "keep": ("_current_",), "doc": "Name of the session, as shown in the session list."},
+            {"name": "name", "type": str, "default": "_current_", "keep": ("_current_",), "doc": "Name of the session, as shown in the session list (not empty)."},
             {"name": "object", "type": str, "default": "_current_", "keep": ("_current_",), "doc": "Name of the object (the OBJECT keyword of the header)."},
             # Above -1 (1 + z > 0) and finite (Guido, phase 6-bis, F46)
             {"name": "z_em", "type": float, "default": "_current_", "keep": ("_current_",), "gt": -1, "doc": "Emission redshift of the quasar (z_em); needed to locate the Lyman-alpha forest."},
             # A number (R) or 'Npx', checked by the recipe: R > 0, N > 0
-            {"name": "resol", "type": str, "default": "_current_", "keep": ("_current_",), "doc": "Resolution of the spectrum: the resolving power R (e.g. '50000'), or the FWHM of the line spread function in pixels (e.g. '3px'); written in the 'resol' column."}, 
+            {"name": "resol", "type": str, "default": "_current_", "keep": ("_current_",), "doc": "Resolution of the spectrum: the resolving power R (e.g. '50000'), or the FWHM of the line spread function in pixels (e.g. '3px', with the x axis in wavelength); written in the 'resol' column."},
             # Replace a resolution column that varies with wavelength by a
             # flat one; False (#526) keeps it. The GUI asks the user
             {"name": "overwrite_resol_col", "type": bool, "default": False, "gui_hidden": True, "doc": "Replace an existing 'resol' column that varies along the spectrum (asked by the GUI)."}
@@ -164,9 +166,9 @@ EDIT_RECIPES_SCHEMAS = {
     "x_convert": {
         "methods": _methods_x_convert,
         "brief": "Convert X axis.",
-        "details": "Converts the x axis to another unit of wavelength (e.g. nm, Angstrom) or to velocity (e.g. km/s) relative to a reference redshift.",
+        "details": "Converts the x axis to another unit of wavelength (e.g. nm, Angstrom) or to velocity (e.g. km/s); the zero of the velocity is the Lyman-alpha emission at the reference redshift, 121.567 nm * (1 + z_ref).",
         "params": [
-            {"name": "z_ref", "type": float, "default": "_current_", "keep": ("_current_",), "gt": -1, "doc": "Reference redshift of the zero of the velocity axis ('_current_': z_em); not used for a unit of wavelength."},
+            {"name": "z_ref", "type": float, "default": "_current_", "keep": ("_current_",), "gt": -1, "doc": "Redshift of the zero of the velocity axis, the Lyman-alpha emission at 121.567 nm * (1 + z_ref) ('_current_': z_em); not used for a unit of wavelength."},
             {"name": "xunit", "type": str, "default": "km/s", "doc": "Unit of the new x axis: a wavelength (e.g. 'nm', 'Angstrom') or a velocity (e.g. 'km/s')."},
         ],
         "url": "edit_cb.html#convert-x-axis"
@@ -174,28 +176,30 @@ EDIT_RECIPES_SCHEMAS = {
     "y_convert": {
         "methods": "The flux and its error were converted to {yunit}{menu}",
         "brief": "Convert Y axis units.",
-        "details": "Converts the flux, its error and the columns like the flux to another unit of flux density.",
+        "details": "Converts the flux, its error and the columns in the unit of the flux (e.g. cont, model) to another unit of flux density per unit wavelength.",
         "params": [
-            {"name": "yunit", "type": str, "default": "erg/(nm s cm^2)", "doc": "Unit of flux density, e.g. 'erg/(nm s cm^2)' or 'erg/(Angstrom s cm^2)'."},
+            {"name": "yunit", "type": str, "default": "erg/(nm s cm^2)", "doc": "Unit of flux density per unit wavelength, e.g. 'erg/(nm s cm^2)' or 'erg/(Angstrom s cm^2)'; a unit per frequency (Jy) is not converted."},
         ],
         "url": "edit_cb.html#convert-y-axis"
     },
     "apply_expression": {
         "methods": "The column {target_col} was computed as {expression}{menu}",
         "brief": "Apply expression to columns.",
-        "details": "Evaluates a NumPy expression of the columns and writes it in a column, new or existing. The columns are named as in the GUI (λ, F, dF, cont, model, ...); e.g. 'F / cont', 'F * 2.0', 'log10(F)'.",
+        "details": "Evaluates an expression of the columns (NumExpr: + - * / **, comparisons, sqrt, exp, log, log10, abs, where, sum, min, max, ...) and writes it in a column, new or existing. The columns are named as in the GUI: λ (or lambda), F, dF, cont, model, ...; e.g. 'F / cont', 'F * 2.0', 'log10(F)'. The axis (λ, λmin, λmax) is not written: x_convert converts it.",
         "params": [
-            {"name": "target_col", "type": str, "default": "F", "doc": "Column to write: replaced if it exists, created otherwise.", "kind": "column"},
-            {"name": "expression", "type": str, "default": "F / dF", "doc": "Expression of the columns, e.g. 'F / cont'."},
+            # Required (PR 8): with the defaults 'F' and 'F / dF' it
+            # replaced the flux with its S/N
+            {"name": "target_col", "type": str, "default": "", "doc": "Column to write, e.g. 'snr': replaced if it exists, created otherwise; a name of letters, digits and _ (not the axis, λ, λmin, λmax).", "kind": "column"},
+            {"name": "expression", "type": str, "default": "", "doc": "Expression of the columns, e.g. 'F / dF' or 'F / cont'."},
         ],
         "url": "edit_cb.html#apply_expression" # Placeholder URL
     },
     "mask_expression": {
         "methods": "The column {target_col} was masked where {expression}{menu}",
         "brief": "Mask column by expression.",
-        "details": "Sets a column to NaN where a boolean expression of the columns is true, e.g. '(λ < 300) | (λ > 400)' or 'dF <= 0'.",
+        "details": "Sets a column to NaN where a boolean expression of the columns is true, e.g. '(λ < 300) | (λ > 400)' or 'dF <= 0'. The columns are named as in the GUI (λ or lambda, F, dF, cont, ...). The axis (λ, λmin, λmax) is not masked.",
         "params": [
-            {"name": "target_col", "type": str, "default": "F", "doc": "Column to mask, e.g. 'F'.", "kind": "column"},
+            {"name": "target_col", "type": str, "default": "F", "doc": "Column to mask, e.g. 'F' (not the axis, λ, λmin, λmax).", "kind": "column"},
             {"name": "expression", "type": str, "default": "dF <= 0", "doc": "Boolean expression of the columns: the pixels where it is true are masked."},
         ],
         "url": "edit_cb.html#mask_expression" # Placeholder URL
@@ -205,7 +209,7 @@ EDIT_RECIPES_SCHEMAS = {
         "brief": "Smooth a single column.",
         "details": "Smooths one column of the spectrum (e.g. 'dF' or 'cont') with a Gaussian kernel; the other columns are unchanged.",
         "params": [
-            {"name": "target_col", "type": str, "default": "dF", "doc": "Column to smooth, e.g. 'dF'.", "kind": "column"},
+            {"name": "target_col", "type": str, "default": "dF", "doc": "Column to smooth, e.g. 'dF' (not the axis, λ, λmin, λmax).", "kind": "column"},
             {"name": "sigma_kms", "type": float, "default": 100.0, "gt": 0, "doc": "Standard deviation of the Gaussian kernel (km/s)."},
             {"name": "renorm_model", "type": bool, "default": False, "doc": "When smoothing 'cont', rescale the model to the new continuum (asked by the GUI).", "gui_hidden": True, "agents": False},
         ],
@@ -327,8 +331,14 @@ def _expression_errors(expression: str):
     try:
         yield
     except (*DATA_ERRORS, SyntaxError, TypeError) as e:
+        reason = reason_of(e)
+        if isinstance(e, TypeError) and "is not callable" in str(e):
+            # NumExpr names a function it does not have so (PR 8; F128)
+            reason = ("it uses a function that the expressions do not have (they "
+                      "have those of NumExpr: sqrt, exp, log, log10, abs, sin, cos, "
+                      "where, sum, prod, min, max, ...).")
         raise RecipeFailed(f"The expression '{expression}' cannot be evaluated: "
-                           f"{reason_of(e)}") from e
+                           f"{reason}") from e
 
 
 SESSION_VAR_REGEX = re.compile(r'([a-zA-Z0-9_]+)\s*\.\s*([a-zA-Z0-9_]+)')
@@ -346,33 +356,33 @@ class RecipeEdit:
         self._tag = 'cb'
 
     def _translate_ui_names(self, name_str: str) -> str:
-        """
-        Translates scientific symbols back to internal keys.
-        Supports: λ -> x, F -> y, dF -> dy.
-        Original V1 names (x, y, dy) remain untouched for compatibility.
-        """
+        """The names of the columns of every spectrum in ``name_str`` (an
+        expression or a list of names) written as in the data (λ, lambda ->
+        x, F -> y, dF -> dy, ...; :mod:`astrocook.core.column_names`, F120).
+        The names of the data (x, y, dy) are left as they are."""
         if not isinstance(name_str, str):
             return name_str
+        return internal_expression(name_str)
 
-        # Mapping: UI Display -> Internal Key
-        mapping = {
-            'λ': 'x',
-            'λmin': 'xmin',
-            'λmax': 'xmax',
-            'F': 'y',
-            'dF': 'dy'
-        }
-        
-        processed_str = name_str
-        # Sort keys by length (descending)
-        sorted_keys = sorted(mapping.keys(), key=len, reverse=True)
-        
-        for ui_name in sorted_keys:
-            internal_name = mapping[ui_name]
-            # Use regex word boundaries to ensure we only replace exact matches
-            processed_str = re.sub(r'\b' + re.escape(ui_name) + r'\b', internal_name, processed_str)
-        
-        return processed_str
+    def _column_to_write(self, target_col: str, must_exist: bool) -> str:
+        """The name in the data of the column a recipe writes, checked
+        (phase 6-quater, PR 8): a name usable in an expression, not the
+        axis (F127), and one of the spectrum if ``must_exist``.
+        :class:`InvalidParameter` otherwise."""
+        name = target_col.strip()
+        internal = internal_column(name)
+        if not internal.isidentifier():
+            # '' and 'a b' made columns that no expression could name
+            raise InvalidParameter(f"target_col: {target_col!r} is not a name of a column "
+                                   "(letters, digits and _, not starting with a digit)")
+        if is_axis_column(name):
+            raise InvalidParameter(f"target_col: {name} is the axis, which this recipe "
+                                   "does not change (x_convert converts it)")
+        colnames = spec_of(self._session).t.colnames
+        if must_exist and internal not in colnames:
+            raise InvalidParameter(f"target_col: there is no column {name}. The columns: "
+                                   f"{', '.join(display_columns(colnames))}.")
+        return internal
 
     def _prepare_expression_contexts(self, expression: str, alias_map: Optional[Dict[str, str]]) -> Tuple[str, Dict[str, np.ndarray]]:
         """
@@ -538,6 +548,10 @@ class RecipeEdit:
         Session
             A new :class:`~astrocook.session.session.Session` with updated properties.
         """
+        if name != '_current_' and not name.strip():
+            # An empty name was ignored without a word (PR 8)
+            raise InvalidParameter("name: the name of a session cannot be empty "
+                                   "('_current_' keeps it)")
         # 1. Parse numerical inputs (z_em, resol)
         try:
             if str(z_em) == '_current_':
@@ -570,8 +584,7 @@ class RecipeEdit:
 
         # 4. Handle Session Name (Lives on the Session wrapper)
         new_session = self._session.with_new_spectrum(new_spec)
-        if new_name:
-            new_session.name = new_name
+        new_session.name = new_name
 
         return new_session
 
@@ -608,6 +621,10 @@ class RecipeEdit:
             xunit_obj = au.Unit(xunit)
         except ValueError:
             raise InvalidParameter(f"xunit: {xunit!r} is not a unit") from None
+        if not (xunit_obj.is_equivalent(au.nm) or xunit_obj.is_equivalent(au.km / au.s)):
+            # It failed in the conversion, with the same outcome (PR 8)
+            raise InvalidParameter(f"xunit: {xunit!r} is neither a wavelength (e.g. nm) "
+                                   "nor a velocity (e.g. km/s)")
 
         # 1. Get the new Spectrum instance (the immutable operation)
         new_spec_v2 = spec_of(self._session).x_convert(z_ref=z_ref_float, xunit=xunit_obj)
@@ -638,6 +655,12 @@ class RecipeEdit:
             yunit_obj = au.Unit(yunit)
         except ValueError:
             raise InvalidParameter(f"yunit: {yunit!r} is not a unit") from None
+        y_unit = spec_of(self._session).y.unit
+        if not yunit_obj.is_equivalent(y_unit):
+            # It failed in the conversion, with the same outcome (PR 8)
+            raise InvalidParameter(f"yunit: the flux ({y_unit}) cannot be converted to "
+                                   f"{yunit!r}: a flux density per unit wavelength, e.g. "
+                                   "'erg/(nm s cm^2)'")
 
         # 1. Execute the immutable V2 operation
         new_spec_v2 = spec_of(self._session).y_convert(yunit=yunit_obj)
@@ -668,8 +691,8 @@ class RecipeEdit:
         Session
             A new :class:`~astrocook.session.session.Session` with the computed column.
         """
-        # Translate UI symbols back to internal keys
-        target_col = self._translate_ui_names(target_col.strip())
+        # The names of the GUI (or of the data) to those of the data
+        target_col = self._column_to_write(target_col, must_exist=False)
         expression = self._translate_ui_names(expression.strip())
         if not expression:
             raise RecipeFailed("The expression is empty.")
@@ -709,8 +732,8 @@ class RecipeEdit:
         Session
             A new :class:`~astrocook.session.session.Session` with the masked column.
         """
-        # Translate UI symbols back to internal keys
-        target_col = self._translate_ui_names(target_col.strip())
+        # The names of the GUI (or of the data) to those of the data
+        target_col = self._column_to_write(target_col, must_exist=True)
         expression = self._translate_ui_names(expression.strip())
         if not expression:
             raise RecipeFailed("The expression is empty.")
@@ -752,8 +775,8 @@ class RecipeEdit:
         Session
             A new :class:`~astrocook.session.session.Session` with the smoothed column.
         """
-        # Translate UI symbols back to internal keys
-        target_col = self._translate_ui_names(target_col.strip())
+        # The names of the GUI (or of the data) to those of the data
+        target_col = self._column_to_write(target_col, must_exist=True)
         # 1. Call the immutable V2 operation
         new_spec_v2 = spec_of(self._session).smooth_column(
             target_col=target_col,

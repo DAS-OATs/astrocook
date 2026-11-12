@@ -522,7 +522,9 @@ class SessionList(BaseModel):
 
 
 class ColumnInfo(BaseModel):
-    name: str
+    name: str = Field(description=(
+        "Name of the column, as in the GUI and in the expressions: λ, λmin, "
+        "λmax, F (flux), dF (its error), cont, model, ..."))
     unit: str = Field(description="Unit; empty if dimensionless.")
 
 
