@@ -893,7 +893,12 @@ def agents_followed_session(s: Studio):
     # A copy of its own: the marker must not reach the other scenes
     archive = folder / "My QSO.acs2"
     shutil.copyfile(s.staged("My QSO"), archive)
-    follow.write_marker(archive, "My QSO")
+    # A fixed pid and version, so that the image is the same at every run
+    # (no such process runs: the writer is taken as alive for the scene)
+    follow.marker_path(archive).write_text(json.dumps(
+        {"session_id": "My QSO", "pid": 4121, "version": "2.6.0"}))
+    alive = follow.FollowMarker.writer_alive
+    follow.FollowMarker.writer_alive = lambda self: True
     try:
         w = s.new_window()
         w.open_session_from_path(str(archive))
@@ -903,6 +908,7 @@ def agents_followed_session(s: Studio):
         w._on_close_session_requested()
         s.pump(0.3)
     finally:
+        follow.FollowMarker.writer_alive = alive
         shutil.rmtree(folder, ignore_errors=True)
     return image
 

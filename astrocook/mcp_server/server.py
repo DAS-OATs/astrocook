@@ -94,11 +94,43 @@ nothing they do there reaches you). It is not available where there is no
 display.
 """
 
+#: Typical workflows on the components. The tools of Absorbers overlap, and
+#: what an agent most needs to know is which of them fit and which do not
+#: (read from the recipes, phase 6-quater PR 12: update_component and
+#: update_constraint change values and links and run no fit; the model drawn
+#: stays as it was until the next fit, F152). Each example is a call written
+#: as ``tool(parameter=value, ...)``: a test reads them and checks the names
+#: of the tools and of the parameters against the registry.
+INSTRUCTIONS_WORKFLOWS = """
+Components, by hand. These tools fit, with the components blended with the
+one they name: absorbers_add_component, absorbers_add_linked_system,
+absorbers_fit_component; absorbers_refit_all fits every group;
+absorbers_optimize_system adds components where the residuals call for them,
+keeping each only if the AIC improves. These do not fit: absorbers_update_component,
+absorbers_update_components, absorbers_update_constraint,
+absorbers_update_constraints_column change values and links only, and the
+model stays as it was until a fit: follow them with absorbers_fit_component.
+- Adapt a system: components_list(series='CIV') gives the uuids and the fit
+  of each component; absorbers_update_component(uuid='<uuid>', logN=14.2);
+  absorbers_fit_component(uuid='<uuid>'); judge it with components_list and
+  spectrum_plot; absorbers_optimize_system(uuid='<uuid>') if the residuals
+  need more components.
+- Try a component: absorbers_add_component(series='CIV', z=1.9, logN=13.5,
+  b=10.0) adds and fits it; keep it, or session_undo to drop it (a try on a
+  copy: session_duplicate).
+- Link ions: absorbers_add_linked_system(series_list='CIV,SiIV', z=1.9) adds
+  new components with the redshifts tied to the first; to tie a parameter of
+  components that exist, absorbers_update_constraint(uuid='<uuid of SiIV>',
+  param='b', expression="p['<uuid of CIV>'].b"), then
+  absorbers_fit_component(uuid='<uuid of SiIV>'); is_free=True frees it again.
+"""
+
 
 def instructions() -> str:
     """The instructions of the server: the menus of the recipes come from
     the registry."""
-    return INSTRUCTIONS_HEAD + menus_text() + "\n" + INSTRUCTIONS_TAIL
+    return (INSTRUCTIONS_HEAD + menus_text() + "\n" + INSTRUCTIONS_TAIL
+            + INSTRUCTIONS_WORKFLOWS)
 
 
 def build_server() -> MCPServer:

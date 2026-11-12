@@ -118,6 +118,28 @@ def test_a_marked_archive_is_followed(followed):
     assert followed.left_sidebar_widget.y() >= followed._banner_room() > 0
 
 
+def test_the_banner_names_the_writer(followed):
+    """The pid and the version of Astrocook of the marker: which process
+    writes the archive (a server of an older version left running)."""
+    import os
+    from astrocook import __version__
+    text = followed.follow_banner_label.text()
+    assert f"pid {os.getpid()}, Astrocook {__version__}" in text
+    assert f"pid {os.getpid()}" in followed.follow_banner_label.toolTip()
+
+
+def test_the_banner_of_a_marker_without_the_new_fields_is_as_before(
+        qtbot, window, archive):
+    follow.marker_path(archive).write_text('{"session_id": "J0103"}')
+    window.open_session_from_path(str(archive))
+    qtbot.wait(50)
+    assert window.is_followed()
+    assert window.follow_banner_label.text() == (
+        "<b>Followed session.</b> Updated by an AI agent after every change. "
+        "Read only.")
+    assert "program that writes" not in window.follow_banner_label.toolTip()
+
+
 def test_the_banner_follows_the_session_shown(qtbot, followed):
     followed.open_session_from_path(str(SESSION_FILE))  # not followed
     assert followed.follow_banner.isHidden() and not followed.is_followed()

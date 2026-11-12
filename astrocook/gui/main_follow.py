@@ -63,6 +63,10 @@ class _Followed:
     #: The archive, with the links resolved
     path: str
     session_id: str
+    #: The process that writes the archive and its version of Astrocook, from
+    #: the marker (None and '' for a marker that does not say)
+    writer_pid: Optional[int]
+    writer_version: str
     #: (mtime_ns, size) of the archive at the last load
     stamp: Optional[Tuple[int, int]]
     #: True when the marker is gone (or its writer is dead)
@@ -166,7 +170,8 @@ class MainFollowMixin(HostBase):
         if marker is None:
             return
         real = os.path.realpath(path)
-        followed = _Followed(history, real, marker.session_id, _stamp(real),
+        followed = _Followed(history, real, marker.session_id, marker.pid,
+                             marker.version, _stamp(real),
                              ended=not marker.writer_alive())
         self._followed.append(followed)
         if followed.ended:
@@ -315,6 +320,18 @@ class MainFollowMixin(HostBase):
 
     # --- The banner and the read-only guard ---
 
+    @staticmethod
+    def _writer_text(followed: _Followed) -> str:
+        """The process that writes the archive, as the banner says it: 'pid
+        1234, Astrocook 2.6.0' (what the marker holds), or '' if it says
+        nothing."""
+        parts = []
+        if followed.writer_pid is not None:
+            parts.append(f"pid {followed.writer_pid}")
+        if followed.writer_version:
+            parts.append(f"Astrocook {followed.writer_version}")
+        return ", ".join(parts)
+
     def _update_follow_banner(self):
         """Show the banner when the active session is followed, with what it
         says; hide it otherwise."""
@@ -326,17 +343,21 @@ class MainFollowMixin(HostBase):
         if followed is None:
             banner.hide()
         else:
+            writer = self._writer_text(followed)
             if followed.ended:
                 text = ("<b>No longer followed.</b> The agent closed this session, "
                         "or its server stopped. Read only.")
                 tip = ("This session was changed by an AI agent through the MCP server; "
                        "it is not updated any more.")
             else:
-                text = ("<b>Followed session.</b> Updated by an AI agent after every "
-                        "change. Read only.")
+                by = f" ({writer})" if writer else ""
+                text = (f"<b>Followed session.</b> Updated by an AI agent{by} after "
+                        "every change. Read only.")
                 tip = ("An AI agent changes this session through the MCP server, and the "
                        "window shows each change. Nothing done here reaches the agent: "
                        "make an editable copy to work on it.")
+            if writer:
+                tip += f" The program that writes it: {writer}."
             self.follow_banner_label.setText(text)
             self.follow_banner_label.setToolTip(tip)
             banner.show()
