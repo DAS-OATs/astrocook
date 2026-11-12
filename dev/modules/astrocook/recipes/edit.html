@@ -482,6 +482,8 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.column_names</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">display_columns</span><span class="p">,</span> <span class="n">internal_column</span><span class="p">,</span>
                                          <span class="n">internal_expression</span><span class="p">,</span> <span class="n">is_axis_column</span><span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemListData</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.units</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">has_no_unit</span><span class="p">,</span> <span class="n">is_arbitrary_flux</span><span class="p">,</span>
+                                  <span class="n">is_flux_density_per_wavelength</span><span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.system_list</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemList</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.errors</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">InvalidParameter</span><span class="p">,</span> <span class="n">RecipeError</span><span class="p">,</span> <span class="n">RecipeFailed</span><span class="p">,</span>
                                       <span class="n">reason_of</span><span class="p">)</span>
@@ -514,6 +516,10 @@
             <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
                 <span class="k">pass</span>
             <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"the resolving power to R = </span><span class="si">{</span><span class="n">resol</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">given</span><span class="p">(</span><span class="s1">'yunit'</span><span class="p">):</span>
+        <span class="n">unit</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s1">'yunit'</span><span class="p">])</span>
+        <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"the flux was declared in arbitrary units"</span> <span class="k">if</span> <span class="n">unit</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="s1">'arb_flux'</span>
+                     <span class="k">else</span> <span class="sa">f</span><span class="s2">"the unit of the flux was declared as </span><span class="si">{</span><span class="n">unit</span><span class="si">}</span><span class="s2">, the values unchanged"</span><span class="p">)</span>
     <span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'overwrite_resol_col'</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">parts</span><span class="p">:</span>
         <span class="k">return</span> <span class="sa">f</span><span class="s2">"The properties of the session were left as they were</span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">"</span>
@@ -622,7 +628,7 @@
         <span class="s2">"methods"</span><span class="p">:</span> <span class="n">_methods_set_properties</span><span class="p">,</span>
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Set session properties."</span><span class="p">,</span>
         <span class="s2">"provides"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"z_em"</span><span class="p">,</span> <span class="s2">"resolution"</span><span class="p">),</span>
-        <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Sets the name of the session, the name of the object, the emission redshift and the resolution of the spectrum. A field left at '_current_' keeps its value."</span><span class="p">,</span>
+        <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Sets the name of the session, the name of the object, the emission redshift, the resolution of the spectrum and the unit of its flux (a flux density per unit wavelength, declared, not converted: y_convert converts). A field left at '_current_' keeps its value."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"name"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"_current_"</span><span class="p">,</span> <span class="s2">"keep"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"_current_"</span><span class="p">,),</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Name of the session, as shown in the session list (not empty)."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"object"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"_current_"</span><span class="p">,</span> <span class="s2">"keep"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"_current_"</span><span class="p">,),</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Name of the object (the OBJECT keyword of the header)."</span><span class="p">},</span>
@@ -632,6 +638,9 @@
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"resol"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"_current_"</span><span class="p">,</span> <span class="s2">"keep"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"_current_"</span><span class="p">,),</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Resolution of the spectrum: the resolving power R (e.g. '50000'), or the FWHM of the line spread function in pixels (e.g. '3px', with the x axis in wavelength); written in the 'resol' column."</span><span class="p">},</span>
             <span class="c1"># Replace a resolution column that varies with wavelength by a</span>
             <span class="c1"># flat one; False (#526) keeps it. The GUI asks the user</span>
+            <span class="c1"># Declared, not converted (PR 8-bis, Guido: a parameter of</span>
+            <span class="c1"># set_properties, as z_em and resol); y_convert converts</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"yunit"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"_current_"</span><span class="p">,</span> <span class="s2">"keep"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"_current_"</span><span class="p">,),</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Unit of the flux, declared without converting the values, e.g. 'erg/(Angstrom s cm^2)', or 'arb_flux' (arbitrary units)."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"overwrite_resol_col"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">"gui_hidden"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Replace an existing 'resol' column that varies along the spectrum (asked by the GUI)."</span><span class="p">}</span>
         <span class="p">],</span>
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"edit_cb.html#set_properties"</span>
@@ -997,7 +1006,8 @@
     <span class="nd">@typed_recipe</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">set_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'_current_'</span><span class="p">,</span> <span class="nb">object</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'_current_'</span><span class="p">,</span>
                        <span class="n">z_em</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s1">'_current_'</span><span class="p">,</span> <span class="n">resol</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'_current_'</span><span class="p">,</span>
-                       <span class="n">overwrite_resol_col</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">'Session'</span><span class="p">]:</span>
+                       <span class="n">overwrite_resol_col</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                       <span class="n">yunit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'_current_'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">'Session'</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Set session properties.</span>
 
@@ -1022,6 +1032,12 @@
 <span class="sd">            kept (a flat or missing column is always set). Defaults to</span>
 <span class="sd">            ``False`` (#526: before, a variable column was flattened even</span>
 <span class="sd">            with ``resol='_current_'``).</span>
+<span class="sd">        yunit : str, optional</span>
+<span class="sd">            The unit of the flux, declared without converting the values</span>
+<span class="sd">            (phase 6-quater, PR 8-bis): a flux density per unit wavelength</span>
+<span class="sd">            (e.g. ``'erg/(Angstrom s cm^2)'``) or ``'arb_flux'``, the</span>
+<span class="sd">            arbitrary units of Astrocook. Defaults to ``'_current_'`` (no</span>
+<span class="sd">            change). :meth:`y_convert` converts a flux that has a unit.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -1032,6 +1048,16 @@
             <span class="c1"># An empty name was ignored without a word (PR 8)</span>
             <span class="k">raise</span> <span class="n">InvalidParameter</span><span class="p">(</span><span class="s2">"name: the name of a session cannot be empty "</span>
                                    <span class="s2">"('_current_' keeps it)"</span><span class="p">)</span>
+        <span class="n">yunit_obj</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">yunit</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">'_current_'</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">yunit_obj</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">Unit</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">yunit</span><span class="p">))</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">InvalidParameter</span><span class="p">(</span><span class="sa">f</span><span class="s2">"yunit: </span><span class="si">{</span><span class="n">yunit</span><span class="si">!r}</span><span class="s2"> is not a unit"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">is_arbitrary_flux</span><span class="p">(</span><span class="n">yunit_obj</span><span class="p">)</span> <span class="ow">or</span> <span class="n">is_flux_density_per_wavelength</span><span class="p">(</span><span class="n">yunit_obj</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="n">InvalidParameter</span><span class="p">(</span><span class="sa">f</span><span class="s2">"yunit: </span><span class="si">{</span><span class="n">yunit</span><span class="si">!r}</span><span class="s2"> is not a flux density per unit "</span>
+                                       <span class="s2">"wavelength (e.g. 'erg/(Angstrom s cm^2)') nor "</span>
+                                       <span class="s2">"'arb_flux' (arbitrary units)"</span><span class="p">)</span>
         <span class="c1"># 1. Parse numerical inputs (z_em, resol)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">z_em</span><span class="p">)</span> <span class="o">==</span> <span class="s1">'_current_'</span><span class="p">:</span>
@@ -1061,6 +1087,9 @@
             <span class="n">object_name</span><span class="o">=</span><span class="n">new_object</span><span class="p">,</span>
             <span class="n">overwrite_resol_col</span><span class="o">=</span><span class="n">overwrite_resol_col</span> 
         <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">yunit_obj</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">new_spec</span> <span class="o">=</span> <span class="n">new_spec</span><span class="o">.</span><span class="n">with_flux_unit</span><span class="p">(</span><span class="n">yunit_obj</span><span class="p">)</span>
 
         <span class="c1"># 4. Handle Session Name (Lives on the Session wrapper)</span>
         <span class="n">new_session</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec</span><span class="p">)</span>
@@ -1142,6 +1171,12 @@
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">InvalidParameter</span><span class="p">(</span><span class="sa">f</span><span class="s2">"yunit: </span><span class="si">{</span><span class="n">yunit</span><span class="si">!r}</span><span class="s2"> is not a unit"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
         <span class="n">y_unit</span> <span class="o">=</span> <span class="n">spec_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">unit</span>
+        <span class="k">if</span> <span class="n">is_arbitrary_flux</span><span class="p">(</span><span class="n">y_unit</span><span class="p">)</span> <span class="ow">or</span> <span class="n">has_no_unit</span><span class="p">(</span><span class="n">y_unit</span><span class="p">):</span>
+            <span class="c1"># PR 8-bis: the message says how to give the flux a unit</span>
+            <span class="k">raise</span> <span class="n">InvalidParameter</span><span class="p">(</span><span class="s2">"yunit: the flux is in arbitrary units and cannot be "</span>
+                                   <span class="s2">"converted: declare its unit with set_properties "</span>
+                                   <span class="s2">"(yunit), or calibrate it with "</span>
+                                   <span class="s2">"calibrate_from_magnitudes"</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">yunit_obj</span><span class="o">.</span><span class="n">is_equivalent</span><span class="p">(</span><span class="n">y_unit</span><span class="p">):</span>
             <span class="c1"># It failed in the conversion, with the same outcome (PR 8)</span>
             <span class="k">raise</span> <span class="n">InvalidParameter</span><span class="p">(</span><span class="sa">f</span><span class="s2">"yunit: the flux (</span><span class="si">{</span><span class="n">y_unit</span><span class="si">}</span><span class="s2">) cannot be converted to "</span>

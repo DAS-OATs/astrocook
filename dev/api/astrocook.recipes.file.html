@@ -445,6 +445,7 @@
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.structures.html">astrocook.core.structures module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.system_list.html">astrocook.core.system_list module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.templates.html">astrocook.core.templates module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.units.html">astrocook.core.units module</a></li>
 </ul>
 </details></li>
 </ul>
@@ -569,9 +570,17 @@ the session. It operates immutably where applicable to support Undo/Redo.</p>
 <dd><p>Export selected components of the session to ASCII/CSV files.</p>
 <p>Generates distinct files for spectrum data (<cite>_spec.csv</cite>) and system
 lists (<cite>_systems.csv</cite>) based on the requested targets. Spectrum
-exports automatically include the wavelength array (<cite>x</cite>), while
+exports automatically include the wavelength array (<code class="docutils literal notranslate"><span class="pre">lam</span></code>), while
 system exports automatically include the transition name (<cite>series</cite>)
 and redshift (<cite>z</cite>).</p>
+<p>The spectrum is written as ECSV (the CSV format of astropy, phase
+6-quater, PR 8-bis, F129): a header of comment lines with the unit
+of each column and the emission redshift, then the names and the
+values separated by commas (<code class="docutils literal notranslate"><span class="pre">pandas.read_csv(path,</span> <span class="pre">comment='#')</span></code>
+reads it). The columns have the names of the GUI in ASCII: <code class="docutils literal notranslate"><span class="pre">lam</span></code>,
+<code class="docutils literal notranslate"><span class="pre">lammin</span></code>, <code class="docutils literal notranslate"><span class="pre">lammax</span></code>, <code class="docutils literal notranslate"><span class="pre">F</span></code>, <code class="docutils literal notranslate"><span class="pre">dF</span></code> and the others by their own
+name (before: <code class="docutils literal notranslate"><span class="pre">x</span></code>, <code class="docutils literal notranslate"><span class="pre">xmin</span></code>, <code class="docutils literal notranslate"><span class="pre">xmax</span></code>, <code class="docutils literal notranslate"><span class="pre">y</span></code>, <code class="docutils literal notranslate"><span class="pre">dy</span></code>, without
+units). Opened again, the file gives the same columns and units.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">

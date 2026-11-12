@@ -476,10 +476,12 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astropy.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">ascii</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">astropy.table</span><span class="w"> </span><span class="kn">import</span> <span class="n">Table</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">astropy.units</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">au</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astropy.table</span><span class="w"> </span><span class="kn">import</span> <span class="n">Column</span><span class="p">,</span> <span class="n">Table</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">List</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.column_names</span><span class="w"> </span><span class="kn">import</span> <span class="n">internal_expression</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.column_names</span><span class="w"> </span><span class="kn">import</span> <span class="n">internal_column</span><span class="p">,</span> <span class="n">internal_expression</span><span class="p">,</span> <span class="n">is_axis_column</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.units</span><span class="w"> </span><span class="kn">import</span> <span class="n">known_unit</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.errors</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeFailed</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes._spectrum</span><span class="w"> </span><span class="kn">import</span> <span class="n">spec_of</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.params</span><span class="w"> </span><span class="kn">import</span> <span class="n">typed_recipe</span>
@@ -526,6 +528,26 @@
     <span class="p">}</span>
 <span class="p">}</span>
 
+<span class="c1">#: The names of the columns of every spectrum in the CSV files: those of the</span>
+<span class="c1">#: GUI, in ASCII (phase 6-quater, PR 8-bis; x, xmin, xmax, y, dy before)</span>
+<span class="n">_CSV_NAMES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'x'</span><span class="p">:</span> <span class="s1">'lam'</span><span class="p">,</span> <span class="s1">'xmin'</span><span class="p">:</span> <span class="s1">'lammin'</span><span class="p">,</span> <span class="s1">'xmax'</span><span class="p">:</span> <span class="s1">'lammax'</span><span class="p">,</span> <span class="s1">'y'</span><span class="p">:</span> <span class="s1">'F'</span><span class="p">,</span> <span class="s1">'dy'</span><span class="p">:</span> <span class="s1">'dF'</span><span class="p">}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_spectrum_table</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">columns</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Table</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The columns of the spectrum as a table for a CSV file: the names of</span>
+<span class="sd">    the GUI in ASCII, the units, and z_em in the metadata (F129: the files</span>
+<span class="sd">    had neither, and the loader assumed nm and erg/(Angstrom s cm2))."""</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">Table</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">columns</span><span class="p">:</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">t</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+        <span class="n">unit</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="s1">'unit'</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">table</span><span class="p">[</span><span class="n">_CSV_NAMES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">name</span><span class="p">)]</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="s1">'value'</span><span class="p">,</span> <span class="n">q</span><span class="p">)),</span>
+            <span class="n">unit</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">unit</span> <span class="o">==</span> <span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span> <span class="k">else</span> <span class="n">unit</span><span class="p">)</span>
+    <span class="n">table</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s1">'z_em'</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">table</span>
+
+
 <div class="viewcode-block" id="RecipeFile">
 <a class="viewcode-back" href="../../../api/astrocook.recipes.file.html#astrocook.recipes.file.RecipeFile">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">RecipeFile</span><span class="p">:</span>
@@ -553,9 +575,18 @@
 
 <span class="sd">        Generates distinct files for spectrum data (`_spec.csv`) and system </span>
 <span class="sd">        lists (`_systems.csv`) based on the requested targets. Spectrum </span>
-<span class="sd">        exports automatically include the wavelength array (`x`), while </span>
+<span class="sd">        exports automatically include the wavelength array (``lam``), while </span>
 <span class="sd">        system exports automatically include the transition name (`series`) </span>
 <span class="sd">        and redshift (`z`).</span>
+
+<span class="sd">        The spectrum is written as ECSV (the CSV format of astropy, phase</span>
+<span class="sd">        6-quater, PR 8-bis, F129): a header of comment lines with the unit</span>
+<span class="sd">        of each column and the emission redshift, then the names and the</span>
+<span class="sd">        values separated by commas (``pandas.read_csv(path, comment='#')``</span>
+<span class="sd">        reads it). The columns have the names of the GUI in ASCII: ``lam``,</span>
+<span class="sd">        ``lammin``, ``lammax``, ``F``, ``dF`` and the others by their own</span>
+<span class="sd">        name (before: ``x``, ``xmin``, ``xmax``, ``y``, ``dy``, without</span>
+<span class="sd">        units). Opened again, the file gives the same columns and units.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -604,10 +635,10 @@
         <span class="n">saved_any</span> <span class="o">=</span> <span class="kc">False</span>
 
         <span class="k">if</span> <span class="n">spec_req</span><span class="p">:</span>
-            <span class="n">valid_cols</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'x'</span><span class="p">]</span> <span class="o">+</span> <span class="n">spec_req</span>
-            <span class="n">raw_data</span> <span class="o">=</span> <span class="p">{</span><span class="n">c</span><span class="p">:</span> <span class="n">spec_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span><span class="o">.</span><span class="n">t</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">valid_cols</span><span class="p">}</span>
+            <span class="n">spec</span> <span class="o">=</span> <span class="n">spec_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span>
             <span class="n">out_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">folder</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">_spec.csv"</span><span class="p">)</span>
-            <span class="n">ascii</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">Table</span><span class="p">(</span><span class="n">raw_data</span><span class="p">),</span> <span class="n">out_path</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">'csv'</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">ascii</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">_spectrum_table</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="p">[</span><span class="s1">'x'</span><span class="p">]</span> <span class="o">+</span> <span class="n">spec_req</span><span class="p">),</span> <span class="n">out_path</span><span class="p">,</span>
+                        <span class="nb">format</span><span class="o">=</span><span class="s1">'ecsv'</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s1">','</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="n">saved_any</span> <span class="o">=</span> <span class="kc">True</span>
 
         <span class="c1"># 2. Systems Export (Refined)</span>
@@ -728,15 +759,28 @@
         <span class="n">imported_cols</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="c1"># 3. Iterate through columns in the ASCII file</span>
-        <span class="k">for</span> <span class="n">col_name</span> <span class="ow">in</span> <span class="n">table</span><span class="o">.</span><span class="n">colnames</span><span class="p">:</span>
-            <span class="c1"># We skip 'x' to prevent grid misalignment, but use everything else</span>
-            <span class="k">if</span> <span class="n">col_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">'x'</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">file_name_col</span> <span class="ow">in</span> <span class="n">table</span><span class="o">.</span><span class="n">colnames</span><span class="p">:</span>
+            <span class="c1"># The names of the GUI (F, dF, lam, ...) are those of the data</span>
+            <span class="c1"># (PR 8-bis: F made a column F)</span>
+            <span class="n">col_name</span> <span class="o">=</span> <span class="n">internal_column</span><span class="p">(</span><span class="n">file_name_col</span><span class="p">)</span>
+            <span class="c1"># The axis is skipped to prevent grid misalignment (x, and since</span>
+            <span class="c1"># PR 8-bis lam, xmin, xmax and their other names)</span>
+            <span class="k">if</span> <span class="n">col_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">'x'</span> <span class="ow">or</span> <span class="n">is_axis_column</span><span class="p">(</span><span class="n">col_name</span><span class="p">):</span>
                 <span class="k">continue</span>
-            
-            <span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">table</span><span class="p">[</span><span class="n">col_name</span><span class="p">])</span>
-            <span class="c1"># Update the column (this handles both core y/dy and aux columns)</span>
-            <span class="n">new_spec</span> <span class="o">=</span> <span class="n">new_spec</span><span class="o">.</span><span class="n">update_column</span><span class="p">(</span><span class="n">col_name</span><span class="p">,</span> <span class="n">values</span><span class="p">)</span>
-            <span class="n">imported_cols</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">col_name</span><span class="p">)</span>
+
+            <span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">table</span><span class="p">[</span><span class="n">file_name_col</span><span class="p">])</span>
+            <span class="n">unit</span> <span class="o">=</span> <span class="n">table</span><span class="p">[</span><span class="n">file_name_col</span><span class="p">]</span><span class="o">.</span><span class="n">unit</span>
+            <span class="k">if</span> <span class="n">col_name</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">'y'</span><span class="p">,</span> <span class="s1">'dy'</span><span class="p">)</span> <span class="ow">and</span> <span class="n">unit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">unit</span> <span class="o">=</span> <span class="n">known_unit</span><span class="p">(</span><span class="n">unit</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">unit</span> <span class="o">!=</span> <span class="n">new_spec</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">unit</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">RecipeFailed</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The column </span><span class="si">{</span><span class="n">file_name_col</span><span class="si">}</span><span class="s2"> of the file is in </span><span class="si">{</span><span class="n">unit</span><span class="si">}</span><span class="s2">, "</span>
+                                       <span class="sa">f</span><span class="s2">"the flux of the session in </span><span class="si">{</span><span class="n">new_spec</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">unit</span><span class="si">}</span><span class="s2">: "</span>
+                                       <span class="s2">"they must be the same."</span><span class="p">)</span>
+            <span class="c1"># Update the column (this handles both core y/dy and aux</span>
+            <span class="c1"># columns); the unit of the file, if it has one (PR 8-bis)</span>
+            <span class="n">new_spec</span> <span class="o">=</span> <span class="n">new_spec</span><span class="o">.</span><span class="n">update_column</span><span class="p">(</span><span class="n">col_name</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span>
+                                              <span class="n">unit</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">unit</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">known_unit</span><span class="p">(</span><span class="n">unit</span><span class="p">))</span>
+            <span class="n">imported_cols</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">file_name_col</span><span class="p">)</span>
 
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Columns imported: </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">imported_cols</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec</span><span class="p">)</span></div>

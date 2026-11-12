@@ -445,6 +445,7 @@
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.structures.html">astrocook.core.structures module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.system_list.html">astrocook.core.system_list module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.templates.html">astrocook.core.templates module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.units.html">astrocook.core.units module</a></li>
 </ul>
 </details></li>
 </ul>
@@ -1436,6 +1437,29 @@ columns (cont, model, cont_pl) and the transmission (telluric_model).</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="astrocook.core.spectrum.Spectrum.with_flux_unit">
+<span class="sig-name descname"><span class="pre">with_flux_unit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">unit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">UnitBase</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#astrocook.core.spectrum.Spectrum.with_flux_unit" title="Link to this definition">#</a></dt>
+<dd><p>Declare the unit of the flux, without converting the values (phase
+6-quater, PR 8-bis; <code class="docutils literal notranslate"><span class="pre">y_convert</span></code> converts).</p>
+<p>The unit is given to <code class="docutils literal notranslate"><span class="pre">y</span></code>, <code class="docutils literal notranslate"><span class="pre">dy</span></code>, the flux columns (<code class="docutils literal notranslate"><span class="pre">cont</span></code>,
+<code class="docutils literal notranslate"><span class="pre">model</span></code>, <code class="docutils literal notranslate"><span class="pre">cont_pl</span></code>) in the unit of the flux or without one, and
+the other columns in the unit of the flux when this is not
+dimensionless (a dimensionless quality flag is not a flux).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>unit</strong> (<em>astropy.units.Unit</em>) – The unit of the flux, e.g. <code class="docutils literal notranslate"><span class="pre">erg/(Angstrom</span> <span class="pre">s</span> <span class="pre">cm2)</span></code> or
+<code class="docutils literal notranslate"><span class="pre">arb_flux</span></code>.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new instance with the same values and the unit declared.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#astrocook.core.spectrum.Spectrum" title="astrocook.core.spectrum.Spectrum">Spectrum</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="astrocook.core.spectrum.Spectrum.merge_column">
 <span class="sig-name descname"><span class="pre">merge_column</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">other_values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.spectrum.Spectrum" title="astrocook.core.spectrum.Spectrum"><span class="pre">Spectrum</span></a></span></span><a class="reference internal" href="../modules/astrocook/core/spectrum.html#Spectrum.merge_column"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.Spectrum.merge_column" title="Link to this definition">#</a></dt>
 <dd><p>Merge new values into an existing column.</p>
@@ -1612,6 +1636,7 @@ columns (cont, model, cont_pl) and the transmission (telluric_model).</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.Spectrum.split"><code class="docutils literal notranslate"><span class="pre">Spectrum.split()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.Spectrum.stitch"><code class="docutils literal notranslate"><span class="pre">Spectrum.stitch()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.Spectrum.update_continuum_from_knots"><code class="docutils literal notranslate"><span class="pre">Spectrum.update_continuum_from_knots()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.Spectrum.with_flux_unit"><code class="docutils literal notranslate"><span class="pre">Spectrum.with_flux_unit()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.Spectrum.merge_column"><code class="docutils literal notranslate"><span class="pre">Spectrum.merge_column()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.Spectrum.update_model"><code class="docutils literal notranslate"><span class="pre">Spectrum.update_model()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.Spectrum.x_convert"><code class="docutils literal notranslate"><span class="pre">Spectrum.x_convert()</span></code></a></li>
