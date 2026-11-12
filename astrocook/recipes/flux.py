@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Optional, Union
 from astrocook.core.column_names import CORE_COLUMNS as CORE_COLUMN_NAMES, internal_column, is_core_column
 from astrocook.core.photometry import STANDARD_FILTERS
 from astrocook.recipes.errors import InvalidParameter, RecipeFailed
-from astrocook.recipes.messages import msg_session_not_found
+from astrocook.recipes._sessions import open_session
 from astrocook.recipes._spectrum import spec_of
 from astrocook.recipes.params import typed_recipe
 
@@ -164,14 +164,11 @@ def _check_magnitudes(magnitudes: str) -> None:
                                    f"filters are {', '.join(STANDARD_FILTERS)}")
 
 
-def _find_session(session: 'Session', name: str):
-    """The history of the open session called ``name`` (RecipeFailed if
-    there is none, or no GUI to find it in)."""
-    gui = getattr(session, '_gui', None)
-    for hist in getattr(gui, 'session_histories', None) or []:
-        if hist.display_name == name:
-            return hist
-    raise RecipeFailed(msg_session_not_found.format(name=name))
+def _find_session(session: 'Session', name, param: str) -> 'Session':
+    """The open session called ``name``, or ``name`` itself in a script (the
+    rule of :mod:`astrocook.recipes._sessions`, phase 6-quater, PR 9);
+    RecipeFailed if there is none."""
+    return open_session(session, name, param)
 
 
 class RecipeFlux:
@@ -362,9 +359,9 @@ class RecipeFlux:
         """
         if reference_session in ['None', '']:
             raise RecipeFailed("No reference session is selected.")
-        ref_hist = _find_session(self._session, reference_session)
+        reference = _find_session(self._session, reference_session, 'reference_session')
         new_spec = spec_of(self._session).equalize_to_reference(
-            ref_hist.current_state.spec, order=order
+            spec_of(reference), order=order
         )
         return self._session.with_new_spectrum(new_spec)
     
@@ -391,7 +388,7 @@ class RecipeFlux:
         """
         if target_session in ['None', '']:
             raise RecipeFailed("No target session is selected.")
-        target_spec = _find_session(self._session, target_session).current_state.spec
+        target_spec = _find_session(self._session, target_session, 'target_session').spec
         if target_spec is None:
             raise RecipeFailed(f"The session '{target_session}' has no spectrum.")
         new_spec_v2 = spec_of(self._session).resample_on_grid(target_grid_spec=target_spec)

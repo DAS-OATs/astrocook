@@ -295,19 +295,22 @@ CASES = [
     ('delete', 'targets', 'cont', {}, 'cont'),
     ('delete', 'targets', 'systems', {}, 'systems'),
     ('delete', 'targets', 'cont, systems', {}, 'cont, systems'),
-    ('delete', 'targets', '', {}, ''),
-    ('delete', 'targets', 'nope', {}, 'nope'),
+    ('delete', 'targets', '', {}, REFUSED),  # 6-quater PR 9: nothing done
+    ('delete', 'targets', 'nope', {}, REFUSED),  # 6-quater PR 9: a WARNING, nothing done
+    ('delete', 'targets', 'F', {}, REFUSED),  # 6-quater PR 9: a WARNING, nothing done
+    ('delete', 'targets', 'λ, cont', {}, REFUSED),  # 6-quater PR 9: a WARNING, cont deleted
     ('delete', 'targets', None, {}, REFUSED),  # 2.4.0: crashed (AttributeError)
     ('split', 'expression', '(λ > 400) & (λ < 410)', {}, '(λ > 400) & (λ < 410)'),
     ('split', 'expression', 'λ > 1000', {}, FAILS),
-    ('split', 'expression', '', {}, FAILS),
+    ('split', 'expression', '', {}, REFUSED),  # 6-quater PR 9: failed (RecipeFailed)
     ('split', 'expression', None, {}, REFUSED),  # 2.4.0: crashed (AttributeError)
     ('split', 'expression', 'λ >', {}, FAILS),
     ('extract_preset', 'region', 'lya_forest', {}, 'lya_forest'),
     ('extract_preset', 'region', 'red_side', {}, 'red_side'),
     ('extract_preset', 'region', 'lya_forest, red_side', {}, 'lya_forest, red_side'),
-    ('extract_preset', 'region', 'nope', {}, FAILS),
-    ('extract_preset', 'region', '', {}, FAILS),
+    ('extract_preset', 'region', 'nope', {}, REFUSED),  # 6-quater PR 9: failed (RecipeFailed)
+    ('extract_preset', 'region', 'lya_forest, nope', {}, REFUSED),  # 6-quater PR 9: nope skipped (WARNING)
+    ('extract_preset', 'region', '', {}, REFUSED),  # 6-quater PR 9: failed (RecipeFailed)
     ('extract_preset', 'region', None, {}, REFUSED),  # 2.4.0: crashed (AttributeError)
     ('trim_common', 'z_target', '2.0', {'others_names': 'same', 'trans_self': 'Ly_a', 'trans_others': 'Ly_a'}, FAILS),
     ('trim_common', 'z_target', 2.0, {'others_names': 'same', 'trans_self': 'Ly_a', 'trans_others': 'Ly_a'}, FAILS),
@@ -353,79 +356,85 @@ CASES = [
     ('equalize_and_stitch', 'manual_factors', 'abc', {'other_sessions': 'blue', 'stitch_wavelengths': '398'}, REFUSED),
     ('equalize_and_stitch', 'manual_factors', '', {'other_sessions': 'blue', 'stitch_wavelengths': '398'}, REFUSED),
     ('equalize_and_stitch', 'manual_factors', None, {'other_sessions': 'blue', 'stitch_wavelengths': '398'}, REFUSED),  # 2.4.0: crashed (AttributeError)
-    ('coadd', 'xstart', '2.0', {'session_names': 'main2, same'}, 2.0),
-    ('coadd', 'xstart', 2.0, {'session_names': 'main2, same'}, 2.0),
-    ('coadd', 'xstart', 2, {'session_names': 'main2, same'}, 2.0),
-    ('coadd', 'xstart', ' 2 ', {'session_names': 'main2, same'}, 2.0),
-    ('coadd', 'xstart', '1e1', {'session_names': 'main2, same'}, 10.0),
-    ('coadd', 'xstart', 'abc', {'session_names': 'main2, same'}, REFUSED),
-    ('coadd', 'xstart', '', {'session_names': 'main2, same'}, None),  # 2.4.0: refused (0)
-    ('coadd', 'xstart', 'None', {'session_names': 'main2, same'}, None),
-    ('coadd', 'xstart', None, {'session_names': 'main2, same'}, None),  # 2.4.0: refused (0)
-    ('coadd', 'xstart', 'nan', {'session_names': 'main2, same'}, REFUSED),
-    ('coadd', 'xstart', 'inf', {'session_names': 'main2, same'}, REFUSED),
-    ('coadd', 'xstart', True, {'session_names': 'main2, same'}, REFUSED),  # 2.4.0: accepted as 1
-    ('coadd', 'xstart', '-1', {'session_names': 'main2, same'}, FAILS),
-    ('coadd', 'xstart', '0', {'session_names': 'main2, same'}, FAILS),
-    ('coadd', 'xstart', '390', {'session_names': 'main2, same'}, 390.0),
-    ('coadd', 'xstart', 390, {'session_names': 'main2, same'}, 390.0),
-    ('coadd', 'xend', '2.0', {'session_names': 'same'}, 2.0),
-    ('coadd', 'xend', 2.0, {'session_names': 'same'}, 2.0),
-    ('coadd', 'xend', 2, {'session_names': 'same'}, 2.0),
-    ('coadd', 'xend', ' 2 ', {'session_names': 'same'}, 2.0),
-    ('coadd', 'xend', '1e1', {'session_names': 'same'}, 10.0),
-    ('coadd', 'xend', 'abc', {'session_names': 'same'}, REFUSED),
-    ('coadd', 'xend', '', {'session_names': 'same'}, None),  # 2.4.0: refused (0)
-    ('coadd', 'xend', 'None', {'session_names': 'same'}, None),
-    ('coadd', 'xend', None, {'session_names': 'same'}, None),  # 2.4.0: refused (0)
-    ('coadd', 'xend', 'nan', {'session_names': 'same'}, REFUSED),
-    ('coadd', 'xend', 'inf', {'session_names': 'same'}, REFUSED),
-    ('coadd', 'xend', True, {'session_names': 'same'}, REFUSED),  # 2.4.0: accepted as 1
-    ('coadd', 'xend', '-1', {'session_names': 'same'}, FAILS),
-    ('coadd', 'xend', '0', {'session_names': 'same'}, FAILS),
-    ('coadd', 'xend', '450', {'session_names': 'same'}, 450.0),
-    ('coadd', 'xend', 450, {'session_names': 'same'}, 450.0),
-    ('coadd', 'dx', '20', {'session_names': 'same'}, 20.0),
-    ('coadd', 'dx', 20, {'session_names': 'same'}, 20.0),
-    ('coadd', 'dx', 20.0, {'session_names': 'same'}, 20.0),
-    ('coadd', 'dx', '', {'session_names': 'same'}, REFUSED),
-    ('coadd', 'dx', 'None', {'session_names': 'same'}, REFUSED),
-    ('coadd', 'dx', None, {'session_names': 'same'}, REFUSED),
-    ('coadd', 'dx', 'abc', {'session_names': 'same'}, REFUSED),
-    ('coadd', 'dx', 'nan', {'session_names': 'same'}, REFUSED),
-    ('coadd', 'dx', True, {'session_names': 'same'}, REFUSED),  # 2.4.0: accepted as 1
-    ('coadd', 'kappa', '2.0', {'session_names': 'same'}, 2.0),
-    ('coadd', 'kappa', 2.0, {'session_names': 'same'}, 2.0),
-    ('coadd', 'kappa', 2, {'session_names': 'same'}, 2.0),
-    ('coadd', 'kappa', ' 2 ', {'session_names': 'same'}, 2.0),
-    ('coadd', 'kappa', '1e1', {'session_names': 'same'}, 10.0),
-    ('coadd', 'kappa', 'abc', {'session_names': 'same'}, REFUSED),
-    ('coadd', 'kappa', '', {'session_names': 'same'}, REFUSED),
-    ('coadd', 'kappa', 'None', {'session_names': 'same'}, None),
-    ('coadd', 'kappa', None, {'session_names': 'same'}, None),  # 2.4.0: refused (0)
-    ('coadd', 'kappa', 'nan', {'session_names': 'same'}, REFUSED),  # 2.4.0: accepted as NaN
-    ('coadd', 'kappa', 'inf', {'session_names': 'same'}, REFUSED),  # 2.4.0: accepted as an infinity
-    ('coadd', 'kappa', True, {'session_names': 'same'}, REFUSED),  # 2.4.0: accepted as 1
-    ('coadd', 'kappa', '-1', {'session_names': 'same'}, REFUSED),  # 2.4.0: accepted
-    ('coadd', 'kappa', '0', {'session_names': 'same'}, REFUSED),  # 2.4.0: accepted
-    ('coadd', 'equalize_order', '0', {'session_names': 'same, blue'}, 0),
-    ('coadd', 'equalize_order', 0, {'session_names': 'same, blue'}, 0),
-    ('coadd', 'equalize_order', '1', {'session_names': 'same, blue'}, 1),
-    ('coadd', 'equalize_order', 1, {'session_names': 'same, blue'}, 1),
-    ('coadd', 'equalize_order', '-1', {'session_names': 'same, blue'}, -1),
-    ('coadd', 'equalize_order', -1, {'session_names': 'same, blue'}, -1),
-    ('coadd', 'equalize_order', '0.0', {'session_names': 'same, blue'}, REFUSED),
-    ('coadd', 'equalize_order', 0.0, {'session_names': 'same, blue'}, 0),
-    ('coadd', 'equalize_order', 0.5, {'session_names': 'same, blue'}, REFUSED),  # 2.4.0: accepted, truncated
-    ('coadd', 'equalize_order', '', {'session_names': 'same, blue'}, REFUSED),
-    ('coadd', 'equalize_order', 'abc', {'session_names': 'same, blue'}, REFUSED),
-    ('coadd', 'equalize_order', True, {'session_names': 'same, blue'}, REFUSED),  # 2.4.0: accepted as 1
-    ('coadd', 'equalize_order', None, {'session_names': 'same, blue'}, REFUSED),
-    ('coadd', 'xunit', 'km/s', {'session_names': 'same'}, 'km/s'),
-    ('coadd', 'xunit', 'nm', {'session_names': 'same'}, 'nm'),
-    ('coadd', 'xunit', 'bogus', {'session_names': 'same'}, FAILS),
-    ('coadd', 'xunit', '', {'session_names': 'same'}, FAILS),
-    ('coadd', 'xunit', None, {'session_names': 'same'}, REFUSED),
+    ('coadd', 'xstart', '2.0', {'session_names': 'main, same'}, 2.0),
+    ('coadd', 'xstart', 2.0, {'session_names': 'main, same'}, 2.0),
+    ('coadd', 'xstart', 2, {'session_names': 'main, same'}, 2.0),
+    ('coadd', 'xstart', ' 2 ', {'session_names': 'main, same'}, 2.0),
+    ('coadd', 'xstart', '1e1', {'session_names': 'main, same'}, 10.0),
+    ('coadd', 'xstart', 'abc', {'session_names': 'main, same'}, REFUSED),
+    ('coadd', 'xstart', '', {'session_names': 'main, same'}, None),  # 2.4.0: refused (0)
+    ('coadd', 'xstart', 'None', {'session_names': 'main, same'}, None),
+    ('coadd', 'xstart', None, {'session_names': 'main, same'}, None),  # 2.4.0: refused (0)
+    ('coadd', 'xstart', 'nan', {'session_names': 'main, same'}, REFUSED),
+    ('coadd', 'xstart', 'inf', {'session_names': 'main, same'}, REFUSED),
+    ('coadd', 'xstart', True, {'session_names': 'main, same'}, REFUSED),  # 2.4.0: accepted as 1
+    ('coadd', 'xstart', '-1', {'session_names': 'main, same'}, FAILS),
+    ('coadd', 'xstart', '0', {'session_names': 'main, same'}, FAILS),
+    ('coadd', 'xstart', '390', {'session_names': 'main, same'}, 390.0),
+    ('coadd', 'xstart', 390, {'session_names': 'main, same'}, 390.0),
+    ('coadd', 'xend', '2.0', {'session_names': 'main, same'}, 2.0),
+    ('coadd', 'xend', 2.0, {'session_names': 'main, same'}, 2.0),
+    ('coadd', 'xend', 2, {'session_names': 'main, same'}, 2.0),
+    ('coadd', 'xend', ' 2 ', {'session_names': 'main, same'}, 2.0),
+    ('coadd', 'xend', '1e1', {'session_names': 'main, same'}, 10.0),
+    ('coadd', 'xend', 'abc', {'session_names': 'main, same'}, REFUSED),
+    ('coadd', 'xend', '', {'session_names': 'main, same'}, None),  # 2.4.0: refused (0)
+    ('coadd', 'xend', 'None', {'session_names': 'main, same'}, None),
+    ('coadd', 'xend', None, {'session_names': 'main, same'}, None),  # 2.4.0: refused (0)
+    ('coadd', 'xend', 'nan', {'session_names': 'main, same'}, REFUSED),
+    ('coadd', 'xend', 'inf', {'session_names': 'main, same'}, REFUSED),
+    ('coadd', 'xend', True, {'session_names': 'main, same'}, REFUSED),  # 2.4.0: accepted as 1
+    ('coadd', 'xend', '-1', {'session_names': 'main, same'}, FAILS),
+    ('coadd', 'xend', '0', {'session_names': 'main, same'}, FAILS),
+    ('coadd', 'xend', '450', {'session_names': 'main, same'}, 450.0),
+    ('coadd', 'xend', 450, {'session_names': 'main, same'}, 450.0),
+    ('coadd', 'dx', '20', {'session_names': 'main, same'}, 20.0),
+    ('coadd', 'dx', 20, {'session_names': 'main, same'}, 20.0),
+    ('coadd', 'dx', 20.0, {'session_names': 'main, same'}, 20.0),
+    ('coadd', 'dx', '', {'session_names': 'main, same'}, REFUSED),
+    ('coadd', 'dx', 'None', {'session_names': 'main, same'}, REFUSED),
+    ('coadd', 'dx', None, {'session_names': 'main, same'}, REFUSED),
+    ('coadd', 'dx', 'abc', {'session_names': 'main, same'}, REFUSED),
+    ('coadd', 'dx', 'nan', {'session_names': 'main, same'}, REFUSED),
+    ('coadd', 'dx', True, {'session_names': 'main, same'}, REFUSED),  # 2.4.0: accepted as 1
+    ('coadd', 'kappa', '2.0', {'session_names': 'main, same'}, 2.0),
+    ('coadd', 'kappa', 2.0, {'session_names': 'main, same'}, 2.0),
+    ('coadd', 'kappa', 2, {'session_names': 'main, same'}, 2.0),
+    ('coadd', 'kappa', ' 2 ', {'session_names': 'main, same'}, 2.0),
+    ('coadd', 'kappa', '1e1', {'session_names': 'main, same'}, 10.0),
+    ('coadd', 'kappa', 'abc', {'session_names': 'main, same'}, REFUSED),
+    ('coadd', 'kappa', '', {'session_names': 'main, same'}, REFUSED),
+    ('coadd', 'kappa', 'None', {'session_names': 'main, same'}, None),
+    ('coadd', 'kappa', None, {'session_names': 'main, same'}, None),  # 2.4.0: refused (0)
+    ('coadd', 'kappa', 'nan', {'session_names': 'main, same'}, REFUSED),  # 2.4.0: accepted as NaN
+    ('coadd', 'kappa', 'inf', {'session_names': 'main, same'}, REFUSED),  # 2.4.0: accepted as an infinity
+    ('coadd', 'kappa', True, {'session_names': 'main, same'}, REFUSED),  # 2.4.0: accepted as 1
+    ('coadd', 'kappa', '-1', {'session_names': 'main, same'}, REFUSED),  # 2.4.0: accepted
+    ('coadd', 'kappa', '0', {'session_names': 'main, same'}, REFUSED),  # 2.4.0: accepted
+    ('coadd', 'equalize_order', '0', {'session_names': 'main, same, blue'}, 0),
+    ('coadd', 'equalize_order', 0, {'session_names': 'main, same, blue'}, 0),
+    ('coadd', 'equalize_order', '1', {'session_names': 'main, same, blue'}, 1),
+    ('coadd', 'equalize_order', 1, {'session_names': 'main, same, blue'}, 1),
+    ('coadd', 'equalize_order', '-1', {'session_names': 'main, same, blue'}, -1),
+    ('coadd', 'equalize_order', -1, {'session_names': 'main, same, blue'}, -1),
+    ('coadd', 'equalize_order', '0.0', {'session_names': 'main, same, blue'}, REFUSED),
+    ('coadd', 'equalize_order', 0.0, {'session_names': 'main, same, blue'}, 0),
+    ('coadd', 'equalize_order', 0.5, {'session_names': 'main, same, blue'}, REFUSED),  # 2.4.0: accepted, truncated
+    ('coadd', 'equalize_order', '', {'session_names': 'main, same, blue'}, REFUSED),
+    ('coadd', 'equalize_order', 'abc', {'session_names': 'main, same, blue'}, REFUSED),
+    ('coadd', 'equalize_order', True, {'session_names': 'main, same, blue'}, REFUSED),  # 2.4.0: accepted as 1
+    ('coadd', 'equalize_order', None, {'session_names': 'main, same, blue'}, None),  # 6-quater PR 9: refused (F123)
+    ('coadd', 'equalize_order', 'None', {'session_names': 'main, same, blue'}, None),  # 6-quater PR 9: refused (F123)
+    ('coadd', 'equalize_order', -1, {'session_names': 'main, same, blue'}, None),  # the same (F123)
+    ('coadd', 'equalize_order', -2, {'session_names': 'main, same, blue'}, REFUSED),  # 6-quater PR 9: no scaling
+    ('coadd', 'equalize_order', 5, {'session_names': 'main, same, blue'}, 5),
+    ('coadd', 'equalize_order', 6, {'session_names': 'main, same, blue'}, REFUSED),  # 6-quater PR 9: accepted
+    ('coadd', 'xunit', 'km/s', {'session_names': 'main, same'}, 'km/s'),
+    ('coadd', 'xunit', 'nm', {'session_names': 'main, same'}, 'nm'),
+    ('coadd', 'xunit', 'bogus', {'session_names': 'main, same'}, REFUSED),  # 6-quater PR 9: failed
+    ('coadd', 'xunit', '', {'session_names': 'main, same'}, REFUSED),  # 6-quater PR 9: failed
+    ('coadd', 'xunit', 's', {'session_names': 'main, same'}, REFUSED),  # 6-quater PR 9: failed
+    ('coadd', 'xunit', None, {'session_names': 'main, same'}, REFUSED),
 ]
 
 

@@ -214,8 +214,11 @@ file and flux (PR 7; the first renamed parameter, `folder` of
 names of the columns, those of the GUI (PR 8, `core/column_names.py`),
 and the units of the flux with the CSV files (PR 8-bis: `arb_flux` of
 `core/units.py` for a flux whose unit the file does not say, ECSV for
-`export_ascii`);
-next, the reviews of the other recipes (PRs 9-10); its plan, with the model and the
+`export_ascii`), and of edit on several spectra (PR 9: one rule for the
+parameters that name other sessions, `recipes/_sessions.py`, kinds
+`session` and `sessions`; the sessions combined in the units of a
+reference);
+next, the review of the manual fits (PR 10); its plan, with the model and the
 estimate of each PR, in `ROADMAP.md`), then
 phase 7 (robust
 components, measured on the benchmark of phase 4; the real analysis of the

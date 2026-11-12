@@ -246,7 +246,10 @@ def test_delete_columns_and_systems():
     assert not out.spec.has_aux_column("cont")
     assert out.spec.has_aux_column("model")
     assert out.systs.components == []
-    assert session.edit.delete("") is session
+    # Nothing named: refused since phase 6-quater, PR 9 (the session was
+    # returned as it was)
+    with pytest.raises(InvalidParameter):
+        session.edit.delete("")
 
 
 # --- Edit > Split, Extract preset, Trim common ----------------------------
@@ -380,18 +383,22 @@ def test_stitch_overlap_asks_for_scatter_plot():
 def test_coadd(snapshot):
     a, b = _spec(seed=1), _spec(seed=2, scale=1.1)
     gui = _gui(a=SimpleNamespace(spec=a), b=SimpleNamespace(spec=b))
-    out = _session(a, gui=gui).edit.coadd("a, b", dx="0.01", xunit="nm")
+    # The session co-adds itself with b (phase 6-quater, PR 9: a list
+    # without this session is refused)
+    out = _session(a, gui=gui, name="a").edit.coadd("a, b", dx="0.01", xunit="nm")
     x = out.spec.x.value
     np.testing.assert_allclose(np.diff(x), 0.01, rtol=1e-6)
     snapshot.check("recipe_coadd_nm", {"x": out.spec.x, "y": out.spec.y,
                                        "dy": out.spec.dy}, rtol=1e-8)
 
 
-@pytest.mark.parametrize("names, kwargs", [("", {}), ("missing", {}),
-                                           ("a", dict(dx="abc"))])
-def test_coadd_bad_input_fails(names, kwargs):
+@pytest.mark.parametrize("names, kwargs, error", [
+    ("", {}, InvalidParameter),  # RecipeFailed until phase 6-quater, PR 9
+    ("main, missing", {}, RecipeFailed),
+    ("main, a", dict(dx="abc"), InvalidParameter)])
+def test_coadd_bad_input_fails(names, kwargs, error):
     session = _session(gui=_gui(a=SimpleNamespace(spec=_spec())))
-    with pytest.raises(InvalidParameter if kwargs else RecipeFailed):
+    with pytest.raises(error):
         session.edit.coadd(names, **kwargs)
 
 

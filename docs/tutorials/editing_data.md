@@ -97,14 +97,14 @@ While the Flux menu smooths the whole spectrum, you might want to smooth only a 
 
 To clean up your session:
 * **Edit > Delete Elements...**: Enter a comma-separated list of items to remove.
-    * Column names (e.g., `cont`, `snr`) to remove data arrays.
+    * Column names (e.g., `cont`, `snr`) to remove data arrays. The columns of every spectrum (`λ`, `λmin`, `λmax`, `F`, `dF`) cannot be removed, and a name that is not a column of the spectrum stops the recipe (the message lists the columns).
     * Keywords `lines` or `systems` to clear the entire absorption system list.
 
 ### Importing Systems
 
 If you have analyzed the same object in a different session (e.g., a different exposure), you can copy its absorption lines to the current one.
 1.  Go to **File > Import Systems from Session...**.
-2.  **Source Session:** Select the other open session by name.
+2.  **Source Session:** Select the other open session by name (required).
 3.  **Append:** Check this to add to your current list; uncheck to replace it entirely.
 
 ## 5. Slicing Sessions (Split & Extract)
@@ -116,7 +116,7 @@ Sometimes you only want to work on a specific piece of a spectrum, such as the L
 To extract a custom range into a *new* session:
 
 1.  Go to **Edit > Split Out Region...**.
-2.  Enter a boolean expression. Use the dialog **toolbar** to insert the wavelength variable `λ`.
+2.  Enter a boolean expression (the field starts empty). Use the dialog **toolbar** to insert the wavelength variable `λ`.
     * Example: `(λ > 400) & (λ < 500)`
 3.  A new session containing only that data range will appear in your list.
 
@@ -127,7 +127,7 @@ You can also select the range with the mouse: choose the **Select** tool in the 
 Astrocook knows standard quasar regions. If your $z_\mathrm{em}$ is set:
 
 1.  Go to **Edit > Extract Preset Region...**.
-2.  **Region:** Choose a preset (e.g., `lya_forest`) or enter multiple presets separated by commas to extract them all at once (e.g., `lya_forest, red_side`).
+2.  **Region:** Choose a preset (`lya_forest`, `all_ly_forest`, `red_side`) or enter multiple presets separated by commas to extract them all at once (e.g., `lya_forest, red_side`). A name that is not a preset stops the recipe.
 3.  The software automatically calculates the observed bounds and creates new sessions for each region.
 
 :::{note}
@@ -138,6 +138,10 @@ This recipe requires **Emission Redshift ($z_{em}$)** to be defined. If missing,
 
 If you have multiple exposures of the same object, you can combine them directly from the Session List.
 
+The recipes that combine sessions name the other sessions by the names of the Session List, separated by commas; a name that is not that of an open session stops the recipe. In a Python script, where no other session is open, give the sessions themselves (e.g. `session.edit.stitch([red, nir])`, `session.edit.coadd([session, other])`); the session log records their names.
+
+**Units.** The sessions are combined in the units of one of them, the *reference* (this session for *Stitch*, the bluest arm for *Equalize and Stitch*, the first session listed for *Co-add*): the others are converted to the unit of its axis (e.g. Å to nm) and of its flux (e.g. erg cm⁻² s⁻¹ nm⁻¹ to erg cm⁻² s⁻¹ Å⁻¹) before they are scaled or joined. A flux in arbitrary units (`arb_flux`, see [Setting Session Properties](#editing-properties)) cannot be converted to a physical one: it is combined with it only when it is scaled to it (by *Equalize and Stitch*, or by *Co-add* with `equalize_order` not None), and then takes its unit. A normalized flux (no unit) is never combined with one that is not. An axis in velocity is converted to wavelengths first with *Convert X axis*.
+
 ### Co-adding Spectra
 
 This operation defines common grid and rebins all spectra at once into it (weighting the contributions by their inverse variance and the amount of overlap with the final bins). The errors are those of the weighted mean, and the optional `kappa` clipping rejects only upward outliers (spikes), as in **Flux > Rebin Spectrum** (see [Flux Operations](flux_operations.md)).
@@ -146,11 +150,13 @@ This operation defines common grid and rebins all spectra at once into it (weigh
 2. In the **Session List**, hold `Ctrl` (or `Cmd` on Mac) and click to select multiple sessions.
 3. Right-click on the selection.
 4. Choose **Co-add N sessions...**.
-5. A dialog will ask for the grid parameters (e.g., step size `dx`).
+5. A dialog will ask for the grid parameters (e.g., step size `dx`; `xstart` must be below `xend`).
 6. A new, combined session will be created.
 
+The first session listed is the reference: the others are scaled to its flux by a polynomial of order `equalize_order` (0, a constant factor, the default, up to 5), or not scaled if it is `None` (the session logs written before version 2.7 say `-1`, which is the same).
+
 :::{note}
-You can also access this tool via **Edit > Co-add Spectra...**. This opens a dialog where you can manually type the names of the sessions to combine (comma-separated), which is useful for scripting.
+You can also access this tool via **Edit > Co-add Spectra...**. This opens a dialog where you can manually type the names of the sessions to combine (comma-separated, this session among them), which is useful for scripting.
 :::
 
 ### Stitching
@@ -173,9 +179,9 @@ When working with multi-arm spectrographs (like X-Shooter), the flux calibration
 2. In the **Session List**, hold `Ctrl` (or `Cmd` on Mac) and click to select them.
 3. Right-click and choose **Equalize and Stitch N Arms...**.
 4. A dialog will appear asking for exact parameters to guide the combination:
-    * **stitch_wavelengths**: Enter the precise wavelengths (in nm) where one arm should stop and the next should begin (e.g., `550, 1000`). You must provide exactly $N-1$ values.
+    * **stitch_wavelengths**: Enter the precise wavelengths (in nm) where one arm should stop and the next should begin (e.g., `550, 1000`), increasing. You must provide exactly $N-1$ values, and each arm must have pixels between its cuts.
     * **equalize_ranges**: (Optional) Specify the exact overlap window (e.g., `545-555, 995-1005`) Astrocook should use to calculate the flux scaling factor. Leave as `auto` to attempt a global match.
-    * **manual_factors**: (Optional) If you already know the exact flux multipliers, enter them here to override automatic calculation.
+    * **manual_factors**: (Optional) If you already know the exact flux multipliers (positive), enter them here to override automatic calculation.
 
 Astrocook automatically sorts the arms from bluest to reddest before processing, ensuring a mathematically continuous final spectrum.
 

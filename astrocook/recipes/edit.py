@@ -1,19 +1,24 @@
 from astrocook._renamed import renamed
 import contextlib
+from itertools import pairwise
 from astropy import units as au
 import logging
 import numpy as np
 import re
 from typing import TYPE_CHECKING, Dict, cast, Optional, Union, List, Tuple
 
+from astrocook.core.atomic_data import ATOM_DATA
 from astrocook.core.column_names import (display_columns, internal_column,
-                                         internal_expression, is_axis_column)
+                                         internal_expression, is_axis_column,
+                                         is_core_column)
+from astrocook.core.spectrum_expressions import REGION_PRESETS
 from astrocook.core.structures import SystemListData
 from astrocook.core.units import (has_no_unit, is_arbitrary_flux,
                                   is_flux_density_per_wavelength)
 from astrocook.core.system_list import SystemList
 from astrocook.recipes.errors import (InvalidParameter, RecipeError, RecipeFailed,
                                       reason_of)
+from astrocook.recipes._sessions import is_session, open_session, open_sessions, split_names
 from astrocook.recipes._spectrum import spec_of
 from astrocook.recipes.params import DATA_ERRORS, typed_recipe
 from astrocook.recipes.messages import msg_session_not_found
@@ -229,7 +234,7 @@ EDIT_RECIPES_SCHEMAS = {
         "brief": "Import systems from session.",
         "details": "Copies the absorption systems (components and constraints) of another open session into this one.",
         "params": [
-            {"name": "source_session", "type": str, "default": "None", "doc": "Name of the open session to copy the systems from.", "kind": "session"},
+            {"name": "source_session", "type": str, "default": "", "doc": "Name of the open session to copy the systems from (in a script, also the session itself).", "kind": "session"},
             {"name": "append", "type": bool, "default": True, "doc": "True: add the systems to those of this session; False: replace them."},
             {"name": "refit", "type": bool, "default": False, "doc": "Refit the systems on the spectrum of this session after copying them."}
         ],
@@ -249,9 +254,9 @@ EDIT_RECIPES_SCHEMAS = {
     "delete": {
         "methods": _methods_delete,
         "brief": "Delete elements.",
-        "details": "Removes columns from the spectrum, or all the components of the system list ('systems').",
+        "details": "Removes columns from the spectrum, or all the components of the system list ('systems'). The columns of every spectrum (λ, λmin, λmax, F, dF) are not removed.",
         "params": [
-            {"name": "targets", "type": str, "default": "", "doc": "Comma-separated items to delete: names of columns (e.g. 'cont, model') and/or 'systems' for the whole system list."}
+            {"name": "targets", "type": str, "default": "", "doc": "Comma-separated items to delete: names of columns of the spectrum (e.g. 'cont, model') and/or 'systems' for the whole system list."}
         ],
         "url": "edit_cb.html#delete"
     },
@@ -261,7 +266,7 @@ EDIT_RECIPES_SCHEMAS = {
         "branching": True,
         "details": "Copies the pixels where a boolean expression of the columns is true into a new session, e.g. '(λ > 400) & (λ < 500)'.",
         "params": [
-            {"name": "expression", "type": str, "default": "(λ > 400) & (λ < 500)", "doc": "Boolean expression of the columns: the pixels where it is true go to the new session."}
+            {"name": "expression", "type": str, "default": "", "doc": "Boolean expression of the columns, e.g. '(λ > 400) & (λ < 500)': the pixels where it is true go to the new session."}
         ],
         "url": "edit_cb.html#split"
     },
@@ -273,7 +278,7 @@ EDIT_RECIPES_SCHEMAS = {
         "details": "Copies a standard region into a new session, from the emission redshift: 'lya_forest' (between Ly-beta and Ly-alpha), 'all_ly_forest' (between the Lyman limit and Ly-alpha), 'red_side' (redward of Ly-alpha). Several regions, separated by commas, give one session each.",
         "params": [
             # We use a string for now. Options: 'lya_forest', 'all_ly_forest', 'red_side'
-            {"name": "region", "type": str, "default": "lya_forest", "doc": "Region(s) to extract: 'lya_forest', 'all_ly_forest', 'red_side', comma-separated."}
+            {"name": "region", "type": str, "default": "lya_forest", "doc": "Region(s) to extract, comma-separated: 'lya_forest', 'all_ly_forest', 'red_side'."}
         ],
         "url": "edit_cb.html#extract_preset"
     },
@@ -282,10 +287,10 @@ EDIT_RECIPES_SCHEMAS = {
         "brief": "Trim to common velocity coverage.",
         "details": "Trims this session to the velocity range around a redshift that all the given sessions cover, each with its own transition (e.g. the arms of an instrument, or the lines of a doublet).",
         "params": [
-            {"name": "others_names", "type": str, "default": "", "doc": "Comma-separated names of the other sessions."},
+            {"name": "other_sessions", "type": str, "default": "", "kind": "sessions", "aliases": ["others_names"], "doc": "Comma-separated names of the other sessions (in a script, also a list of the sessions themselves)."},
             {"name": "z_target", "type": float, "default": "_current_", "keep": ("_current_",), "gt": -1, "doc": "Redshift at the centre of the range ('_current_': z_em)."},
-            {"name": "trans_self", "type": str, "default": "Ly_a", "doc": "Transition of this session that sets its velocity zero, e.g. 'Ly_a'."},
-            {"name": "trans_others", "type": str, "default": "", "doc": "Comma-separated transitions of the other sessions, in their order."},
+            {"name": "trans_self", "type": str, "default": "Ly_a", "doc": "Transition of this session that sets its velocity zero, as named in the atomic data, e.g. 'Ly_a', 'CIV_1548'."},
+            {"name": "trans_others", "type": str, "default": "", "doc": "Comma-separated transitions of the other sessions, one per session, in their order."},
             {"name": "window_kms", "type": float, "default": 500.0, "gt": 0, "doc": "Half-width of the velocity range kept (km/s)."}
         ],
         "url": "edit_cb.html#trim_common"
@@ -296,7 +301,7 @@ EDIT_RECIPES_SCHEMAS = {
         "details": "Joins this session and other sessions into one spectrum, without equalizing their flux (see Equalize and stitch arms); the step that Equalize and stitch arms ends with.",
         "branching": True,
         "params": [
-            {"name": "other_sessions", "type": list, "default": "", "doc": "The other sessions: their names, or the sessions themselves in a script."},
+            {"name": "other_sessions", "type": str, "default": "", "kind": "sessions", "doc": "Comma-separated names of the other sessions (in a script, also a list of the sessions themselves). Their flux and axis are converted to the units of this session; a flux that cannot be converted (arbitrary, or normalized, against a physical one) is refused."},
             {"name": "sort", "type": bool, "default": True, "doc": "Sort the joined spectrum by wavelength."},
         ],
         "gui_hidden": True  # Usually called via script
@@ -305,12 +310,12 @@ EDIT_RECIPES_SCHEMAS = {
         "methods": _methods_equalize_and_stitch,
         "brief": "Equalize and stitch arms.",
         "branching": True,
-        "details": "Scales the flux of the sessions (the arms of an instrument) to match in their overlaps, then joins them into one spectrum, cutting at the given wavelengths.",
+        "details": "Scales the flux of the sessions (the arms of an instrument) to match in their overlaps, then joins them into one spectrum, cutting at the given wavelengths. The arms are taken from blue to red, in any order given; their flux and axis are converted to the units of the bluest, and an arm in arbitrary units of flux takes those of the bluest once scaled.",
         "params": [
-            {"name": "other_sessions", "type": str, "default": "", "doc": "Comma-separated names of the other sessions, from blue to red.", "gui_hidden": True},
-            {"name": "stitch_wavelengths", "type": str, "default": "", "doc": "Comma-separated wavelengths (nm) where each arm ends and the next begins: one fewer than the sessions."},
+            {"name": "other_sessions", "type": str, "default": "", "kind": "sessions", "doc": "Comma-separated names of the other sessions (in a script, also a list of the sessions themselves).", "gui_hidden": True},
+            {"name": "stitch_wavelengths", "type": str, "default": "", "doc": "Comma-separated wavelengths (nm), increasing, where each arm ends and the next begins: one fewer than the sessions."},
             {"name": "equalize_ranges", "type": str, "default": "auto", "doc": "Comma-separated wavelength ranges (nm) where the flux of adjacent arms is matched (e.g. '545-555, 795-805'), or 'auto' for their overlaps."},
-            {"name": "manual_factors", "type": str, "default": "auto", "doc": "Comma-separated factors that multiply the flux of each arm instead of the equalization, or 'auto'."}
+            {"name": "manual_factors", "type": str, "default": "auto", "doc": "Comma-separated positive factors that multiply the flux of each arm but the bluest instead of the equalization, or 'auto'."}
         ],
         "url": "edit_cb.html#equalize-and-stitch"
     },
@@ -318,15 +323,18 @@ EDIT_RECIPES_SCHEMAS = {
         "methods": _methods_coadd,
         "brief": "Co-add multiple sessions.",
         "branching": True,
-        "details": "Combines several sessions on one new grid with a constant step, weighting each pixel with its inverse variance, in one pass.",
+        "details": "Combines several sessions on one new grid with a constant step, weighting each pixel with its inverse variance, in one pass. The first session is the reference: the others are converted to its units and scaled to its flux; an arbitrary flux is co-added with a physical one only when scaled.",
         "params": [
-            {"name": "session_names", "type": str, "default": "", "doc": "Comma-separated names of the sessions to co-add, with this one."},
+            {"name": "session_names", "type": str, "default": "", "kind": "sessions", "doc": "Comma-separated names of the sessions to co-add, this one among them (in a script, also a list of the sessions themselves); the first is the reference."},
             {"name": "xstart", "type": float, "default": None, "optional": True, "doc": "Start of the new grid (nm); None: the start of the data."},
-            {"name": "xend", "type": float, "default": None, "optional": True, "doc": "End of the new grid (nm); None: the end of the data."},
+            {"name": "xend", "type": float, "default": None, "optional": True, "doc": "End of the new grid (nm), above xstart; None: the end of the data."},
             {"name": "dx", "type": float, "default": 10.0, "gt": 0, "doc": "Step of the new grid, in the unit of xunit."},
             {"name": "xunit", "type": str, "default": "km/s", "doc": "Unit of the step: a velocity (km/s, a grid uniform in log wavelength) or a wavelength (nm)."},
             {"name": "kappa", "type": float, "default": 5.0, "optional": True, "gt": 0, "doc": "Threshold (in sigma) of the clipping of outliers; None: no clipping."},
-            {"name": "equalize_order", "type": int, "default": 0, "doc": "Order of the polynomial that scales each session to the first before co-adding (0: a constant factor; -1: no scaling)."},
+            # max 5: polyfit is poorly conditioned from order 6-7 on overlaps
+            # of 20-50 nm (measured in PR 9 of 6-quater); -1 (no scaling
+            # before PR 9, F123) is still read as None
+            {"name": "equalize_order", "type": int, "default": 0, "optional": True, "min": -1, "max": 5, "doc": "Order of the polynomial (0 to 5) that scales each session to the first before co-adding: 0 a constant factor; None no scaling (-1, of the old logs, is the same)."},
         ],
         "url": "edit_cb.html#coadd"
     }
@@ -823,7 +831,8 @@ class RecipeEdit:
         return self._session.with_new_spectrum(new_spec_v2)
         
     @typed_recipe
-    def import_systems(self, source_session: str, append: bool = True, refit: bool = False) -> 'Session':
+    def import_systems(self, source_session: Union[str, 'Session'], append: bool = True,
+                       refit: bool = False) -> 'Session':
         """
         Import systems from session.
 
@@ -834,7 +843,8 @@ class RecipeEdit:
         Parameters
         ----------
         source_session : str
-            Name of the session to import from.
+            Name of the open session to import from (required; in a script,
+            also the session itself).
         append : bool, optional
             If ``True``, adds to existing systems. If ``False``, replaces them.
             Defaults to ``True``.
@@ -847,28 +857,16 @@ class RecipeEdit:
             A new :class:`~astrocook.session.session.Session` with imported systems.
         """
 
-        do_append = append
-        do_refit = refit
-
-        # 1. Find the source session
-        target_hist = None
-        if hasattr(self._session, '_gui'):
-            for hist in self._session._gui.session_histories:
-                if hist.display_name == source_session:
-                    target_hist = hist
-                    break
-        
-        if not target_hist:
-            # (It returned the session unchanged, which looked like a success)
-            raise RecipeFailed(msg_session_not_found.format(name=source_session))
-
-        source_systs = target_hist.current_state.systs
+        # A name not found fails (it returned the session unchanged, which
+        # looked like a success; without a GUI, an AttributeError, F135)
+        source = open_session(self._session, source_session, 'source_session')
+        label = source.name if is_session(source_session) else source_session
+        source_systs = source.systs
         if not source_systs or not source_systs.components:
-            logger.warning(f"The session '{source_session}' has no systems: nothing is imported.")
+            logger.warning(f"The session '{label}' has no systems: nothing is imported.")
             return self._session
 
-        return self._merge_imported_systems(source_systs, do_append, do_refit,
-                                            label=f"'{source_session}'")
+        return self._merge_imported_systems(source_systs, append, refit, label=f"'{label}'")
 
     def _merge_imported_systems(self, source_systs, do_append: bool, do_refit: bool,
                                 label: str) -> 'Session':
@@ -963,8 +961,13 @@ class RecipeEdit:
         Returns
         -------
         Session
-            A new session with the imported systems, or 0 if the file cannot
-            be read or lacks the required columns.
+            A new session with the imported systems (the session as it was
+            if the file holds no valid row).
+
+        Raises
+        ------
+        RecipeFailed
+            If the file cannot be read or lacks the required columns.
         """
         import numpy as np
         from astropy.io import ascii as ap_ascii
@@ -1021,34 +1024,44 @@ class RecipeEdit:
         Parameters
         ----------
         targets : str
-            Comma-separated list of items to delete (e.g. ``'cont, lines'``).
-            Use ``'lines'`` or ``'systems'`` to clear the component list.
+            Comma-separated list of items to delete (e.g. ``'cont, model'``),
+            columns of the spectrum other than its axis, flux and error.
+            Use ``'systems'`` (or ``'lines'``) to clear the component list.
 
         Returns
         -------
         Session
             A new :class:`~astrocook.session.session.Session` with the elements removed.
+
+        Raises
+        ------
+        InvalidParameter
+            If ``targets`` names nothing, a column of every spectrum (λ,
+            λmin, λmax, F, dF) or a column that the spectrum does not have
+            (phase 6-quater, PR 9: each gave a WARNING and an unchanged
+            state, recorded as done).
         """
-        targets = self._translate_ui_names(targets)
         target_list = [t.strip() for t in targets.split(',') if t.strip()]
         if not target_list:
-            return self._session
+            raise InvalidParameter("targets: name at least one column, or 'systems'")
+        clear_systems = any(t in ('lines', 'systems') for t in target_list)
+        columns = [t for t in target_list if t not in ('lines', 'systems')]
+        spec = spec_of(self._session)
+        core = [c for c in columns if is_core_column(c)]
+        if core:
+            raise InvalidParameter(f"targets: {', '.join(core)} cannot be deleted: λ, λmin, "
+                                   "λmax, F and dF are the data of every spectrum")
+        aux = {k.strip() for k in spec._data.aux_cols}
+        missing = [c for c in columns if c not in aux]
+        if missing:
+            raise InvalidParameter(f"targets: there is no column {', '.join(missing)}. The "
+                                   f"columns that can be deleted: {', '.join(sorted(aux)) or 'none'}.")
 
-        # 1. Handle System List
         new_systs = self._session.systs
-        if 'lines' in target_list or 'systems' in target_list:
-            # Re-initialize empty
+        if clear_systems:
             new_systs = SystemList(SystemListData())
             logger.info("The systems are removed.")
-            # Remove keywords from list to avoid trying to delete them as columns
-            target_list = [t for t in target_list if t not in ['lines', 'systems']]
-
-        # 2. Handle Columns via Core API
-        if target_list:
-            new_spec = spec_of(self._session).remove_columns(target_list)
-        else:
-            new_spec = spec_of(self._session)
-            
+        new_spec = spec.remove_columns(columns) if columns else spec
         return self._session.with_new_spectrum(new_spec).with_new_system_list(new_systs)
     
     @typed_recipe
@@ -1063,7 +1076,8 @@ class RecipeEdit:
         Parameters
         ----------
         expression : str
-            Boolean expression to select data (e.g., ``'(λ > 400) & (λ < 500)'``).
+            Boolean expression to select data (e.g., ``'(λ > 400) & (λ < 500)'``);
+            required (no default since phase 6-quater, PR 9).
         alias_map : dict, optional
             Mapping for multi-session variables.
 
@@ -1074,7 +1088,8 @@ class RecipeEdit:
         """
         expression = self._translate_ui_names(expression.strip())
         if not expression:
-            raise RecipeFailed("The expression is empty.")
+            raise InvalidParameter("expression: give a boolean expression of the columns, "
+                                   "e.g. '(λ > 400) & (λ < 500)'")
             
         # 1. Prepare multi-session vars (re-using our existing helper!)
         final_expression, extra_vars = self._prepare_expression_contexts(expression, alias_map)
@@ -1088,9 +1103,6 @@ class RecipeEdit:
 
         new_systs = self._session.systs
         if new_spec_v2 and len(new_spec_v2.x) > 0 and new_systs:
-            import numpy as np
-            import astropy.units as au
-            
             # Safely get min/max in nanometers, regardless of current plot units
             xmin_nm = np.min(new_spec_v2.x.to(au.nm).value)
             xmax_nm = np.max(new_spec_v2.x.to(au.nm).value)
@@ -1125,9 +1137,21 @@ class RecipeEdit:
         -------
         Session or List[Session]
             One or more new :class:`~astrocook.session.session.Session` instances.
+
+        Raises
+        ------
+        InvalidParameter
+            If ``region`` names no region, or one that is not a preset (phase
+            6-quater, PR 9: an unknown one was skipped with a WARNING).
         """
-        # Parse inputs (split by comma and strip whitespace)
         region_list = [r.strip() for r in region.split(',') if r.strip()]
+        options = ", ".join(REGION_PRESETS)
+        if not region_list:
+            raise InvalidParameter(f"region: name at least one region: {options}")
+        unknown = [r for r in region_list if r not in REGION_PRESETS]
+        if unknown:
+            raise InvalidParameter(f"region: {', '.join(unknown)} is not a region; the "
+                                   f"regions are {options}")
         
         results = []
         failures = []
@@ -1146,14 +1170,7 @@ class RecipeEdit:
                 expression = f"(λ > {v_min:.4f}) & (λ < {v_max:.4f})"
                 logger.info(f"Extracting {reg} ({expression}, z_em = {spec_of(self._session)._data.z_em:.4f}).")
                 
-                # Create the split session
-                new_session = self.split(expression=expression)
-                
-                # (Optional) Store the intended suffix name in the session metadata 
-                # so the GUI could potentially use it later (though GUI currently auto-names branches)
-                # new_session.name += f"_{reg}" 
-                
-                results.append(new_session)
+                results.append(self.split(expression=expression))
                 
             except (ValueError, KeyError, TypeError, RecipeError) as e:
                 # The other regions are extracted; with none, the recipe
@@ -1173,7 +1190,8 @@ class RecipeEdit:
         return results
     
     @typed_recipe
-    def trim_common(self, others_names: str, z_target: Union[float, str], trans_self: str,
+    def trim_common(self, other_sessions: Union[str, List[Union['Session', str]]],
+                    z_target: Union[float, str], trans_self: str,
                     trans_others: str, window_kms: float = 500.0) -> 'Session':
         """
         Trim to common velocity coverage.
@@ -1184,14 +1202,17 @@ class RecipeEdit:
 
         Parameters
         ----------
-        others_names : str
-            Comma-separated names of other sessions.
+        other_sessions : str or list
+            Comma-separated names of other sessions (in a script, also a
+            list of the sessions themselves). ``others_names`` until phase
+            6-quater, PR 9, still accepted.
         z_target : float
             Target redshift, above -1 and finite.
         trans_self : str
-            Transition for current session (e.g. ``'Ly_a'``).
+            Transition for current session (e.g. ``'Ly_a'``), as named in the
+            atomic data.
         trans_others : str
-            Comma-separated transitions for other sessions.
+            Comma-separated transitions for other sessions, one per session.
         window_kms : float, optional
             Symmetric window width in km/s, positive. Defaults to ``500.0``.
 
@@ -1199,38 +1220,32 @@ class RecipeEdit:
         -------
         Session
             A new :class:`~astrocook.session.session.Session` trimmed to the common coverage.
+
+        Raises
+        ------
+        InvalidParameter
+            If a transition is not in the atomic data, or the transitions are
+            not one per session (phase 6-quater, PR 9: an unknown transition
+            of this session gave "no range in common", one of another session
+            was ignored).
         """
-        # 1. Parse Inputs
-        z_f = float(z_target)
-        win_f = float(window_kms)
-        others_list = [n.strip() for n in others_names.split(',') if n.strip()]
+        names = split_names(other_sessions)
         trans_list_others = [t.strip() for t in trans_others.split(',') if t.strip()]
-        
-        # 2. Resolve Session Objects (GUI Logic)
-        resolved_others_specs = []
-        if hasattr(self._session, '_gui'):
-            for name in others_list:
-                found = False
-                for hist in self._session._gui.session_histories:
-                    if hist.display_name == name:
-                        resolved_others_specs.append(hist.current_state.spec)
-                        found = True
-                        break
-                if not found:
-                    logger.warning(msg_session_not_found.format(name=name))
-        
-        if len(resolved_others_specs) != len(trans_list_others):
-            raise RecipeFailed(f"There are {len(resolved_others_specs)} sessions and "
-                         f"{len(trans_list_others)} transitions: give one transition per session.")
-            
-        # 3. Delegate Calculation to Core (SSOT)
-        # The core calculates the physics and returns the boolean expression string
+        unknown = [t for t in [trans_self.strip(), *trans_list_others] if t not in ATOM_DATA]
+        if unknown:
+            raise InvalidParameter(f"trans_self, trans_others: {', '.join(unknown)} is not a "
+                                   "transition of the atomic data (e.g. 'Ly_a', 'CIV_1548')")
+        if len(names) != len(trans_list_others):
+            raise InvalidParameter(f"trans_others: there are {len(names)} sessions and "
+                                   f"{len(trans_list_others)} transitions: give one per session")
+        others = open_sessions(self._session, names, 'other_sessions')
+
         split_expression = spec_of(self._session).calc_intersection_expression(
-            others_specs=resolved_others_specs,
-            z_target=z_f,
-            trans_self=trans_self,
+            others_specs=[spec_of(s) for s in others],
+            z_target=float(z_target),
+            trans_self=trans_self.strip(),
             trans_others=trans_list_others,
-            window_kms=win_f
+            window_kms=float(window_kms)
         )
         
         if not split_expression:
@@ -1238,12 +1253,11 @@ class RecipeEdit:
             raise RecipeFailed("The sessions have no range in common: nothing is trimmed.")
 
         logger.info(f"Trimming to the range in common: {split_expression}.")
-        
-        # 4. Execute Split
         return self.split(split_expression)
 
     @typed_recipe
-    def stitch(self, other_sessions: List[Union['Session', str]], sort: bool = True) -> 'Session':
+    def stitch(self, other_sessions: Union[str, List[Union['Session', str]]],
+               sort: bool = True) -> 'Session':
         """
         Merge multiple sessions.
 
@@ -1252,9 +1266,11 @@ class RecipeEdit:
 
         Parameters
         ----------
-        other_sessions : list
-            A list of :class:`~astrocook.session.session.Session` objects OR strings
-            (names of sessions loaded in the GUI).
+        other_sessions : str or list
+            Comma-separated names of the other sessions, or a list of names
+            or (in a script) of :class:`~astrocook.session.session.Session`
+            objects. Their flux and axis are converted to the units of this
+            session.
         sort : bool, optional
             If ``True``, sorts the final spectrum by wavelength. Defaults to ``True``.
 
@@ -1262,41 +1278,20 @@ class RecipeEdit:
         -------
         Session
             A new :class:`~astrocook.session.session.Session` containing the merged data.
+
+        Raises
+        ------
+        RecipeFailed
+            If a name is not that of an open session (phase 6-quater, PR 9:
+            skipped with a WARNING), or a flux or an axis cannot be converted
+            to the units of this session.
         """
-        # Delayed import to avoid circular dependency
-        from astrocook.session.session import Session 
-
-        if not other_sessions:
-            # (A WARNING and the session unchanged, phase 6)
-            raise RecipeFailed("No sessions to stitch.")
-
-        # 1. Resolve Inputs (GUI/Script Logic)
-        resolved_specs = []
-        
-        for item in other_sessions:
-            if isinstance(item, Session):
-                resolved_specs.append(spec_of(item))
-            elif isinstance(item, str):
-                # GUI Lookup
-                found = None
-                if hasattr(self._session, '_gui') and hasattr(self._session._gui, 'session_histories'):
-                    for hist in self._session._gui.session_histories:
-                        if hist.display_name == item:
-                            found = hist.current_state
-                            break
-                if found:
-                    resolved_specs.append(spec_of(found))
-                else:
-                    logger.warning(msg_session_not_found.format(name=item) + " It is skipped.")
-            else:
-                logger.warning(f"An item of type {type(item).__name__} cannot be stitched: it is skipped.")
-
-        if not resolved_specs:
-            # (An ERROR and the session unchanged, phase 6)
-            raise RecipeFailed("There are no valid sessions to stitch.")
-
-        # 2. Delegate Data Manipulation to Core
-        new_spec = spec_of(self._session).stitch(resolved_specs, sort=sort)
+        items = split_names(other_sessions)
+        others = open_sessions(self._session, items, 'other_sessions')
+        names = [self._session.name] + _labels(items, others)
+        specs = _in_units_of_first([spec_of(self._session)] + [spec_of(s) for s in others],
+                                   names, scaled=False)
+        new_spec = specs[0].stitch(specs[1:], sort=sort)
 
         # Remove NaNs which break the 'step' plot (causing "scatter" look)
         # We use the public split API to keep valid data only.
@@ -1306,19 +1301,17 @@ class RecipeEdit:
             y_val = new_spec.y.value
             if not (np.all(np.isfinite(x_val)) and np.all(np.isfinite(y_val))):
                 logger.debug("Removing the pixels with NaN values.")
-                # Filter: Keep rows where X and Y are finite
-                # Note: We rely on the core's split expression evaluator
                 new_spec = new_spec.split("isfinite(x) & isfinite(y)")
         except (ValueError, KeyError, TypeError) as clean_err:
             logger.warning(f"The pixels with NaN values could not be removed "
                            f"({clean_err}): they are kept.")
         
-        # 3. Return New Session
         return self._session.with_new_spectrum(new_spec)
         
     @typed_recipe
-    def equalize_and_stitch(self, other_sessions: str, stitch_wavelengths: str, 
-                            equalize_ranges: str = 'auto', manual_factors: str = 'auto') -> 'Session':
+    def equalize_and_stitch(self, other_sessions: Union[str, List[Union['Session', str]]],
+                            stitch_wavelengths: str, equalize_ranges: str = 'auto',
+                            manual_factors: str = 'auto') -> 'Session':
         """
         Equalize and stitch arms.
 
@@ -1328,23 +1321,27 @@ class RecipeEdit:
 
         The procedure enforces a strict blue-to-red processing order regardless of 
         input order. For $N$ total sessions, exactly $N-1$ parameters must be provided 
-        for cuts, ranges, and factors.
+        for cuts, ranges, and factors. The arms are converted to the units of
+        the axis and of the flux of the bluest (an arm in arbitrary units of
+        flux takes those of the bluest once scaled; phase 6-quater, PR 9,
+        F132, F134).
 
         Parameters
         ----------
-        other_sessions : str
-            Comma-separated names of the other sessions to stitch to the current one.
+        other_sessions : str or list
+            Comma-separated names of the other sessions to stitch to the current one
+            (in a script, also a list of the sessions themselves).
             (This parameter is hidden in the GUI dialog).
         stitch_wavelengths : str
-            Comma-separated cut-off wavelengths (in nm) where the arms join. 
-            Data bluer than a cut is taken from the bluer arm; data redder is taken 
-            from the redder arm. Requires $N-1$ values.
+            Comma-separated cut-off wavelengths (in nm), increasing, where the
+            arms join. Data bluer than a cut is taken from the bluer arm; data
+            redder is taken from the redder arm. Requires $N-1$ values.
         equalize_ranges : str, optional
             Comma-separated overlap ranges formatted as ``'min-max, min-max'`` (in nm) 
             used to calculate the scaling factor between adjacent arms. If set to 
             ``'auto'``, the recipe attempts a global match. Defaults to ``'auto'``.
         manual_factors : str, optional
-            Comma-separated fixed multipliers to scale adjacent arms. If provided, 
+            Comma-separated fixed positive multipliers to scale adjacent arms. If provided, 
             these override the `equalize_ranges` calculation. Defaults to ``'auto'``.
 
         Returns
@@ -1353,147 +1350,52 @@ class RecipeEdit:
             A new :class:`~astrocook.session.session.Session` containing the equalized 
             and stitched spectrum.
         """
-        
-        # 1. Parse Input Lists
-        others_list = [s.strip() for s in other_sessions.split(',') if s.strip()]
-        if not others_list:
-            raise RecipeFailed("No other sessions to stitch.")
-            
-        try:
-            cuts = [float(c.strip()) for c in stitch_wavelengths.split(',')]
-        except ValueError:
-            raise InvalidParameter("stitch_wavelengths: give numbers separated by "
-                                   "commas") from None
-
-        if len(cuts) != len(others_list):
-            raise InvalidParameter(f"stitch_wavelengths: give {len(others_list)}, one per "
-                                   f"other session ({len(cuts)} given)")
-
-        # Parse Manual Factors
-        factors = []
+        names = split_names(other_sessions)
+        if not names:
+            raise InvalidParameter("other_sessions: name at least one session")
+        n = len(names)
+        cuts = _numbers('stitch_wavelengths', stitch_wavelengths, n)
+        if any(b <= a for a, b in pairwise(cuts)):
+            raise InvalidParameter("stitch_wavelengths: give them increasing, from blue to red")
         # Factors or ranges that cannot be read make the recipe fail: they
         # were replaced by 'auto', with a WARNING (phase 6)
-        if manual_factors.lower() != 'auto':
-            try:
-                factors = [float(f.strip()) for f in manual_factors.split(',')]
-            except ValueError:
-                raise InvalidParameter("manual_factors: give numbers separated by commas, "
-                                       "or 'auto'") from None
-            if len(factors) != len(others_list):
-                raise InvalidParameter(f"manual_factors: give {len(others_list)}, one per "
-                                       f"other session ({len(factors)} given)")
+        factors: List[Optional[float]] = [None] * n
+        if manual_factors.strip().lower() != 'auto':
+            factors = list(_numbers('manual_factors', manual_factors, n, positive=True))
+        ranges: List[Optional[Tuple[float, float]]] = [None] * n
+        if equalize_ranges.strip().lower() != 'auto' and factors[0] is None:
+            ranges = list(_ranges('equalize_ranges', equalize_ranges, n))
 
-        # Parse Equalize Ranges
-        eq_ranges = []
-        if equalize_ranges.lower() != 'auto' and not factors:
-            try:
-                for r in equalize_ranges.split(','):
-                    vmin, vmax = map(float, r.split('-'))
-                    eq_ranges.append((vmin, vmax))
-            except ValueError:
-                raise InvalidParameter("equalize_ranges: write them 'min-max, min-max' "
-                                       "(in nm), or 'auto'") from None
-            if len(eq_ranges) != len(others_list):
-                raise InvalidParameter(f"equalize_ranges: give {len(others_list)}, one per "
-                                       f"other session ({len(eq_ranges)} given)")
+        others = open_sessions(self._session, names, 'other_sessions')
+        arms = _blue_to_red([(self._session.name, spec_of(self._session))]
+                            + list(zip(_labels(names, others), [spec_of(s) for s in others],
+                                       strict=True)))
+        arm_names = [name for name, _ in arms]
+        specs = _in_units_of_first([spec for _, spec in arms], arm_names, scaled=True)
+        unit = specs[0].x.unit
+        bounds = [None, *cuts, None]
 
-        # 2. Resolve GUI Sessions
-        resolved_others = []
-        if hasattr(self._session, '_gui'):
-            for name in others_list:
-                found = False
-                for hist in self._session._gui.session_histories:
-                    if hist.display_name == name:
-                        resolved_others.append(hist.current_state.spec)
-                        found = True
-                        break
-                if not found:
-                    raise RecipeFailed(msg_session_not_found.format(name=name))
-        
-        if len(resolved_others) != len(others_list):
-            raise RecipeFailed("The other sessions are looked for among the sessions "
-                               "open in the GUI, and there are none.")
+        # Each arm scaled to the arms bluer than it, joined, then cut
+        reference = specs[0]
+        parts = [_arm_part(specs[0], arm_names[0], None, cuts[0], unit)]
+        for i, arm in enumerate(specs[1:]):
+            equalized = _equalize_arm(arm, arm_names[i + 1], reference, factors[i],
+                                      ranges[i], unit)
+            parts.append(_arm_part(equalized, arm_names[i + 1], bounds[i + 1],
+                                   bounds[i + 2], unit))
+            reference = reference.stitch([equalized], sort=True)
 
-        # --- [FIX] 3. Gather and Sort All Arms (Blue-to-Red) ---
-        # It doesn't matter which arm was right-clicked; we MUST process them from bluest to reddest.
-        all_sessions_info = [(self._session.name, spec_of(self._session))]
-        for name, spec in zip(others_list, resolved_others, strict=True):
-            all_sessions_info.append((name, spec))
-            
-        all_sessions_info.sort(key=lambda item: np.nanmin(item[1].x.value))
-        
-        anchor_spec = all_sessions_info[0][1]
-        subsequent_specs = [item[1] for item in all_sessions_info[1:]]
-        ordered_names = [item[0] for item in all_sessions_info]
-
-        # 4. Processing
-        processed_parts = []
-        
-        # First (Bluest) Part: x <= first_cut
-        logger.info(f"{ordered_names[0]}: kept up to {cuts[0]}.")
-        first_part = anchor_spec.split(f"x <= {cuts[0]}")
-        processed_parts.append(first_part)
-    
-        current_reference_full = anchor_spec 
-
-        # Subsequent Arms
-        for i, other_spec in enumerate(subsequent_specs):
-            current_cut = cuts[i]
-            arm_name = ordered_names[i+1]
-            
-            # --- A. Equalization ---
-            if factors:
-                logger.info(f"{arm_name}: scaled by {factors[i]:.4f} (factor given).")
-                equalized_spec = other_spec.scale_flux(factors[i])
-            else:
-                if eq_ranges:
-                    vmin, vmax = eq_ranges[i]
-                    logger.debug(f"{arm_name}: equalizing between {vmin} and {vmax} nm.")
-                    ref_overlap = current_reference_full.split(f"(x >= {vmin}) & (x <= {vmax})")
-                    other_overlap = other_spec.split(f"(x >= {vmin}) & (x <= {vmax})")
-                    
-                    if len(ref_overlap.x) > 5 and len(other_overlap.x) > 5:
-                        from astrocook.core.spectrum_operations import compute_flux_scaling
-                        scale_model = compute_flux_scaling(
-                            ref_overlap.x.value, ref_overlap.y.value, 
-                            other_overlap.x.value, other_overlap.y.value, order=0
-                        )
-                        scalar_factor = np.nanmedian(scale_model)
-                        logger.info(f"{arm_name}: scaled by {scalar_factor:.4f} (between {vmin} and {vmax} nm).")
-                        equalized_spec = other_spec.scale_flux(scalar_factor)
-                    else:
-                        logger.warning(f"{arm_name}: not enough pixels between {vmin} and {vmax} nm: "
-                                       "equalized on the whole overlap instead.")
-                        equalized_spec = other_spec.equalize_to_reference(current_reference_full, order=0)
-                else:
-                    logger.debug(f"{arm_name}: equalizing on the whole overlap.")
-                    equalized_spec = other_spec.equalize_to_reference(current_reference_full, order=0)
-            
-            # --- B. Apply Split Logic ---
-            if i < len(cuts) - 1:
-                next_cut = cuts[i+1]
-                logger.info(f"{arm_name}: kept from {current_cut} to {next_cut}.")
-                part = equalized_spec.split(f"(x > {current_cut}) & (x <= {next_cut})")
-            else:
-                logger.info(f"{arm_name}: kept from {current_cut}.")
-                part = equalized_spec.split(f"x > {current_cut}")
-            
-            processed_parts.append(part)
-            current_reference_full = current_reference_full.stitch([equalized_spec], sort=True)
-    
-        # 5. Final Stitch
         logger.debug("Stitching the parts together.")
-        final_spec = processed_parts[0].stitch(processed_parts[1:], sort=True)
-        
-        new_name = "Stitched_" + "_".join(ordered_names)
+        final_spec = parts[0].stitch(parts[1:], sort=True)
         new_session = self._session.with_new_spectrum(final_spec)
-        new_session.name = new_name
+        new_session.name = "Stitched_" + "_".join(arm_names)
         return new_session
         
     @typed_recipe
-    def coadd(self, session_names: str, xstart: Optional[float] = None,
-              xend: Optional[float] = None, dx: float = 10.0, xunit: str = 'km/s',
-              kappa: Optional[float] = 5.0, equalize_order: int = 0) -> 'Session':
+    def coadd(self, session_names: Union[str, List[Union['Session', str]]],
+              xstart: Optional[float] = None, xend: Optional[float] = None,
+              dx: float = 10.0, xunit: str = 'km/s', kappa: Optional[float] = 5.0,
+              equalize_order: Optional[int] = 0) -> 'Session':
         """
         Co-add multiple sessions.
 
@@ -1503,75 +1405,233 @@ class RecipeEdit:
 
         Parameters
         ----------
-        session_names : str
-            Comma-separated names of sessions to co-add.
+        session_names : str or list
+            Comma-separated names of sessions to co-add, this one among them
+            (in a script, also a list of the sessions themselves). The first
+            is the reference: the others are converted to the units of its
+            axis and flux, and scaled to its flux (F133, F134).
         xstart : float or None, optional
             Start wavelength (nm). None for auto. Defaults to None.
         xend : float or None, optional
-            End wavelength (nm). None for auto. Defaults to None.
+            End wavelength (nm), above ``xstart``. None for auto. Defaults to None.
         dx : float, optional
             Step size for the final grid, positive. Defaults to ``10.0`` (km/s), as
             the GUI: choose the native pixel size for high-resolution data
             (e.g. ~2.5 km/s for UVES, ~0.8 km/s for ESPRESSO).
         xunit : str, optional
-            Unit for the step size (e.g., ``'nm'`` or ``'km/s'``). Defaults to ``'km/s'``.
+            Unit for the step size: a velocity or a wavelength (e.g.,
+            ``'km/s'`` or ``'nm'``). Defaults to ``'km/s'``.
         kappa : float or None, optional
             Sigma clipping threshold, positive. None for off. Defaults to ``5.0``.
-        equalize_order : int, optional
-            Polynomial order for flux scaling (-1=Off, 0=Scalar, 1=Linear).
+        equalize_order : int or None, optional
+            Order of the polynomial (0 to 5) that scales each session to the
+            first: 0 a constant factor, None no scaling (``-1``, the value of
+            no scaling until phase 6-quater, PR 9, F123, is read as None).
             Defaults to ``0``.
 
         Returns
         -------
         Session
             A new :class:`~astrocook.session.session.Session` containing the co-added spectrum.
+
+        Raises
+        ------
+        InvalidParameter
+            If ``session_names`` names no session or not this one, ``xstart``
+            is not below ``xend`` (an empty spectrum) or ``xunit`` is neither
+            a velocity nor a wavelength (phase 6-quater, PR 9).
+        RecipeFailed
+            If a name is not that of an open session (it was skipped without
+            a word), or a flux or an axis cannot be converted.
         """
-        
-        names_list = [n.strip() for n in session_names.split(',') if n.strip()]
-        if not names_list:
-            raise RecipeFailed("No sessions to combine.")
+        names = split_names(session_names)
+        if not names:
+            raise InvalidParameter("session_names: name at least one session")
+        dx_unit = _grid_unit(xunit)
+        if xstart is not None and xend is not None and not xstart < xend:
+            raise InvalidParameter(f"xstart: {xstart} is not below xend ({xend})")
+        sessions = open_sessions(self._session, names, 'session_names')
+        if not (any(s is self._session for s in sessions) or self._session.name in names):
+            raise InvalidParameter(f"session_names: name this session too "
+                                   f"('{self._session.name}'): the result is a new state of it")
+        eq_order = -1 if equalize_order is None or equalize_order < 0 else equalize_order
+        specs = _in_units_of_first([spec_of(s) for s in sessions], _labels(names, sessions),
+                                   scaled=eq_order >= 0)
 
-        # 1. Resolve Session Objects
-        # We assume the first session in the list is the "primary" (self is implied context, 
-        # but we need to find the specific objects named in the list).
-        
-        resolved_specs = []
-        if hasattr(self._session, '_gui'):
-            for name in names_list:
-                for hist in self._session._gui.session_histories:
-                    if hist.display_name == name:
-                        resolved_specs.append(hist.current_state.spec)
-                        break
-        
-        if not resolved_specs:
-            raise RecipeFailed("There are no valid sessions to combine.")
-
-        # 2. Parse Parameters
-        eq_order = equalize_order
         xstart_q = au.Quantity(xstart, au.nm) if xstart is not None else None
         xend_q = au.Quantity(xend, au.nm) if xend is not None else None
-        dx_unit = au.Unit(xunit) 
         dx_q = au.Quantity(dx, dx_unit)
-        kappa_f = kappa
-
-        # 3. Delegate to Core
-        # We use the first spectrum in the list as the 'base' to call the method on.
-        base_spec = resolved_specs[0]
-        others = resolved_specs[1:]
-        
-        logger.info(f"Combining {len(resolved_specs)} sessions on a grid of step {dx_q}.")
-        
-        new_spec = base_spec.coadd(
-            others=others,
-            xstart=xstart_q,
-            xend=xend_q,
-            dx=dx_q,
-            kappa=kappa_f,
-            equalize_order=eq_order
-        )
-        
-        # 4. Return New Session
+        logger.info(f"Combining {len(specs)} sessions on a grid of step {dx_q}.")
+        new_spec = specs[0].coadd(others=specs[1:], xstart=xstart_q, xend=xend_q, dx=dx_q,
+                                  kappa=kappa, equalize_order=eq_order)
         return self._session.with_new_spectrum(new_spec)
+
+
+# --- Helpers of the recipes on several spectra (phase 6-quater, PR 9) ---
+
+def _labels(items: list, sessions: list) -> List[str]:
+    """The names of the sessions in the messages: those given (a session
+    given as itself, by its own name)."""
+    return [item if isinstance(item, str) else s.name
+            for item, s in zip(items, sessions, strict=True)]
+
+
+def _numbers(param: str, text: str, n: int, positive: bool = False) -> List[float]:
+    """The ``n`` comma-separated numbers of ``text`` (finite, and positive
+    if ``positive``); InvalidParameter otherwise."""
+    try:
+        values = [float(v.strip()) for v in text.split(',')]
+    except ValueError:
+        raise InvalidParameter(f"{param}: give numbers separated by commas"
+                               + ("" if param == 'stitch_wavelengths' else ", or 'auto'")) from None
+    if len(values) != n:
+        raise InvalidParameter(f"{param}: give {n}, one per other session ({len(values)} given)")
+    if not all(np.isfinite(values)) or (positive and not all(v > 0 for v in values)):
+        raise InvalidParameter(f"{param}: give finite numbers" + (" above 0" if positive else ""))
+    return values
+
+
+def _ranges(param: str, text: str, n: int) -> List[Tuple[float, float]]:
+    """The ``n`` ranges ``'min-max'`` of ``text`` (nm), each with min below
+    max; InvalidParameter otherwise."""
+    ranges = []
+    try:
+        for r in text.split(','):
+            vmin, vmax = map(float, r.split('-'))
+            ranges.append((vmin, vmax))
+    except ValueError:
+        raise InvalidParameter(f"{param}: write them 'min-max, min-max' (in nm), "
+                               "or 'auto'") from None
+    if len(ranges) != n:
+        raise InvalidParameter(f"{param}: give {n}, one per other session ({len(ranges)} given)")
+    if any(not vmin < vmax for vmin, vmax in ranges):
+        raise InvalidParameter(f"{param}: the start of each range must be below its end")
+    return ranges
+
+
+def _grid_unit(xunit: str) -> au.UnitBase:
+    """The unit of the step of a grid: a velocity or a wavelength."""
+    try:
+        unit = au.Unit(xunit)
+    except (ValueError, TypeError):
+        raise InvalidParameter(f"xunit: {xunit!r} is not a unit") from None
+    if not (unit.is_equivalent(au.km / au.s) or unit.is_equivalent(au.nm)):
+        raise InvalidParameter(f"xunit: {xunit!r} is neither a velocity nor a wavelength")
+    return unit
+
+
+def _unit_words(unit) -> str:
+    if is_arbitrary_flux(unit):
+        return "arbitrary units"
+    if has_no_unit(unit):
+        return "no unit (normalized)"
+    return str(unit)
+
+
+def _in_units_of(spec, ref, name: str, ref_name: str, scaled: bool):
+    """``spec`` with the axis and the flux in the units of ``ref`` (F132-F134):
+    converted when the units are of one kind, the arbitrary flux declared in
+    the unit of ``ref`` when ``scaled`` (the scaling calibrates it);
+    RecipeFailed for the other cases. Nothing done when the units are the
+    same, so those results do not move."""
+    x_u, x_ref = au.Unit(spec.x.unit), au.Unit(ref.x.unit)
+    if x_u != x_ref:
+        if not (x_u.is_equivalent(au.nm) and x_ref.is_equivalent(au.nm)):
+            raise RecipeFailed(f"The axis of {name} is in {x_u} and that of {ref_name} in "
+                               f"{x_ref}: convert them to wavelengths with x_convert.")
+        spec = spec.x_convert(spec._data.z_em or 0.0, x_ref)
+    y_u, y_ref = spec.y.unit, ref.y.unit
+    if au.Unit(y_u) == au.Unit(y_ref):
+        return spec
+    if au.Unit(y_u).is_equivalent(y_ref):
+        return spec.y_convert(y_ref)
+    if scaled and (is_arbitrary_flux(y_u) or is_arbitrary_flux(y_ref)) \
+            and not (has_no_unit(y_u) or has_no_unit(y_ref)):
+        logger.info(f"The flux of {name}, in {_unit_words(y_u)}, takes the unit of "
+                    f"{ref_name} ({_unit_words(y_ref)}) once scaled to it.")
+        return spec.with_flux_unit(y_ref)
+    how = ("" if scaled else "; scaled to it (Equalize and stitch arms, or Co-add with "
+           "equalize_order), an arbitrary flux takes the unit of the other")
+    raise RecipeFailed(f"The flux of {name} is in {_unit_words(y_u)} and that of {ref_name} "
+                       f"in {_unit_words(y_ref)}: they cannot be combined{how}. Set_properties "
+                       "declares the unit of a flux (yunit).")
+
+
+def _in_units_of_first(specs: list, names: List[str], scaled: bool) -> list:
+    """The spectra, the first as it is, the others in its units (see
+    :func:`_in_units_of`)."""
+    return [specs[0]] + [_in_units_of(spec, specs[0], name, names[0], scaled)
+                         for spec, name in zip(specs[1:], names[1:], strict=True)]
+
+
+def _blue_to_red(arms: list) -> list:
+    """The arms ``(name, spectrum)`` from blue to red, by their bluest
+    pixel in nm (it was compared in the unit of each arm, F134); an arm
+    whose axis is not a wavelength cannot be cut at wavelengths."""
+    for name, spec in arms:
+        if not au.Unit(spec.x.unit).is_equivalent(au.nm):
+            raise RecipeFailed(f"The axis of {name} is in {spec.x.unit}: the arms are cut at "
+                               "wavelengths, so convert it to a wavelength with x_convert.")
+    return sorted(arms, key=lambda arm: np.nanmin(arm[1].x.to_value(au.nm)))
+
+
+def _in_axis_unit(value_nm: float, unit) -> float:
+    """A wavelength in nm, in the unit of the axis (as it is for nm)."""
+    return value_nm if au.Unit(unit) == au.nm else (value_nm * au.nm).to_value(unit)
+
+
+def _arm_part(arm, name: str, lo: Optional[float], hi: Optional[float], unit):
+    """The part of ``arm`` above the cut ``lo`` and up to the cut ``hi`` (nm;
+    None: no cut); InvalidParameter if it holds no pixel (it failed with
+    "Split expression resulted in an empty spectrum")."""
+    terms = []
+    if lo is not None:
+        terms.append(f"x > {_in_axis_unit(lo, unit)}")
+    if hi is not None:
+        terms.append(f"x <= {_in_axis_unit(hi, unit)}")
+    where = (f"from {lo} to {hi}" if lo is not None and hi is not None
+             else f"from {lo}" if lo is not None else f"up to {hi}")
+    x = arm.x.value
+    inside = np.ones(len(x), dtype=bool)
+    if lo is not None:
+        inside &= x > _in_axis_unit(lo, unit)
+    if hi is not None:
+        inside &= x <= _in_axis_unit(hi, unit)
+    if not inside.any():
+        raise InvalidParameter(f"stitch_wavelengths: {name} has no pixel {where} nm; each "
+                               "arm must cover the range between its cuts")
+    logger.info(f"{name}: kept {where}.")
+    expression = terms[0] if len(terms) == 1 else f"({terms[0]}) & ({terms[1]})"
+    return arm.split(expression)
+
+
+def _equalize_arm(arm, name: str, reference, factor: Optional[float],
+                  rng: Optional[Tuple[float, float]], unit):
+    """``arm`` scaled to ``reference``: by ``factor`` if given, else to match
+    in the range ``rng`` (nm), else in their whole overlap."""
+    if factor is not None:
+        logger.info(f"{name}: scaled by {factor:.4f} (factor given).")
+        return arm.scale_flux(factor)
+    if rng is None:
+        logger.debug(f"{name}: equalizing on the whole overlap.")
+        return arm.equalize_to_reference(reference, order=0)
+    vmin, vmax = rng
+    logger.debug(f"{name}: equalizing between {vmin} and {vmax} nm.")
+    where = f"(x >= {_in_axis_unit(vmin, unit)}) & (x <= {_in_axis_unit(vmax, unit)})"
+    ref_overlap = reference.split(where)
+    other_overlap = arm.split(where)
+    if len(ref_overlap.x) > 5 and len(other_overlap.x) > 5:
+        from astrocook.core.spectrum_operations import compute_flux_scaling
+        scale_model = compute_flux_scaling(
+            ref_overlap.x.value, ref_overlap.y.value,
+            other_overlap.x.value, other_overlap.y.value, order=0
+        )
+        scalar_factor = np.nanmedian(scale_model)
+        logger.info(f"{name}: scaled by {scalar_factor:.4f} (between {vmin} and {vmax} nm).")
+        return arm.scale_flux(scalar_factor)
+    logger.warning(f"{name}: not enough pixels between {vmin} and {vmax} nm: "
+                   "equalized on the whole overlap instead.")
+    return arm.equalize_to_reference(reference, order=0)
 
 
 # Old names (phase 6-quater, PR 6): see astrocook/_renamed.py

@@ -324,7 +324,13 @@ archive is not your save: save the session with `session_save` as usual.
 folder `folder` (called `path` until 2.6.0, a name still accepted), named
 after `prefix`, and does not replace files that exist unless asked
 (`overwrite=true`). The tools that read another session
-(`flux_equalize`, `flux_resample`) require its `session_id`.
+(`flux_equalize`, `flux_resample`, `edit_import_systems`) require its
+`session_id`; those that read several (`edit_stitch`,
+`edit_equalize_and_stitch`, `edit_coadd`, `edit_trim_common`; their
+schema says `x-astrocook-kind: sessions`) take their `session_id`s
+separated by commas, and `edit_coadd` the id of the session it runs on
+among them (the first is the reference of the units and of the flux). A
+`session_id` not found stops the tool.
 
 The sessions live in the server while the client is running: save the
 result with `session_save` before closing the client.
