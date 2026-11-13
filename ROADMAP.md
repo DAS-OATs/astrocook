@@ -533,8 +533,8 @@ Agreed with Guido at the start of the MCP pilot (October 2026); scope and plan a
 
 **Data and blindness.**
 - The mock benchmark of phase 4 keeps its grid and baseline (`validate_mocks.py --compare` stays valid); the new cases (DLAs, tellurics, emission lines, BALs) are a second grid of their own (7a.1).
-- Real spectra (Guido, 13 November 2026): 3-5 proprietary spectra, not HE0940–1050, possibly the basis of a publication. They live in the private `DAS-OATs/astrocook-data` (folder `benchmark/`), found as the spectra of the screenshots (`--data`, `$ASTROCOOK_DATA/benchmark`, a folder ignored by git); nothing of them reaches this public repository: neither the data nor the results that describe them (fitted parameters, per-object numbers), which stay in `astrocook-data`; this repository holds the code and, at most, aggregate numbers Guido chooses to publish. The benchmark on them runs locally, in a cloud session with `astrocook-data` attached, or in a workflow of the private repository that checks out this one (its logs and artifacts stay private; the CI of this repository never reads private data). Split in a *development* part, used in the phase, and a *test* part, blind as HE0940 until the version is frozen (which spectra: Guido). Without a truth, what is measured on them needs a reference (Guido's own continuum and identifications, or the agreement between runs): defined in 7a.4.
-- HE0940–1050 stays blind (section 6); its synthetic twin is the realistic high-S/N case of the phase (7a.3, when the material of the published analysis arrives).
+- Real spectra (Guido, 13 November 2026; they replace the 3-5 proprietary spectra agreed earlier the same day): the 28 UVES quasars of D'Odorico et al. (2010) (z_em 2.14-4.56, S/N per pixel 20-205, pixels of 1.3-2.5 km/s), in the reductions of SQUAD DR1 (Murphy et al. 2019, MNRAS 482, 3458), not in those of the paper: the difference is stated, and its effect on the comparison measured (7a.4). The reference is the published analysis (its CIV components), not a truth: on these spectra the benchmark measures the agreement with it, and with the DLAs of the SQUAD catalogue; the continuum has no reference there (the mocks measure it). The spectra are public, but the blindness of the test part is a discipline, not an access control (Guido, 13 November 2026): the spectra and every per-object result live in the private `DAS-OATs/astrocook-data` (folder `benchmark/`), found as the spectra of the screenshots (`--data`, `$ASTROCOOK_DATA/benchmark`, a folder ignored by git); this public repository holds the code and, at most, aggregate numbers Guido chooses to publish. The benchmark on them runs locally, in a cloud session with `astrocook-data` attached, or in a workflow of the private repository that checks out this one (its logs and artifacts stay private; the CI of this repository never reads private data). *Split* (proposed at the planning of 7a, stratified by z_em and S/N; Guido, 13 November 2026): *development*, 8 spectra, used in the phase: Q0329-385, HE1341-1020, PKS0237-23 (z_em < 2.5), PKS0329-255, Q0453-423, HE1347-2457 (2.5-3.2), SDSS J1249-015, PKS2126-158 (> 3.2), S/N 46-140; *test*, the other 20, blind until the version is frozen, among them HE0940–1050 and the extreme cases (Q1209+0919 at S/N 20, Q2237-0608 at z_em 4.56), which the mocks cover in development.
+- HE0940–1050 is one of the test spectra and stays blind (section 6). The synthetic twins (7a.3) are made for the spectra whose published analysis gives a model; those of the development part are the realistic cases of the phase.
 
 **Plan** (13 November 2026; estimates in working time of the session, before Guido's review, calibrated on 6-quater: about 2 h for a mechanical PR with tests and documentation, 2-4 h for a review; the prototypes are new ground and their estimates are rougher). The PRs of 7-bis (B1-B11, next section) are interleaved (Guido, 13 November 2026): at most one PR of 7 and one of 7-bis open at a time, each on its own branch; a 7-bis PR touches in `ROADMAP.md` only its own row of the plan and of the register, and is rebased on master before the merge.
 
@@ -542,21 +542,22 @@ Agreed with Guido at the start of the MCP pilot (October 2026); scope and plan a
 
 | PR | Content | Model | Estimate | Done |
 |---|---|---|---|---|
-| 7a.1 | Mocks with the cases the grid lacks, in `astrocook/mocks` (independent of `fitting/`): DLAs and sub-DLAs with their damped wings, a BAL trough, QSO emission lines in the continuum, tellurics (from the pre-release `data-telluric-2026`), absorbers within the proximity zone and beyond z_em; a second grid of the benchmark (`validate_mocks.py --grid robustness`), the baseline grid unchanged | Opus | half a day to a day | |
-| 7a.2 | Metrics of the benchmark for the new goals: the continuum near DLAs and BALs and on the emission lines, the pull of the continuum against its uncertainty (once there is one), z_em against the truth, false identifications on tellurics, the fraction of absorbed pixels accounted for (identified, unidentified), the components flagged against the wrong ones; the current algorithms run on both grids: the reference of the phase | Opus | 3-4 h | |
-| 7a.3 | The twin of section 6: a mock from an arbitrary component list on a given pixel grid, with a given error spectrum, resolution and continuum; the import of a VPFIT model (fort.26) into a `SystemList` | Opus | half a day | waits for the material of the published analysis |
-| 7a.4 | The benchmark on the real spectra: a script (or a mode of `validate_mocks.py`) that reads `$ASTROCOOK_DATA/benchmark`, the split development/test, the references to measure against (with Guido), the results written to `astrocook-data`; the workflow in the private repository | Opus | 3-4 h | waits for the spectra and the references |
-| 7a.5 | F154: the evaluation of a model on a fixed set of pixels, without fitting: residuals, chi2, AIC and BIC of the model of a session (or of some of its components) on a range or mask chosen by the user, as a recipe (and so an MCP tool); the basis of the comparison between alternatives (credibility, 7c) and of the evaluation of an imported model (7a.3) | Opus | 3-4 h | |
+| 7a.1 | Mocks with the cases the grid lacks, in `astrocook/mocks` (independent of `fitting/`; each new field of `MockTruth` off by default, so the mocks made before are unchanged): (a) BAL troughs, a smooth optical depth in velocity on CIV, SiIV, NV and Ly-a in the ratio of their oscillator strengths; (b) a richer set of QSO emission lines (OVI/Ly-b, Ly-a, NV, SiIV+OIV], CIV, CIII] where covered), with asymmetries and a velocity shift per line (the CIV blueshift), z_em the systemic one (`QSO_EMISSION_LINES` unchanged, the new set under another name); (c) tellurics: transmission templates from ESO SkyCalc, the run of the pre-release `data-telluric-2026` (Paranal, airmass 1.1, PWV 2.5 mm) and a second one made by the session at another PWV, so that the part of the optical depth that scales with PWV (H2O) is separated from the rest; cut to about 550-1000 nm and resampled into a small file of the package (a few hundred kB), its source and parameters documented; the mock scales each part (airmass, PWV) and shifts it by a small velocity, so that the model of 7b.6 is not perfect by construction, and applies it in the observed frame before the convolution; (d) a proximity zone (the density of the forest reduced near z_em) and associated absorbers up to a few thousand km/s beyond z_em (F55); (e) a truth map per pixel: what absorbs each pixel (forest, metal, strong H I, BAL, telluric), from the truth alone, for the metrics of 7a.2. In `validate_mocks.py`, `--grid robustness`: an axis of cases (`dla`, `subdla`, `bal`, `emission`, `telluric`, `proximity`, `combined`) on the base of forest and metals, by S/N 10, 30, 100, R 8900, 45000, z_em 3.5, 4.5 (the tellurics fall in the window) and 3 seeds, 252 mocks; the recipes get a z_em perturbed by a draw of sigma 500 km/s per mock, reproducible from the seed, the true one in the records (Guido, 13 November 2026). The grid `full` and its baseline unchanged (`--compare` identical). Needs network access to the ESO hosts (SkyCalc) | Opus | half a day to a day | |
+| 7a.2 | Metrics of the benchmark for the new goals, with the truth map of 7a.1: the continuum (estimated over true: median, p05/p95, integrated deviation) on the damped wings of the DLAs (the saturated core excluded), across the BAL troughs, on the peaks of the emission lines (within one FWHM) and in the proximity zone; the pull of the continuum against its uncertainty, active when the column `dcont` exists (the name fixed here, for 7b.2); z_em of an estimator against the truth (velocity difference), when the chain has one (F153, 7b.3); the false candidates on tellurics (lines on pixels of true transmission below 0.9 and no true absorber within the tolerance), counted apart; the absorbed pixels of the truth map: identified right, identified wrong, in a region without identification, not detected (the Ly-a by default of F51 counted apart); a confusion table of the flags of the components (#517 and those of the benchmark) against the wrong ones (pull above 3 sigma, spurious, at a bound). The current algorithms on both grids: `benchmarks/results/validate_mocks_robustness_baseline.json`, the reference of the phase; the baseline of `full` unchanged | Opus | 3-4 h | |
+| 7a.3 | The twins and the import of the published analysis: a mock from an arbitrary component list on a given pixel grid, with a given error spectrum, resolution and continuum; the import of a VPFIT model (fort.26, or the tables of the paper) into a `SystemList`; the twins of the spectra of the sample whose published analysis gives a model (in `astrocook-data`) | Opus | half a day | waits for the material of D'Odorico et al. (2010): the VPFIT models (CIV only, or complete) |
+| 7a.4 | The benchmark on the real spectra: the SQUAD DR1 spectra of the sample downloaded into `astrocook-data` (`benchmark/`, with the split); a script (or a mode of `validate_mocks.py`) that reads `$ASTROCOOK_DATA/benchmark` and compares the chain with the published CIV components (completeness, purity, N and b, the CIV mass density) and with the DLAs of the SQUAD catalogue; the effect of the difference between the SQUAD reductions and those of the paper (Guido, 13 November 2026); the results written to `astrocook-data`; the workflow in the private repository | Opus | 3-4 h | waits for the material of 7a.3 and network access to the host of the SQUAD data |
+| 7a.5 | F154: the evaluation of a model on a fixed set of pixels, without fitting, as a read-only recipe (working name `evaluate_model`, menu Absorbers; so also an MCP tool): the pixels as ranges in x or a mask column; the components of the model all (default) or a selection by system, series or z range; an option to write the normalised residuals in a column. Output: chi2, number of pixels, k (the free parameters of the constraint model: tied and frozen ones do not count), dof, reduced chi2, AIC, AICc, BIC and SpIC (Webb et al. 2021, MNRAS, doi:10.1093/mnras/staa3551, arXiv:2009.08336; implemented from the paper, it needs the footprint in pixels of each component, from the model) (Guido, 13 November 2026), and the mean of the residuals and their fraction beyond 3 sigma. One function for the private `SystemList._compute_fixed_aic` and `VoigtFitter.chi2_on_fit_pixels`, the chi2 of `metals_auto` (F111) unchanged. The basis of the comparison between alternatives (credibility, 7c) and of the evaluation of an imported model (7a.3) | Opus | 3-4 h | |
 
 *7b – Emission model*
 
 | PR | Content | Model | Estimate | Done |
 |---|---|---|---|---|
-| 7b.1 | Design document: the options for the continuum (upper envelope, splines with adaptive knots and uncertainty, Gaussian processes, PCA prediction of the forest from the red side, the mean transmission expected at each redshift, spikes recognised by their width, the F60 bias), the DLAs and BALs (masked or modelled with their wings), the emission lines and z_em (F153), the uncertainty of the continuum and its propagation to N and b (a free local continuum and zero level in the fit window, section 2); F53, F56 | Opus | half a day, then Guido's reading | |
+| 7b.1 | Design document: the options for the continuum (upper envelope, splines with adaptive knots and uncertainty, Gaussian processes, PCA prediction of the forest from the red side, the mean transmission expected at each redshift, spikes recognised by their width, the F60 bias), the DLAs and BALs (masked or modelled with their wings), the emission lines and z_em (F153), the telluric model (7b.6: a fit with templates per molecule, as Molecfit without its line-by-line radiative transfer; Molecfit itself, as an external option), the uncertainty of the continuum and its propagation to N and b (a free local continuum and zero level in the fit window, section 2); F53, F56 | Opus | half a day, then Guido's reading | |
 | 7b.2 | Prototype of the continuum, selectable next to `estimate_auto` (the method a parameter of the recipe, its default the old one), with its uncertainty; measured on both grids and on the development spectra | Opus | 1-2 days | |
 | 7b.3 | F153: an estimator of z_em from the emission lines (and the onset of the forest), as a recipe; its accuracy on the mocks | Opus | half a day | |
 | 7b.4 | The uncertainty of the continuum in the fit: a local continuum (and zero level) free in the fit window, or the continuum uncertainty propagated to N and b, as decided in 7b.1 | Opus | 1 day | |
 | 7b.5 | The new continuum the default, if the benchmark shows it better; the release notes | Sonnet | 1 h | |
+| 7b.6 | The telluric model, in-house (suggested by V. D'Odorico; Guido, 13 November 2026): a fit of the telluric transmission with the templates of 7a.1 (a depth per part, H2O apart from the rest, a small velocity shift, the resolution of the spectrum), with the local continuum, as a recipe; measured on the telluric case of the robustness grid and on the development spectra | Opus | 1-2 days | |
 
 *7c – Identification*
 
@@ -566,7 +567,7 @@ Agreed with Guido at the start of the MCP pilot (October 2026); scope and plan a
 | 7c.2 | Design document: identification as a comparison between hypotheses; every absorbed region accounted for (identified or unidentified); alternatives and credibility (from the measure of 7a.5); multiplets beyond their first two lines and F1 = F2^gamma after the convolution; the scoring (F119) and the completeness down to 3 sigma (F57); Ly-a only when asked, and the interlopers (F51); tellurics (F54, F155); the pairs stored (F93); the standard multiplets (#455) | Opus | half a day to a day, then Guido's reading | |
 | 7c.3 | The data structure of the candidates with their alternatives and credibility, and their place in the archive: one mechanism for the structured data that a FITS header cannot hold, used also by the Bayesian samples (F28, from 7-bis) | Opus | half a day | |
 | 7c.4 | Prototype of the identification, selectable next to `identify_lines`; measured on both grids and on the development spectra | Opus | 1-2 days | |
-| 7c.5 | Tellurics: the telluric model (F155) in the identification and in the fit, from `data-telluric-2026` | Opus | half a day | |
+| 7c.5 | Tellurics in the identification and in the fit: the model of 7b.6 (F155) used to flag or mask the telluric lines (F54) | Opus | 2-3 h | |
 | 7c.6 | The output of the pipelines: the candidates, their alternatives and the dropped ones with their score (F119, decided on PR 7 of 6-ter) in `RecipeResult.extra` and in the MCP outputs; F112 (`IdentificationSummary`) rebuilt on them | Sonnet | 2 h | |
 | 7c.7 | The GUI of the identification: alternatives and credibility in the Identifications window and the System Inspector; screenshots, agreed with Guido | Opus | half a day | |
 | 7c.8 | The new identification the default, if the benchmark shows it better; the release notes | Sonnet | 1 h | |
@@ -590,7 +591,7 @@ Agreed with Guido at the start of the MCP pilot (October 2026); scope and plan a
 |---|---|---|---|---|
 | 7.Z | Closing of the phase: "Result of the phase", the progress table, the rules in force, `CLAUDE.md`, the detail to `ROADMAP_HISTORY.md`; the full benchmark on both grids and the slow tests on the final master; the release | Sonnet | 2 h | |
 
-*Order.* 7a.1, 7a.2, 7a.5, then 7c.1; the design documents 7b.1 and 7c.2 next (Guido reads one while the other is written); then the prototypes of 7b and 7c, with 7c.3 before 7c.4; 7d after 7c.4 (its flags and the addition of components are measured on the new identification); 7a.3 and 7a.4 when their material arrives. In all about 15-20 working days of the sessions, plus Guido's reading of three design documents.
+*Order.* 7a.1, 7a.2, 7a.5, then 7c.1; the design documents 7b.1 and 7c.2 next (Guido reads one while the other is written); then the prototypes of 7b and 7c (7b.6 after 7b.2 and before 7c.5), with 7c.3 before 7c.4; 7d after 7c.4 (its flags and the addition of components are measured on the new identification); 7a.3 and 7a.4 when their material arrives. In all about 15-20 working days of the sessions, plus Guido's reading of three design documents.
 
 *Findings* (register, 3.2): F51, F52, F53, F54, F56, F57, F58, F59, F68, F93, F116, F118, F119 (the scoring), F121, F148, F149 (the criterion), F153-F156; F60 (the 0.055 sigma bias, closed in phase 4, its rest here); #455.
 
@@ -986,30 +987,33 @@ is in the private repository `DAS-OATs/astrocook-data`,
 `papers/plan.md`; here only what drives the development.
 
 **Reference paper (A, after phase 7).** Validation on mocks and an
-automatic re-analysis of the UVES Deep Spectrum of HE0940–1050, assisted
-by an agent through MCP, compared with the published VPFIT analysis
-(D'Odorico et al. 2016) and with a *synthetic twin* of the spectrum (a
-mock with the published components, on the grid, with the error
-spectrum, resolution and continuum of the real one).
+automatic re-analysis of the 28 UVES quasars of D'Odorico et al. (2010),
+in the reductions of SQUAD DR1, assisted by an agent through MCP,
+compared with the published analysis and with *synthetic twins* of the
+spectra where it gives a model (a mock with the published components, on
+the grid, with the error spectrum, resolution and continuum of the real
+one). Guido, 13 November 2026; before, the UVES Deep Spectrum of
+HE0940–1050 alone, compared with D'Odorico et al. (2016).
 
-**Rule: the real spectrum of HE0940–1050 stays blind** until the version
-of the paper is frozen (after phase 7). Astrocook is developed and
-measured only on the mocks and on the twin, never on the real spectrum,
-so that it is not tuned on it; the analysis plan is written before the
-first run on it.
+**Rule: the test part of the sample stays blind** (20 spectra, among
+them HE0940–1050; the split in phase 7, "Data and blindness") until the
+version of the paper is frozen (after phase 7). Astrocook is developed
+and measured only on the mocks, the development part and the twins,
+never on the test spectra, so that it is not tuned on them; the analysis
+plan is written before the first run on them.
 
 **What the development owes to the paper:**
 
 | What | When |
 |---|---|
-| Twin: a mock from an arbitrary component list, on a given pixel grid, with a given error spectrum, resolution and continuum (`astrocook/mocks` has a uniform velocity grid, a power-law continuum and an error from the S/N today) | small, when the material of the published analysis arrives |
+| Twins: a mock from an arbitrary component list, on a given pixel grid, with a given error spectrum, resolution and continuum (`astrocook/mocks` has a uniform velocity grid, a power-law continuum and an error from the S/N today) | small, when the material of the published analysis arrives |
 | Import of a VPFIT model (fort.26 or the tables of a paper) into a `SystemListV2`, and its evaluation on a spectrum without fitting (chi2, residuals, AIC/BIC per system) | new, small |
 | Full MCP server, with the log of the decisions of the agent | phase 6-ter |
 | Emission model with an uncertainty; identification with alternatives and credibility | phase 7 |
 | Mock benchmark rerun with the frozen version | after phase 7 |
 
-The twin also gives phase 7 a realistic high-S/N development case, which
-the mocks of phase 4 do not cover.
+The twins of the development part also give phase 7 realistic
+development cases, which the mocks of phase 4 do not cover.
 
 **Software paper (B, JOSS)**: as soon as the LICENSE arrives (#549); the
 recipe API is stable after phase 6-bis.
