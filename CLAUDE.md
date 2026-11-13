@@ -48,7 +48,7 @@ screenshots (PRs 11, 12): estimate 2 h for those.
 Astrocook: a Python package for the analysis of quasar spectra (continuum,
 identification of absorption systems, Voigt fitting). PySide6 GUI +
 scriptable API. Author and maintainer: Guido Cupani (INAF–OATs).
-Current version: 2.6.0 (2.7.0 is PR 14 of phase 6-quater). Python ≥3.12.
+Current version: 2.7.0 (prepared in PR 14, 13 November 2026). Python ≥3.12.
 
 ## Architecture (v2)
 - `astrocook/core/` – immutable dataclasses (`structures.py`), `Spectrum`,
@@ -208,8 +208,9 @@ Current version: 2.6.0 (2.7.0 is PR 14 of phase 6-quater). Python ≥3.12.
 ## Current status
 Phases 0, 1, 1-bis, 2, 2-bis, 3, 3-bis, 4, 5, 5-bis, 6, 6-bis, 6-ter and
 6-quater are done (October-November 2026; short summaries and the result of
-each in `ROADMAP.md`, the detail in `ROADMAP_HISTORY.md`). Release 2.6.0
-(10 November 2026) is on GitHub with the macOS app, not on PyPI. The
+each in `ROADMAP.md`, the detail in `ROADMAP_HISTORY.md`). Release 2.7.0
+(13 November 2026; 2.6.0 was 10 November) is published by Guido on GitHub
+with the macOS app, not on PyPI. The
 results on the mock benchmark are those of 2.2.0
 (`benchmarks/results/validate_mocks_baseline.json`) except `metals_auto`,
 which the benchmark does not run (phase 6-ter, PR 7-quater): phases that
@@ -219,11 +220,9 @@ Phase 6-quater (review of the recipe parameters, PRs #752-#768, closed in
 PR 13 on 13 November 2026) left: aliases for renamed parameters and
 classes, mypy at zero errors, one set of column names, the units of the
 flux (`arb_flux`), the menus from the registry, the shorter MCP
-descriptions (`SHARED_PARAMS`); the numbers of the benchmark unchanged by
-construction. What still holds is in "Rules and decisions in force"
-(`ROADMAP.md`). Next: PR 14, the release 2.7.0 (the version, the CHANGELOG,
-`switcher.json`, the slow tests and the full benchmark on the final master),
-then phase 7 (robust components, measured on the benchmark of phase 4; the
+descriptions (`SHARED_PARAMS`); the numbers of the benchmark unchanged (full run
+on the final master identical to the baseline). What still holds is in "Rules and decisions in force"
+(`ROADMAP.md`). Next: phase 7 (robust components, measured on the benchmark of phase 4; the
 real analysis of the MCP server goes there) and phase 7-bis (small fixes: the
 register of 3.2 says which findings go to each).
 
