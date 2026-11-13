@@ -36,8 +36,15 @@ plan and reports through its PR description and the update of that row.
 A planning conversation lasts one block of a phase (e.g. 7a), not the
 whole phase: it writes the details of the block, reviews only the PRs of
 judgement (the description, `git diff --stat`, the central files), and
-closes with the block. No conversation reads the transcripts of another
-or creates sessions for Guido.
+closes with the block. The planning conversation of a block opens the
+sessions of its PRs (`create_session`: the repository, the model of the
+plan, a prompt of a few lines that points to the row of the PR, the tag
+of the block, e.g. `phase-7a`, and the title by the convention below),
+for Guido to work in; it does not follow them, and no conversation reads
+the transcripts of another. Titles of the sessions: `<PR> · <subject>`
+(e.g. `7a · planning`, `7a.1 · new mocks`, `B1 · script console`); a
+session opened by hand gives itself that title at its start
+(`set_session_title`).
 Calibration (phase 6-quater): PRs 1-7 took one working day in all, about
 1 h for a mechanical PR (Sonnet) and 2-4 h for a review (Opus); the
 estimates of the plan had been 4-8 times longer. Later in the phase a
