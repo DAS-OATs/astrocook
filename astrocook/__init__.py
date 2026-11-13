@@ -7,7 +7,7 @@ from .session.session import Session
 __all__ = ["Session"]
 
 # Expose formatting/version info if needed
-__version__ = "2.6.0"
+__version__ = "2.7.0"
 
 # Old name (phase 6-quater, PR 6): see astrocook/_renamed.py
 __getattr__ = renamed(__name__, {"SessionV2": "Session"})
