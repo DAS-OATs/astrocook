@@ -110,7 +110,7 @@ MAIN_WINDOW |= {'_setup_follow', '_apply_follow_style', '_banner_room', '_follow
                 'is_followed', '_follow_if_marked', '_watch', '_unwatch', '_forget_followed',
                 '_on_followed_path_changed', '_check_followed', '_reload_followed',
                 '_on_followed_loaded', '_on_followed_failed', '_replace_followed_state',
-                '_end_follow', '_update_follow_banner', '_refuse_if_followed',
+                '_end_follow', '_writer_text', '_update_follow_banner', '_refuse_if_followed',
                 '_refuse_recipe_if_followed', '_on_make_editable_copy', '_show_if_followed'}
 #: ... without the lists of the recipes that need z_em or the resolution,
 #: now declared by each recipe in the registry (phase 6-bis, PR 1)
