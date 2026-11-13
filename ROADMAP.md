@@ -1306,7 +1306,7 @@ its own, except the smallest; the model of each PR proposed by the rule
 | 10 | Review of the manual fits (`add_component`, `update_component(s)`, `delete_component`, `detect_anchor`, `fit_component`, `update_constraint(s)` with F117, `add_linked_system`, `optimize_system`, `fit_bayesian`); possibly split in two | Opus | 3-5 h (two PRs if split) (split, Guido, 12 November 2026: PR 10 the components and the constraints, done, 12 November 2026, about 3 h: see below) |
 | 10-bis | Review of `optimize_system` and `fit_bayesian` (split from PR 10, Guido, 12 November 2026): the unknown components refused as in PR 10 (F142), `uuids` of `fit_bayesian` required, the GUI no longer passing `"500"`, `"250"`, `"2"` as strings, the description of `z_window_kms` of `optimize_system` (the window analysed and the freedom of z in its fits); the samplers: F139 (the crash of nested sampling), F140 (the posterior of nested sampling without its weights), F141 (MCMC with more than 16 free parameters: its 32 walkers are a heuristic, to ask Guido before changing them), the minimum of `nlive`. The numbers of nested sampling change (slow tests, a measure). F28 and F114 not touched | Opus | 2 h (done, 12 November 2026: see below) |
 | 11 | F107: the labels of the menus of the GUI from the registry (and the screenshots), with F125 (the pages of `docs/` for the *Help* button) | Sonnet | 1 h (done, 12 November 2026, about 2 h with the tests, the documentation and the screenshots: see below) |
-| 12 | MCP server: the descriptions of the shared parameters shorter, a paragraph of typical workflows in the instructions, the banner of a followed session with the pid and the version of the marker | Sonnet | 1 h |
+| 12 | MCP server: the descriptions of the shared parameters shorter, a paragraph of typical workflows in the instructions, the banner of a followed session with the pid and the version of the marker | Sonnet | 1 h (done, 13 November 2026, about 2 h with the tests, the screenshot and the documentation: see below) |
 | 13 | Closing of the phase (added on PR 8, Guido): "Result of the phase" in this section, the progress table, "Rules and decisions in force" (what of the phase still holds: the aliases, the one set of names of the columns, the units of the flux), `CLAUDE.md`; the concluded detail moved to `ROADMAP_HISTORY.md`; before it, the review with Guido of the findings without a phase (added on PR 10-bis, Guido: F15, F17, F28, F30, F52, F101, F102, F112, F114, F115, F116, F126, F128; a phase for each, or closed: F52 and F116 wait for #517, closed in phase 4) | Sonnet | 1 h |
 | 14 | Release 2.7.0 (added on PR 8, Guido): the version, the CHANGELOG (the summary of the phase and the numerical results: unchanged on the benchmark), the "preferred" entry of `switcher.json`; the release and the macOS app published by Guido | Sonnet | 1 h |
 
@@ -1614,6 +1614,44 @@ its own, except the smallest; the model of each PR proposed by the rule
   - New `tests/test_recipe_review_file_flux.py` (the behaviour kept and
     the behaviour changed, each test saying what it was), new cases in
     `test_recipe_inputs.py`; `test_mcp_schemas.py` follows `folder`.
+- *Result of PR 12* (MCP server: shared parameters, workflows, banner; 13
+  November 2026; the table of the shared descriptions and the tests agreed
+  with Guido in the conversation of the PR). (1) **The descriptions of the
+  four parameters of every recipe tool** (`session_id`, `provide_missing`,
+  `max_listed`, `reason`) are shorter: 34 018 characters in the 65 tools
+  (the `session_id` of the sessions' tools included) became 22 522 (-34%),
+  of the 51 078 of all the descriptions of parameters; no constraint lost
+  (the default of `provide_missing`, that the counts are complete, that a
+  recipe that only returns a value logs nothing). One source:
+  `SHARED_PARAMS` in `mcp_server/schemas.py`, read by `SERVER_PARAMS`
+  (`tools.py`) and by `SESSION_ID` (`session_tools.py`), which had a second
+  text. Tests (`test_mcp_schemas.py`): one text in every tool, at most 160
+  characters per shared description, 24 000 in all over the 48 recipe tools
+  (21 360 now), and at most 300 for any description of any tool (the longest
+  is 257); the registry's own descriptions (`z_window_kms`, `max_b`, ...) were
+  not shortened: each says something of its recipe, and appears in 1-10 tools.
+  (2) **A paragraph of workflows** in the instructions of the server
+  (`INSTRUCTIONS_WORKFLOWS`, 1 860 characters): which tools of *Absorbers*
+  fit (`add_component`, `add_linked_system`, `fit_component`, then
+  `refit_all`, `optimize_system`) and which do not (`update_component(s)`,
+  `update_constraint`, `update_constraints_column`), and three workflows with
+  examples (adapt a system, try a component, link ions); the examples were
+  run on the mock, and a test reads them (tools, parameters, required ones)
+  from the registry. The advice of the trials of section 4.3 (undo to drop
+  alternatives, `session_duplicate` to try) is in it. Found, and not
+  changed: F152 (the update recipes do not redraw the model). (3) **The
+  banner of a followed session** says the pid and the version of Astrocook
+  of the process that writes the archive. The marker already held them (PR
+  5-bis of 6-ter): the GUI did not show them; `FollowMarker.pid` is now
+  optional, because `read_marker` discarded a marker without it, so one of an
+  earlier version is read and its banner is as before. The scene
+  `agents_followed_session` of the screenshots writes a fixed marker (pid
+  4121, 2.6.0) so that the image does not change at every run. Numbers and
+  behaviour of the recipes unchanged: only texts, the instructions and a
+  banner (no recipe, fit or numerical code touched), so neither the slow
+  tests nor the benchmark apply. Tests run here: `test_follow`,
+  `test_gui_follow`, `test_mcp_*` (but the slow ones), `ruff check .` and
+  `mypy`.
 - *Result of PR 11* (the labels of the menus from the registry, F107, and
   the *Help* button, F125; 12 November 2026; the table of the entries and of
   the pages agreed with Guido in the conversation of the PR). A new key
@@ -2697,5 +2735,5 @@ One line per concluded phase; the long rows are in `ROADMAP_HISTORY.md`, "7. Pro
 | 6 – Error handling | done (November 2026), PRs #691-#701; release 2.4.0 |
 | 6-bis – Recipe API | done (November 2026), PRs #705-#723; release 2.5.0 |
 | 6-ter – Full MCP server | done (November 2026), PRs #726-#747 and the closing PR 8; release 2.6.0 published on GitHub on 10 November 2026 (PR 9, #751: version, CHANGELOG, `switcher.json`); plan of the phase agreed (PR 0, #726); the tools generated from the registry, F106 found (PR 1, #729); F106 fixed (PR 1-bis, #730); the tools of the sessions, undo and redo (PR 2, #731); the tools of inspection (PR 3, #732); progress notifications (PR 4, #733); the agent's decisions in the log (PR 5a); the gaps of the recipes (PR 5b); the log as the text of a methods section (PR 5c); the GUI following a session of the server, F109 found (PR 5-bis); the headless Docker image, F110 found (PR 6, not published); trials with fresh agents, F111-F116 found (PR 7, report in section 4.3); heartbeat and reads during a recipe, F113 in part (PR 7-bis); trial 3, the editing tools, F117-F120 found (PR 7); the outputs of trial 3 (PR 7-ter); F111 and the cancellation, F113 closed, F121 found (PR 7-quater) |
-| 6-quater – Review of the recipe parameters | in progress (November 2026): plan of the phase agreed (in PR 1, ruff `B`); PR 2, the aliases of the renamed parameters; PR 3-4-bis, mypy on the whole package; PR 5, `SessionV2` and `SessionHistory` into `astrocook/session/`; PR 6, the `V2` suffixes dropped (#759); PR 7, the review of file and flux, F122-F125 found (#761); PR 8, the review of edit on columns and expressions, F120 fixed (one set of names of the columns), F126-F128 found, F127 fixed; PR 8-bis, the units of the flux (`arb_flux`) and the CSV files in ECSV, F129-F131 fixed; PR 9, the review of edit on several spectra, one rule for the sessions, F123 and F132-F138 fixed; PR 10, the review of the manual fits (components and constraints), F117 closed, F142-F146 fixed, F139-F141 found (the samplers, PR 10-bis); PR 10-bis, the review of `optimize_system` and `fit_bayesian`, F139-F142 and F150 fixed, F147 documented, F148-F149 registered; PR 11, the labels of the menus from the registry (`menu` key, F107) and the pages of the docs for the *Help* button (F125), F151 found |
+| 6-quater – Review of the recipe parameters | in progress (November 2026): plan of the phase agreed (in PR 1, ruff `B`); PR 2, the aliases of the renamed parameters; PR 3-4-bis, mypy on the whole package; PR 5, `SessionV2` and `SessionHistory` into `astrocook/session/`; PR 6, the `V2` suffixes dropped (#759); PR 7, the review of file and flux, F122-F125 found (#761); PR 8, the review of edit on columns and expressions, F120 fixed (one set of names of the columns), F126-F128 found, F127 fixed; PR 8-bis, the units of the flux (`arb_flux`) and the CSV files in ECSV, F129-F131 fixed; PR 9, the review of edit on several spectra, one rule for the sessions, F123 and F132-F138 fixed; PR 10, the review of the manual fits (components and constraints), F117 closed, F142-F146 fixed, F139-F141 found (the samplers, PR 10-bis); PR 10-bis, the review of `optimize_system` and `fit_bayesian`, F139-F142 and F150 fixed, F147 documented, F148-F149 registered; PR 11, the labels of the menus from the registry (`menu` key, F107) and the pages of the docs for the *Help* button (F125), F151 found; PR 12, the MCP server: the shared descriptions shorter (-34%), the workflows in the instructions, the pid and version of the marker in the banner, F152 found |
 | 7 – Robust components | not started |

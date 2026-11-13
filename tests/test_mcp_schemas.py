@@ -61,3 +61,43 @@ def test_what_a_schema_says():
     assert z_em["type"] == ["number", "string"]
     with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate({"region_limit": "nowhere"}, schema)
+
+
+# --- The descriptions paid in every tool (phase 6-quater, PR 12) -------------------------------
+
+#: The longest description of a shared parameter, and of any parameter
+SHARED_MAX = 160
+ANY_MAX = 300
+#: The total of the shared parameters over the tools (21 360 characters in the 48 recipe
+#: tools when they were shortened, from 32 352)
+SHARED_TOTAL_MAX = 24_000
+
+
+def _tools():
+    import asyncio
+    pytest.importorskip("mcp")
+    from astrocook.mcp_server.server import build_server
+    return asyncio.run(build_server().list_tools())
+
+
+def test_the_shared_parameters_have_one_text_and_are_short():
+    from astrocook.mcp_server.schemas import SHARED_PARAMS
+    tools = _tools()
+    total = 0
+    for tool in tools:
+        props = tool.input_schema["properties"]
+        # One text in every tool that has the parameter, the one of the
+        # registry of shared parameters (the reason and the maximum listed of
+        # session_undo, session_history and the like are their own)
+        if "session_id" in props:
+            assert props["session_id"]["description"] == \
+                SHARED_PARAMS["session_id"]["description"], tool.name
+        if "provide_missing" in props:  # a recipe tool
+            for name, shared in SHARED_PARAMS.items():
+                assert props[name] == {**shared}, (tool.name, name)
+                total += len(props[name]["description"])
+        for name, prop in props.items():
+            assert len(prop.get("description", "")) <= ANY_MAX, (tool.name, name)
+    for name, shared in SHARED_PARAMS.items():
+        assert len(shared["description"]) <= SHARED_MAX, name
+    assert 0 < total <= SHARED_TOTAL_MAX, total

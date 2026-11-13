@@ -30,14 +30,14 @@ from astrocook.mcp_server.outputs import (
     NoteResult, SaveResult,
     SessionDescription, SessionInfo, SessionList, SessionListItem, StateInfo,
     UndoResult, _jsonable, note_info, spectrum_summary)
+from astrocook.mcp_server.schemas import SHARED_PARAMS
 from astrocook.mcp_server.sessions import SessionStore
 from astrocook.mcp_server.tools import run_tool, session_info, tool_name
 from astrocook.recipes.registry import find_recipe, get_recipe
 from astrocook.recipes.result import compare_sessions
 
-SESSION_ID = Annotated[str, Field(description=(
-    "Identifier of the session, as returned by session_open, by a recipe "
-    "that opened a new session, or by session_duplicate."))]
+SESSION_ID = Annotated[str, Field(
+    description=SHARED_PARAMS["session_id"]["description"])]
 
 
 def _resolve(path: str) -> Path:

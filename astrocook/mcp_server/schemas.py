@@ -21,6 +21,28 @@ from typing import Any, Dict
 JSON_TYPES = {float: "number", int: "integer", bool: "boolean", str: "string",
               list: "array"}
 
+#: The parameters that every recipe tool has besides those of its recipe
+#: (``session_id``, ``provide_missing``, ``max_listed``, ``reason``), and
+#: the ``session_id`` of the tools of the sessions: the one source of their
+#: texts. They are paid in every tool (65), so each is as short as it can be
+#: without losing a constraint (phase 6-quater, PR 12); a test caps their
+#: length and total.
+SHARED_PARAMS: Dict[str, Dict[str, Any]] = {
+    "session_id": {"type": "string", "description": (
+        "Session id, from session_open, session_duplicate or a recipe that "
+        "opened a session.")},
+    "provide_missing": {"type": "boolean", "default": False, "description": (
+        "Run first, with defaults, the recipe that makes what the session "
+        "lacks (e.g. a continuum); reported in 'provided' and logged. False: "
+        "say what is missing.")},
+    "max_listed": {"type": "integer", "minimum": 0, "default": 50, "description": (
+        "Maximum items in each output list; the counts are always complete.")},
+    "reason": {"type": ["string", "null"], "default": None, "description": (
+        "Why this recipe with these values, in a sentence: stored in the "
+        "session log for the reviewer (a recipe that only returns a value "
+        "logs nothing).")},
+}
+
 
 def _json_default(value: Any) -> Any:
     """The default as JSON, or ``...`` if it cannot be written."""

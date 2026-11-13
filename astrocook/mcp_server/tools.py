@@ -32,7 +32,7 @@ from astrocook.mcp_server.outputs import (
     NewSession, RecipeInfo, SessionInfo, _value, changes_summary, details,
     spectrum_summary, summaries)
 from astrocook.mcp_server.progress import report_progress, run_cancellable
-from astrocook.mcp_server.schemas import parameters_schema
+from astrocook.mcp_server.schemas import SHARED_PARAMS, parameters_schema
 from astrocook.mcp_server.sessions import SessionStore
 from astrocook.recipes.errors import MissingPrerequisite, RecipeError
 from astrocook.recipes.prerequisites import missing as missing_prerequisites
@@ -45,24 +45,7 @@ from astrocook.recipes.result import run as run_registry
 EXCLUDED: dict[str, str] = {}
 
 #: The parameters of every recipe tool, besides those of the recipe
-SERVER_PARAMS = {
-    "session_id": {"type": "string", "description": (
-        "Identifier of the session to run the recipe on, as returned by "
-        "session_open or by a recipe that opened a new session.")},
-    "provide_missing": {"type": "boolean", "default": False, "description": (
-        "Provide what the session lacks and a recipe can make with its "
-        "default parameters (e.g. a continuum), before running this one; "
-        "the step is reported in 'provided' and logged. False: the tool "
-        "says what is missing instead.")},
-    "max_listed": {"type": "integer", "minimum": 0, "default": 50, "description": (
-        "Maximum number of items in each list of the output (components, "
-        "regions, systems); the counts are always complete.")},
-    "reason": {"type": ["string", "null"], "default": None, "description": (
-        "Why you run this recipe with these parameters (e.g. 'z_em from the "
-        "peak of Ly-a'), in a sentence or two: stored with the step in the "
-        "session log, for the person who reviews it. A recipe that only "
-        "returns a value logs nothing.")},
-}
+SERVER_PARAMS = SHARED_PARAMS
 
 #: In the result of a recipe that removed components or columns
 UNDO_HINT = ("session_undo restores the state before this recipe, with what it "
