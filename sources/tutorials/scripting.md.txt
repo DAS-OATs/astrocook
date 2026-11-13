@@ -10,7 +10,7 @@ result and seeing Astrocook's messages.
 Open a spectrum or a session file (`.acs2`, V1 `.acs`, or the spectrum
 formats the GUI can open) with `load_session_from_file`:
 ```python
-from astrocook.core.session import load_session_from_file
+from astrocook.session.session import load_session_from_file
 
 session = load_session_from_file("my_session.acs2", "my_session", None, "auto")
 ```
@@ -139,7 +139,7 @@ The log of a session as the text of a methods section, as *File > Export
 Log as Text* writes it (one paragraph per recipe, with the reasons, what it
 changed and the notes, then the references):
 ```python
-from astrocook.core.session_manager import SessionHistory
+from astrocook.session.history import SessionHistory
 from astrocook.methods_text import methods_text
 
 text = methods_text(history)        # a SessionHistory: the states and the log

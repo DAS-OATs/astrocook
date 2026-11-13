@@ -7,7 +7,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>astrocook.core.templates module &#8212; Astrocook 2.6.0 documentation</title>
+    <title>astrocook.core.templates module &#8212; Astrocook 2.7.0 documentation</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="../static/documentation_options.js?v=ae39cb24"></script>
+    <script src="../static/documentation_options.js?v=dfec817d"></script>
     <script src="../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../static/design-tabs.js?v=fcb327ea"></script>
@@ -47,19 +47,19 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.6.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.7.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
     <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="astrocook.recipes package" href="astrocook.recipes.html" />
+    <link rel="next" title="astrocook.core.units module" href="astrocook.core.units.html" />
     <link rel="prev" title="astrocook.core.system_list module" href="astrocook.core.system_list.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.6.0" />
+  <meta name="docsearch:version" content="2.7.0" />
   
     
     <script src="../static/searchtools.js"></script>
@@ -436,13 +436,16 @@
   <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Data structures and operations</span></p>
 <ul class="current nav bd-sidenav">
 <li class="toctree-l1 current active has-children"><a class="reference internal" href="astrocook.core.html">astrocook.core package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.column_names.html">astrocook.core.column_names module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.debug_hooks.html">astrocook.core.debug_hooks module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.resolution.html">astrocook.core.resolution module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.session.html">astrocook.core.session module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.session_manager.html">astrocook.core.session_manager module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.spectrum.html">astrocook.core.spectrum module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.structures.html">astrocook.core.structures module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.system_list.html">astrocook.core.system_list module</a></li>
 <li class="toctree-l2 current active"><a aria-current="page" class="current reference internal" href="#">astrocook.core.templates module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.units.html">astrocook.core.units module</a></li>
 </ul>
 </details></li>
 </ul>
@@ -553,7 +556,7 @@
 <dt class="sig sig-object py" id="astrocook.core.templates.qso_composite">
 <span class="sig-prename descclassname"><span class="pre">astrocook.core.templates.</span></span><span class="sig-name descname"><span class="pre">qso_composite</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../modules/astrocook/core/templates.html#qso_composite"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.templates.qso_composite" title="Link to this definition">#</a></dt>
 <dd><p>QSO composite spectrum, used to trace the Lyman-alpha emission when
-fitting the continuum (<code class="docutils literal notranslate"><span class="pre">SpectrumV2.fit_continuum(template=True)</span></code>).</p>
+fitting the continuum (<code class="docutils literal notranslate"><span class="pre">Spectrum.fit_continuum(template=True)</span></code>).</p>
 <p>Read once from <code class="docutils literal notranslate"><span class="pre">qso_composite.dat</span></code> (the same file as V1).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -589,11 +592,11 @@ fitting the continuum (<code class="docutils literal notranslate"><span class="p
       </div>
     </a>
     <a class="right-next"
-       href="astrocook.recipes.html"
+       href="astrocook.core.units.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">astrocook.recipes package</p>
+        <p class="prev-next-title">astrocook.core.units module</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>

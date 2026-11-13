@@ -7,7 +7,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>astrocook.fitting.bayesian_fitter module &#8212; Astrocook 2.6.0 documentation</title>
+    <title>astrocook.fitting.bayesian_fitter module &#8212; Astrocook 2.7.0 documentation</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="../static/documentation_options.js?v=ae39cb24"></script>
+    <script src="../static/documentation_options.js?v=dfec817d"></script>
     <script src="../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../static/design-tabs.js?v=fcb327ea"></script>
@@ -47,7 +47,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.6.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.7.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -59,7 +59,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.6.0" />
+  <meta name="docsearch:version" content="2.7.0" />
   
     
     <script src="../static/searchtools.js"></script>
@@ -436,13 +436,16 @@
   <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Data structures and operations</span></p>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1 has-children"><a class="reference internal" href="astrocook.core.html">astrocook.core package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.column_names.html">astrocook.core.column_names module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.debug_hooks.html">astrocook.core.debug_hooks module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.resolution.html">astrocook.core.resolution module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.session.html">astrocook.core.session module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.session_manager.html">astrocook.core.session_manager module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.spectrum.html">astrocook.core.spectrum module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.structures.html">astrocook.core.structures module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.system_list.html">astrocook.core.system_list module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.templates.html">astrocook.core.templates module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.units.html">astrocook.core.units module</a></li>
 </ul>
 </details></li>
 </ul>
@@ -565,14 +568,14 @@
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">astrocook.fitting.bayesian_fitter.</span></span><span class="sig-name descname"><span class="pre">BayesianVoigtFitter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">systs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_window_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/fitting/bayesian_fitter.html#BayesianVoigtFitter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.bayesian_fitter.BayesianVoigtFitter" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Bayesian engine for Voigt profile fitting.</p>
-<p>This class wraps a <a class="reference internal" href="astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitterV2" title="astrocook.fitting.voigt_fitter.VoigtFitterV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">VoigtFitterV2</span></code></a>
+<p>This class wraps a <a class="reference internal" href="astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitter" title="astrocook.fitting.voigt_fitter.VoigtFitter"><code class="xref py py-class docutils literal notranslate"><span class="pre">VoigtFitter</span></code></a>
 instance to perform Markov Chain Monte Carlo (MCMC) or Nested Sampling
 using the exact same physical model, constraints, and data preparation.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>spec</strong> (<a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><em>SpectrumV2</em></a>) – The spectral data to fit.</p></li>
-<li><p><strong>systs</strong> (<a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2"><em>SystemListV2</em></a>) – The system list containing the components to model.</p></li>
+<li><p><strong>spec</strong> (<a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.Spectrum" title="astrocook.core.spectrum.Spectrum"><em>Spectrum</em></a>) – The spectral data to fit.</p></li>
+<li><p><strong>systs</strong> (<a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemList" title="astrocook.core.system_list.SystemList"><em>SystemList</em></a>) – The system list containing the components to model.</p></li>
 <li><p><strong>z_window_kms</strong> (<em>float</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Velocity window (km/s) around component centers to include in the fit mask.
 Defaults to <code class="docutils literal notranslate"><span class="pre">20.0</span></code>.</p></li>
 </ul>
@@ -642,19 +645,26 @@ free parameters (e.g., column density between 10.0 and 23.0).</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.fitting.bayesian_fitter.BayesianVoigtFitter.run_mcmc">
-<span class="sig-name descname"><span class="pre">run_mcmc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nwalkers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nsteps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">burn_in</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../modules/astrocook/fitting/bayesian_fitter.html#BayesianVoigtFitter.run_mcmc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.bayesian_fitter.BayesianVoigtFitter.run_mcmc" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">run_mcmc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nwalkers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nsteps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">burn_in</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../modules/astrocook/fitting/bayesian_fitter.html#BayesianVoigtFitter.run_mcmc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.bayesian_fitter.BayesianVoigtFitter.run_mcmc" title="Link to this definition">#</a></dt>
 <dd><p>Execute Markov Chain Monte Carlo (MCMC) sampling using <code class="docutils literal notranslate"><span class="pre">emcee</span></code>.</p>
 <p>Initializes walkers around the initial parameter guess and samples the
 posterior distribution.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>nwalkers</strong> (<em>int</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Number of MCMC walkers. Defaults to <code class="docutils literal notranslate"><span class="pre">32</span></code>.</p></li>
+<li><p><strong>nwalkers</strong> (<em>int</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Number of MCMC walkers. Defaults to <code class="docutils literal notranslate"><span class="pre">max(32,</span> <span class="pre">2</span> <span class="pre">*</span> <span class="pre">ndim)</span></code>: emcee
+needs at least twice as many walkers as free parameters, so the
+32 walkers of before were enough up to 16 free parameters only
+(F141, phase 6-quater, PR 10-bis); up to 16 the sampling is the
+same as before. A value below <code class="docutils literal notranslate"><span class="pre">2</span> <span class="pre">*</span> <span class="pre">ndim</span></code> is refused.</p></li>
 <li><p><strong>nsteps</strong> (<em>int</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Number of sampling steps per walker. Defaults to <code class="docutils literal notranslate"><span class="pre">1000</span></code>.</p></li>
 <li><p><strong>burn_in</strong> (<em>int</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Number of initial steps to discard as burn-in. Defaults to
 <code class="docutils literal notranslate"><span class="pre">min(200,</span> <span class="pre">nsteps</span> <span class="pre">//</span> <span class="pre">2)</span></code>, so that at least half of the chain is
 kept. Must be smaller than <code class="docutils literal notranslate"><span class="pre">nsteps</span></code>.</p></li>
 <li><p><strong>progress</strong> (<em>bool</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – If True, pipes progress percentage to the logger. Defaults to <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p></li>
+<li><p><strong>seed</strong> (<em>int</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Seed of the random numbers (the starting walkers and the moves),
+for a sampling that can be repeated. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code>: the
+global generator of NumPy, as before the parameter existed.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -670,8 +680,9 @@ kept. Must be smaller than <code class="docutils literal notranslate"><span clas
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
 <li><p><strong>ImportError</strong> – If the <code class="docutils literal notranslate"><span class="pre">emcee</span></code> package is not installed.</p></li>
-<li><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">nsteps</span> <span class="pre">&lt;</span> <span class="pre">1</span></code> or <code class="docutils literal notranslate"><span class="pre">burn_in</span></code> is not smaller than <code class="docutils literal notranslate"><span class="pre">nsteps</span></code>
-    (the chain left after the burn-in would be empty).</p></li>
+<li><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">nsteps</span> <span class="pre">&lt;</span> <span class="pre">1</span></code>, <code class="docutils literal notranslate"><span class="pre">burn_in</span></code> is not smaller than <code class="docutils literal notranslate"><span class="pre">nsteps</span></code>
+    (the chain left after the burn-in would be empty), or
+    <code class="docutils literal notranslate"><span class="pre">nwalkers</span></code> is less than twice the free parameters.</p></li>
 </ul>
 </dd>
 </dl>
@@ -679,7 +690,7 @@ kept. Must be smaller than <code class="docutils literal notranslate"><span clas
 
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.fitting.bayesian_fitter.BayesianVoigtFitter.run_nested">
-<span class="sig-name descname"><span class="pre">run_nested</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nlive</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">250</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../modules/astrocook/fitting/bayesian_fitter.html#BayesianVoigtFitter.run_nested"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.bayesian_fitter.BayesianVoigtFitter.run_nested" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">run_nested</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nlive</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">250</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../modules/astrocook/fitting/bayesian_fitter.html#BayesianVoigtFitter.run_nested"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.bayesian_fitter.BayesianVoigtFitter.run_nested" title="Link to this definition">#</a></dt>
 <dd><p>Execute Nested Sampling using <code class="docutils literal notranslate"><span class="pre">dynesty</span></code>.</p>
 <p>Samples the parameter space to estimate both the posterior distribution
 and the Bayesian evidence (log-Z).</p>
@@ -688,22 +699,39 @@ and the Bayesian evidence (log-Z).</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>nlive</strong> (<em>int</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Number of live points for the nested sampler. Defaults to <code class="docutils literal notranslate"><span class="pre">250</span></code>.</p></li>
 <li><p><strong>progress</strong> (<em>bool</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – If True, pipes progress (dLogZ) to the logger. Defaults to <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p></li>
+<li><p><strong>seed</strong> (<em>int</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Seed of the random numbers of the sampler, for a sampling that
+can be repeated. Defaults to <code class="docutils literal notranslate"><span class="pre">None</span></code> (not repeatable).</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A dictionary containing:
+<dd class="field-even"><p><p>A dictionary containing:
 - <code class="docutils literal notranslate"><span class="pre">'results'</span></code>: The raw <code class="docutils literal notranslate"><span class="pre">dynesty</span></code> results object.
 - <code class="docutils literal notranslate"><span class="pre">'logz'</span></code>: The estimated log-evidence.
 - <code class="docutils literal notranslate"><span class="pre">'logzerr'</span></code>: The error on the log-evidence.
-- <code class="docutils literal notranslate"><span class="pre">'samples'</span></code>: The posterior samples (np.ndarray).
-- <code class="docutils literal notranslate"><span class="pre">'medians'</span></code>: The median values for each parameter (np.ndarray).
-- <code class="docutils literal notranslate"><span class="pre">'std'</span></code>: The standard deviations for each parameter (np.ndarray).</p>
+- <code class="docutils literal notranslate"><span class="pre">'samples'</span></code>: Samples of the posterior with equal weights</p>
+<blockquote>
+<div><p>(<code class="docutils literal notranslate"><span class="pre">samples_equal</span></code> of dynesty), e.g. for a corner plot.</p>
+</div></blockquote>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">'medians'</span></code>: The weighted medians of the parameters (np.ndarray).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'std'</span></code>: The weighted standard deviations of the parameters
+(np.ndarray).</p></li>
+</ul>
+</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>dict</p>
 </dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>ImportError</strong> – If the <code class="docutils literal notranslate"><span class="pre">dynesty</span></code> package is not installed.</p>
+</dl>
+<p class="rubric">Notes</p>
+<p>The points of a nested sampling are not a sample of the posterior:
+each has its importance weight. The medians and standard deviations
+were taken from the points without the weights, and came out too
+wide (on a CIV component, 1.7 in logN and 42 km/s in b instead of
+0.005 and 0.14, which the MCMC gives): F140, phase 6-quater, PR 10-bis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ImportError</strong> – If the <code class="docutils literal notranslate"><span class="pre">dynesty</span></code> package is not installed.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -723,7 +751,7 @@ in the system list. Fixed or linked parameters maintain their prior state.</p>
 <dd class="field-even"><p>A new system list containing the updated parameters and Bayesian errors.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemListV2" title="astrocook.core.system_list.SystemListV2">SystemListV2</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.system_list.html#astrocook.core.system_list.SystemList" title="astrocook.core.system_list.SystemList">SystemList</a></p>
 </dd>
 </dl>
 </dd></dl>

@@ -7,7 +7,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Editing Data &#8212; Astrocook 2.6.0 documentation</title>
+    <title>Editing Data &#8212; Astrocook 2.7.0 documentation</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="../static/documentation_options.js?v=ae39cb24"></script>
+    <script src="../static/documentation_options.js?v=dfec817d"></script>
     <script src="../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../static/design-tabs.js?v=fcb327ea"></script>
@@ -49,7 +49,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.6.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.7.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -61,7 +61,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.6.0" />
+  <meta name="docsearch:version" content="2.7.0" />
   
     
     <script src="../static/searchtools.js"></script>
@@ -514,36 +514,42 @@
 <li><p><strong>Redo</strong>: Press <code class="docutils literal notranslate"><span class="pre">Ctrl+Y</span></code> (or <code class="docutils literal notranslate"><span class="pre">Cmd+Shift+Z</span></code>) or select <strong>Edit &gt; Redo</strong>.</p></li>
 </ul>
 </section>
-<section id="setting-session-properties">
-<span id="editing-properties"></span><h2>2. Setting Session Properties<a class="headerlink" href="#setting-session-properties" title="Link to this heading">#</a></h2>
+<section id="editing-properties">
+<span id="setting-session-properties"></span><h2>2. Setting Session Properties<a class="headerlink" href="#editing-properties" title="Link to this heading">#</a></h2>
 <p>Before running complex algorithms, ensure your session metadata is correct. Many Astrocook recipes (like the Ly-<span class="math notranslate nohighlight">\(\alpha\)</span> forest analysis) rely on the emission redshift (<span class="math notranslate nohighlight">\(z_\mathrm{em}\)</span>) to determine rest-frame wavelengths.</p>
 <ol class="arabic">
 <li><p>Select your session in the <strong>Session List</strong> (left sidebar).</p></li>
 <li><p>Go to <strong>Edit &gt; Set Properties…</strong>.</p></li>
 <li><p>A dialog will appear, showing the current values. Here you can update:</p>
 <ul class="simple">
-<li><p><strong>Name:</strong> The label used in the list.</p></li>
+<li><p><strong>Name:</strong> The label used in the list (it cannot be empty).</p></li>
 <li><p><strong>Object:</strong> The target name (often from the FITS header).</p></li>
 <li><p><strong>Emission Redshift (<span class="math notranslate nohighlight">\(z_\mathrm{em}\)</span>):</strong> Set this carefully!</p></li>
-<li><p><strong>Resolution (<span class="math notranslate nohighlight">\(R\)</span>):</strong> You can enter a resolving power (e.g., <code class="docutils literal notranslate"><span class="pre">50000</span></code>) or a pixel width (e.g., <code class="docutils literal notranslate"><span class="pre">3px</span></code>). The resolution is stored in the <code class="docutils literal notranslate"><span class="pre">resol</span></code> column of the spectrum, one value per pixel, and the fits use the value of each pixel. If the resolution varies with wavelength (e.g. after co-adding spectra of different resolution), the field is left empty, with the median as a hint, and the column is kept: if you type a value there, Astrocook asks whether to replace the column with it.</p></li>
+<li><p><strong>Flux unit (<em>yunit</em>):</strong> The unit of the flux, declared without changing the values: a flux density per unit wavelength (e.g. <code class="docutils literal notranslate"><span class="pre">erg/(Angstrom</span> <span class="pre">s</span> <span class="pre">cm^2)</span></code>, <code class="docutils literal notranslate"><span class="pre">1e-17</span> <span class="pre">erg/(Angstrom</span> <span class="pre">s</span> <span class="pre">cm^2)</span></code>), or <code class="docutils literal notranslate"><span class="pre">arb_flux</span></code> for arbitrary units. It is given to the flux, its error, the continuum and the model. Use it when the file did not say the unit (see <a class="reference internal" href="getting_started.html#getting-started-flux-unit"><span class="std std-ref">the unit of the flux</span></a>); to <em>convert</em> a flux that has a unit, use <strong>Convert Y axis</strong>.</p></li>
+<li><p><strong>Resolution (<span class="math notranslate nohighlight">\(R\)</span>):</strong> You can enter a resolving power (e.g., <code class="docutils literal notranslate"><span class="pre">50000</span></code>) or a pixel width (e.g., <code class="docutils literal notranslate"><span class="pre">3px</span></code>, with the x axis in wavelength). The resolution is stored in the <code class="docutils literal notranslate"><span class="pre">resol</span></code> column of the spectrum, one value per pixel, and the fits use the value of each pixel. If the resolution varies with wavelength (e.g. after co-adding spectra of different resolution), the field is left empty, with the median as a hint, and the column is kept: if you type a value there, Astrocook asks whether to replace the column with it.</p></li>
 </ul>
 <p>A field left empty keeps the current value.</p>
 </li>
 </ol>
 <img alt="The Set Properties dialog" class="align-center" src="../images/editing_set_properties.png" />
 </section>
-<section id="arithmetic-on-columns">
-<span id="editing-arithmetic"></span><h2>3. Arithmetic on Columns<a class="headerlink" href="#arithmetic-on-columns" title="Link to this heading">#</a></h2>
+<section id="editing-arithmetic">
+<span id="arithmetic-on-columns"></span><h2>3. Arithmetic on Columns<a class="headerlink" href="#editing-arithmetic" title="Link to this heading">#</a></h2>
 <p>Astrocook allows you to perform mathematical operations on <strong>any</strong> data column (Flux <code class="docutils literal notranslate"><span class="pre">F</span></code>, Error <code class="docutils literal notranslate"><span class="pre">dF</span></code>, Wavelength <code class="docutils literal notranslate"><span class="pre">λ</span></code>, etc.) using NumPy-style syntax.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>The names of the columns.</strong> Everywhere a column is named (expressions, the fields of the recipes, scripts, the MCP server) the names are those of the table of the GUI: <code class="docutils literal notranslate"><span class="pre">λ</span></code>, <code class="docutils literal notranslate"><span class="pre">λmin</span></code>, <code class="docutils literal notranslate"><span class="pre">λmax</span></code>, <code class="docutils literal notranslate"><span class="pre">F</span></code>, <code class="docutils literal notranslate"><span class="pre">dF</span></code>, and the other columns by their own name (<code class="docutils literal notranslate"><span class="pre">cont</span></code>, <code class="docutils literal notranslate"><span class="pre">model</span></code>, <code class="docutils literal notranslate"><span class="pre">resol</span></code>, …). Where a plain ASCII name is handier, <code class="docutils literal notranslate"><span class="pre">λ</span></code> can be written <code class="docutils literal notranslate"><span class="pre">lam</span></code> (<code class="docutils literal notranslate"><span class="pre">lammin</span></code>, <code class="docutils literal notranslate"><span class="pre">lammax</span></code>). The names that the data have in the archives (and had in the CSV files of <em>Export ASCII</em> before version 2.7), <code class="docutils literal notranslate"><span class="pre">x</span></code>, <code class="docutils literal notranslate"><span class="pre">xmin</span></code>, <code class="docutils literal notranslate"><span class="pre">xmax</span></code>, <code class="docutils literal notranslate"><span class="pre">y</span></code>, <code class="docutils literal notranslate"><span class="pre">dy</span></code>, are accepted too, so the logs and the scripts written with them still work.</p>
+</div>
 <section id="general-arithmetic">
 <h3>General Arithmetic<a class="headerlink" href="#general-arithmetic" title="Link to this heading">#</a></h3>
 <p>You can modify existing columns or create new ones.</p>
 <ol class="arabic simple">
 <li><p>Go to <strong>Edit &gt; Apply Expression…</strong>.</p></li>
-<li><p><strong>Target Column:</strong> Enter the name of the column to overwrite (e.g., <code class="docutils literal notranslate"><span class="pre">F</span></code>) or create (e.g., <code class="docutils literal notranslate"><span class="pre">F_corr</span></code>).</p></li>
+<li><p><strong>Target Column:</strong> Enter the name of the column to overwrite (e.g., <code class="docutils literal notranslate"><span class="pre">F</span></code>) or create (e.g., <code class="docutils literal notranslate"><span class="pre">F_corr</span></code>): letters, digits and <code class="docutils literal notranslate"><span class="pre">_</span></code>, not starting with a digit. The two fields start empty.</p></li>
 <li><p><strong>Expression:</strong> Enter your formula (e.g., <code class="docutils literal notranslate"><span class="pre">F</span> <span class="pre">*</span> <span class="pre">1e17</span></code>).</p></li>
 <li><p>Click <strong>Run</strong>.</p></li>
 </ol>
+<p>The expressions are evaluated by <a class="reference external" href="https://numexpr.readthedocs.io">NumExpr</a>: the arithmetic operators, the comparisons, and its functions (<code class="docutils literal notranslate"><span class="pre">sqrt</span></code>, <code class="docutils literal notranslate"><span class="pre">exp</span></code>, <code class="docutils literal notranslate"><span class="pre">log</span></code>, <code class="docutils literal notranslate"><span class="pre">log10</span></code>, <code class="docutils literal notranslate"><span class="pre">abs</span></code>, <code class="docutils literal notranslate"><span class="pre">sin</span></code>, <code class="docutils literal notranslate"><span class="pre">cos</span></code>, <code class="docutils literal notranslate"><span class="pre">where</span></code>, and <code class="docutils literal notranslate"><span class="pre">sum</span></code>, <code class="docutils literal notranslate"><span class="pre">prod</span></code>, <code class="docutils literal notranslate"><span class="pre">min</span></code>, <code class="docutils literal notranslate"><span class="pre">max</span></code>, which reduce the whole column to one number). The axis (<code class="docutils literal notranslate"><span class="pre">λ</span></code>, <code class="docutils literal notranslate"><span class="pre">λmin</span></code>, <code class="docutils literal notranslate"><span class="pre">λmax</span></code>) cannot be the target: use <strong>Convert X axis</strong> to change its unit. A new column has no unit, whatever the expression.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>The recipe dialog features <strong>toolbars</strong> above the input fields. Click buttons like <code class="docutils literal notranslate"><span class="pre">F</span></code>, <code class="docutils literal notranslate"><span class="pre">λ</span></code>, <code class="docutils literal notranslate"><span class="pre">log10</span></code>, or <code class="docutils literal notranslate"><span class="pre">sqrt</span></code> to instantly insert them into your expression syntax error-free.</p>
@@ -568,10 +574,21 @@
 <p>To exclude bad data points (e.g., dead pixels or negative errors) without deleting rows:</p>
 <ol class="arabic simple">
 <li><p>Go to <strong>Edit &gt; Mask by Expression…</strong>.</p></li>
-<li><p><strong>Target Column:</strong> The column to mask (e.g., <code class="docutils literal notranslate"><span class="pre">F</span></code>).</p></li>
+<li><p><strong>Target Column:</strong> The column to mask (e.g., <code class="docutils literal notranslate"><span class="pre">F</span></code>); not the axis (<code class="docutils literal notranslate"><span class="pre">λ</span></code>, <code class="docutils literal notranslate"><span class="pre">λmin</span></code>, <code class="docutils literal notranslate"><span class="pre">λmax</span></code>).</p></li>
 <li><p><strong>Expression:</strong> A boolean condition (e.g., <code class="docutils literal notranslate"><span class="pre">dF</span> <span class="pre">&lt;=</span> <span class="pre">0</span></code> or <code class="docutils literal notranslate"><span class="pre">λ</span> <span class="pre">&lt;</span> <span class="pre">350</span></code>).</p></li>
 <li><p>Values satisfying this condition will be set to <code class="docutils literal notranslate"><span class="pre">NaN</span></code>.</p></li>
 </ol>
+</section>
+<section id="converting-the-axes">
+<h3>Converting the Axes<a class="headerlink" href="#converting-the-axes" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><strong>Edit &gt; Convert X axis…</strong>: converts the axis to another unit of wavelength (<code class="docutils literal notranslate"><span class="pre">nm</span></code>, <code class="docutils literal notranslate"><span class="pre">Angstrom</span></code>) or to velocity (<code class="docutils literal notranslate"><span class="pre">km/s</span></code>). The zero of the velocity is the Lyman-α emission at the reference redshift, 121.567 nm × (1 + <code class="docutils literal notranslate"><span class="pre">z_ref</span></code>); <code class="docutils literal notranslate"><span class="pre">z_ref</span></code> is <span class="math notranslate nohighlight">\(z_\mathrm{em}\)</span> if left at <code class="docutils literal notranslate"><span class="pre">_current_</span></code>.</p></li>
+<li><p><strong>Edit &gt; Convert Y axis…</strong>: converts the flux, its error and the columns in the same unit (<code class="docutils literal notranslate"><span class="pre">cont</span></code>, <code class="docutils literal notranslate"><span class="pre">model</span></code>, …) to another unit of flux density per unit wavelength, e.g. <code class="docutils literal notranslate"><span class="pre">erg/(Angstrom</span> <span class="pre">s</span> <span class="pre">cm^2)</span></code>. A unit per frequency (<code class="docutils literal notranslate"><span class="pre">Jy</span></code>) is not converted. A continuum or a model without a unit (in archives saved by earlier versions) is taken in the unit of the flux and converted with it. A flux in arbitrary units cannot be converted: declare its unit with <strong>Set Properties</strong>, or calibrate it.</p></li>
+</ul>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The spectrum does not remember the <code class="docutils literal notranslate"><span class="pre">z_ref</span></code> of a conversion to velocity: to go back to wavelength, convert with the same <code class="docutils literal notranslate"><span class="pre">z_ref</span></code>, and without changing <span class="math notranslate nohighlight">\(z_\mathrm{em}\)</span> in between if <code class="docutils literal notranslate"><span class="pre">z_ref</span></code> was left at <code class="docutils literal notranslate"><span class="pre">_current_</span></code>; otherwise the wavelengths come back shifted.</p>
+</div>
 </section>
 <section id="smoothing-single-columns">
 <h3>Smoothing Single Columns<a class="headerlink" href="#smoothing-single-columns" title="Link to this heading">#</a></h3>
@@ -586,7 +603,7 @@
 <ul class="simple">
 <li><p><strong>Edit &gt; Delete Elements…</strong>: Enter a comma-separated list of items to remove.</p>
 <ul>
-<li><p>Column names (e.g., <code class="docutils literal notranslate"><span class="pre">cont</span></code>, <code class="docutils literal notranslate"><span class="pre">snr</span></code>) to remove data arrays.</p></li>
+<li><p>Column names (e.g., <code class="docutils literal notranslate"><span class="pre">cont</span></code>, <code class="docutils literal notranslate"><span class="pre">snr</span></code>) to remove data arrays. The columns of every spectrum (<code class="docutils literal notranslate"><span class="pre">λ</span></code>, <code class="docutils literal notranslate"><span class="pre">λmin</span></code>, <code class="docutils literal notranslate"><span class="pre">λmax</span></code>, <code class="docutils literal notranslate"><span class="pre">F</span></code>, <code class="docutils literal notranslate"><span class="pre">dF</span></code>) cannot be removed, and a name that is not a column of the spectrum stops the recipe (the message lists the columns).</p></li>
 <li><p>Keywords <code class="docutils literal notranslate"><span class="pre">lines</span></code> or <code class="docutils literal notranslate"><span class="pre">systems</span></code> to clear the entire absorption system list.</p></li>
 </ul>
 </li>
@@ -597,7 +614,7 @@
 <p>If you have analyzed the same object in a different session (e.g., a different exposure), you can copy its absorption lines to the current one.</p>
 <ol class="arabic simple">
 <li><p>Go to <strong>File &gt; Import Systems from Session…</strong>.</p></li>
-<li><p><strong>Source Session:</strong> Select the other open session by name.</p></li>
+<li><p><strong>Source Session:</strong> Select the other open session by name (required).</p></li>
 <li><p><strong>Append:</strong> Check this to add to your current list; uncheck to replace it entirely.</p></li>
 </ol>
 </section>
@@ -610,7 +627,7 @@
 <p>To extract a custom range into a <em>new</em> session:</p>
 <ol class="arabic simple">
 <li><p>Go to <strong>Edit &gt; Split Out Region…</strong>.</p></li>
-<li><p>Enter a boolean expression. Use the dialog <strong>toolbar</strong> to insert the wavelength variable <code class="docutils literal notranslate"><span class="pre">λ</span></code>.</p>
+<li><p>Enter a boolean expression (the field starts empty). Use the dialog <strong>toolbar</strong> to insert the wavelength variable <code class="docutils literal notranslate"><span class="pre">λ</span></code>.</p>
 <ul class="simple">
 <li><p>Example: <code class="docutils literal notranslate"><span class="pre">(λ</span> <span class="pre">&gt;</span> <span class="pre">400)</span> <span class="pre">&amp;</span> <span class="pre">(λ</span> <span class="pre">&lt;</span> <span class="pre">500)</span></code></p></li>
 </ul>
@@ -624,7 +641,7 @@
 <p>Astrocook knows standard quasar regions. If your <span class="math notranslate nohighlight">\(z_\mathrm{em}\)</span> is set:</p>
 <ol class="arabic simple">
 <li><p>Go to <strong>Edit &gt; Extract Preset Region…</strong>.</p></li>
-<li><p><strong>Region:</strong> Choose a preset (e.g., <code class="docutils literal notranslate"><span class="pre">lya_forest</span></code>) or enter multiple presets separated by commas to extract them all at once (e.g., <code class="docutils literal notranslate"><span class="pre">lya_forest,</span> <span class="pre">red_side</span></code>).</p></li>
+<li><p><strong>Region:</strong> Choose a preset (<code class="docutils literal notranslate"><span class="pre">lya_forest</span></code>, <code class="docutils literal notranslate"><span class="pre">all_ly_forest</span></code>, <code class="docutils literal notranslate"><span class="pre">red_side</span></code>) or enter multiple presets separated by commas to extract them all at once (e.g., <code class="docutils literal notranslate"><span class="pre">lya_forest,</span> <span class="pre">red_side</span></code>). A name that is not a preset stops the recipe.</p></li>
 <li><p>The software automatically calculates the observed bounds and creates new sessions for each region.</p></li>
 </ol>
 <div class="admonition note">
@@ -636,6 +653,8 @@
 <section id="combining-sessions-stitch-co-add">
 <h2>6. Combining Sessions (Stitch &amp; Co-add)<a class="headerlink" href="#combining-sessions-stitch-co-add" title="Link to this heading">#</a></h2>
 <p>If you have multiple exposures of the same object, you can combine them directly from the Session List.</p>
+<p>The recipes that combine sessions name the other sessions by the names of the Session List, separated by commas; a name that is not that of an open session stops the recipe. In a Python script, where no other session is open, give the sessions themselves (e.g. <code class="docutils literal notranslate"><span class="pre">session.edit.stitch([red,</span> <span class="pre">nir])</span></code>, <code class="docutils literal notranslate"><span class="pre">session.edit.coadd([session,</span> <span class="pre">other])</span></code>); the session log records their names.</p>
+<p><strong>Units.</strong> The sessions are combined in the units of one of them, the <em>reference</em> (this session for <em>Stitch</em>, the bluest arm for <em>Equalize and Stitch</em>, the first session listed for <em>Co-add</em>): the others are converted to the unit of its axis (e.g. Å to nm) and of its flux (e.g. erg cm⁻² s⁻¹ nm⁻¹ to erg cm⁻² s⁻¹ Å⁻¹) before they are scaled or joined. A flux in arbitrary units (<code class="docutils literal notranslate"><span class="pre">arb_flux</span></code>, see <a class="reference internal" href="#editing-properties">Setting Session Properties</a>) cannot be converted to a physical one: it is combined with it only when it is scaled to it (by <em>Equalize and Stitch</em>, or by <em>Co-add</em> with <code class="docutils literal notranslate"><span class="pre">equalize_order</span></code> not None), and then takes its unit. A normalized flux (no unit) is never combined with one that is not. An axis in velocity is converted to wavelengths first with <em>Convert X axis</em>.</p>
 <section id="co-adding-spectra">
 <h3>Co-adding Spectra<a class="headerlink" href="#co-adding-spectra" title="Link to this heading">#</a></h3>
 <p>This operation defines common grid and rebins all spectra at once into it (weighting the contributions by their inverse variance and the amount of overlap with the final bins). The errors are those of the weighted mean, and the optional <code class="docutils literal notranslate"><span class="pre">kappa</span></code> clipping rejects only upward outliers (spikes), as in <strong>Flux &gt; Rebin Spectrum</strong> (see <a class="reference internal" href="flux_operations.html"><span class="std std-doc">Flux Operations</span></a>).</p>
@@ -644,12 +663,13 @@
 <li><p>In the <strong>Session List</strong>, hold <code class="docutils literal notranslate"><span class="pre">Ctrl</span></code> (or <code class="docutils literal notranslate"><span class="pre">Cmd</span></code> on Mac) and click to select multiple sessions.</p></li>
 <li><p>Right-click on the selection.</p></li>
 <li><p>Choose <strong>Co-add N sessions…</strong>.</p></li>
-<li><p>A dialog will ask for the grid parameters (e.g., step size <code class="docutils literal notranslate"><span class="pre">dx</span></code>).</p></li>
+<li><p>A dialog will ask for the grid parameters (e.g., step size <code class="docutils literal notranslate"><span class="pre">dx</span></code>; <code class="docutils literal notranslate"><span class="pre">xstart</span></code> must be below <code class="docutils literal notranslate"><span class="pre">xend</span></code>).</p></li>
 <li><p>A new, combined session will be created.</p></li>
 </ol>
+<p>The first session listed is the reference: the others are scaled to its flux by a polynomial of order <code class="docutils literal notranslate"><span class="pre">equalize_order</span></code> (0, a constant factor, the default, up to 5), or not scaled if it is <code class="docutils literal notranslate"><span class="pre">None</span></code> (the session logs written before version 2.7 say <code class="docutils literal notranslate"><span class="pre">-1</span></code>, which is the same).</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>You can also access this tool via <strong>Edit &gt; Co-add Spectra…</strong>. This opens a dialog where you can manually type the names of the sessions to combine (comma-separated), which is useful for scripting.</p>
+<p>You can also access this tool via <strong>Edit &gt; Co-add Spectra…</strong>. This opens a dialog where you can manually type the names of the sessions to combine (comma-separated, this session among them), which is useful for scripting.</p>
 </div>
 </section>
 <section id="stitching">
@@ -676,9 +696,9 @@ If the stitched spectra <strong>overlap</strong>, the pixels of the overlap regi
 <li><p>Right-click and choose <strong>Equalize and Stitch N Arms…</strong>.</p></li>
 <li><p>A dialog will appear asking for exact parameters to guide the combination:</p>
 <ul class="simple">
-<li><p><strong>stitch_wavelengths</strong>: Enter the precise wavelengths (in nm) where one arm should stop and the next should begin (e.g., <code class="docutils literal notranslate"><span class="pre">550,</span> <span class="pre">1000</span></code>). You must provide exactly <span class="math notranslate nohighlight">\(N-1\)</span> values.</p></li>
+<li><p><strong>stitch_wavelengths</strong>: Enter the precise wavelengths (in nm) where one arm should stop and the next should begin (e.g., <code class="docutils literal notranslate"><span class="pre">550,</span> <span class="pre">1000</span></code>), increasing. You must provide exactly <span class="math notranslate nohighlight">\(N-1\)</span> values, and each arm must have pixels between its cuts.</p></li>
 <li><p><strong>equalize_ranges</strong>: (Optional) Specify the exact overlap window (e.g., <code class="docutils literal notranslate"><span class="pre">545-555,</span> <span class="pre">995-1005</span></code>) Astrocook should use to calculate the flux scaling factor. Leave as <code class="docutils literal notranslate"><span class="pre">auto</span></code> to attempt a global match.</p></li>
-<li><p><strong>manual_factors</strong>: (Optional) If you already know the exact flux multipliers, enter them here to override automatic calculation.</p></li>
+<li><p><strong>manual_factors</strong>: (Optional) If you already know the exact flux multipliers (positive), enter them here to override automatic calculation.</p></li>
 </ul>
 </li>
 </ol>
@@ -745,14 +765,15 @@ If the stitched spectra <strong>overlap</strong>, the pixels of the overlap regi
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#history-management-undo-redo">1. History Management (Undo/Redo)</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#setting-session-properties">2. Setting Session Properties</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#arithmetic-on-columns">3. Arithmetic on Columns</a><ul class="nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#editing-properties">2. Setting Session Properties</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#editing-arithmetic">3. Arithmetic on Columns</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#general-arithmetic">General Arithmetic</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#creating-new-columns">Creating New Columns</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#advanced-operations">4. Advanced Operations</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#masking-data">Masking Data</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#converting-the-axes">Converting the Axes</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#smoothing-single-columns">Smoothing Single Columns</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#deleting-elements">Deleting Elements</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#importing-systems">Importing Systems</a></li>

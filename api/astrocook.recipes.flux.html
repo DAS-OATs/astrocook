@@ -7,7 +7,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>astrocook.recipes.flux module &#8212; Astrocook 2.6.0 documentation</title>
+    <title>astrocook.recipes.flux module &#8212; Astrocook 2.7.0 documentation</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="../static/documentation_options.js?v=ae39cb24"></script>
+    <script src="../static/documentation_options.js?v=dfec817d"></script>
     <script src="../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../static/design-tabs.js?v=fcb327ea"></script>
@@ -47,7 +47,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.6.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.7.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -59,7 +59,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.6.0" />
+  <meta name="docsearch:version" content="2.7.0" />
   
     
     <script src="../static/searchtools.js"></script>
@@ -436,13 +436,16 @@
   <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Data structures and operations</span></p>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1 has-children"><a class="reference internal" href="astrocook.core.html">astrocook.core package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.column_names.html">astrocook.core.column_names module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.debug_hooks.html">astrocook.core.debug_hooks module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.resolution.html">astrocook.core.resolution module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.session.html">astrocook.core.session module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.session_manager.html">astrocook.core.session_manager module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.spectrum.html">astrocook.core.spectrum module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.structures.html">astrocook.core.structures module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.system_list.html">astrocook.core.system_list module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.templates.html">astrocook.core.templates module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.units.html">astrocook.core.units module</a></li>
 </ul>
 </details></li>
 </ul>
@@ -548,157 +551,209 @@
                   
   <section id="module-astrocook.recipes.flux">
 <span id="astrocook-recipes-flux-module"></span><h1>astrocook.recipes.flux module<a class="headerlink" href="#module-astrocook.recipes.flux" title="Link to this heading">#</a></h1>
+<dl class="py data">
+<dt class="sig sig-object py" id="astrocook.recipes.flux.CORE_COLUMNS">
+<span class="sig-prename descclassname"><span class="pre">astrocook.recipes.flux.</span></span><span class="sig-name descname"><span class="pre">CORE_COLUMNS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('x',</span> <span class="pre">'xmin',</span> <span class="pre">'xmax',</span> <span class="pre">'y',</span> <span class="pre">'dy')</span></span><a class="headerlink" href="#astrocook.recipes.flux.CORE_COLUMNS" title="Link to this definition">#</a></dt>
+<dd><p>not a name for a column written by a recipe
+(phase 6-quater, PR 7: the result went to a column that nothing shows),
+by the names of the data; those of the GUI (λ, F, dF, …) too since PR 8</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The columns of every spectrum</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py class">
-<dt class="sig sig-object py" id="astrocook.recipes.flux.RecipeFluxV2">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">astrocook.recipes.flux.</span></span><span class="sig-name descname"><span class="pre">RecipeFluxV2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session_v2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/recipes/flux.html#RecipeFluxV2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.flux.RecipeFluxV2" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="astrocook.recipes.flux.RecipeFlux">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">astrocook.recipes.flux.</span></span><span class="sig-name descname"><span class="pre">RecipeFlux</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session_v2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.session.session.html#astrocook.session.session.Session" title="astrocook.session.session.Session"><span class="pre">Session</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/recipes/flux.html#RecipeFlux"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.flux.RecipeFlux" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Recipes for manipulating spectral flux and grid sampling.</p>
 <p>These methods are accessed via the <code class="docutils literal notranslate"><span class="pre">session.flux</span></code> attribute and delegate
-logic to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2" title="astrocook.core.spectrum.SpectrumV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SpectrumV2</span></code></a>.</p>
+logic to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.Spectrum" title="astrocook.core.spectrum.Spectrum"><code class="xref py py-class docutils literal notranslate"><span class="pre">Spectrum</span></code></a>.</p>
 <dl class="py method">
-<dt class="sig sig-object py" id="astrocook.recipes.flux.RecipeFluxV2.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session_v2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/recipes/flux.html#RecipeFluxV2.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.flux.RecipeFluxV2.__init__" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="astrocook.recipes.flux.RecipeFlux.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session_v2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.session.session.html#astrocook.session.session.Session" title="astrocook.session.session.Session"><span class="pre">Session</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/recipes/flux.html#RecipeFlux.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.flux.RecipeFlux.__init__" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="astrocook.recipes.flux.RecipeFluxV2.calculate_running_std">
-<span class="sig-name descname"><span class="pre">calculate_running_std</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'y'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'running_std'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_pix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">21</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../modules/astrocook/recipes/flux.html#RecipeFluxV2.calculate_running_std"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.flux.RecipeFluxV2.calculate_running_std" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="astrocook.recipes.flux.RecipeFlux.calculate_running_std">
+<span class="sig-name descname"><span class="pre">calculate_running_std</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'F'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'running_std'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_pix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">21</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.session.session.html#astrocook.session.session.Session" title="astrocook.session.session.Session"><span class="pre">Session</span></a></span></span><a class="reference internal" href="../modules/astrocook/recipes/flux.html#RecipeFlux.calculate_running_std"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.flux.RecipeFlux.calculate_running_std" title="Link to this definition">#</a></dt>
 <dd><p>Calculate running standard deviation.</p>
 <p>Calculates a running Root-Mean-Square (RMS) on a specific column to estimate
 local error or variability.
-Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.calculate_running_std" title="astrocook.core.spectrum.SpectrumV2.calculate_running_std"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.calculate_running_std()</span></code></a>.</p>
+Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.Spectrum.calculate_running_std" title="astrocook.core.spectrum.Spectrum.calculate_running_std"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.Spectrum.calculate_running_std()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>input_col</strong> (<em>str</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – The column to use for StdDev calculation (e.g., <code class="docutils literal notranslate"><span class="pre">'y'</span></code>). Defaults to <code class="docutils literal notranslate"><span class="pre">'y'</span></code>.</p></li>
-<li><p><strong>output_col</strong> (<em>str</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Name of the new column to create (e.g., <code class="docutils literal notranslate"><span class="pre">'running_std'</span></code>).
+<li><p><strong>input_col</strong> (<em>str</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – The column to use for StdDev calculation, by the names of the GUI
+(<code class="docutils literal notranslate"><span class="pre">'F'</span></code>, <code class="docutils literal notranslate"><span class="pre">'dF'</span></code>, <code class="docutils literal notranslate"><span class="pre">'cont'</span></code>, …; <code class="docutils literal notranslate"><span class="pre">'y'</span></code>, <code class="docutils literal notranslate"><span class="pre">'dy'</span></code> are
+accepted). Defaults to <code class="docutils literal notranslate"><span class="pre">'F'</span></code> (<code class="docutils literal notranslate"><span class="pre">'y'</span></code> until phase 6-quater,
+PR 8: the same column).</p></li>
+<li><p><strong>output_col</strong> (<em>str</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Name of the column to write (e.g., <code class="docutils literal notranslate"><span class="pre">'running_std'</span></code>): a new
+column, or an auxiliary one to replace; not empty, nor one of
+the columns of every spectrum (<code class="docutils literal notranslate"><span class="pre">λ</span></code>, <code class="docutils literal notranslate"><span class="pre">λmin</span></code>, <code class="docutils literal notranslate"><span class="pre">λmax</span></code>, <code class="docutils literal notranslate"><span class="pre">F</span></code>,
+<code class="docutils literal notranslate"><span class="pre">dF</span></code>, or their names in the data, <code class="docutils literal notranslate"><span class="pre">x</span></code>, …, <code class="docutils literal notranslate"><span class="pre">dy</span></code>).
 Defaults to <code class="docutils literal notranslate"><span class="pre">'running_std'</span></code>.</p></li>
 <li><p><strong>window_pix</strong> (<em>int</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Total window size in pixels (should be odd: an even one is
 increased by 1, and one below 3 is 3). Defaults to <code class="docutils literal notranslate"><span class="pre">21</span></code>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> with the calculated column added.</p>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.session.session.html#astrocook.session.session.Session" title="astrocook.session.session.Session"><code class="xref py py-class docutils literal notranslate"><span class="pre">Session</span></code></a> with the calculated column added.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.session.session.html#astrocook.session.session.Session" title="astrocook.session.session.Session">Session</a></p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="astrocook.recipes.errors.html#astrocook.recipes.errors.InvalidParameter" title="astrocook.recipes.errors.InvalidParameter"><strong>InvalidParameter</strong></a> – If <code class="docutils literal notranslate"><span class="pre">output_col</span></code> is empty or the name of a column of every
+    spectrum (phase 6-quater, PR 7: the result went to a hidden
+    column, findings register F122; PR 8: also by the names of the
+    GUI, which made a column that no expression could name).</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="astrocook.recipes.flux.RecipeFluxV2.smooth">
-<span class="sig-name descname"><span class="pre">smooth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sigma_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../modules/astrocook/recipes/flux.html#RecipeFluxV2.smooth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.flux.RecipeFluxV2.smooth" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="astrocook.recipes.flux.RecipeFlux.smooth">
+<span class="sig-name descname"><span class="pre">smooth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sigma_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.session.session.html#astrocook.session.session.Session" title="astrocook.session.session.Session"><span class="pre">Session</span></a></span></span><a class="reference internal" href="../modules/astrocook/recipes/flux.html#RecipeFlux.smooth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.flux.RecipeFlux.smooth" title="Link to this definition">#</a></dt>
 <dd><p>Smooth spectrum.</p>
 <p>Applies a Gaussian filter to the spectrum flux (y-axis), error (dy-axis),
 and auxiliary columns.
-Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.smooth" title="astrocook.core.spectrum.SpectrumV2.smooth"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.smooth()</span></code></a>.</p>
+Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.Spectrum.smooth" title="astrocook.core.spectrum.Spectrum.smooth"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.Spectrum.smooth()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>sigma_kms</strong> (<em>float</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Standard deviation for Gaussian kernel in km/s. Defaults to <code class="docutils literal notranslate"><span class="pre">100.0</span></code>.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> with smoothed columns.</p>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.session.session.html#astrocook.session.session.Session" title="astrocook.session.session.Session"><code class="xref py py-class docutils literal notranslate"><span class="pre">Session</span></code></a> with smoothed columns.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.session.session.html#astrocook.session.session.Session" title="astrocook.session.session.Session">Session</a></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="astrocook.recipes.flux.RecipeFluxV2.rebin">
-<span class="sig-name descname"><span class="pre">rebin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xstart</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xend</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xunit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'km/s'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kappa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filling</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">nan</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">norm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'False'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../modules/astrocook/recipes/flux.html#RecipeFluxV2.rebin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.flux.RecipeFluxV2.rebin" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="astrocook.recipes.flux.RecipeFlux.rebin">
+<span class="sig-name descname"><span class="pre">rebin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xstart</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xend</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xunit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'km/s'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kappa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filling</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">nan</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">norm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.session.session.html#astrocook.session.session.Session" title="astrocook.session.session.Session"><span class="pre">Session</span></a></span></span><a class="reference internal" href="../modules/astrocook/recipes/flux.html#RecipeFlux.rebin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.flux.RecipeFlux.rebin" title="Link to this definition">#</a></dt>
 <dd><p>Rebin spectrum.</p>
 <p>Applies a new binning to a spectrum with a constant bin size.
-Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.rebin" title="astrocook.core.spectrum.SpectrumV2.rebin"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.rebin()</span></code></a>.</p>
+Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.Spectrum.rebin" title="astrocook.core.spectrum.Spectrum.rebin"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.Spectrum.rebin()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>xstart</strong> (<em>float</em><em> or </em><em>None</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Start wavelength (nm). None for auto (data minimum).
 Defaults to None.</p></li>
-<li><p><strong>xend</strong> (<em>float</em><em> or </em><em>None</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – End wavelength (nm). None for auto (data maximum).
-Defaults to None.</p></li>
-<li><p><strong>dx</strong> (<em>float</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Step size in x. Defaults to <code class="docutils literal notranslate"><span class="pre">10.0</span></code>.</p></li>
-<li><p><strong>xunit</strong> (<em>str</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Unit of wavelength or velocity for the step size (e.g., <code class="docutils literal notranslate"><span class="pre">'km/s'</span></code>, <code class="docutils literal notranslate"><span class="pre">'nm'</span></code>).
-Defaults to <code class="docutils literal notranslate"><span class="pre">'km/s'</span></code>.</p></li>
+<li><p><strong>xend</strong> (<em>float</em><em> or </em><em>None</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – End wavelength (nm), above <code class="docutils literal notranslate"><span class="pre">xstart</span></code>. None for auto (data
+maximum). Defaults to None.</p></li>
+<li><p><strong>dx</strong> (<em>float</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Step size, in the unit of <code class="docutils literal notranslate"><span class="pre">xunit</span></code>. Defaults to <code class="docutils literal notranslate"><span class="pre">10.0</span></code>.</p></li>
+<li><p><strong>xunit</strong> (<em>str</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Unit of the step: a velocity (<code class="docutils literal notranslate"><span class="pre">'km/s'</span></code>, a grid uniform in log
+wavelength) or a wavelength (<code class="docutils literal notranslate"><span class="pre">'nm'</span></code>). Defaults to <code class="docutils literal notranslate"><span class="pre">'km/s'</span></code>.</p></li>
 <li><p><strong>kappa</strong> (<em>float</em><em> or </em><em>None</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Sigma clipping threshold for binning. None for off. Defaults to <code class="docutils literal notranslate"><span class="pre">5.0</span></code>.</p></li>
 <li><p><strong>filling</strong> (<em>float</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Value to fill regions without data. Defaults to NaN.</p></li>
-<li><p><strong>norm</strong> (<em>str</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Ignored, kept so that scripts and logs written for V1 still run:
-the rebinned spectrum is never normalized, and <code class="docutils literal notranslate"><span class="pre">'True'</span></code> only
-logs a warning. To see the normalized flux, use the normalized
-view of the plot, or <code class="docutils literal notranslate"><span class="pre">apply_expression</span></code> with <code class="docutils literal notranslate"><span class="pre">y/cont</span></code>.
-Defaults to <code class="docutils literal notranslate"><span class="pre">'False'</span></code>.</p></li>
+<li><p><strong>norm</strong> (<em>bool</em><em> or </em><em>str</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Ignored, kept so that scripts and logs written for V1 still run:
+the rebinned spectrum is never normalized, and a true value
+(<code class="docutils literal notranslate"><span class="pre">True</span></code>, <code class="docutils literal notranslate"><span class="pre">'True'</span></code>, <code class="docutils literal notranslate"><span class="pre">'true'</span></code>, <code class="docutils literal notranslate"><span class="pre">1</span></code>) only logs a warning. To
+see the normalized flux, use the normalized view of the plot, or
+<code class="docutils literal notranslate"><span class="pre">apply_expression</span></code> with <code class="docutils literal notranslate"><span class="pre">y/cont</span></code>. Defaults to <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> with the rebinned spectrum.</p>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.session.session.html#astrocook.session.session.Session" title="astrocook.session.session.Session"><code class="xref py py-class docutils literal notranslate"><span class="pre">Session</span></code></a> with the rebinned spectrum.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.session.session.html#astrocook.session.session.Session" title="astrocook.session.session.Session">Session</a></p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="astrocook.recipes.errors.html#astrocook.recipes.errors.InvalidParameter" title="astrocook.recipes.errors.InvalidParameter"><strong>InvalidParameter</strong></a> – If <code class="docutils literal notranslate"><span class="pre">xunit</span></code> is not a unit, or <code class="docutils literal notranslate"><span class="pre">xstart</span></code> is not below <code class="docutils literal notranslate"><span class="pre">xend</span></code>
+    (phase 6-quater, PR 7: an empty spectrum, findings register
+    F124).</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="astrocook.recipes.flux.RecipeFluxV2.equalize">
-<span class="sig-name descname"><span class="pre">equalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reference_session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'None'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../modules/astrocook/recipes/flux.html#RecipeFluxV2.equalize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.flux.RecipeFluxV2.equalize" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="astrocook.recipes.flux.RecipeFlux.equalize">
+<span class="sig-name descname"><span class="pre">equalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reference_session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.session.session.html#astrocook.session.session.Session" title="astrocook.session.session.Session"><span class="pre">Session</span></a></span></span><a class="reference internal" href="../modules/astrocook/recipes/flux.html#RecipeFlux.equalize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.flux.RecipeFlux.equalize" title="Link to this definition">#</a></dt>
 <dd><p>Equalize flux to a reference session.</p>
 <p>Scales the flux of the current session to match the flux level of a
 reference session using a polynomial scaling model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>reference_session</strong> (<em>str</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – The name of the reference session. Defaults to <code class="docutils literal notranslate"><span class="pre">'None'</span></code>.</p></li>
-<li><p><strong>order</strong> (<em>int</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – The polynomial order for the scaling model (<code class="docutils literal notranslate"><span class="pre">0</span></code> = scalar, <code class="docutils literal notranslate"><span class="pre">-1</span></code> = spline).
+<li><p><strong>reference_session</strong> (<em>str</em>) – The name of the open session whose flux is matched (required;
+<code class="docutils literal notranslate"><span class="pre">''</span></code> or <code class="docutils literal notranslate"><span class="pre">'None'</span></code>, the default of the old logs, fail saying
+that no session is selected).</p></li>
+<li><p><strong>order</strong> (<em>int</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – The model of the scaling: <code class="docutils literal notranslate"><span class="pre">0</span></code> a constant factor, <code class="docutils literal notranslate"><span class="pre">n</span> <span class="pre">&gt;</span> <span class="pre">0</span></code> a
+polynomial of order <code class="docutils literal notranslate"><span class="pre">n</span></code>, <code class="docutils literal notranslate"><span class="pre">-1</span></code> a spline (the lowest value).
 Defaults to <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A new session with the scaled flux.</p>
+<dd class="field-even"><p>A new session with the scaled flux, in the unit of its flux (an
+arbitrary flux scaled to a physical one takes the unit of the
+reference).</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.session.session.html#astrocook.session.session.Session" title="astrocook.session.session.Session">Session</a></p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="astrocook.recipes.errors.html#astrocook.recipes.errors.RecipeFailed" title="astrocook.recipes.errors.RecipeFailed"><strong>RecipeFailed</strong></a> – If the reference is not an open session, its axis cannot be
+    compared with this one (a velocity against a wavelength), or a
+    flux is normalized and the other is not (phase 6-quater, PR 9,
+    F138: the values were compared as they were, so an axis in Å
+    against one in nm was not scaled, and a flux per Å against one
+    per nm came out off by their ratio).</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="astrocook.recipes.flux.RecipeFluxV2.resample">
-<span class="sig-name descname"><span class="pre">resample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'None'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../modules/astrocook/recipes/flux.html#RecipeFluxV2.resample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.flux.RecipeFluxV2.resample" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="astrocook.recipes.flux.RecipeFlux.resample">
+<span class="sig-name descname"><span class="pre">resample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.session.session.html#astrocook.session.session.Session" title="astrocook.session.session.Session"><span class="pre">Session</span></a></span></span><a class="reference internal" href="../modules/astrocook/recipes/flux.html#RecipeFlux.resample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.flux.RecipeFlux.resample" title="Link to this definition">#</a></dt>
 <dd><p>Resample on another grid.</p>
 <p>Resamples this spectrum onto the exact wavelength grid of another open session.
 This is often a prerequisite for multi-session arithmetic.
-Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.resample_on_grid" title="astrocook.core.spectrum.SpectrumV2.resample_on_grid"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.resample_on_grid()</span></code></a>.</p>
+Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.Spectrum.resample_on_grid" title="astrocook.core.spectrum.Spectrum.resample_on_grid"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.Spectrum.resample_on_grid()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>target_session</strong> (<em>str</em>) – Name of the session to use as the grid source.</p>
+<dd class="field-odd"><p><strong>target_session</strong> (<em>str</em>) – Name of the open session whose grid is used (required; <code class="docutils literal notranslate"><span class="pre">''</span></code>
+or <code class="docutils literal notranslate"><span class="pre">'None'</span></code>, the default of the old logs, fail saying that no
+session is selected).</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> interpolated to the target grid.</p>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.session.session.html#astrocook.session.session.Session" title="astrocook.session.session.Session"><code class="xref py py-class docutils literal notranslate"><span class="pre">Session</span></code></a> interpolated to the target grid.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.session.session.html#astrocook.session.session.Session" title="astrocook.session.session.Session">Session</a></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="astrocook.recipes.flux.RecipeFluxV2.calibrate_from_magnitudes">
-<span class="sig-name descname"><span class="pre">calibrate_from_magnitudes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">magnitudes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'SDSS_r=17.0'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><span class="pre">SessionV2</span></a></span></span><a class="reference internal" href="../modules/astrocook/recipes/flux.html#RecipeFluxV2.calibrate_from_magnitudes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.flux.RecipeFluxV2.calibrate_from_magnitudes" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="astrocook.recipes.flux.RecipeFlux.calibrate_from_magnitudes">
+<span class="sig-name descname"><span class="pre">calibrate_from_magnitudes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">magnitudes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'SDSS_r=17.0'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.session.session.html#astrocook.session.session.Session" title="astrocook.session.session.Session"><span class="pre">Session</span></a></span></span><a class="reference internal" href="../modules/astrocook/recipes/flux.html#RecipeFlux.calibrate_from_magnitudes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.flux.RecipeFlux.calibrate_from_magnitudes" title="Link to this definition">#</a></dt>
 <dd><p>Flux calibrate (multi-band).</p>
 <p>Warps the spectrum SED to match multiple photometric points.
-Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.SpectrumV2.calibrate" title="astrocook.core.spectrum.SpectrumV2.calibrate"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.SpectrumV2.calibrate()</span></code></a>.</p>
+Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.Spectrum.calibrate" title="astrocook.core.spectrum.Spectrum.calibrate"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.Spectrum.calibrate()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>magnitudes</strong> (<em>str</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – List of ‘Filter=Mag’ pairs separated by commas (e.g., <code class="docutils literal notranslate"><span class="pre">&quot;SDSS_g=17.5,</span> <span class="pre">SDSS_r=17.0&quot;</span></code>).
-Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;SDSS_r=17.0&quot;</span></code>.</p>
+<dd class="field-odd"><p><strong>magnitudes</strong> (<em>str</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – List of ‘Filter=Mag’ pairs (AB magnitudes) separated by commas
+(e.g., <code class="docutils literal notranslate"><span class="pre">&quot;SDSS_g=17.5,</span> <span class="pre">SDSS_r=17.0&quot;</span></code>), the filters among those
+of <code class="xref py py-data docutils literal notranslate"><span class="pre">astrocook.core.photometry.STANDARD_FILTERS</span></code>. Defaults
+to <code class="docutils literal notranslate"><span class="pre">&quot;SDSS_r=17.0&quot;</span></code>.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2"><code class="xref py py-class docutils literal notranslate"><span class="pre">SessionV2</span></code></a> with calibrated flux.</p>
+<dd class="field-even"><p>A new <a class="reference internal" href="astrocook.session.session.html#astrocook.session.session.Session" title="astrocook.session.session.Session"><code class="xref py py-class docutils literal notranslate"><span class="pre">Session</span></code></a> with calibrated flux.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="astrocook.core.session.html#astrocook.core.session.SessionV2" title="astrocook.core.session.SessionV2">SessionV2</a></p>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.session.session.html#astrocook.session.session.Session" title="astrocook.session.session.Session">Session</a></p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="astrocook.recipes.errors.html#astrocook.recipes.errors.InvalidParameter" title="astrocook.recipes.errors.InvalidParameter"><strong>InvalidParameter</strong></a> – If <code class="docutils literal notranslate"><span class="pre">magnitudes</span></code> is not a list of pairs, or names a filter that
+    is not known (phase 6-quater, PR 7: a RecipeFailed from the
+    core).</p>
 </dd>
 </dl>
 </dd></dl>
@@ -754,14 +809,15 @@ Defaults to <code class="docutils literal notranslate"><span class="pre">&quot;S
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.flux.RecipeFluxV2"><code class="docutils literal notranslate"><span class="pre">RecipeFluxV2</span></code></a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.flux.RecipeFluxV2.__init__"><code class="docutils literal notranslate"><span class="pre">RecipeFluxV2.__init__()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.flux.RecipeFluxV2.calculate_running_std"><code class="docutils literal notranslate"><span class="pre">RecipeFluxV2.calculate_running_std()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.flux.RecipeFluxV2.smooth"><code class="docutils literal notranslate"><span class="pre">RecipeFluxV2.smooth()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.flux.RecipeFluxV2.rebin"><code class="docutils literal notranslate"><span class="pre">RecipeFluxV2.rebin()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.flux.RecipeFluxV2.equalize"><code class="docutils literal notranslate"><span class="pre">RecipeFluxV2.equalize()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.flux.RecipeFluxV2.resample"><code class="docutils literal notranslate"><span class="pre">RecipeFluxV2.resample()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.flux.RecipeFluxV2.calibrate_from_magnitudes"><code class="docutils literal notranslate"><span class="pre">RecipeFluxV2.calibrate_from_magnitudes()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.flux.CORE_COLUMNS"><code class="docutils literal notranslate"><span class="pre">CORE_COLUMNS</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.flux.RecipeFlux"><code class="docutils literal notranslate"><span class="pre">RecipeFlux</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.flux.RecipeFlux.__init__"><code class="docutils literal notranslate"><span class="pre">RecipeFlux.__init__()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.flux.RecipeFlux.calculate_running_std"><code class="docutils literal notranslate"><span class="pre">RecipeFlux.calculate_running_std()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.flux.RecipeFlux.smooth"><code class="docutils literal notranslate"><span class="pre">RecipeFlux.smooth()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.flux.RecipeFlux.rebin"><code class="docutils literal notranslate"><span class="pre">RecipeFlux.rebin()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.flux.RecipeFlux.equalize"><code class="docutils literal notranslate"><span class="pre">RecipeFlux.equalize()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.flux.RecipeFlux.resample"><code class="docutils literal notranslate"><span class="pre">RecipeFlux.resample()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.flux.RecipeFlux.calibrate_from_magnitudes"><code class="docutils literal notranslate"><span class="pre">RecipeFlux.calibrate_from_magnitudes()</span></code></a></li>
 </ul>
 </li>
 </ul>

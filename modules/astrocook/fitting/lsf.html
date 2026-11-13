@@ -6,7 +6,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>astrocook.fitting.lsf &#8212; Astrocook 2.6.0 documentation</title>
+    <title>astrocook.fitting.lsf &#8212; Astrocook 2.7.0 documentation</title>
   
   
   
@@ -38,7 +38,7 @@
   <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
 <link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="../../../static/documentation_options.js?v=ae39cb24"></script>
+    <script src="../../../static/documentation_options.js?v=dfec817d"></script>
     <script src="../../../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../../../static/design-tabs.js?v=fcb327ea"></script>
@@ -46,7 +46,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.6.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.7.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -56,7 +56,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.6.0" />
+  <meta name="docsearch:version" content="2.7.0" />
   
     
     <script src="../../../static/searchtools.js"></script>
@@ -592,8 +592,8 @@
         <span class="n">sigma_max</span> <span class="o">=</span> <span class="p">(</span><span class="n">C_KMS</span> <span class="o">/</span> <span class="n">r_min</span> <span class="o">*</span> <span class="n">FWHM_TO_SIGMA</span><span class="p">)</span> <span class="k">if</span> <span class="p">(</span><span class="n">r_min</span> <span class="ow">and</span> <span class="n">r_min</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="k">else</span> <span class="mf">0.0</span>
         <span class="n">margin</span> <span class="o">=</span> <span class="n">KERNEL_SIGMAS</span> <span class="o">*</span> <span class="n">sigma_max</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">dv</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_pix</span><span class="p">:</span>
-            <span class="n">v_start</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">v_lo</span><span class="p">)</span> <span class="o">-</span> <span class="n">margin</span>
-            <span class="n">v_end</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">v_hi</span><span class="p">)</span> <span class="o">+</span> <span class="n">margin</span>
+            <span class="n">v_start</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">v_lo</span><span class="p">)</span> <span class="o">-</span> <span class="n">margin</span>
+            <span class="n">v_end</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">v_hi</span><span class="p">)</span> <span class="o">+</span> <span class="n">margin</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">v_start</span> <span class="o">=</span> <span class="n">v_end</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="n">n_fine</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">((</span><span class="n">v_end</span> <span class="o">-</span> <span class="n">v_start</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">dv</span><span class="p">))</span> <span class="o">+</span> <span class="mi">1</span>

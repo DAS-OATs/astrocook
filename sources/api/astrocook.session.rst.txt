@@ -1,0 +1,18 @@
+astrocook.session package
+=========================
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 4
+
+   astrocook.session.session
+
+Module contents
+---------------
+
+.. automodule:: astrocook.session
+   :members:
+   :show-inheritance:
+   :undoc-members:

@@ -7,7 +7,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Getting Started &#8212; Astrocook 2.6.0 documentation</title>
+    <title>Getting Started &#8212; Astrocook 2.7.0 documentation</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="../static/documentation_options.js?v=ae39cb24"></script>
+    <script src="../static/documentation_options.js?v=dfec817d"></script>
     <script src="../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../static/design-tabs.js?v=fcb327ea"></script>
@@ -49,7 +49,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.6.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.7.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -61,7 +61,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.6.0" />
+  <meta name="docsearch:version" content="2.7.0" />
   
     
     <script src="../static/searchtools.js"></script>
@@ -508,7 +508,11 @@
 <p>Welcome to Astrocook V2! This guide will walk you through the basics of the interface: loading data, exploring your spectra, and managing your analysis sessions.</p>
 <section id="loading-a-spectrum">
 <h2>1. Loading a Spectrum<a class="headerlink" href="#loading-a-spectrum" title="Link to this heading">#</a></h2>
-<p>Let’s begin by loading some data. Astrocook supports various formats, including standard FITS files and its own archive formats (<code class="docutils literal notranslate"><span class="pre">.acs</span></code>, <code class="docutils literal notranslate"><span class="pre">.acs2</span></code>). A <code class="docutils literal notranslate"><span class="pre">.csv</span></code> file is read as three columns, by position: wavelength (nm), flux and its error (erg cm⁻² s⁻¹ Å⁻¹), with or without a line of names on top; further columns are ignored.</p>
+<p>Let’s begin by loading some data. Astrocook supports various formats, including standard FITS files and its own archive formats (<code class="docutils literal notranslate"><span class="pre">.acs</span></code>, <code class="docutils literal notranslate"><span class="pre">.acs2</span></code>). A <code class="docutils literal notranslate"><span class="pre">.csv</span></code> file written by <strong>File &gt; Export to ASCII…</strong> is read back with its columns and units (see <a class="reference internal" href="#getting-started-export">below</a>); any other <code class="docutils literal notranslate"><span class="pre">.csv</span></code> file is read as three columns, by position: wavelength (nm), flux and its error, with or without a line of names on top, and further columns are ignored.</p>
+<div class="admonition note" id="getting-started-flux-unit">
+<p class="admonition-title">Note</p>
+<p><strong>The unit of the flux.</strong> A spectrum gets a physical unit of the flux only when the file says it: the <code class="docutils literal notranslate"><span class="pre">BUNIT</span></code> or <code class="docutils literal notranslate"><span class="pre">TUNIT</span></code> keyword of a FITS file (e.g. <code class="docutils literal notranslate"><span class="pre">erg</span> <span class="pre">cm**(-2)</span> <span class="pre">s**(-1)</span> <span class="pre">angstrom**(-1)</span></code> in an ESO X-Shooter product, unless its <code class="docutils literal notranslate"><span class="pre">FLUXCAL</span></code> is <code class="docutils literal notranslate"><span class="pre">UNCALIBRATED</span></code>), the units of an exported CSV file, or the archives. Otherwise the flux is in <strong>arbitrary units</strong>, the unit <code class="docutils literal notranslate"><span class="pre">arb_flux</span></code> of Astrocook: the plot says “arbitrary units”, the iso-magnitude grid is not drawn, and <strong>Convert Y axis</strong> refuses to convert it. If you know the unit, declare it with <strong>Edit &gt; Set Properties…</strong> (the field <em>yunit</em>, e.g. <code class="docutils literal notranslate"><span class="pre">1e-17</span> <span class="pre">erg/(Angstrom</span> <span class="pre">s</span> <span class="pre">cm^2)</span></code>): the values are not changed. <strong>Flux &gt; Calibrate from Magnitudes</strong> gives the flux a physical unit by calibrating it. The archives of Astrocook 1 and the archives whose flux has no unit open in arbitrary units; an archive with a unit keeps it.</p>
+</div>
 <ol class="arabic simple">
 <li><p>Launch Astrocook. The window opens with the size and position you left it with, and shows the welcome screen, with the buttons <strong>Open Session…</strong> and <strong>Open Recent</strong> (a drop-down menu of the files you opened last).</p></li>
 <li><p>Click <strong>Open Session…</strong>, or select <strong>File &gt; Open Session…</strong> in the menu bar (or press <code class="docutils literal notranslate"><span class="pre">Ctrl+O</span></code> / <code class="docutils literal notranslate"><span class="pre">Cmd+O</span></code>). <strong>File &gt; Open Recent</strong> lists the files opened last; you can also drop files on the window.</p></li>
@@ -517,8 +521,8 @@
 <p>Once loaded, the interface will come alive. The central area displays your spectrum, while two sidebars provide control over your data and visualization.</p>
 <img alt="The main Astrocook interface with a spectrum loaded" class="align-center" src="../images/getting_started_main_view.png" />
 </section>
-<section id="navigating-the-plot">
-<span id="getting-started-navigating"></span><h2>2. Navigating the Plot<a class="headerlink" href="#navigating-the-plot" title="Link to this heading">#</a></h2>
+<section id="getting-started-navigating">
+<span id="navigating-the-plot"></span><h2>2. Navigating the Plot<a class="headerlink" href="#getting-started-navigating" title="Link to this heading">#</a></h2>
 <p>The central plot is interactive. You can explore the details of your spectrum using the toolbar in the bottom left corner of the graph. Like the side panels, it floats over the plot, which takes the whole height of the window, fades while the mouse is on the plot (it comes back when you move the mouse over it), and has a tab at its right edge that hides it and shows it again. The tool that is on (Pan, Zoom or Select) is highlighted in blue; Back and Forward are grey when there is no view to go to. The keys in brackets act after a click on the plot:</p>
 <ul class="simple">
 <li><p><strong>Home</strong> (<code class="docutils literal notranslate"><span class="pre">H</span></code>): reset the view to the full range.</p></li>
@@ -534,8 +538,8 @@
 <p>Hover your mouse over any data point or absorption line. A tooltip will appear displaying the precise Wavelength, Flux, and information about identified components or regions!</p>
 </div>
 <img alt="A region of the spectrum selected with the Select tool, and the menu of the actions on it" class="align-center" src="../images/getting_started_region_select.png" />
-<section id="the-data-inspector">
-<span id="data-inspector"></span><h3>The Data Inspector<a class="headerlink" href="#the-data-inspector" title="Link to this heading">#</a></h3>
+<section id="data-inspector">
+<span id="the-data-inspector"></span><h3>The Data Inspector<a class="headerlink" href="#data-inspector" title="Link to this heading">#</a></h3>
 <p>For precise pixel-level analysis, you can open the <strong>Data Inspector</strong>.</p>
 <ol class="arabic simple">
 <li><p><strong>Right-click</strong> on any point in the spectrum plot.</p></li>
@@ -552,8 +556,8 @@
 <p>The table supports infinite scrolling, automatically loading more data as you move up or down.</p>
 </section>
 </section>
-<section id="customizing-the-view-right-sidebar">
-<span id="getting-started-customizing"></span><h2>3. Customizing the View (Right Sidebar)<a class="headerlink" href="#customizing-the-view-right-sidebar" title="Link to this heading">#</a></h2>
+<section id="getting-started-customizing">
+<span id="customizing-the-view-right-sidebar"></span><h2>3. Customizing the View (Right Sidebar)<a class="headerlink" href="#getting-started-customizing" title="Link to this heading">#</a></h2>
 <p>Click the cog icon at the top right of the plot to open the <strong>Plot Controls</strong> panel (click it again to close it). Here you can tweak how the data is displayed without altering the data itself.</p>
 <p>The panel floats over the plot, so that opening it does not change the aspect of the spectrum. To cover as little as possible, it is only as tall as its contents, and it fades out while the mouse is on the plot: you can see the effect of a change through it. It comes back as soon as the mouse returns to it. Its sections (<strong>Plot Elements</strong>, <strong>View Controls</strong>, <strong>Axis Limits</strong>, <strong>Redshift Cursor</strong>, <strong>Edit Continuum</strong>) open and close with a click on their title, and Astrocook remembers which ones you left open.</p>
 <section id="plot-elements">
@@ -703,18 +707,19 @@
 <img alt="The Session List with context menu" class="align-center" src="../images/getting_started_session_list.png" />
 </section>
 </section>
-<section id="exporting-and-importing-data">
-<h2>5. Exporting and Importing Data<a class="headerlink" href="#exporting-and-importing-data" title="Link to this heading">#</a></h2>
+<section id="getting-started-export">
+<span id="exporting-and-importing-data"></span><h2>5. Exporting and Importing Data<a class="headerlink" href="#getting-started-export" title="Link to this heading">#</a></h2>
 <p>Astrocook allows you to easily exchange data with external tools (like spreadsheet managers, Topcat, or custom Python scripts) using standard CSV files.</p>
 <section id="export-to-ascii">
 <h3>Export to ASCII<a class="headerlink" href="#export-to-ascii" title="Link to this heading">#</a></h3>
 <p>To save your current data in a human-readable format, go to <strong>File &gt; Export to ASCII…</strong>.
 A dialog will appear allowing you to select exactly what to export:</p>
 <ul class="simple">
-<li><p><strong>Spectrum (spec)</strong>: Saves the Wavelength (<span class="math notranslate nohighlight">\(x\)</span>), Flux (<span class="math notranslate nohighlight">\(y\)</span>), Error (<span class="math notranslate nohighlight">\(dy\)</span>), Continuum (<span class="math notranslate nohighlight">\(cont\)</span>), and any other active spectral columns into a <code class="docutils literal notranslate"><span class="pre">_spec.csv</span></code> file.</p></li>
+<li><p><strong>Spectrum (spec)</strong>: Saves the wavelength (<code class="docutils literal notranslate"><span class="pre">lam</span></code>), its pixel edges (<code class="docutils literal notranslate"><span class="pre">lammin</span></code>, <code class="docutils literal notranslate"><span class="pre">lammax</span></code>), the flux (<code class="docutils literal notranslate"><span class="pre">F</span></code>), its error (<code class="docutils literal notranslate"><span class="pre">dF</span></code>), the continuum (<code class="docutils literal notranslate"><span class="pre">cont</span></code>) and any other column of the spectrum into a <code class="docutils literal notranslate"><span class="pre">_spec.csv</span></code> file. The wavelength is always written; the other columns can be chosen one by one.</p></li>
 <li><p><strong>System List (systems)</strong>: Saves your identified absorption lines (including Redshift, Column Density, Doppler Parameter, etc.) into a <code class="docutils literal notranslate"><span class="pre">_systems.csv</span></code> file.</p></li>
 </ul>
-<p>You can choose to export entire structures or pick individual columns. The suggested filename will automatically adjust based on your selection, and Astrocook will warn you if you are about to overwrite existing files.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">_spec.csv</span></code> file is in <a class="reference external" href="https://docs.astropy.org/en/stable/io/ascii/ecsv.html">ECSV</a>, the CSV format of astropy: a header of lines starting with <code class="docutils literal notranslate"><span class="pre">#</span></code> gives the unit of each column and the emission redshift, then come the names of the columns and the values, separated by commas. Opened again in Astrocook (<strong>File &gt; Open Session…</strong>), it gives back the columns, their units and <span class="math notranslate nohighlight">\(z_\mathrm{em}\)</span>; astropy reads it with <code class="docutils literal notranslate"><span class="pre">Table.read(path,</span> <span class="pre">format=&quot;ascii.ecsv&quot;)</span></code>, pandas with <code class="docutils literal notranslate"><span class="pre">pandas.read_csv(path,</span> <span class="pre">comment=&quot;#&quot;)</span></code>. The files written by earlier versions (columns <code class="docutils literal notranslate"><span class="pre">x</span></code>, <code class="docutils literal notranslate"><span class="pre">y</span></code>, <code class="docutils literal notranslate"><span class="pre">dy</span></code>, …, no units) are read by the names of their columns, with the flux in arbitrary units.</p>
+<p>You can choose to export entire structures or pick individual columns. The suggested filename will automatically adjust based on your selection, and Astrocook will warn you if you are about to overwrite existing files. An item that is neither a column nor <code class="docutils literal notranslate"><span class="pre">spec</span></code> or <code class="docutils literal notranslate"><span class="pre">systems</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">cont</span></code> before a continuum is estimated) is skipped, and a warning in the log names it.</p>
 </section>
 <section id="export-log-as-text">
 <h3>Export Log as Text<a class="headerlink" href="#export-log-as-text" title="Link to this heading">#</a></h3>
@@ -739,13 +744,17 @@ so for those steps.</p>
 <h3>Import from ASCII<a class="headerlink" href="#import-from-ascii" title="Link to this heading">#</a></h3>
 <p>If you have manipulated your exported <code class="docutils literal notranslate"><span class="pre">_spec.csv</span></code> data externally, you can bring it back into Astrocook by going to <strong>File &gt; Import from ASCII…</strong>.</p>
 <ul class="simple">
-<li><p>Astrocook will match the column headers in your CSV to the columns in the active session and overwrite them.</p></li>
+<li><p>Astrocook will match the column headers in your CSV to the columns in the active session and overwrite them; the names of the GUI (<code class="docutils literal notranslate"><span class="pre">F</span></code>, <code class="docutils literal notranslate"><span class="pre">dF</span></code>, …) and those of the data (<code class="docutils literal notranslate"><span class="pre">y</span></code>, <code class="docutils literal notranslate"><span class="pre">dy</span></code>, …) are both understood. The wavelength (<code class="docutils literal notranslate"><span class="pre">lam</span></code>, <code class="docutils literal notranslate"><span class="pre">lammin</span></code>, <code class="docutils literal notranslate"><span class="pre">lammax</span></code>, or <code class="docutils literal notranslate"><span class="pre">x</span></code>, <code class="docutils literal notranslate"><span class="pre">xmin</span></code>, <code class="docutils literal notranslate"><span class="pre">xmax</span></code>) is not read: the grid of the spectrum is kept. A column with a unit in the file keeps it; a flux or an error in a unit different from that of the session is refused.</p></li>
 <li><p><strong>Safety first:</strong> The imported file must have the exact same number of rows (pixels) as your current spectrum. Because this operates through the recipe pipeline, the import is fully undoable via the Log Scripter or <code class="docutils literal notranslate"><span class="pre">Ctrl+Z</span></code> (<code class="docutils literal notranslate"><span class="pre">Cmd+Z</span></code>).</p></li>
 </ul>
 </section>
 </section>
+<section id="the-dialog-of-a-recipe">
+<h2>6. The Dialog of a Recipe<a class="headerlink" href="#the-dialog-of-a-recipe" title="Link to this heading">#</a></h2>
+<p>Every entry of the menus <em>Edit</em>, <em>Flux</em>, <em>Continuum</em> and <em>Absorbers</em> that ends in <code class="docutils literal notranslate"><span class="pre">...</span></code> opens the dialog of a recipe, titled with the label of the entry (<em>Absorbers &gt; Auto-detect Doublets…</em> opens <em>Recipe: Auto-detect Doublets</em>). The dialog describes the recipe and its parameters; the <strong>Help</strong> button opens the page of this documentation that explains it (the section of the tutorial for the recipe, e.g. <em>Masking Data</em> for <em>Mask by Expression</em>). The session log and the text of the methods (<em>File &gt; Export Log as Text…</em>) name the recipe by the same label.</p>
+</section>
 <section id="when-something-goes-wrong">
-<h2>6. When Something Goes Wrong<a class="headerlink" href="#when-something-goes-wrong" title="Link to this heading">#</a></h2>
+<h2>7. When Something Goes Wrong<a class="headerlink" href="#when-something-goes-wrong" title="Link to this heading">#</a></h2>
 <p>A recipe that cannot run says why: in the status bar, in a dialog, and in the log written to the terminal (or to the window of the long recipes). A recipe that gives a result but has something to say about it (a parameter at a bound, a step done with its defaults) lists its warnings at the end.</p>
 <p>An error that Astrocook does not expect is a bug. It is shown in an <strong>Unexpected Error</strong> dialog with the message; <strong>Show Details…</strong> opens the traceback, which you can copy and attach to an issue on <a class="reference external" href="https://github.com/DAS-OATs/astrocook/issues">GitHub</a>. Astrocook goes on after it, but the action that failed was not completed.</p>
 </section>
@@ -803,11 +812,11 @@ so for those steps.</p>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#loading-a-spectrum">1. Loading a Spectrum</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#navigating-the-plot">2. Navigating the Plot</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-data-inspector">The Data Inspector</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#getting-started-navigating">2. Navigating the Plot</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#data-inspector">The Data Inspector</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#customizing-the-view-right-sidebar">3. Customizing the View (Right Sidebar)</a><ul class="nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#getting-started-customizing">3. Customizing the View (Right Sidebar)</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#plot-elements">Plot Elements</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#axis-controls">Axis Controls</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#axis-limits">Axis Limits</a></li>
@@ -825,13 +834,14 @@ so for those steps.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#saving-and-closing">Saving and Closing</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#exporting-and-importing-data">5. Exporting and Importing Data</a><ul class="nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#getting-started-export">5. Exporting and Importing Data</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#export-to-ascii">Export to ASCII</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#export-log-as-text">Export Log as Text</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#import-from-ascii">Import from ASCII</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#when-something-goes-wrong">6. When Something Goes Wrong</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-dialog-of-a-recipe">6. The Dialog of a Recipe</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#when-something-goes-wrong">7. When Something Goes Wrong</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-s-next">What’s Next?</a></li>
 </ul>
   </nav></div>

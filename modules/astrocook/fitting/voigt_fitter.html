@@ -6,7 +6,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>astrocook.fitting.voigt_fitter &#8212; Astrocook 2.6.0 documentation</title>
+    <title>astrocook.fitting.voigt_fitter &#8212; Astrocook 2.7.0 documentation</title>
   
   
   
@@ -38,7 +38,7 @@
   <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
 <link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="../../../static/documentation_options.js?v=ae39cb24"></script>
+    <script src="../../../static/documentation_options.js?v=dfec817d"></script>
     <script src="../../../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../../../static/design-tabs.js?v=fcb327ea"></script>
@@ -46,7 +46,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.6.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.7.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -56,7 +56,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.6.0" />
+  <meta name="docsearch:version" content="2.7.0" />
   
     
     <script src="../../../static/searchtools.js"></script>
@@ -471,7 +471,8 @@
                 <article class="bd-article">
                   
   <h1>Source code for astrocook.fitting.voigt_fitter</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">astropy.units</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">au</span>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">astrocook._renamed</span><span class="w"> </span><span class="kn">import</span> <span class="n">renamed</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">astropy.units</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">au</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.ndimage</span><span class="w"> </span><span class="kn">import</span> <span class="n">gaussian_filter1d</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.optimize</span><span class="w"> </span><span class="kn">import</span> <span class="n">least_squares</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">scipy.special</span><span class="w"> </span><span class="kn">import</span> <span class="n">wofz</span>
@@ -483,9 +484,9 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.atomic_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">ATOM_DATA</span><span class="p">,</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">,</span> <span class="n">is_multiplet</span><span class="p">,</span> <span class="n">series_lines</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.fitting.lsf</span><span class="w"> </span><span class="kn">import</span> <span class="n">PixelLSF</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum</span><span class="w"> </span><span class="kn">import</span> <span class="n">SpectrumV2</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ComponentDataV2</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.system_list</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemListV2</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Spectrum</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ComponentData</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.system_list</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemList</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
@@ -493,7 +494,7 @@
 <span class="n">TAU_CUT</span> <span class="o">=</span> <span class="mf">1e-6</span>
 
 <span class="c1">#: Flags that a fit leaves on the components it fits (#517), in</span>
-<span class="c1">#: ComponentDataV2.flags: a free parameter ended at a bound of the fit</span>
+<span class="c1">#: ComponentData.flags: a free parameter ended at a bound of the fit</span>
 <span class="c1">#: (within AT_BOUND_RTOL of the width of its range), or the uncertainties</span>
 <span class="c1">#: could not be computed. The upper bounds of the fit are those of the</span>
 <span class="c1">#: constraint model (logN 23, b 300 km/s) or the tighter max_logN and max_b</span>
@@ -577,9 +578,9 @@
 
 
 
-<div class="viewcode-block" id="VoigtFitterV2">
-<a class="viewcode-back" href="../../../api/astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitterV2">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">VoigtFitterV2</span><span class="p">:</span>
+<div class="viewcode-block" id="VoigtFitter">
+<a class="viewcode-back" href="../../../api/astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitter">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">VoigtFitter</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Engine for fitting Voigt profiles to spectral data.</span>
 
@@ -592,14 +593,14 @@
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    spectrum : SpectrumV2</span>
+<span class="sd">    spectrum : Spectrum</span>
 <span class="sd">        The spectral data to fit. Must have a valid normalization (continuum) or be pre-normalized.</span>
-<span class="sd">    system_list : SystemListV2</span>
+<span class="sd">    system_list : SystemList</span>
 <span class="sd">        The list of absorption components to model.</span>
 <span class="sd">    """</span>
-<div class="viewcode-block" id="VoigtFitterV2.__init__">
-<a class="viewcode-back" href="../../../api/astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitterV2.__init__">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spectrum</span><span class="p">:</span> <span class="n">SpectrumV2</span><span class="p">,</span> <span class="n">system_list</span><span class="p">:</span> <span class="n">SystemListV2</span><span class="p">,</span> <span class="n">check_stop</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="VoigtFitter.__init__">
+<a class="viewcode-back" href="../../../api/astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitter.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spectrum</span><span class="p">:</span> <span class="n">Spectrum</span><span class="p">,</span> <span class="n">system_list</span><span class="p">:</span> <span class="n">SystemList</span><span class="p">,</span> <span class="n">check_stop</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_spectrum</span> <span class="o">=</span> <span class="n">spectrum</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_system_list</span> <span class="o">=</span> <span class="n">system_list</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span> <span class="o">=</span> <span class="n">system_list</span><span class="o">.</span><span class="n">constraint_model</span>
@@ -611,8 +612,8 @@
         <span class="c1"># Pixel edges, for the exact convolution with the LSF (#526)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_xmin_ang</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spectrum</span><span class="o">.</span><span class="n">xmin</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">au</span><span class="o">.</span><span class="n">Angstrom</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_xmax_ang</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spectrum</span><span class="o">.</span><span class="n">xmax</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">au</span><span class="o">.</span><span class="n">Angstrom</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_x_tau</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_lsf</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_x_tau</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lsf</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
         
         <span class="n">norm_q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spectrum</span><span class="o">.</span><span class="n">norm</span>
         
@@ -637,7 +638,7 @@
         <span class="c1"># 2. Resolution Setup: the 'resol' column of the spectrum, as R</span>
         <span class="c1"># (#526; before, five sources and a guess of the unit by value). A</span>
         <span class="c1"># flat column takes the scalar path, as a global value did before</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_resol_column</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_resol_column</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_use_variable_resolution</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_val</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_unit</span> <span class="o">=</span> <span class="s1">'R'</span>
@@ -654,24 +655,24 @@
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"VoigtFitter: No resolution found. Fitting unconvolved profiles."</span><span class="p">)</span>
 
         <span class="c1"># Placeholders</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_fit_mask</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fit_mask</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_sl</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_x_calc</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_y_norm_calc</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_dy_norm_calc</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_fit_mask_calc</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_resol_calc</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_x_calc</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_y_norm_calc</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dy_norm_calc</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fit_mask_calc</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_resol_calc</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
         
         <span class="c1"># Cache is now a dict: { (resol_val, unit_str): tau_array }</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_cached_tau_groups</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cached_tau_groups</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
         
         <span class="c1"># [OPTIMIZATION] Cache list of active components for the inner loop</span>
         <span class="c1"># Stores tuples: (index_in_system_list, component_object)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_active_fit_components</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">ComponentDataV2</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_active_fit_components</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">ComponentData</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_compute_tau_component</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">comp</span><span class="p">:</span> <span class="n">ComponentDataV2</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">logN</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">btur</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_compute_tau_component</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">comp</span><span class="p">:</span> <span class="n">ComponentData</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">logN</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">btur</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
         <span class="n">atoms</span> <span class="o">=</span> <span class="p">[</span><span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">_transitions</span><span class="p">(</span><span class="n">comp</span><span class="o">.</span><span class="n">series</span><span class="p">)]</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">atoms</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_tau</span><span class="p">)</span>
@@ -682,7 +683,7 @@
             <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">at</span><span class="p">[</span><span class="s1">'gamma'</span><span class="p">]</span> <span class="k">for</span> <span class="n">at</span> <span class="ow">in</span> <span class="n">atoms</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">z</span><span class="p">)),</span>
             <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">10</span><span class="o">**</span><span class="n">logN</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">b</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">btur</span><span class="o">**</span><span class="mi">2</span><span class="p">)))</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_get_component_resolution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">comp</span><span class="p">:</span> <span class="n">ComponentDataV2</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_component_resolution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">comp</span><span class="p">:</span> <span class="n">ComponentData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Determines the resolution (val, unit) for a specific component.</span>
 <span class="sd">        Priority: Variable Column &gt; Component Attribute &gt; Global Default</span>
@@ -706,7 +707,7 @@
 <span class="w">        </span><span class="sd">"""Fine grid and LSF for the pixels ``sl`` (#526): the optical</span>
 <span class="sd">        depth is computed on ``self._x_tau``, the model on the pixels.</span>
 <span class="sd">        Without ``cache``, for a model computed once (see ``PixelLSF``)."""</span>
-        <span class="n">r_values</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">r_values</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_variable_resolution</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resol_column</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">r_values</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_resol_column</span><span class="p">[</span><span class="n">sl</span><span class="p">][</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_resol_column</span><span class="p">[</span><span class="n">sl</span><span class="p">])])</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_val</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -872,11 +873,11 @@
                           <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="o">.</span><span class="n">map_p_free_to_full</span><span class="p">(</span><span class="n">p_minus</span><span class="p">)[</span><span class="n">linked</span><span class="p">])</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">h</span><span class="p">)</span>
         <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s1">'ignore'</span><span class="p">):</span>
             <span class="n">errors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">'ij,jk,ik-&gt;i'</span><span class="p">,</span> <span class="n">grad</span><span class="p">,</span> <span class="n">cov</span><span class="p">,</span> <span class="n">grad</span><span class="p">))</span>
-        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">linked</span><span class="p">,</span> <span class="n">errors</span><span class="p">))</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">linked</span><span class="p">,</span> <span class="n">errors</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
 
-<div class="viewcode-block" id="VoigtFitterV2.evaluate_uncertainties">
-<a class="viewcode-back" href="../../../api/astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitterV2.evaluate_uncertainties">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">evaluate_uncertainties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">20.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SystemListV2</span><span class="p">:</span>
+<div class="viewcode-block" id="VoigtFitter.evaluate_uncertainties">
+<a class="viewcode-back" href="../../../api/astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitter.evaluate_uncertainties">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evaluate_uncertainties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">20.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SystemList</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Recompute the uncertainties of the active components at their current</span>
 <span class="sd">        values, without fitting.</span>
@@ -888,7 +889,7 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        SystemListV2</span>
+<span class="sd">        SystemList</span>
 <span class="sd">            A new system list with ``dz``, ``dlogN``, ``db``, ``dbtur`` (of the</span>
 <span class="sd">            free parameters) and ``chi2`` of the active components updated.</span>
 <span class="sd">        """</span>
@@ -902,7 +903,7 @@
             <span class="n">p</span> <span class="o">=</span> <span class="n">p0</span><span class="o">.</span><span class="n">copy</span><span class="p">();</span> <span class="n">p</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">+=</span> <span class="n">step</span>
             <span class="n">jac</span><span class="p">[:,</span> <span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_residual_function</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="o">-</span> <span class="n">r0</span><span class="p">)</span> <span class="o">/</span> <span class="n">step</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_active_fit_components</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_active_lines_data</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_active_lines_data</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">errors</span><span class="p">,</span> <span class="n">red_chi2</span><span class="p">,</span> <span class="n">cov</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scaled_errors</span><span class="p">(</span><span class="n">r0</span><span class="p">,</span> <span class="n">jac</span><span class="p">)</span>
             <span class="n">linked_errors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_linked_errors</span><span class="p">(</span><span class="n">p0</span><span class="p">,</span> <span class="n">cov</span><span class="p">)</span>
@@ -921,7 +922,7 @@
             <span class="k">if</span> <span class="n">active</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">c</span><span class="o">.</span><span class="n">uuid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">active</span><span class="p">:</span>
                 <span class="n">comps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="p">);</span> <span class="k">continue</span>
             <span class="n">idx</span> <span class="o">=</span> <span class="n">i</span> <span class="o">*</span> <span class="mi">4</span>
-            <span class="n">new</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'chi2'</span><span class="p">:</span> <span class="n">red_chi2</span><span class="p">}</span>
+            <span class="n">new</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'chi2'</span><span class="p">:</span> <span class="n">red_chi2</span><span class="p">}</span>
             <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">j</span> <span class="ow">in</span> <span class="p">((</span><span class="s1">'dz'</span><span class="p">,</span> <span class="n">idx</span><span class="p">),</span> <span class="p">(</span><span class="s1">'dlogN'</span><span class="p">,</span> <span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="s1">'db'</span><span class="p">,</span> <span class="n">idx</span> <span class="o">+</span> <span class="mi">2</span><span class="p">),</span>
                             <span class="p">(</span><span class="s1">'dbtur'</span><span class="p">,</span> <span class="n">idx</span> <span class="o">+</span> <span class="mi">3</span><span class="p">)):</span>
                 <span class="k">if</span> <span class="n">is_free_mask</span><span class="p">[</span><span class="n">j</span><span class="p">]:</span>
@@ -929,7 +930,7 @@
                 <span class="k">elif</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">linked_errors</span><span class="p">:</span>
                     <span class="n">new</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">linked_errors</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
             <span class="n">comps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="o">**</span><span class="n">new</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">SystemListV2</span><span class="p">(</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_system_list</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">components</span><span class="o">=</span><span class="n">comps</span><span class="p">))</span></div>
+        <span class="k">return</span> <span class="n">SystemList</span><span class="p">(</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_system_list</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">components</span><span class="o">=</span><span class="n">comps</span><span class="p">))</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_cap_upper</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bounds</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">offset</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -1009,7 +1010,7 @@
             <span class="n">continuum_threshold</span> <span class="o">=</span> <span class="mf">0.95</span>
 
         <span class="c1"># 1. Find Center Index</span>
-        <span class="n">idx_center</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="p">,</span> <span class="n">lambda_obs</span><span class="p">)</span>
+        <span class="n">idx_center</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="p">,</span> <span class="n">lambda_obs</span><span class="p">)</span>
         <span class="n">idx_center</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">idx_center</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
 
         <span class="c1"># 2. Determine Search Range (Indices)</span>
@@ -1155,8 +1156,8 @@
 <span class="w">        </span><span class="sd">"""See :func:`voigt_optical_depth`."""</span>
         <span class="k">return</span> <span class="n">voigt_optical_depth</span><span class="p">(</span><span class="n">wave_grid_ang</span><span class="p">,</span> <span class="n">lambda_0</span><span class="p">,</span> <span class="n">f_val</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">N_col</span><span class="p">,</span> <span class="n">b_kms</span><span class="p">)</span>
 
-<div class="viewcode-block" id="VoigtFitterV2.prepare_fit_context">
-<a class="viewcode-back" href="../../../api/astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitterV2.prepare_fit_context">[docs]</a>
+<div class="viewcode-block" id="VoigtFitter.prepare_fit_context">
+<a class="viewcode-back" href="../../../api/astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitter.prepare_fit_context">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">prepare_fit_context</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">20.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Prepares the internal state for fitting (masks, background, vectorized data).</span>
@@ -1275,7 +1276,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_active_lines_data</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">iterator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_active_fit_components</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_active_fit_components</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_system_list</span><span class="o">.</span><span class="n">components</span><span class="p">)</span>
-        <span class="n">grouped_lines</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">grouped_lines</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
         
         <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">iterator</span><span class="p">:</span>
             <span class="n">res_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_component_resolution</span><span class="p">(</span><span class="n">comp</span><span class="p">)</span>
@@ -1324,8 +1325,8 @@
 
 
 
-<div class="viewcode-block" id="VoigtFitterV2.get_fit_context_data">
-<a class="viewcode-back" href="../../../api/astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitterV2.get_fit_context_data">[docs]</a>
+<div class="viewcode-block" id="VoigtFitter.get_fit_context_data">
+<a class="viewcode-back" href="../../../api/astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitter.get_fit_context_data">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_fit_context_data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Retrieve all internal data required for external likelihood calculations.</span>
@@ -1354,12 +1355,12 @@
         <span class="p">}</span></div>
 
 
-<div class="viewcode-block" id="VoigtFitterV2.fit">
-<a class="viewcode-back" href="../../../api/astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitterV2.fit">[docs]</a>
+<div class="viewcode-block" id="VoigtFitter.fit">
+<a class="viewcode-back" href="../../../api/astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitter.fit">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_nfev</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2000</span><span class="p">,</span> <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">'trf'</span><span class="p">,</span> 
             <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">20.0</span><span class="p">,</span> <span class="n">verbose</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
             <span class="n">b_max</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="n">logN_max</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">SystemListV2</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+            <span class="n">logN_max</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">SystemList</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Execute the Voigt profile optimization.</span>
 
@@ -1398,7 +1399,7 @@
 <span class="sd">        tuple</span>
 <span class="sd">            A tuple containing:</span>
 <span class="sd">            </span>
-<span class="sd">            1. **new_system_list** (:class:`~astrocook.core.system_list.SystemListV2`):</span>
+<span class="sd">            1. **new_system_list** (:class:`~astrocook.core.system_list.SystemList`):</span>
 <span class="sd">               A new system list containing the optimized parameter values and errors.</span>
 <span class="sd">            2. **final_model_flux** (*np.ndarray*):</span>
 <span class="sd">               The full model flux array (physical units), evaluated on the entire grid.</span>
@@ -1422,7 +1423,7 @@
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">comp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">old_systs</span><span class="o">.</span><span class="n">components</span><span class="p">):</span>
             <span class="n">idx</span> <span class="o">=</span> <span class="n">i</span> <span class="o">*</span> <span class="mi">4</span>
             <span class="n">new_comps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">replace</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="n">p_full_refined</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">logN</span><span class="o">=</span><span class="n">p_full_refined</span><span class="p">[</span><span class="n">idx</span><span class="o">+</span><span class="mi">1</span><span class="p">],</span> <span class="n">b</span><span class="o">=</span><span class="n">p_full_refined</span><span class="p">[</span><span class="n">idx</span><span class="o">+</span><span class="mi">2</span><span class="p">],</span> <span class="n">btur</span><span class="o">=</span><span class="n">p_full_refined</span><span class="p">[</span><span class="n">idx</span><span class="o">+</span><span class="mi">3</span><span class="p">]))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_system_list</span> <span class="o">=</span> <span class="n">SystemListV2</span><span class="p">(</span><span class="n">replace</span><span class="p">(</span><span class="n">old_systs</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">components</span><span class="o">=</span><span class="n">new_comps</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_system_list</span> <span class="o">=</span> <span class="n">SystemList</span><span class="p">(</span><span class="n">replace</span><span class="p">(</span><span class="n">old_systs</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">components</span><span class="o">=</span><span class="n">new_comps</span><span class="p">))</span>
 
         <span class="n">bounds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prepare_fit_context</span><span class="p">(</span><span class="n">z_window_kms</span><span class="o">=</span><span class="n">z_window_kms</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">b_max</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -1446,7 +1447,7 @@
         <span class="c1"># Statistics</span>
         <span class="n">p_free_errors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
         <span class="n">is_free_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="o">.</span><span class="n">_param_map</span><span class="p">[</span><span class="s1">'is_free'</span><span class="p">]</span>
-        <span class="n">red_chi2</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">red_chi2</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">linked_errors</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">p_free_errors</span><span class="p">,</span> <span class="n">red_chi2</span><span class="p">,</span> <span class="n">cov</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scaled_errors</span><span class="p">(</span><span class="n">res</span><span class="o">.</span><span class="n">fun</span><span class="p">,</span> <span class="n">res</span><span class="o">.</span><span class="n">jac</span><span class="p">)</span>
@@ -1480,7 +1481,7 @@
             <span class="n">is_spectator</span> <span class="o">=</span> <span class="p">(</span><span class="n">active_uuids</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">old_comp</span><span class="o">.</span><span class="n">uuid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">active_uuids</span><span class="p">)</span>
             
             <span class="c1"># Helper to assign error</span>
-            <span class="k">def</span><span class="w"> </span><span class="nf">resolve_error</span><span class="p">(</span><span class="n">param_idx</span><span class="p">,</span> <span class="n">old_err</span><span class="p">):</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">resolve_error</span><span class="p">(</span><span class="n">param_idx</span><span class="p">,</span> <span class="n">old_err</span><span class="p">,</span> <span class="n">is_spectator</span><span class="o">=</span><span class="n">is_spectator</span><span class="p">):</span>
                 <span class="k">if</span> <span class="n">is_free_mask</span><span class="p">[</span><span class="n">param_idx</span><span class="p">]:</span>
                     <span class="k">return</span> <span class="n">p_full_errors</span><span class="p">[</span><span class="n">param_idx</span><span class="p">]</span> <span class="c1"># New calculated error</span>
                 <span class="k">elif</span> <span class="n">is_spectator</span><span class="p">:</span>
@@ -1532,7 +1533,7 @@
             
         <span class="c1"># Report the components whose uncertainties could not be computed</span>
         <span class="c1"># (findings register F20): the errors stay NaN, which the tables show</span>
-        <span class="n">nan_errors</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span><span class="p">,</span> <span class="n">old</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">new_components</span><span class="p">,</span> <span class="n">old_components</span><span class="p">)</span>
+        <span class="n">nan_errors</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span><span class="p">,</span> <span class="n">old</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">new_components</span><span class="p">,</span> <span class="n">old_components</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                       <span class="k">if</span> <span class="p">(</span><span class="n">active_uuids</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">old</span><span class="o">.</span><span class="n">uuid</span> <span class="ow">in</span> <span class="n">active_uuids</span><span class="p">)</span>
                       <span class="ow">and</span> <span class="nb">any</span><span class="p">(</span><span class="n">e</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
                               <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">dz</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">dlogN</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">db</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">dbtur</span><span class="p">))]</span>
@@ -1545,7 +1546,7 @@
                 <span class="sa">f</span><span class="s2">"Their errors are NaN; consider refitting or freezing parameters."</span><span class="p">)</span>
 
         <span class="n">new_data_core</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_system_list</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">components</span><span class="o">=</span><span class="n">new_components</span><span class="p">)</span>
-        <span class="n">new_system_list</span> <span class="o">=</span> <span class="n">SystemListV2</span><span class="p">(</span><span class="n">new_data_core</span><span class="p">)</span>
+        <span class="n">new_system_list</span> <span class="o">=</span> <span class="n">SystemList</span><span class="p">(</span><span class="n">new_data_core</span><span class="p">)</span>
         
         <span class="c1"># 4. Final Flux Model (Un-sliced)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_cached_tau_groups</span> <span class="o">=</span> <span class="p">{}</span> <span class="c1"># Clear cache</span>
@@ -1579,8 +1580,8 @@
         <span class="k">return</span> <span class="n">new_system_list</span><span class="p">,</span> <span class="n">final_model_flux</span><span class="p">,</span> <span class="n">res</span></div>
 
 
-<div class="viewcode-block" id="VoigtFitterV2.chi2_on_fit_pixels">
-<a class="viewcode-back" href="../../../api/astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitterV2.chi2_on_fit_pixels">[docs]</a>
+<div class="viewcode-block" id="VoigtFitter.chi2_on_fit_pixels">
+<a class="viewcode-back" href="../../../api/astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitter.chi2_on_fit_pixels">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">chi2_on_fit_pixels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_flux</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""The chi2 of a model flux (in the units of :meth:`fit` and</span>
 <span class="sd">        :meth:`compute_model_flux`, on the whole spectrum) on the pixels of</span>
@@ -1591,8 +1592,8 @@
         <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">resid</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">resid</span><span class="p">)]</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)),</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">mask</span><span class="p">))</span></div>
 
 
-<div class="viewcode-block" id="VoigtFitterV2.compute_model_flux">
-<a class="viewcode-back" href="../../../api/astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitterV2.compute_model_flux">[docs]</a>
+<div class="viewcode-block" id="VoigtFitter.compute_model_flux">
+<a class="viewcode-back" href="../../../api/astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitter.compute_model_flux">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">compute_model_flux</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Compute the model flux for the current parameters.</span>
@@ -1631,6 +1632,9 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="p">,</span> <span class="n">y_model_phys</span></div>
 </div>
 
+
+<span class="c1"># Old names (phase 6-quater, PR 6): see astrocook/_renamed.py</span>
+<span class="fm">__getattr__</span> <span class="o">=</span> <span class="n">renamed</span><span class="p">(</span><span class="vm">__name__</span><span class="p">,</span> <span class="p">{</span><span class="s2">"VoigtFitterV2"</span><span class="p">:</span> <span class="s2">"VoigtFitter"</span><span class="p">})</span>
 </pre></div>
 
                 </article>

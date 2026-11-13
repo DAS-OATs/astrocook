@@ -6,7 +6,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>astrocook.core.structures &#8212; Astrocook 2.6.0 documentation</title>
+    <title>astrocook.core.structures &#8212; Astrocook 2.7.0 documentation</title>
   
   
   
@@ -38,7 +38,7 @@
   <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
 <link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="../../../static/documentation_options.js?v=ae39cb24"></script>
+    <script src="../../../static/documentation_options.js?v=dfec817d"></script>
     <script src="../../../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../../../static/design-tabs.js?v=fcb327ea"></script>
@@ -46,7 +46,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.6.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.7.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -56,7 +56,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.6.0" />
+  <meta name="docsearch:version" content="2.7.0" />
   
     
     <script src="../../../static/searchtools.js"></script>
@@ -471,20 +471,25 @@
                 <article class="bd-article">
                   
   <h1>Source code for astrocook.core.structures</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">astrocook._renamed</span><span class="w"> </span><span class="kn">import</span> <span class="n">renamed</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astropy</span><span class="w"> </span><span class="kn">import</span> <span class="n">units</span> <span class="k">as</span> <span class="n">au</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span>
 
+<span class="c1"># Enables the unit arb_flux in astropy (PR 8-bis): every structure of the</span>
+<span class="c1"># data imports this module</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">astrocook.core.units</span>  <span class="c1"># noqa: F401</span>
+
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="SessionMetadataV2">
-<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.SessionMetadataV2">[docs]</a>
+<div class="viewcode-block" id="SessionMetadata">
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.SessionMetadata">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">class</span><span class="w"> </span><span class="nc">SessionMetadataV2</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SessionMetadata</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Core immutable structure for holding constraints, configuration, and history.</span>
 
@@ -533,10 +538,10 @@
     <span class="n">astrocook_version</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
-<div class="viewcode-block" id="DataColumnV2">
-<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.DataColumnV2">[docs]</a>
+<div class="viewcode-block" id="DataColumn">
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.DataColumn">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">class</span><span class="w"> </span><span class="nc">DataColumnV2</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DataColumn</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Immutable container for a single column of data with physical units.</span>
 
@@ -581,29 +586,29 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span></div>
 
 
-<div class="viewcode-block" id="SpectrumDataV2">
-<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.SpectrumDataV2">[docs]</a>
+<div class="viewcode-block" id="SpectrumData">
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.SpectrumData">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">class</span><span class="w"> </span><span class="nc">SpectrumDataV2</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SpectrumData</span><span class="p">:</span>
 <span class="w">    </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">    Immutable core container for all spectral data.</span>
 
 <span class="sd">    This class holds the "heavy" numerical arrays (flux, wavelength, error)</span>
-<span class="sd">    and auxiliary columns. It is the data payload for :class:`~astrocook.core.spectrum.SpectrumV2`.</span>
+<span class="sd">    and auxiliary columns. It is the data payload for :class:`~astrocook.core.spectrum.Spectrum`.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    x : DataColumnV2</span>
+<span class="sd">    x : DataColumn</span>
 <span class="sd">        The independent variable (wavelength or velocity).</span>
-<span class="sd">    xmin : DataColumnV2</span>
+<span class="sd">    xmin : DataColumn</span>
 <span class="sd">        Lower bound of the x-bins.</span>
-<span class="sd">    xmax : DataColumnV2</span>
+<span class="sd">    xmax : DataColumn</span>
 <span class="sd">        Upper bound of the x-bins.</span>
-<span class="sd">    y : DataColumnV2</span>
+<span class="sd">    y : DataColumn</span>
 <span class="sd">        The dependent variable (flux density).</span>
-<span class="sd">    dy : DataColumnV2</span>
+<span class="sd">    dy : DataColumn</span>
 <span class="sd">        The 1-sigma uncertainty on ``y``.</span>
-<span class="sd">    aux_cols : dict of DataColumnV2</span>
+<span class="sd">    aux_cols : dict of DataColumn</span>
 <span class="sd">        Additional columns (e.g. ``'cont'``, ``'model'``, ``'abs_mask'``).</span>
 <span class="sd">    meta : dict</span>
 <span class="sd">        Header keywords and other metadata.</span>
@@ -614,17 +619,17 @@
 <span class="sd">    """</span>
     
     <span class="c1"># Dati Spaziali (Assi X e Binning)</span>
-    <span class="n">x</span><span class="p">:</span> <span class="n">DataColumnV2</span>    <span class="c1"># Lunghezza d'onda / Velocità</span>
-    <span class="n">xmin</span><span class="p">:</span> <span class="n">DataColumnV2</span> <span class="c1"># Limite inferiore del bin</span>
-    <span class="n">xmax</span><span class="p">:</span> <span class="n">DataColumnV2</span> <span class="c1"># Limite superiore del bin</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">DataColumn</span>    <span class="c1"># Lunghezza d'onda / Velocità</span>
+    <span class="n">xmin</span><span class="p">:</span> <span class="n">DataColumn</span> <span class="c1"># Limite inferiore del bin</span>
+    <span class="n">xmax</span><span class="p">:</span> <span class="n">DataColumn</span> <span class="c1"># Limite superiore del bin</span>
     
     <span class="c1"># Dati Verticali (Flusso e Errore)</span>
-    <span class="n">y</span><span class="p">:</span> <span class="n">DataColumnV2</span>    <span class="c1"># Flusso / Densità di flusso</span>
-    <span class="n">dy</span><span class="p">:</span> <span class="n">DataColumnV2</span>   <span class="c1"># Errore sul Flusso</span>
+    <span class="n">y</span><span class="p">:</span> <span class="n">DataColumn</span>    <span class="c1"># Flusso / Densità di flusso</span>
+    <span class="n">dy</span><span class="p">:</span> <span class="n">DataColumn</span>   <span class="c1"># Errore sul Flusso</span>
 
     <span class="c1"># Colonne Aggiuntive (Cont, Resol, Model, ecc.)</span>
-    <span class="c1"># Vengono gestite come un dizionario di DataColumnV2</span>
-    <span class="n">aux_cols</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">DataColumnV2</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="c1"># Vengono gestite come un dizionario di DataColumn</span>
+    <span class="n">aux_cols</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">DataColumn</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
     
     <span class="c1"># Metadata di Alto Livello</span>
     <span class="n">meta</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
@@ -633,8 +638,8 @@
     <span class="n">z_em</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span> <span class="c1"># Emission redshift</span>
     <span class="n">resol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span> <span class="c1"># Median resolution</span>
 
-<div class="viewcode-block" id="SpectrumDataV2.from_flat_data">
-<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.SpectrumDataV2.from_flat_data">[docs]</a>
+<div class="viewcode-block" id="SpectrumData.from_flat_data">
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.SpectrumData.from_flat_data">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">from_flat_data</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> 
                        <span class="n">x_values</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">x_unit</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Unit</span><span class="p">,</span>
@@ -645,9 +650,9 @@
                        <span class="n">aux_data</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="c1"># {'col_name': (values, unit, desc)}</span>
                        <span class="n">meta</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                        <span class="n">z_em</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
-                       <span class="n">resol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SpectrumDataV2'</span><span class="p">:</span>
+                       <span class="n">resol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SpectrumData'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
-<span class="sd">        Factory method to create a SpectrumDataV2 from raw NumPy arrays.</span>
+<span class="sd">        Factory method to create a SpectrumData from raw NumPy arrays.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -674,7 +679,7 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        SpectrumDataV2</span>
+<span class="sd">        SpectrumData</span>
 <span class="sd">            The initialized data object.</span>
 <span class="sd">        """</span>
 
@@ -683,17 +688,17 @@
         <span class="k">if</span> <span class="n">xmax_values</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="n">xmax_values</span> <span class="o">=</span> <span class="n">x_values</span>
 
         <span class="c1"># Costruire le colonne principali</span>
-        <span class="n">x_col</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="n">x_values</span><span class="p">,</span> <span class="n">x_unit</span><span class="p">)</span>
-        <span class="n">y_col</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="n">y_values</span><span class="p">,</span> <span class="n">y_unit</span><span class="p">)</span>
-        <span class="n">dy_col</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="n">dy_values</span><span class="p">,</span> <span class="n">y_unit</span><span class="p">)</span> <span class="c1"># dy usa la stessa unità di y</span>
-        <span class="n">xmin_col</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="n">xmin_values</span><span class="p">,</span> <span class="n">x_unit</span><span class="p">)</span>
-        <span class="n">xmax_col</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="n">xmax_values</span><span class="p">,</span> <span class="n">x_unit</span><span class="p">)</span>
+        <span class="n">x_col</span> <span class="o">=</span> <span class="n">DataColumn</span><span class="p">(</span><span class="n">x_values</span><span class="p">,</span> <span class="n">x_unit</span><span class="p">)</span>
+        <span class="n">y_col</span> <span class="o">=</span> <span class="n">DataColumn</span><span class="p">(</span><span class="n">y_values</span><span class="p">,</span> <span class="n">y_unit</span><span class="p">)</span>
+        <span class="n">dy_col</span> <span class="o">=</span> <span class="n">DataColumn</span><span class="p">(</span><span class="n">dy_values</span><span class="p">,</span> <span class="n">y_unit</span><span class="p">)</span> <span class="c1"># dy usa la stessa unità di y</span>
+        <span class="n">xmin_col</span> <span class="o">=</span> <span class="n">DataColumn</span><span class="p">(</span><span class="n">xmin_values</span><span class="p">,</span> <span class="n">x_unit</span><span class="p">)</span>
+        <span class="n">xmax_col</span> <span class="o">=</span> <span class="n">DataColumn</span><span class="p">(</span><span class="n">xmax_values</span><span class="p">,</span> <span class="n">x_unit</span><span class="p">)</span>
         
         <span class="c1"># Costruire le colonne ausiliarie</span>
         <span class="n">aux_cols</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">if</span> <span class="n">aux_data</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="p">(</span><span class="n">vals</span><span class="p">,</span> <span class="n">unit</span><span class="p">,</span> <span class="n">desc</span><span class="p">)</span> <span class="ow">in</span> <span class="n">aux_data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                 <span class="n">aux_cols</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">DataColumnV2</span><span class="p">(</span><span class="n">vals</span><span class="p">,</span> <span class="n">unit</span><span class="p">,</span> <span class="n">desc</span><span class="p">)</span>
+                 <span class="n">aux_cols</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">DataColumn</span><span class="p">(</span><span class="n">vals</span><span class="p">,</span> <span class="n">unit</span><span class="p">,</span> <span class="n">desc</span><span class="p">)</span>
         
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x_col</span><span class="p">,</span> <span class="n">xmin</span><span class="o">=</span><span class="n">xmin_col</span><span class="p">,</span> <span class="n">xmax</span><span class="o">=</span><span class="n">xmax_col</span><span class="p">,</span> 
                    <span class="n">y</span><span class="o">=</span><span class="n">y_col</span><span class="p">,</span> <span class="n">dy</span><span class="o">=</span><span class="n">dy_col</span><span class="p">,</span> 
@@ -704,10 +709,10 @@
 </div>
 
     
-<div class="viewcode-block" id="ComponentDataV2">
-<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.ComponentDataV2">[docs]</a>
+<div class="viewcode-block" id="ComponentData">
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.ComponentData">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">class</span><span class="w"> </span><span class="nc">ComponentDataV2</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ComponentData</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Immutable data structure for a single absorption component (Voigt profile).</span>
 <span class="sd">    """</span>
@@ -760,10 +765,10 @@
 <span class="w">    </span><span class="sd">""" A globally unique, stable identifier for V2 constraints and linking. """</span></div>
 
 
-<div class="viewcode-block" id="ParameterConstraintV2">
-<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.ParameterConstraintV2">[docs]</a>
+<div class="viewcode-block" id="ParameterConstraint">
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.ParameterConstraint">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">class</span><span class="w"> </span><span class="nc">ParameterConstraintV2</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ParameterConstraint</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Immutable structure defining a constraint for a single parameter.</span>
 
@@ -787,10 +792,10 @@
 <span class="w">    </span><span class="sd">""" Legacy ID of the target component (for debugging/reconstruction only). """</span></div>
 
 
-<div class="viewcode-block" id="SystemListDataV2">
-<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.SystemListDataV2">[docs]</a>
+<div class="viewcode-block" id="SystemListData">
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.SystemListData">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">class</span><span class="w"> </span><span class="nc">SystemListDataV2</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SystemListData</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Immutable container for system components and constraints.</span>
 
@@ -798,17 +803,17 @@
 <span class="sd">    of components and the maps defining their relationships.</span>
 <span class="sd">    """</span>
     
-    <span class="n">components</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">ComponentDataV2</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+    <span class="n">components</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">ComponentData</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">""" The list of absorption components. """</span>
     <span class="n">v1_header_constraints</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">""" Legacy constraints from V1 file headers. """</span>
     
-    <span class="c1"># Stores a dictionary mapping (Component UUID, Parameter Name) -&gt; ConstraintDataV2</span>
-    <span class="n">parsed_constraints</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">ParameterConstraintV2</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">""" Map of (Component UUID, Parameter Name) -&gt; ConstraintDataV2. """</span>
+    <span class="c1"># Stores a dictionary mapping (Component UUID, Parameter Name) -&gt; ParameterConstraint</span>
+    <span class="n">parsed_constraints</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">ParameterConstraint</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">""" Map of (Component UUID, Parameter Name) -&gt; ParameterConstraint. """</span>
 
     <span class="c1"># V2-style constraints: {UUID: {ParamName: {...}}}</span>
-    <span class="n">v2_constraints_map</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ParameterConstraintV2</span><span class="p">]]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="n">v2_constraints_map</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ParameterConstraint</span><span class="p">]]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">""" Nested map {UUID: {ParamName: Constraint}}. """</span>
     
     <span class="c1"># Add the missing field</span>
@@ -821,10 +826,10 @@
 <span class="w">    </span><span class="sd">""" Metadata for the system list. """</span></div>
 
 
-<div class="viewcode-block" id="LogEntryV2">
-<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.LogEntryV2">[docs]</a>
+<div class="viewcode-block" id="LogEntry">
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.LogEntry">[docs]</a>
 <span class="nd">@dataclass</span>
-<span class="k">class</span><span class="w"> </span><span class="nc">LogEntryV2</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">LogEntry</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    A single entry in the V2 analysis log.</span>
 <span class="sd">    </span>
@@ -838,17 +843,17 @@
 
 
 
-<span class="c1">#: The kinds of the notes of a log that :meth:`HistoryLogV2.add_note` takes:</span>
+<span class="c1">#: The kinds of the notes of a log that :meth:`HistoryLog.add_note` takes:</span>
 <span class="c1">#: ``note`` (what was done or decided outside the recipes), ``gap`` (what the</span>
 <span class="c1">#: analysis needed and no recipe provided, declared by the agent) and</span>
 <span class="c1">#: ``gap_seen`` (a gap seen by the MCP server); phase 6-ter, PR 5b</span>
 <span class="n">NOTE_KINDS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"note"</span><span class="p">,</span> <span class="s2">"gap"</span><span class="p">,</span> <span class="s2">"gap_seen"</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="LogNoteV2">
-<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.LogNoteV2">[docs]</a>
+<div class="viewcode-block" id="LogNote">
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.LogNote">[docs]</a>
 <span class="nd">@dataclass</span>
-<span class="k">class</span><span class="w"> </span><span class="nc">LogNoteV2</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">LogNote</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    A note in the V2 analysis log: text that is not a state change (e.g. what</span>
 <span class="sd">    an agent did outside the recipes), skipped by the replay.</span>
@@ -867,36 +872,36 @@
     <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"note"</span></div>
 
 
-<div class="viewcode-block" id="HistoryLogV2">
-<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.HistoryLogV2">[docs]</a>
+<div class="viewcode-block" id="HistoryLog">
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.HistoryLog">[docs]</a>
 <span class="nd">@dataclass</span>
-<span class="k">class</span><span class="w"> </span><span class="nc">HistoryLogV2</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">HistoryLog</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Manages the linear history of operations (Log V2).</span>
 
-<span class="sd">    This class maintains a list of :class:`LogEntryV2` objects matching the</span>
+<span class="sd">    This class maintains a list of :class:`LogEntry` objects matching the</span>
 <span class="sd">    stack of immutable states in the session manager. It supports truncation</span>
 <span class="sd">    to handle branching history (undo/redo logic).</span>
 <span class="sd">    """</span>
     <span class="c1"># The attributes are documented by the #: comments below and not in an</span>
     <span class="c1"># "Attributes" section, which Sphinx would describe twice</span>
-<div class="viewcode-block" id="HistoryLogV2.__init__">
-<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.HistoryLogV2.__init__">[docs]</a>
+<div class="viewcode-block" id="HistoryLog.__init__">
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.HistoryLog.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="c1">#: The list of operations performed (list of :class:`LogEntryV2`).</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">entries</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">LogEntryV2</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1">#: The list of operations performed (list of :class:`LogEntry`).</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">entries</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">LogEntry</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="c1">#: Pointer to the currently active log entry (state), i.e. the last</span>
         <span class="c1">#: valid entry.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
-        <span class="c1">#: The notes (list of :class:`LogNoteV2`), in the order they were</span>
+        <span class="c1">#: The notes (list of :class:`LogNote`), in the order they were</span>
         <span class="c1">#: written; those written after an entry undone are undone with it.</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">notes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">LogNoteV2</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">notes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">LogNote</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="c1">#: The log of the archive the session was opened from (a</span>
-        <span class="c1">#: :class:`HistoryLogV2`), or None: read only, shown while the</span>
+        <span class="c1">#: :class:`HistoryLog`), or None: read only, shown while the</span>
         <span class="c1">#: session is open, never replayed nor saved again (F109: each saved</span>
         <span class="c1">#: archive is a node, its log goes from its original data to its</span>
         <span class="c1">#: state; see :meth:`opened_from`).</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">previous</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">'HistoryLogV2'</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">previous</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">'HistoryLog'</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
     <span class="nd">@property</span>
@@ -904,10 +909,10 @@
 <span class="w">        </span><span class="sd">"""Return True, indicating this is a V2-native log structure."""</span>
         <span class="k">return</span> <span class="kc">True</span>
 
-<div class="viewcode-block" id="HistoryLogV2.opened_from">
-<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.HistoryLogV2.opened_from">[docs]</a>
+<div class="viewcode-block" id="HistoryLog.opened_from">
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.HistoryLog.opened_from">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">opened_from</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">archive_log</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">'HistoryLogV2'</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s1">'HistoryLogV2'</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">opened_from</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">archive_log</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">'HistoryLog'</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s1">'HistoryLog'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""The log of a session opened from an archive: empty, with the log</span>
 <span class="sd">        of the archive as :attr:`previous`.</span>
 
@@ -919,7 +924,7 @@
 <span class="sd">        the earlier nodes are in their archives.</span>
 <span class="sd">        """</span>
         <span class="n">log</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">()</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">archive_log</span><span class="p">,</span> <span class="n">HistoryLogV2</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">archive_log</span><span class="o">.</span><span class="n">entries</span> <span class="ow">or</span> <span class="n">archive_log</span><span class="o">.</span><span class="n">notes</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">archive_log</span><span class="p">,</span> <span class="n">HistoryLog</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">archive_log</span><span class="o">.</span><span class="n">entries</span> <span class="ow">or</span> <span class="n">archive_log</span><span class="o">.</span><span class="n">notes</span><span class="p">):</span>
             <span class="n">previous</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">()</span>
             <span class="n">previous</span><span class="o">.</span><span class="n">entries</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">archive_log</span><span class="o">.</span><span class="n">entries</span><span class="p">[:</span><span class="n">archive_log</span><span class="o">.</span><span class="n">current_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
             <span class="n">previous</span><span class="o">.</span><span class="n">current_index</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">previous</span><span class="o">.</span><span class="n">entries</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
@@ -929,8 +934,8 @@
         <span class="k">return</span> <span class="n">log</span></div>
 
 
-<div class="viewcode-block" id="HistoryLogV2.add_entry">
-<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.HistoryLogV2.add_entry">[docs]</a>
+<div class="viewcode-block" id="HistoryLog.add_entry">
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.HistoryLog.add_entry">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">add_entry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recipe_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
                   <span class="n">reason</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">"""</span>
@@ -954,7 +959,7 @@
         <span class="c1"># 2. Add the new entry</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">reason</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">reason</span><span class="o">.</span><span class="n">strip</span><span class="p">()):</span>
             <span class="n">reason</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="n">entry</span> <span class="o">=</span> <span class="n">LogEntryV2</span><span class="p">(</span><span class="n">recipe_name</span><span class="o">=</span><span class="n">recipe_name</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span>
+        <span class="n">entry</span> <span class="o">=</span> <span class="n">LogEntry</span><span class="p">(</span><span class="n">recipe_name</span><span class="o">=</span><span class="n">recipe_name</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span>
                            <span class="n">reason</span><span class="o">=</span><span class="n">reason</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">if</span> <span class="n">reason</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">entries</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
         
@@ -963,9 +968,9 @@
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Added log entry: </span><span class="si">{</span><span class="n">recipe_name</span><span class="si">}</span><span class="s2">. Index is now </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">current_index</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="HistoryLogV2.add_note">
-<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.HistoryLogV2.add_note">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">add_note</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"note"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LogNoteV2</span><span class="p">:</span>
+<div class="viewcode-block" id="HistoryLog.add_note">
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.HistoryLog.add_note">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_note</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"note"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LogNote</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Add a note at the current entry, without a state.</span>
 
@@ -982,7 +987,7 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        LogNoteV2</span>
+<span class="sd">        LogNote</span>
 <span class="sd">            The note added.</span>
 
 <span class="sd">        Raises</span>
@@ -995,7 +1000,7 @@
         <span class="k">if</span> <span class="n">kind</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">NOTE_KINDS</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unknown kind of note '</span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2">': one of "</span>
                              <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">NOTE_KINDS</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
-        <span class="n">note</span> <span class="o">=</span> <span class="n">LogNoteV2</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span> <span class="n">after</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="n">kind</span><span class="p">)</span>
+        <span class="n">note</span> <span class="o">=</span> <span class="n">LogNote</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span> <span class="n">after</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="n">kind</span><span class="p">)</span>
         <span class="c1"># After the notes of the same entry or earlier ones, before those of</span>
         <span class="c1"># the entries undone</span>
         <span class="n">i</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">notes</span> <span class="k">if</span> <span class="n">n</span><span class="o">.</span><span class="n">after</span> <span class="o">&lt;=</span> <span class="n">note</span><span class="o">.</span><span class="n">after</span><span class="p">)</span>
@@ -1003,16 +1008,16 @@
         <span class="k">return</span> <span class="n">note</span></div>
 
 
-<div class="viewcode-block" id="HistoryLogV2.notes_at">
-<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.HistoryLogV2.notes_at">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">notes_at</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">after</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">LogNoteV2</span><span class="p">]:</span>
+<div class="viewcode-block" id="HistoryLog.notes_at">
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.HistoryLog.notes_at">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">notes_at</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">after</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">LogNote</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""The notes written after ``after`` entries (at the state made by</span>
 <span class="sd">        the entry ``after - 1``), in the order they were written."""</span>
         <span class="k">return</span> <span class="p">[</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">notes</span> <span class="k">if</span> <span class="n">n</span><span class="o">.</span><span class="n">after</span> <span class="o">==</span> <span class="n">after</span><span class="p">]</span></div>
 
 
-<div class="viewcode-block" id="HistoryLogV2.timeline">
-<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.HistoryLogV2.timeline">[docs]</a>
+<div class="viewcode-block" id="HistoryLog.timeline">
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.HistoryLog.timeline">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">timeline</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">include_undone</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]]:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        The entries and the notes in the order they were written.</span>
@@ -1025,11 +1030,11 @@
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        list of tuple</span>
-<span class="sd">            ``(item, active)``: a :class:`LogEntryV2` or a</span>
-<span class="sd">            :class:`LogNoteV2`, and False if it is undone.</span>
+<span class="sd">            ``(item, active)``: a :class:`LogEntry` or a</span>
+<span class="sd">            :class:`LogNote`, and False if it is undone.</span>
 <span class="sd">        """</span>
         <span class="n">last</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entries</span><span class="p">)</span> <span class="k">if</span> <span class="n">include_undone</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">+</span> <span class="mi">1</span>
-        <span class="n">items</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">items</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">last</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
             <span class="n">items</span> <span class="o">+=</span> <span class="p">[(</span><span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="o">.</span><span class="n">after</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">notes_at</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span>
             <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">last</span><span class="p">:</span>
@@ -1037,8 +1042,8 @@
         <span class="k">return</span> <span class="n">items</span></div>
 
 
-<div class="viewcode-block" id="HistoryLogV2.undo">
-<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.HistoryLogV2.undo">[docs]</a>
+<div class="viewcode-block" id="HistoryLog.undo">
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.HistoryLog.undo">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">undo</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Move the history pointer back one step.</span>
@@ -1056,8 +1061,8 @@
         <span class="k">return</span> <span class="kc">False</span></div>
 
 
-<div class="viewcode-block" id="HistoryLogV2.redo">
-<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.HistoryLogV2.redo">[docs]</a>
+<div class="viewcode-block" id="HistoryLog.redo">
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.HistoryLog.redo">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">redo</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Move the history pointer forward one step.</span>
@@ -1074,8 +1079,8 @@
         <span class="k">return</span> <span class="kc">False</span></div>
 
 
-<div class="viewcode-block" id="HistoryLogV2.to_dict">
-<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.HistoryLogV2.to_dict">[docs]</a>
+<div class="viewcode-block" id="HistoryLog.to_dict">
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.HistoryLog.to_dict">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Serialize the active history (entries up to ``current_index``).</span>
@@ -1107,10 +1112,10 @@
         <span class="k">return</span> <span class="n">out</span></div>
 
 
-<div class="viewcode-block" id="HistoryLogV2.from_dict">
-<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.HistoryLogV2.from_dict">[docs]</a>
+<div class="viewcode-block" id="HistoryLog.from_dict">
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.HistoryLog.from_dict">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s1">'HistoryLogV2'</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s1">'HistoryLog'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Rebuild a log from the output of :meth:`to_dict`.</span>
 
@@ -1121,18 +1126,18 @@
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        HistoryLogV2</span>
+<span class="sd">        HistoryLog</span>
 <span class="sd">            The log, pointing at its last entry.</span>
 <span class="sd">        """</span>
         <span class="n">log</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="p">(</span><span class="n">data</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'entries'</span><span class="p">,</span> <span class="p">[])</span> <span class="ow">or</span> <span class="p">[]:</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">entries</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">LogEntryV2</span><span class="p">(</span><span class="n">recipe_name</span><span class="o">=</span><span class="n">e</span><span class="p">[</span><span class="s1">'recipe_name'</span><span class="p">],</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">entries</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">LogEntry</span><span class="p">(</span><span class="n">recipe_name</span><span class="o">=</span><span class="n">e</span><span class="p">[</span><span class="s1">'recipe_name'</span><span class="p">],</span>
                                           <span class="n">params</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'params'</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}),</span>
                                           <span class="n">reason</span><span class="o">=</span><span class="n">e</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'reason'</span><span class="p">)</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">))</span>
         <span class="n">log</span><span class="o">.</span><span class="n">current_index</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">log</span><span class="o">.</span><span class="n">entries</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
         <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="p">(</span><span class="n">data</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'notes'</span><span class="p">,</span> <span class="p">[])</span> <span class="ow">or</span> <span class="p">[]:</span>
             <span class="n">after</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'after'</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">log</span><span class="o">.</span><span class="n">entries</span><span class="p">))),</span> <span class="mi">0</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">log</span><span class="o">.</span><span class="n">entries</span><span class="p">))</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">notes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">LogNoteV2</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">n</span><span class="p">[</span><span class="s1">'text'</span><span class="p">]),</span> <span class="n">after</span><span class="o">=</span><span class="n">after</span><span class="p">,</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">notes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">LogNote</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">n</span><span class="p">[</span><span class="s1">'text'</span><span class="p">]),</span> <span class="n">after</span><span class="o">=</span><span class="n">after</span><span class="p">,</span>
                                        <span class="n">kind</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'kind'</span><span class="p">)</span> <span class="ow">or</span> <span class="s1">'note'</span><span class="p">)))</span>
         <span class="n">log</span><span class="o">.</span><span class="n">notes</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="n">n</span><span class="o">.</span><span class="n">after</span><span class="p">)</span>  <span class="c1"># stable: the order of writing</span>
         <span class="k">return</span> <span class="n">log</span></div>
@@ -1140,6 +1145,10 @@
 
 
 <span class="c1"># --- V1 Compatibility Wrapper ---</span>
+
+
+<span class="c1"># Old names (phase 6-quater, PR 6): see astrocook/_renamed.py</span>
+<span class="fm">__getattr__</span> <span class="o">=</span> <span class="n">renamed</span><span class="p">(</span><span class="vm">__name__</span><span class="p">,</span> <span class="p">{</span><span class="s2">"SessionMetadataV2"</span><span class="p">:</span> <span class="s2">"SessionMetadata"</span><span class="p">,</span> <span class="s2">"DataColumnV2"</span><span class="p">:</span> <span class="s2">"DataColumn"</span><span class="p">,</span> <span class="s2">"SpectrumDataV2"</span><span class="p">:</span> <span class="s2">"SpectrumData"</span><span class="p">,</span> <span class="s2">"ComponentDataV2"</span><span class="p">:</span> <span class="s2">"ComponentData"</span><span class="p">,</span> <span class="s2">"ParameterConstraintV2"</span><span class="p">:</span> <span class="s2">"ParameterConstraint"</span><span class="p">,</span> <span class="s2">"SystemListDataV2"</span><span class="p">:</span> <span class="s2">"SystemListData"</span><span class="p">,</span> <span class="s2">"LogEntryV2"</span><span class="p">:</span> <span class="s2">"LogEntry"</span><span class="p">,</span> <span class="s2">"LogNoteV2"</span><span class="p">:</span> <span class="s2">"LogNote"</span><span class="p">,</span> <span class="s2">"HistoryLogV2"</span><span class="p">:</span> <span class="s2">"HistoryLog"</span><span class="p">})</span>
 </pre></div>
 
                 </article>

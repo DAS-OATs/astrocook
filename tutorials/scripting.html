@@ -7,7 +7,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Using Astrocook from Python &#8212; Astrocook 2.6.0 documentation</title>
+    <title>Using Astrocook from Python &#8212; Astrocook 2.7.0 documentation</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="../static/documentation_options.js?v=ae39cb24"></script>
+    <script src="../static/documentation_options.js?v=dfec817d"></script>
     <script src="../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../static/design-tabs.js?v=fcb327ea"></script>
@@ -47,7 +47,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.6.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.7.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -59,7 +59,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.6.0" />
+  <meta name="docsearch:version" content="2.7.0" />
   
     
     <script src="../static/searchtools.js"></script>
@@ -511,7 +511,7 @@ result and seeing Astrocook’s messages.</p>
 <h2>1. Opening a Session<a class="headerlink" href="#opening-a-session" title="Link to this heading">#</a></h2>
 <p>Open a spectrum or a session file (<code class="docutils literal notranslate"><span class="pre">.acs2</span></code>, V1 <code class="docutils literal notranslate"><span class="pre">.acs</span></code>, or the spectrum
 formats the GUI can open) with <code class="docutils literal notranslate"><span class="pre">load_session_from_file</span></code>:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.session</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_session_from_file</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.session.session</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_session_from_file</span>
 
 <span class="n">session</span> <span class="o">=</span> <span class="n">load_session_from_file</span><span class="p">(</span><span class="s2">"my_session.acs2"</span><span class="p">,</span> <span class="s2">"my_session"</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"auto"</span><span class="p">)</span>
 </pre></div>
@@ -637,7 +637,7 @@ Inspector and the main plot of the GUI do (the AI agents use them too):</p>
 <p>The log of a session as the text of a methods section, as <em>File &gt; Export
 Log as Text</em> writes it (one paragraph per recipe, with the reasons, what it
 changed and the notes, then the references):</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.session_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">SessionHistory</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.session.history</span><span class="w"> </span><span class="kn">import</span> <span class="n">SessionHistory</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.methods_text</span><span class="w"> </span><span class="kn">import</span> <span class="n">methods_text</span>
 
 <span class="n">text</span> <span class="o">=</span> <span class="n">methods_text</span><span class="p">(</span><span class="n">history</span><span class="p">)</span>        <span class="c1"># a SessionHistory: the states and the log</span>

@@ -1,0 +1,7 @@
+astrocook.core.column\_names module
+===================================
+
+.. automodule:: astrocook.core.column_names
+   :members:
+   :show-inheritance:
+   :undoc-members:

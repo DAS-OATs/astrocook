@@ -17,10 +17,11 @@ Before running complex algorithms, ensure your session metadata is correct. Many
 1.  Select your session in the **Session List** (left sidebar).
 2.  Go to **Edit > Set Properties...**.
 3.  A dialog will appear, showing the current values. Here you can update:
-    * **Name:** The label used in the list.
+    * **Name:** The label used in the list (it cannot be empty).
     * **Object:** The target name (often from the FITS header).
     * **Emission Redshift ($z_\mathrm{em}$):** Set this carefully!
-    * **Resolution ($R$):** You can enter a resolving power (e.g., `50000`) or a pixel width (e.g., `3px`). The resolution is stored in the `resol` column of the spectrum, one value per pixel, and the fits use the value of each pixel. If the resolution varies with wavelength (e.g. after co-adding spectra of different resolution), the field is left empty, with the median as a hint, and the column is kept: if you type a value there, Astrocook asks whether to replace the column with it.
+    * **Flux unit (*yunit*):** The unit of the flux, declared without changing the values: a flux density per unit wavelength (e.g. `erg/(Angstrom s cm^2)`, `1e-17 erg/(Angstrom s cm^2)`), or `arb_flux` for arbitrary units. It is given to the flux, its error, the continuum and the model. Use it when the file did not say the unit (see [the unit of the flux](#getting-started-flux-unit)); to *convert* a flux that has a unit, use **Convert Y axis**.
+    * **Resolution ($R$):** You can enter a resolving power (e.g., `50000`) or a pixel width (e.g., `3px`, with the x axis in wavelength). The resolution is stored in the `resol` column of the spectrum, one value per pixel, and the fits use the value of each pixel. If the resolution varies with wavelength (e.g. after co-adding spectra of different resolution), the field is left empty, with the median as a hint, and the column is kept: if you type a value there, Astrocook asks whether to replace the column with it.
 
     A field left empty keeps the current value.
 
@@ -34,14 +35,20 @@ Before running complex algorithms, ensure your session metadata is correct. Many
 
 Astrocook allows you to perform mathematical operations on **any** data column (Flux `F`, Error `dF`, Wavelength `λ`, etc.) using NumPy-style syntax.
 
+:::{note}
+**The names of the columns.** Everywhere a column is named (expressions, the fields of the recipes, scripts, the MCP server) the names are those of the table of the GUI: `λ`, `λmin`, `λmax`, `F`, `dF`, and the other columns by their own name (`cont`, `model`, `resol`, ...). Where a plain ASCII name is handier, `λ` can be written `lam` (`lammin`, `lammax`). The names that the data have in the archives (and had in the CSV files of *Export ASCII* before version 2.7), `x`, `xmin`, `xmax`, `y`, `dy`, are accepted too, so the logs and the scripts written with them still work.
+:::
+
 ### General Arithmetic
 
 You can modify existing columns or create new ones.
 
 1.  Go to **Edit > Apply Expression...**.
-2.  **Target Column:** Enter the name of the column to overwrite (e.g., `F`) or create (e.g., `F_corr`).
+2.  **Target Column:** Enter the name of the column to overwrite (e.g., `F`) or create (e.g., `F_corr`): letters, digits and `_`, not starting with a digit. The two fields start empty.
 3.  **Expression:** Enter your formula (e.g., `F * 1e17`).
 4.  Click **Run**.
+
+The expressions are evaluated by [NumExpr](https://numexpr.readthedocs.io): the arithmetic operators, the comparisons, and its functions (`sqrt`, `exp`, `log`, `log10`, `abs`, `sin`, `cos`, `where`, and `sum`, `prod`, `min`, `max`, which reduce the whole column to one number). The axis (`λ`, `λmin`, `λmax`) cannot be the target: use **Convert X axis** to change its unit. A new column has no unit, whatever the expression.
 
 :::{tip}
 The recipe dialog features **toolbars** above the input fields. Click buttons like `F`, `λ`, `log10`, or `sqrt` to instantly insert them into your expression syntax error-free.
@@ -68,9 +75,18 @@ The Edit menu provides specialized tools for cleaning and organizing your data s
 
 To exclude bad data points (e.g., dead pixels or negative errors) without deleting rows:
 1.  Go to **Edit > Mask by Expression...**.
-2.  **Target Column:** The column to mask (e.g., `F`).
+2.  **Target Column:** The column to mask (e.g., `F`); not the axis (`λ`, `λmin`, `λmax`).
 3.  **Expression:** A boolean condition (e.g., `dF <= 0` or `λ < 350`).
 4.  Values satisfying this condition will be set to `NaN`.
+
+### Converting the Axes
+
+* **Edit > Convert X axis...**: converts the axis to another unit of wavelength (`nm`, `Angstrom`) or to velocity (`km/s`). The zero of the velocity is the Lyman-α emission at the reference redshift, 121.567 nm × (1 + `z_ref`); `z_ref` is $z_\mathrm{em}$ if left at `_current_`.
+* **Edit > Convert Y axis...**: converts the flux, its error and the columns in the same unit (`cont`, `model`, ...) to another unit of flux density per unit wavelength, e.g. `erg/(Angstrom s cm^2)`. A unit per frequency (`Jy`) is not converted. A continuum or a model without a unit (in archives saved by earlier versions) is taken in the unit of the flux and converted with it. A flux in arbitrary units cannot be converted: declare its unit with **Set Properties**, or calibrate it.
+
+:::{warning}
+The spectrum does not remember the `z_ref` of a conversion to velocity: to go back to wavelength, convert with the same `z_ref`, and without changing $z_\mathrm{em}$ in between if `z_ref` was left at `_current_`; otherwise the wavelengths come back shifted.
+:::
 
 ### Smoothing Single Columns
 
@@ -81,14 +97,14 @@ While the Flux menu smooths the whole spectrum, you might want to smooth only a 
 
 To clean up your session:
 * **Edit > Delete Elements...**: Enter a comma-separated list of items to remove.
-    * Column names (e.g., `cont`, `snr`) to remove data arrays.
+    * Column names (e.g., `cont`, `snr`) to remove data arrays. The columns of every spectrum (`λ`, `λmin`, `λmax`, `F`, `dF`) cannot be removed, and a name that is not a column of the spectrum stops the recipe (the message lists the columns).
     * Keywords `lines` or `systems` to clear the entire absorption system list.
 
 ### Importing Systems
 
 If you have analyzed the same object in a different session (e.g., a different exposure), you can copy its absorption lines to the current one.
 1.  Go to **File > Import Systems from Session...**.
-2.  **Source Session:** Select the other open session by name.
+2.  **Source Session:** Select the other open session by name (required).
 3.  **Append:** Check this to add to your current list; uncheck to replace it entirely.
 
 ## 5. Slicing Sessions (Split & Extract)
@@ -100,7 +116,7 @@ Sometimes you only want to work on a specific piece of a spectrum, such as the L
 To extract a custom range into a *new* session:
 
 1.  Go to **Edit > Split Out Region...**.
-2.  Enter a boolean expression. Use the dialog **toolbar** to insert the wavelength variable `λ`.
+2.  Enter a boolean expression (the field starts empty). Use the dialog **toolbar** to insert the wavelength variable `λ`.
     * Example: `(λ > 400) & (λ < 500)`
 3.  A new session containing only that data range will appear in your list.
 
@@ -111,7 +127,7 @@ You can also select the range with the mouse: choose the **Select** tool in the 
 Astrocook knows standard quasar regions. If your $z_\mathrm{em}$ is set:
 
 1.  Go to **Edit > Extract Preset Region...**.
-2.  **Region:** Choose a preset (e.g., `lya_forest`) or enter multiple presets separated by commas to extract them all at once (e.g., `lya_forest, red_side`).
+2.  **Region:** Choose a preset (`lya_forest`, `all_ly_forest`, `red_side`) or enter multiple presets separated by commas to extract them all at once (e.g., `lya_forest, red_side`). A name that is not a preset stops the recipe.
 3.  The software automatically calculates the observed bounds and creates new sessions for each region.
 
 :::{note}
@@ -122,6 +138,10 @@ This recipe requires **Emission Redshift ($z_{em}$)** to be defined. If missing,
 
 If you have multiple exposures of the same object, you can combine them directly from the Session List.
 
+The recipes that combine sessions name the other sessions by the names of the Session List, separated by commas; a name that is not that of an open session stops the recipe. In a Python script, where no other session is open, give the sessions themselves (e.g. `session.edit.stitch([red, nir])`, `session.edit.coadd([session, other])`); the session log records their names.
+
+**Units.** The sessions are combined in the units of one of them, the *reference* (this session for *Stitch*, the bluest arm for *Equalize and Stitch*, the first session listed for *Co-add*): the others are converted to the unit of its axis (e.g. Å to nm) and of its flux (e.g. erg cm⁻² s⁻¹ nm⁻¹ to erg cm⁻² s⁻¹ Å⁻¹) before they are scaled or joined. A flux in arbitrary units (`arb_flux`, see [Setting Session Properties](#editing-properties)) cannot be converted to a physical one: it is combined with it only when it is scaled to it (by *Equalize and Stitch*, or by *Co-add* with `equalize_order` not None), and then takes its unit. A normalized flux (no unit) is never combined with one that is not. An axis in velocity is converted to wavelengths first with *Convert X axis*.
+
 ### Co-adding Spectra
 
 This operation defines common grid and rebins all spectra at once into it (weighting the contributions by their inverse variance and the amount of overlap with the final bins). The errors are those of the weighted mean, and the optional `kappa` clipping rejects only upward outliers (spikes), as in **Flux > Rebin Spectrum** (see [Flux Operations](flux_operations.md)).
@@ -130,11 +150,13 @@ This operation defines common grid and rebins all spectra at once into it (weigh
 2. In the **Session List**, hold `Ctrl` (or `Cmd` on Mac) and click to select multiple sessions.
 3. Right-click on the selection.
 4. Choose **Co-add N sessions...**.
-5. A dialog will ask for the grid parameters (e.g., step size `dx`).
+5. A dialog will ask for the grid parameters (e.g., step size `dx`; `xstart` must be below `xend`).
 6. A new, combined session will be created.
 
+The first session listed is the reference: the others are scaled to its flux by a polynomial of order `equalize_order` (0, a constant factor, the default, up to 5), or not scaled if it is `None` (the session logs written before version 2.7 say `-1`, which is the same).
+
 :::{note}
-You can also access this tool via **Edit > Co-add Spectra...**. This opens a dialog where you can manually type the names of the sessions to combine (comma-separated), which is useful for scripting.
+You can also access this tool via **Edit > Co-add Spectra...**. This opens a dialog where you can manually type the names of the sessions to combine (comma-separated, this session among them), which is useful for scripting.
 :::
 
 ### Stitching
@@ -157,9 +179,9 @@ When working with multi-arm spectrographs (like X-Shooter), the flux calibration
 2. In the **Session List**, hold `Ctrl` (or `Cmd` on Mac) and click to select them.
 3. Right-click and choose **Equalize and Stitch N Arms...**.
 4. A dialog will appear asking for exact parameters to guide the combination:
-    * **stitch_wavelengths**: Enter the precise wavelengths (in nm) where one arm should stop and the next should begin (e.g., `550, 1000`). You must provide exactly $N-1$ values.
+    * **stitch_wavelengths**: Enter the precise wavelengths (in nm) where one arm should stop and the next should begin (e.g., `550, 1000`), increasing. You must provide exactly $N-1$ values, and each arm must have pixels between its cuts.
     * **equalize_ranges**: (Optional) Specify the exact overlap window (e.g., `545-555, 995-1005`) Astrocook should use to calculate the flux scaling factor. Leave as `auto` to attempt a global match.
-    * **manual_factors**: (Optional) If you already know the exact flux multipliers, enter them here to override automatic calculation.
+    * **manual_factors**: (Optional) If you already know the exact flux multipliers (positive), enter them here to override automatic calculation.
 
 Astrocook automatically sorts the arms from bluest to reddest before processing, ensuring a mathematically continuous final spectrum.
 

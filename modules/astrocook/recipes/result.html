@@ -6,7 +6,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>astrocook.recipes.result &#8212; Astrocook 2.6.0 documentation</title>
+    <title>astrocook.recipes.result &#8212; Astrocook 2.7.0 documentation</title>
   
   
   
@@ -38,7 +38,7 @@
   <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
 <link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="../../../static/documentation_options.js?v=ae39cb24"></script>
+    <script src="../../../static/documentation_options.js?v=dfec817d"></script>
     <script src="../../../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../../../static/design-tabs.js?v=fcb327ea"></script>
@@ -46,7 +46,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.6.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.7.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -56,7 +56,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.6.0" />
+  <meta name="docsearch:version" content="2.7.0" />
   
     
     <script src="../../../static/searchtools.js"></script>
@@ -635,8 +635,8 @@
 <span class="sd">        a pipeline made and dropped, those whose fit failed, the candidate</span>
 <span class="sd">        systems found; one line each, e.g. ``'2 components removed: logN &lt;</span>
 <span class="sd">        min_logN = 14.0 (too weak)'``."""</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_recipe</span>
-        <span class="n">out</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">find_recipe</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">recipe</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">'.'</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">brief</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">'.'</span><span class="p">)</span><span class="si">}</span><span class="s2"> run first: "</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_recipe</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">get_recipe</span><span class="p">(</span><span class="o">*</span><span class="n">p</span><span class="o">.</span><span class="n">recipe</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">'.'</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">brief</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">'.'</span><span class="p">)</span><span class="si">}</span><span class="s2"> run first: "</span>
                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">reason</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">provided</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">what</span> <span class="ow">in</span> <span class="p">((</span><span class="s2">"removed"</span><span class="p">,</span> <span class="s2">"removed"</span><span class="p">),</span>
                           <span class="p">(</span><span class="s2">"discarded"</span><span class="p">,</span> <span class="s2">"made and discarded by the recipe"</span><span class="p">)):</span>
@@ -881,9 +881,10 @@
     <span class="k">if</span> <span class="s1">'.'</span> <span class="ow">in</span> <span class="n">recipe</span><span class="p">:</span>
         <span class="n">spec</span> <span class="o">=</span> <span class="n">get_recipe</span><span class="p">(</span><span class="o">*</span><span class="n">recipe</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">'.'</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">spec</span> <span class="o">=</span> <span class="n">find_recipe</span><span class="p">(</span><span class="n">recipe</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">spec</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">found</span> <span class="o">=</span> <span class="n">find_recipe</span><span class="p">(</span><span class="n">recipe</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">found</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"There is no recipe </span><span class="si">{</span><span class="n">recipe</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">spec</span> <span class="o">=</span> <span class="n">found</span>
     <span class="n">method</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">category</span><span class="p">),</span> <span class="n">spec</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
     <span class="n">chosen</span> <span class="o">=</span> <span class="n">policy</span><span class="p">(</span><span class="n">on_missing</span><span class="p">)</span> <span class="k">if</span> <span class="n">on_missing</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">nullcontext</span><span class="p">()</span>
     <span class="k">with</span> <span class="n">chosen</span><span class="p">,</span> <span class="n">_collect_warnings</span><span class="p">()</span> <span class="k">as</span> <span class="n">warnings</span><span class="p">,</span> <span class="n">collect_steps</span><span class="p">()</span> <span class="k">as</span> <span class="n">steps</span><span class="p">,</span> \
@@ -901,6 +902,9 @@
             <span class="n">extra</span><span class="p">[</span><span class="s1">'removed'</span><span class="p">]</span> <span class="o">=</span> <span class="n">removed</span>
         <span class="k">if</span> <span class="n">discarded</span><span class="p">:</span>
             <span class="n">extra</span><span class="p">[</span><span class="s1">'discarded'</span><span class="p">]</span> <span class="o">=</span> <span class="n">discarded</span>
+    <span class="n">new</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="n">changes</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="n">value</span><span class="p">:</span> <span class="n">Any</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
         <span class="n">out</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>

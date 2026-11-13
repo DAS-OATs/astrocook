@@ -7,7 +7,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>astrocook.recipes.params module &#8212; Astrocook 2.6.0 documentation</title>
+    <title>astrocook.recipes.params module &#8212; Astrocook 2.7.0 documentation</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="../static/documentation_options.js?v=ae39cb24"></script>
+    <script src="../static/documentation_options.js?v=dfec817d"></script>
     <script src="../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../static/design-tabs.js?v=fcb327ea"></script>
@@ -47,7 +47,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.6.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.7.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -59,7 +59,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.6.0" />
+  <meta name="docsearch:version" content="2.7.0" />
   
     
     <script src="../static/searchtools.js"></script>
@@ -436,13 +436,16 @@
   <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Data structures and operations</span></p>
 <ul class="nav bd-sidenav">
 <li class="toctree-l1 has-children"><a class="reference internal" href="astrocook.core.html">astrocook.core package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.column_names.html">astrocook.core.column_names module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.debug_hooks.html">astrocook.core.debug_hooks module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.resolution.html">astrocook.core.resolution module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.session.html">astrocook.core.session module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.session_manager.html">astrocook.core.session_manager module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.spectrum.html">astrocook.core.spectrum module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.structures.html">astrocook.core.structures module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.system_list.html">astrocook.core.system_list module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.templates.html">astrocook.core.templates module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.units.html">astrocook.core.units module</a></li>
 </ul>
 </details></li>
 </ul>
@@ -597,7 +600,8 @@ the others (e.g. <code class="docutils literal notranslate"><span class="pre">al
 passed, converted, and the defaults of the others, in the order of the
 registry; for the session log (#573, item 3). The parameters passed that
 the registry does not declare (e.g. <code class="docutils literal notranslate"><span class="pre">alias_map</span></code>), and those of a name
-that is not a recipe, are returned as passed.</p>
+that is not a recipe, are returned as passed. A parameter passed by its
+old name is returned by the new one (phase 6-quater, PR 2).</p>
 </dd></dl>
 
 <dl class="py data">
@@ -630,7 +634,9 @@ with a note naming the recipe. Nothing is logged here: the error is
 logged where it is caught (phase 6-bis, PR 3). Before the method runs,
 the prerequisites that the registry declares for it are filled, or
 their absence raised, as the policy of
-<a class="reference internal" href="astrocook.recipes.prerequisites.html#module-astrocook.recipes.prerequisites" title="astrocook.recipes.prerequisites"><code class="xref py py-mod docutils literal notranslate"><span class="pre">astrocook.recipes.prerequisites</span></code></a> says (PR 5).</p>
+<a class="reference internal" href="astrocook.recipes.prerequisites.html#module-astrocook.recipes.prerequisites" title="astrocook.recipes.prerequisites"><code class="xref py py-mod docutils literal notranslate"><span class="pre">astrocook.recipes.prerequisites</span></code></a> says (PR 5). A parameter
+passed by its old name (an alias in the registry) is passed to the
+method by its new name (phase 6-quater, PR 2).</p>
 </dd></dl>
 
 </section>

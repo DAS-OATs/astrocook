@@ -7,7 +7,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Using Astrocook from an AI Agent &#8212; Astrocook 2.6.0 documentation</title>
+    <title>Using Astrocook from an AI Agent &#8212; Astrocook 2.7.0 documentation</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="../static/documentation_options.js?v=ae39cb24"></script>
+    <script src="../static/documentation_options.js?v=dfec817d"></script>
     <script src="../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../static/design-tabs.js?v=fcb327ea"></script>
@@ -47,7 +47,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.6.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.7.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -59,7 +59,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.6.0" />
+  <meta name="docsearch:version" content="2.7.0" />
   
     
     <script src="../static/searchtools.js"></script>
@@ -637,7 +637,11 @@ recipes that the GUI runs from the System Inspector (e.g.
 <code class="docutils literal notranslate"><span class="pre">absorbers_fit_component</span></code>). The tools are made from the same description
 of the recipes as the dialogs of the GUI: the same parameters, defaults,
 bounds and texts, and a recipe added to Astrocook becomes a tool by
-itself. Other tools handle the sessions:</p>
+itself. The tools of the manual fits refuse, before they run, a component
+or a series that is not in the session (the UUIDs are those of
+<code class="docutils literal notranslate"><span class="pre">components_list</span></code>), and <code class="docutils literal notranslate"><span class="pre">absorbers_update_constraint</span></code> takes the target of a
+link from its expression (see <em>Absorption Systems</em>, “Linking in Scripts and
+for Agents”). Other tools handle the sessions:</p>
 <div class="pst-scrollable-table-container"><table class="table">
 <thead>
 <tr class="row-odd"><th class="head"><p>Tool</p></th>
@@ -696,7 +700,7 @@ itself. Other tools handle the sessions:</p>
 <td><p>The absorption components, by redshift, with their errors, the reduced chi2 and flags of their last fit, their fit group (the components fitted together, as <em>Refit All</em> groups them), their velocity from the first of the group and their constraints (fixed or linked parameters); filters by series, redshift and flags, in pages.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">spectrum_read</span></code></p></td>
-<td><p>The columns of the spectrum in a range, as numbers; a long range is averaged in blocks of pixels (for reading only).</p></td>
+<td><p>The columns of the spectrum in a range, as numbers; a long range is averaged in blocks of pixels (for reading only). The columns have the names of the GUI (<code class="docutils literal notranslate"><span class="pre">λ</span></code>, <code class="docutils literal notranslate"><span class="pre">F</span></code>, <code class="docutils literal notranslate"><span class="pre">dF</span></code>, <code class="docutils literal notranslate"><span class="pre">cont</span></code>, <code class="docutils literal notranslate"><span class="pre">model</span></code>, …), as in the expressions of the recipes; <code class="docutils literal notranslate"><span class="pre">λ</span></code> can be written <code class="docutils literal notranslate"><span class="pre">lam</span></code>, and the names in the data (<code class="docutils literal notranslate"><span class="pre">x</span></code>, <code class="docutils literal notranslate"><span class="pre">y</span></code>, <code class="docutils literal notranslate"><span class="pre">dy</span></code>) are accepted.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">spectrum_plot</span></code></p></td>
 <td><p>A plot of a range (PNG): the flux and its error, the continuum, the model, and a tick at each line of each component.</p></td>
@@ -732,6 +736,25 @@ parameters of the recipe, and:</p>
 <li><p><code class="docutils literal notranslate"><span class="pre">reason</span></code>: why the agent runs the recipe with these values, stored with
 the step in the session log.</p></li>
 </ul>
+<p><strong>The manual fits, which fit and which do not.</strong> The tools of <em>Absorbers</em>
+overlap, and the instructions of the server say which does what, with an
+example of each workflow. <code class="docutils literal notranslate"><span class="pre">absorbers_add_component</span></code>,
+<code class="docutils literal notranslate"><span class="pre">absorbers_add_linked_system</span></code> and <code class="docutils literal notranslate"><span class="pre">absorbers_fit_component</span></code> fit the
+component with the components blended with it; <code class="docutils literal notranslate"><span class="pre">absorbers_refit_all</span></code> fits
+every group; <code class="docutils literal notranslate"><span class="pre">absorbers_optimize_system</span></code> adds components where the
+residuals call for them, keeping each only if the AIC improves.
+<code class="docutils literal notranslate"><span class="pre">absorbers_update_component</span></code>, <code class="docutils literal notranslate"><span class="pre">absorbers_update_components</span></code>,
+<code class="docutils literal notranslate"><span class="pre">absorbers_update_constraint</span></code> and <code class="docutils literal notranslate"><span class="pre">absorbers_update_constraints_column</span></code>
+<strong>do not fit</strong>: they change values, links or freedom, and the model drawn
+stays as it was until a fit, so they are followed by
+<code class="docutils literal notranslate"><span class="pre">absorbers_fit_component</span></code>. The workflows: <em>adapt a system</em> (read it with
+<code class="docutils literal notranslate"><span class="pre">components_list</span></code>, <code class="docutils literal notranslate"><span class="pre">absorbers_update_component</span></code>, <code class="docutils literal notranslate"><span class="pre">absorbers_fit_component</span></code>,
+judge with <code class="docutils literal notranslate"><span class="pre">spectrum_plot</span></code>, <code class="docutils literal notranslate"><span class="pre">absorbers_optimize_system</span></code> if the residuals
+need more components); <em>try a component</em> (<code class="docutils literal notranslate"><span class="pre">absorbers_add_component</span></code> fits
+it at once; <code class="docutils literal notranslate"><span class="pre">session_undo</span></code> drops it); <em>link ions</em>
+(<code class="docutils literal notranslate"><span class="pre">absorbers_add_linked_system</span></code> with <code class="docutils literal notranslate"><span class="pre">series_list='CIV,SiIV'</span></code> for new
+components, <code class="docutils literal notranslate"><span class="pre">absorbers_update_constraint</span></code> with an <code class="docutils literal notranslate"><span class="pre">expression</span></code> to tie a
+parameter of components that exist, then a fit).</p>
 <p><strong>The agent’s decisions in the log.</strong> The log is what you read when you
 review the work of an agent. Besides the recipes and their parameters, it
 holds the <code class="docutils literal notranslate"><span class="pre">reason</span></code> the agent gave for each recipe and the notes it wrote
@@ -834,7 +857,9 @@ session (a recipe, an undo or redo, a note) it shows the new state: you
 see the analysis as it goes. The view stays as you left it: the range and
 zoom of the plot, the System Inspector open with its selected row, the
 session shown. A banner over the plot says that the session is
-<em>followed</em>: it is <strong>read only</strong> in the GUI, so that you and the agent do
+<em>followed</em>, and by which process (its pid and the version of Astrocook, e.g.
+“Updated by an AI agent (pid 4121, Astrocook 2.6.0) after every change”; a
+server of an older version left running shows up here): it is <strong>read only</strong> in the GUI, so that you and the agent do
 not change it at the same time; nothing you do in the GUI reaches the
 agent. The recipes that change it, the continuum editor, Undo and Redo,
 the scripts and renaming are refused, with the offer of an editable copy;
@@ -857,14 +882,25 @@ is not available. The GUI must be a version that knows followed sessions
 archive as an ordinary session, not updated.</p>
 <p>How it works, for the curious: the server saves the session to an archive
 in a temporary folder of its own, with a small file next to it
-(<code class="docutils literal notranslate"><span class="pre">&lt;archive&gt;.follow.json</span></code>) that says it is followed, and saves the archive
+(<code class="docutils literal notranslate"><span class="pre">&lt;archive&gt;.follow.json</span></code>: the session, the pid of the server and its version
+of Astrocook; a file without the last two, written by an older version, is
+still read, and its banner does not name the process) that says it is
+followed, and saves the archive
 again after every change; the GUI watches the file and reloads it. The
 archive is replaced only when it is complete (written to a temporary file
 next to it, then renamed), so the GUI never reads it half written. This
 archive is not your save: save the session with <code class="docutils literal notranslate"><span class="pre">session_save</span></code> as usual.</p>
 <p><em>File &gt; Export to ASCII</em> (<code class="docutils literal notranslate"><span class="pre">file_export_ascii</span></code>) writes the files in the
-folder <code class="docutils literal notranslate"><span class="pre">path</span></code>, named after <code class="docutils literal notranslate"><span class="pre">prefix</span></code>, and does not replace files that exist
-unless asked (<code class="docutils literal notranslate"><span class="pre">overwrite=true</span></code>).</p>
+folder <code class="docutils literal notranslate"><span class="pre">folder</span></code> (called <code class="docutils literal notranslate"><span class="pre">path</span></code> until 2.6.0, a name still accepted), named
+after <code class="docutils literal notranslate"><span class="pre">prefix</span></code>, and does not replace files that exist unless asked
+(<code class="docutils literal notranslate"><span class="pre">overwrite=true</span></code>). The tools that read another session
+(<code class="docutils literal notranslate"><span class="pre">flux_equalize</span></code>, <code class="docutils literal notranslate"><span class="pre">flux_resample</span></code>, <code class="docutils literal notranslate"><span class="pre">edit_import_systems</span></code>) require its
+<code class="docutils literal notranslate"><span class="pre">session_id</span></code>; those that read several (<code class="docutils literal notranslate"><span class="pre">edit_stitch</span></code>,
+<code class="docutils literal notranslate"><span class="pre">edit_equalize_and_stitch</span></code>, <code class="docutils literal notranslate"><span class="pre">edit_coadd</span></code>, <code class="docutils literal notranslate"><span class="pre">edit_trim_common</span></code>; their
+schema says <code class="docutils literal notranslate"><span class="pre">x-astrocook-kind:</span> <span class="pre">sessions</span></code>) take their <code class="docutils literal notranslate"><span class="pre">session_id</span></code>s
+separated by commas, and <code class="docutils literal notranslate"><span class="pre">edit_coadd</span></code> the id of the session it runs on
+among them (the first is the reference of the units and of the flux). A
+<code class="docutils literal notranslate"><span class="pre">session_id</span></code> not found stops the tool.</p>
 <p>The sessions live in the server while the client is running: save the
 result with <code class="docutils literal notranslate"><span class="pre">session_save</span></code> before closing the client.</p>
 </section>
@@ -950,7 +986,9 @@ the tools, which it does anyway (the instructions of the server ask it);</p></li
 <p>Slow recipes are the pipelines (<code class="docutils literal notranslate"><span class="pre">absorbers_doublets_auto</span></code>, <code class="docutils literal notranslate"><span class="pre">absorbers_lya_auto</span></code>,
 <code class="docutils literal notranslate"><span class="pre">absorbers_forest_auto</span></code>, <code class="docutils literal notranslate"><span class="pre">absorbers_metals_auto</span></code>, <code class="docutils literal notranslate"><span class="pre">absorbers_refit_all</span></code>,
 <code class="docutils literal notranslate"><span class="pre">absorbers_fit_bayesian</span></code>): the agent knows
-that they report their progress and can be cancelled. A recipe changes the
+that they report their progress and can be cancelled. The Bayesian fit
+draws random numbers: give it a <code class="docutils literal notranslate"><span class="pre">seed</span></code> when the result must be repeatable
+(a log replayed without one gives other values, within the errors). A recipe changes the
 session it runs on, except those that open new sessions; in doubt, ask the
 agent to <code class="docutils literal notranslate"><span class="pre">session_duplicate</span></code> first: nothing is lost either way, because
 every state is kept.</p>

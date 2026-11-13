@@ -7,7 +7,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Absorption Systems &#8212; Astrocook 2.6.0 documentation</title>
+    <title>Absorption Systems &#8212; Astrocook 2.7.0 documentation</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="../static/documentation_options.js?v=ae39cb24"></script>
+    <script src="../static/documentation_options.js?v=dfec817d"></script>
     <script src="../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../static/design-tabs.js?v=fcb327ea"></script>
@@ -49,7 +49,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.6.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.7.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -61,7 +61,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.6.0" />
+  <meta name="docsearch:version" content="2.7.0" />
   
     
     <script src="../static/searchtools.js"></script>
@@ -570,8 +570,8 @@
 </div>
 </section>
 </section>
-<section id="the-system-inspector">
-<span id="system-inspector"></span><h2>2. The System Inspector<a class="headerlink" href="#the-system-inspector" title="Link to this heading">#</a></h2>
+<section id="system-inspector">
+<span id="the-system-inspector"></span><h2>2. The System Inspector<a class="headerlink" href="#system-inspector" title="Link to this heading">#</a></h2>
 <p>Once you have systems (either from a pipeline or added manually), the <strong>System Inspector</strong> is your cockpit for detailed analysis.</p>
 <p>To open it: <strong>View &gt; View System Inspector</strong>, or right-click over a component in the main window to display the context menu.</p>
 <section id="left-panel-system-list">
@@ -590,7 +590,7 @@
 <h4>Understanding Resolution Priority<a class="headerlink" href="#understanding-resolution-priority" title="Link to this heading">#</a></h4>
 <p>Astrocook handles instrumental resolution (<span class="math notranslate nohighlight">\(R\)</span>) flexibly to support both constant-resolution survey spectra and variable-resolution echelle data. The resolution of a spectrum lives in its <code class="docutils literal notranslate"><span class="pre">resol</span></code> column (visible in the Data Inspector): resolving power <span class="math notranslate nohighlight">\(R\)</span> if dimensionless, FWHM if in km/s. The Voigt fitting engine and the velocity plots use it according to this hierarchy:</p>
 <ol class="arabic simple">
-<li><p><strong>Component-Specific Resolution (Highest Priority):</strong> If you manually assign a resolution to a specific component (via the right-click menu in the System List), Astrocook will <em>always</em> use this value for that specific line, ignoring the column.</p></li>
+<li><p><strong>Component-Specific Resolution (Highest Priority):</strong> If you manually assign a resolution to a specific component (via the right-click menu in the System List), Astrocook will <em>always</em> use this value for that specific line, ignoring the column. It is always a resolving power <span class="math notranslate nohighlight">\(R\)</span>; setting it to <code class="docutils literal notranslate"><span class="pre">0</span></code> removes it, and the component follows the spectrum again.</p></li>
 <li><p><strong>The <code class="docutils literal notranslate"><span class="pre">resol</span></code> Column:</strong> Otherwise each pixel takes its own resolution. The fit computes the model on a grid finer than the pixels (uniform in velocity, with a step set by the instrumental width and by the narrowest line), convolves it for each pixel with a Gaussian of the resolution of that pixel, and averages it over the pixel. This models exactly spectra where <span class="math notranslate nohighlight">\(R\)</span> changes with wavelength, and lines narrower than a pixel.</p></li>
 <li><p><strong>Setting the resolution:</strong> <strong>Edit &gt; Set Properties…</strong> writes a flat <code class="docutils literal notranslate"><span class="pre">resol</span></code> column across the entire spectrum. It asks before replacing a column that varies with wavelength.</p></li>
 </ol>
@@ -690,6 +690,15 @@ The boxes above the plot are in three groups, separated by thin lines: what the 
 <p>Astrocook also tracks a turbulent broadening parameter <code class="docutils literal notranslate"><span class="pre">btur</span></code> separately. It is <strong>frozen (italic)</strong> at 0 by default, and its column is hidden while no component uses it (all at 0 and none linked); it appears by itself when a component does. Right-click the header of the table to show or hide any column (<strong>btur</strong> included); <strong>Default Columns</strong> goes back to this behaviour. To model mixed thermal/turbulent broadening explicitly, select the components and choose <strong>Unfreeze ‘btur’</strong> in the right-click menu of the table: it is there also while the column is hidden, and it shows the column; then refit them.</p>
 </div>
 </section>
+<section id="linking-in-scripts-and-for-agents">
+<h3>Linking in Scripts and for Agents<a class="headerlink" href="#linking-in-scripts-and-for-agents" title="Link to this heading">#</a></h3>
+<p>The menu of the table builds the link for you. In a script, or from an AI agent, a link is made with <code class="docutils literal notranslate"><span class="pre">update_constraint</span></code>: the parameter, its <code class="docutils literal notranslate"><span class="pre">expression</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">p['&lt;uuid</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">other</span> <span class="pre">component&gt;'].z</span></code>, or <code class="docutils literal notranslate"><span class="pre">p['&lt;uuid&gt;'].b</span> <span class="pre">*</span> <span class="pre">0.7</span></code>) and, optionally, <code class="docutils literal notranslate"><span class="pre">target_uuid</span></code>, the component it is linked to. The fits put the target in the group of the linked component; when <code class="docutils literal notranslate"><span class="pre">target_uuid</span></code> is left out it is the first component the expression names (until version 2.6.0 it was left out, and the target was not fitted with it). A linked parameter is frozen: <code class="docutils literal notranslate"><span class="pre">is_free=True</span></code> removes the link, and the two cannot be given together. Refused before anything is stored, with a message that says why: an expression that cannot be evaluated, one that names the component itself, a <code class="docutils literal notranslate"><span class="pre">target_uuid</span></code> that the expression does not name, and a call that asks for nothing (neither <code class="docutils literal notranslate"><span class="pre">is_free</span></code> nor an expression).</p>
+<p>All the recipes of this section that name components (<code class="docutils literal notranslate"><span class="pre">update_component</span></code>, <code class="docutils literal notranslate"><span class="pre">update_components</span></code>, <code class="docutils literal notranslate"><span class="pre">delete_component</span></code>, <code class="docutils literal notranslate"><span class="pre">fit_component</span></code>, <code class="docutils literal notranslate"><span class="pre">update_constraint</span></code>) refuse a component that is not in the session, and those that take a series (<code class="docutils literal notranslate"><span class="pre">add_component</span></code>, <code class="docutils literal notranslate"><span class="pre">update_component(s)</span></code>, <code class="docutils literal notranslate"><span class="pre">add_linked_system</span></code>) refuse one that is not in the <a class="reference internal" href="../atomic_data.html"><span class="std std-doc">atomic data</span></a>: until version 2.6.0 they recorded a step that changed nothing, or stored a component without lines. <code class="docutils literal notranslate"><span class="pre">add_component</span></code> takes one series, a transition or a multiplet (<code class="docutils literal notranslate"><span class="pre">CIV</span></code>), or a multiplet of its own written as its transitions (<code class="docutils literal notranslate"><span class="pre">FeII_2586,FeII_2600</span></code>); several series at the same redshift, with their redshifts linked, are added with <code class="docutils literal notranslate"><span class="pre">add_linked_system</span></code> (<code class="docutils literal notranslate"><span class="pre">CIV,SiIV</span></code>, each once). The redshift of <code class="docutils literal notranslate"><span class="pre">add_component</span></code> and <code class="docutils literal notranslate"><span class="pre">add_linked_system</span></code> has no default.</p>
+</section>
+<section id="doublet-anchor-across-two-sessions">
+<h3>Doublet Anchor Across Two Sessions<a class="headerlink" href="#doublet-anchor-across-two-sessions" title="Link to this heading">#</a></h3>
+<p><strong>Absorbers &gt; Detect doublet anchor redshift</strong> finds the redshift at which a transition in this session and another in a second session (e.g. the two lines of a doublet, extracted into two sessions) overlap best: the product of their absorption depths, on the flux normalized by the continuum (until version 2.6.0 the flux was taken as normalized, so a spectrum in physical units gave a wrong redshift). The two transitions must cover a range of redshift in common: otherwise the recipe stops (it returned 0).</p>
+</section>
 <section id="uncertainties">
 <h3>Uncertainties<a class="headerlink" href="#uncertainties" title="Link to this heading">#</a></h3>
 <p>In the table, the uncertainty of <code class="docutils literal notranslate"><span class="pre">z</span></code> is shown as a velocity, <span class="math notranslate nohighlight">\(c\,\delta z/(1+z)\)</span> in km/s, which compares directly with <code class="docutils literal notranslate"><span class="pre">b</span></code>; the tooltip of the row gives it also as <span class="math notranslate nohighlight">\(\delta z\)</span>. The exported tables keep <span class="math notranslate nohighlight">\(\delta z\)</span>.</p>
@@ -721,6 +730,11 @@ The boxes above the plot are in three groups, separated by thin lines: what the 
 <li><p>Select <strong>Refit Bayesian (MCMC)</strong>.</p></li>
 <li><p>The sampling will run as a batch process, with progress tracked in the main window’s progress bar. The first steps of the chain (up to 200, and at most half of the chain) are discarded as burn-in; use enough steps (the default is 500) for the chain to converge.</p></li>
 </ol>
+<p>The prior is flat: the redshift within ±20 km/s of its current value, <span class="math notranslate nohighlight">\(\log N\)</span> and <span class="math notranslate nohighlight">\(b\)</span> within the bounds of the fits (10–23 and 1–300 km/s). The components get the medians of the posterior, and its standard deviations as errors. The MCMC runs 32 walkers, or twice the free parameters when these are more than 16 (emcee needs at least that many).</p>
+<p>In scripts and for agents, <code class="docutils literal notranslate"><span class="pre">fit_bayesian</span></code> also offers nested sampling (<code class="docutils literal notranslate"><span class="pre">engine='nested'</span></code>, with dynesty): <code class="docutils literal notranslate"><span class="pre">nlive</span></code> live points (default 250, at least 10 per free parameter). Its time varies a lot from run to run (from a few seconds to a minute on one component). <code class="docutils literal notranslate"><span class="pre">seed</span></code> makes either sampling repeatable:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">session</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">absorbers</span><span class="o">.</span><span class="n">fit_bayesian</span><span class="p">([</span><span class="n">uuid</span><span class="p">],</span> <span class="n">engine</span><span class="o">=</span><span class="s1">'nested'</span><span class="p">,</span> <span class="n">nlive</span><span class="o">=</span><span class="mi">250</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
 <p><strong>Visualizing Posteriors (Corner Plots)</strong>
 Once a Bayesian fit completes, Astrocook stores the posterior samples in the session metadata. You can visualize these directly:</p>
 <ul class="simple">
@@ -801,7 +815,7 @@ Once a Bayesian fit completes, Astrocook stores the posterior samples in the ses
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#general-detection">General Detection</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-system-inspector">2. The System Inspector</a><ul class="nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#system-inspector">2. The System Inspector</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#left-panel-system-list">Left Panel: System List</a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#understanding-resolution-priority">Understanding Resolution Priority</a></li>
 </ul>
@@ -815,6 +829,8 @@ Once a Bayesian fit completes, Astrocook stores the posterior samples in the ses
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#adding-components">Adding Components</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#constraints-fix-free">Constraints (Fix/Free)</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#parameter-linking">Parameter Linking</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#linking-in-scripts-and-for-agents">Linking in Scripts and for Agents</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#doublet-anchor-across-two-sessions">Doublet Anchor Across Two Sessions</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#uncertainties">Uncertainties</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#importing-a-line-list">Importing a Line List</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#refitting">Refitting</a></li>

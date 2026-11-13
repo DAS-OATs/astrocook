@@ -143,7 +143,11 @@ recipes that the GUI runs from the System Inspector (e.g.
 `absorbers_fit_component`). The tools are made from the same description
 of the recipes as the dialogs of the GUI: the same parameters, defaults,
 bounds and texts, and a recipe added to Astrocook becomes a tool by
-itself. Other tools handle the sessions:
+itself. The tools of the manual fits refuse, before they run, a component
+or a series that is not in the session (the UUIDs are those of
+`components_list`), and `absorbers_update_constraint` takes the target of a
+link from its expression (see *Absorption Systems*, "Linking in Scripts and
+for Agents"). Other tools handle the sessions:
 
 | Tool | What it does |
 |---|---|
@@ -165,7 +169,7 @@ Three tools let the agent look into a session, without changing it:
 | Tool | What it does |
 |---|---|
 | `components_list` | The absorption components, by redshift, with their errors, the reduced chi2 and flags of their last fit, their fit group (the components fitted together, as *Refit All* groups them), their velocity from the first of the group and their constraints (fixed or linked parameters); filters by series, redshift and flags, in pages. |
-| `spectrum_read` | The columns of the spectrum in a range, as numbers; a long range is averaged in blocks of pixels (for reading only). |
+| `spectrum_read` | The columns of the spectrum in a range, as numbers; a long range is averaged in blocks of pixels (for reading only). The columns have the names of the GUI (`λ`, `F`, `dF`, `cont`, `model`, ...), as in the expressions of the recipes; `λ` can be written `lam`, and the names in the data (`x`, `y`, `dy`) are accepted. |
 | `spectrum_plot` | A plot of a range (PNG): the flux and its error, the continuum, the model, and a tick at each line of each component. |
 
 And one shows a session to you, in the GUI:
@@ -187,6 +191,26 @@ parameters of the recipe, and:
 - `max_listed`: the maximum number of items in each list of the output;
 - `reason`: why the agent runs the recipe with these values, stored with
   the step in the session log.
+
+**The manual fits, which fit and which do not.** The tools of *Absorbers*
+overlap, and the instructions of the server say which does what, with an
+example of each workflow. `absorbers_add_component`,
+`absorbers_add_linked_system` and `absorbers_fit_component` fit the
+component with the components blended with it; `absorbers_refit_all` fits
+every group; `absorbers_optimize_system` adds components where the
+residuals call for them, keeping each only if the AIC improves.
+`absorbers_update_component`, `absorbers_update_components`,
+`absorbers_update_constraint` and `absorbers_update_constraints_column`
+**do not fit**: they change values, links or freedom, and the model drawn
+stays as it was until a fit, so they are followed by
+`absorbers_fit_component`. The workflows: *adapt a system* (read it with
+`components_list`, `absorbers_update_component`, `absorbers_fit_component`,
+judge with `spectrum_plot`, `absorbers_optimize_system` if the residuals
+need more components); *try a component* (`absorbers_add_component` fits
+it at once; `session_undo` drops it); *link ions*
+(`absorbers_add_linked_system` with `series_list='CIV,SiIV'` for new
+components, `absorbers_update_constraint` with an `expression` to tie a
+parameter of components that exist, then a fit).
 
 **The agent's decisions in the log.** The log is what you read when you
 review the work of an agent. Besides the recipes and their parameters, it
@@ -285,7 +309,9 @@ session (a recipe, an undo or redo, a note) it shows the new state: you
 see the analysis as it goes. The view stays as you left it: the range and
 zoom of the plot, the System Inspector open with its selected row, the
 session shown. A banner over the plot says that the session is
-*followed*: it is **read only** in the GUI, so that you and the agent do
+*followed*, and by which process (its pid and the version of Astrocook, e.g.
+"Updated by an AI agent (pid 4121, Astrocook 2.6.0) after every change"; a
+server of an older version left running shows up here): it is **read only** in the GUI, so that you and the agent do
 not change it at the same time; nothing you do in the GUI reaches the
 agent. The recipes that change it, the continuum editor, Undo and Redo,
 the scripts and renaming are refused, with the offer of an editable copy;
@@ -314,15 +340,26 @@ archive as an ordinary session, not updated.
 
 How it works, for the curious: the server saves the session to an archive
 in a temporary folder of its own, with a small file next to it
-(`<archive>.follow.json`) that says it is followed, and saves the archive
+(`<archive>.follow.json`: the session, the pid of the server and its version
+of Astrocook; a file without the last two, written by an older version, is
+still read, and its banner does not name the process) that says it is
+followed, and saves the archive
 again after every change; the GUI watches the file and reloads it. The
 archive is replaced only when it is complete (written to a temporary file
 next to it, then renamed), so the GUI never reads it half written. This
 archive is not your save: save the session with `session_save` as usual.
 
 *File > Export to ASCII* (`file_export_ascii`) writes the files in the
-folder `path`, named after `prefix`, and does not replace files that exist
-unless asked (`overwrite=true`).
+folder `folder` (called `path` until 2.6.0, a name still accepted), named
+after `prefix`, and does not replace files that exist unless asked
+(`overwrite=true`). The tools that read another session
+(`flux_equalize`, `flux_resample`, `edit_import_systems`) require its
+`session_id`; those that read several (`edit_stitch`,
+`edit_equalize_and_stitch`, `edit_coadd`, `edit_trim_common`; their
+schema says `x-astrocook-kind: sessions`) take their `session_id`s
+separated by commas, and `edit_coadd` the id of the session it runs on
+among them (the first is the reference of the units and of the flux). A
+`session_id` not found stops the tool.
 
 The sessions live in the server while the client is running: save the
 result with `session_save` before closing the client.
@@ -412,7 +449,9 @@ know, not how:
 Slow recipes are the pipelines (`absorbers_doublets_auto`, `absorbers_lya_auto`,
 `absorbers_forest_auto`, `absorbers_metals_auto`, `absorbers_refit_all`,
 `absorbers_fit_bayesian`): the agent knows
-that they report their progress and can be cancelled. A recipe changes the
+that they report their progress and can be cancelled. The Bayesian fit
+draws random numbers: give it a `seed` when the result must be repeatable
+(a log replayed without one gives other values, within the errors). A recipe changes the
 session it runs on, except those that open new sessions; in doubt, ask the
 agent to `session_duplicate` first: nothing is lost either way, because
 every state is kept.
