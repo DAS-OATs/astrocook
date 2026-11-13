@@ -484,7 +484,8 @@ writing the archive, the <em>marker</em> that says it is followed, whether the G
 can run here, and the command that launches it.</p>
 <p>The marker is a small JSON file next to the archive,
 <code class="docutils literal notranslate"><span class="pre">&lt;archive&gt;.follow.json</span></code>, with the identifier of the session, the process
-that writes the archive and the version of Astrocook. The GUI looks for it
+that writes the archive and the version of Astrocook (the banner of the GUI
+says them; a marker without them is still read). The GUI looks for it
 whenever it opens an archive, whichever way the file arrives (the command
 line, the macOS <code class="docutils literal notranslate"><span class="pre">open</span></code> event, drag and drop): a flag of the command line
 would not reach an application already running on macOS. When the writer
@@ -515,7 +516,7 @@ marker is written in the same way.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="astrocook.follow.FollowMarker">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">astrocook.follow.</span></span><span class="sig-name descname"><span class="pre">FollowMarker</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">version</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/follow.html#FollowMarker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.follow.FollowMarker" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">astrocook.follow.</span></span><span class="sig-name descname"><span class="pre">FollowMarker</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">version</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/follow.html#FollowMarker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.follow.FollowMarker" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>What the marker of a followed archive says.</p>
 <dl class="py attribute">
@@ -526,14 +527,15 @@ marker is written in the same way.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="astrocook.follow.FollowMarker.pid">
-<span class="sig-name descname"><span class="pre">pid</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#astrocook.follow.FollowMarker.pid" title="Link to this definition">#</a></dt>
-<dd><p>The process that writes the archive</p>
+<span class="sig-name descname"><span class="pre">pid</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#astrocook.follow.FollowMarker.pid" title="Link to this definition">#</a></dt>
+<dd><p>The process that writes the archive (None in the marker of a program
+that did not write it)</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="astrocook.follow.FollowMarker.version">
-<span class="sig-name descname"><span class="pre">version</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#astrocook.follow.FollowMarker.version" title="Link to this definition">#</a></dt>
-<dd><p>The version of Astrocook of that program</p>
+<span class="sig-name descname"><span class="pre">version</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">''</span></span><a class="headerlink" href="#astrocook.follow.FollowMarker.version" title="Link to this definition">#</a></dt>
+<dd><p>The version of Astrocook of that program (’’ if the marker does not say)</p>
 </dd></dl>
 
 <dl class="py method">
@@ -542,12 +544,13 @@ marker is written in the same way.</p>
 <dd><p>Whether the process that writes the archive is still running.</p>
 <p>Checked on macOS and Linux only (a signal 0 to the process); on
 Windows it is taken as running. A marker left behind by a writer that
-did not stop cleanly (killed) belongs to a dead process.</p>
+did not stop cleanly (killed) belongs to a dead process. A marker
+without a pid is taken as running.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.follow.FollowMarker.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">version</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#astrocook.follow.FollowMarker.__init__" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">version</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#astrocook.follow.FollowMarker.__init__" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 </dd></dl>

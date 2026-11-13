@@ -483,7 +483,8 @@
 
 <span class="sd">The marker is a small JSON file next to the archive,</span>
 <span class="sd">``&lt;archive&gt;.follow.json``, with the identifier of the session, the process</span>
-<span class="sd">that writes the archive and the version of Astrocook. The GUI looks for it</span>
+<span class="sd">that writes the archive and the version of Astrocook (the banner of the GUI</span>
+<span class="sd">says them; a marker without them is still read). The GUI looks for it</span>
 <span class="sd">whenever it opens an archive, whichever way the file arrives (the command</span>
 <span class="sd">line, the macOS ``open`` event, drag and drop): a flag of the command line</span>
 <span class="sd">would not reach an application already running on macOS. When the writer</span>
@@ -537,10 +538,11 @@
 <span class="w">    </span><span class="sd">"""What the marker of a followed archive says."""</span>
     <span class="c1">#: The identifier of the session in the program that writes the archive</span>
     <span class="n">session_id</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="c1">#: The process that writes the archive</span>
-    <span class="n">pid</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="c1">#: The version of Astrocook of that program</span>
-    <span class="n">version</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="c1">#: The process that writes the archive (None in the marker of a program</span>
+    <span class="c1">#: that did not write it)</span>
+    <span class="n">pid</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1">#: The version of Astrocook of that program ('' if the marker does not say)</span>
+    <span class="n">version</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span>
 
 <div class="viewcode-block" id="FollowMarker.writer_alive">
 <a class="viewcode-back" href="../../api/astrocook.follow.html#astrocook.follow.FollowMarker.writer_alive">[docs]</a>
@@ -549,9 +551,10 @@
 
 <span class="sd">        Checked on macOS and Linux only (a signal 0 to the process); on</span>
 <span class="sd">        Windows it is taken as running. A marker left behind by a writer that</span>
-<span class="sd">        did not stop cleanly (killed) belongs to a dead process.</span>
+<span class="sd">        did not stop cleanly (killed) belongs to a dead process. A marker</span>
+<span class="sd">        without a pid is taken as running.</span>
 <span class="sd">        """</span>
-        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">name</span> <span class="o">!=</span> <span class="s2">"posix"</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">name</span> <span class="o">!=</span> <span class="s2">"posix"</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">pid</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">True</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">os</span><span class="o">.</span><span class="n">kill</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pid</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
@@ -591,7 +594,9 @@
     <span class="n">path</span> <span class="o">=</span> <span class="n">marker_path</span><span class="p">(</span><span class="n">archive</span><span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">read_text</span><span class="p">())</span>
-        <span class="k">return</span> <span class="n">FollowMarker</span><span class="p">(</span><span class="n">session_id</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">"session_id"</span><span class="p">]),</span> <span class="n">pid</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">"pid"</span><span class="p">]),</span>
+        <span class="n">pid</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"pid"</span><span class="p">)</span>  <span class="c1"># a marker of an earlier version may lack pid and version</span>
+        <span class="k">return</span> <span class="n">FollowMarker</span><span class="p">(</span><span class="n">session_id</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">"session_id"</span><span class="p">]),</span>
+                            <span class="n">pid</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">pid</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">pid</span><span class="p">),</span>
                             <span class="n">version</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"version"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)))</span>
     <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">None</span>

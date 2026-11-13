@@ -736,6 +736,25 @@ parameters of the recipe, and:</p>
 <li><p><code class="docutils literal notranslate"><span class="pre">reason</span></code>: why the agent runs the recipe with these values, stored with
 the step in the session log.</p></li>
 </ul>
+<p><strong>The manual fits, which fit and which do not.</strong> The tools of <em>Absorbers</em>
+overlap, and the instructions of the server say which does what, with an
+example of each workflow. <code class="docutils literal notranslate"><span class="pre">absorbers_add_component</span></code>,
+<code class="docutils literal notranslate"><span class="pre">absorbers_add_linked_system</span></code> and <code class="docutils literal notranslate"><span class="pre">absorbers_fit_component</span></code> fit the
+component with the components blended with it; <code class="docutils literal notranslate"><span class="pre">absorbers_refit_all</span></code> fits
+every group; <code class="docutils literal notranslate"><span class="pre">absorbers_optimize_system</span></code> adds components where the
+residuals call for them, keeping each only if the AIC improves.
+<code class="docutils literal notranslate"><span class="pre">absorbers_update_component</span></code>, <code class="docutils literal notranslate"><span class="pre">absorbers_update_components</span></code>,
+<code class="docutils literal notranslate"><span class="pre">absorbers_update_constraint</span></code> and <code class="docutils literal notranslate"><span class="pre">absorbers_update_constraints_column</span></code>
+<strong>do not fit</strong>: they change values, links or freedom, and the model drawn
+stays as it was until a fit, so they are followed by
+<code class="docutils literal notranslate"><span class="pre">absorbers_fit_component</span></code>. The workflows: <em>adapt a system</em> (read it with
+<code class="docutils literal notranslate"><span class="pre">components_list</span></code>, <code class="docutils literal notranslate"><span class="pre">absorbers_update_component</span></code>, <code class="docutils literal notranslate"><span class="pre">absorbers_fit_component</span></code>,
+judge with <code class="docutils literal notranslate"><span class="pre">spectrum_plot</span></code>, <code class="docutils literal notranslate"><span class="pre">absorbers_optimize_system</span></code> if the residuals
+need more components); <em>try a component</em> (<code class="docutils literal notranslate"><span class="pre">absorbers_add_component</span></code> fits
+it at once; <code class="docutils literal notranslate"><span class="pre">session_undo</span></code> drops it); <em>link ions</em>
+(<code class="docutils literal notranslate"><span class="pre">absorbers_add_linked_system</span></code> with <code class="docutils literal notranslate"><span class="pre">series_list='CIV,SiIV'</span></code> for new
+components, <code class="docutils literal notranslate"><span class="pre">absorbers_update_constraint</span></code> with an <code class="docutils literal notranslate"><span class="pre">expression</span></code> to tie a
+parameter of components that exist, then a fit).</p>
 <p><strong>The agent’s decisions in the log.</strong> The log is what you read when you
 review the work of an agent. Besides the recipes and their parameters, it
 holds the <code class="docutils literal notranslate"><span class="pre">reason</span></code> the agent gave for each recipe and the notes it wrote
@@ -838,7 +857,9 @@ session (a recipe, an undo or redo, a note) it shows the new state: you
 see the analysis as it goes. The view stays as you left it: the range and
 zoom of the plot, the System Inspector open with its selected row, the
 session shown. A banner over the plot says that the session is
-<em>followed</em>: it is <strong>read only</strong> in the GUI, so that you and the agent do
+<em>followed</em>, and by which process (its pid and the version of Astrocook, e.g.
+“Updated by an AI agent (pid 4121, Astrocook 2.6.0) after every change”; a
+server of an older version left running shows up here): it is <strong>read only</strong> in the GUI, so that you and the agent do
 not change it at the same time; nothing you do in the GUI reaches the
 agent. The recipes that change it, the continuum editor, Undo and Redo,
 the scripts and renaming are refused, with the offer of an editable copy;
@@ -861,7 +882,10 @@ is not available. The GUI must be a version that knows followed sessions
 archive as an ordinary session, not updated.</p>
 <p>How it works, for the curious: the server saves the session to an archive
 in a temporary folder of its own, with a small file next to it
-(<code class="docutils literal notranslate"><span class="pre">&lt;archive&gt;.follow.json</span></code>) that says it is followed, and saves the archive
+(<code class="docutils literal notranslate"><span class="pre">&lt;archive&gt;.follow.json</span></code>: the session, the pid of the server and its version
+of Astrocook; a file without the last two, written by an older version, is
+still read, and its banner does not name the process) that says it is
+followed, and saves the archive
 again after every change; the GUI watches the file and reloads it. The
 archive is replaced only when it is complete (written to a temporary file
 next to it, then renamed), so the GUI never reads it half written. This
