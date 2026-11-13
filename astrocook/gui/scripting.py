@@ -1,5 +1,7 @@
 from PySide6.QtCore import QObject, Signal
 
+from astrocook.recipes.result import run
+
 class AppController(QObject):
     """
     The Public API exposed to In-App Scripts.
@@ -30,21 +32,21 @@ class AppController(QObject):
 
     def run_recipe(self, session, recipe: str, method: str, **kwargs):
         """
-        Executes a recipe on a session.
+        Executes a recipe on a session and returns its result.
         Example: app.run_recipe(s, 'absorbers', 'optimize_system', uuid=..., max_components=5)
+
+        The recipe runs here, on ``session`` and in the thread of the
+        script, through the registry (``astrocook.recipes.run``), as in the
+        MCP server: it does not go through the dispatcher of the window (a
+        worker thread, a progress dialog, the active session), which
+        returns nothing to the caller (F101). The result is the new
+        session (the first, for a recipe that returns several), or the
+        value of a recipe that returns none; the window and its history
+        are not changed until the script calls :meth:`create_tab`.
         """
         self.log_message.emit(f"Running {recipe}.{method}...")
-        
-        # We reuse the MainWindow's central dispatcher
-        # This handles parameter parsing and recipe instantiation
-        result_session = self._mw._on_recipe_requested(
-            recipe, method, kwargs, session_override=session
-        )
-        
-        if result_session:
-            return result_session
-        else:
-            raise RuntimeError(f"Recipe {recipe}.{method} failed.")
+        result = run(session, f"{recipe}.{method}", **kwargs)
+        return result.session if result.session is not None else result.value
 
     def create_tab(self, session, name: str):
         """Adds a result session back to the GUI as a new tab."""

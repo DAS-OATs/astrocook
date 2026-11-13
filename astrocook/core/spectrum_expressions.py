@@ -29,7 +29,12 @@ _NE_GLOBAL_DICT = {
     'median': np.nanmedian,
     'mean': np.nanmean,
     'std': np.nanstd,
-    # numexpr *does* have: sum, prod, mean, std, min, max, log, log10, etc.
+    # NumExpr cannot call Python functions: of these entries only `min` and
+    # `max` work, and as NumExpr's own reductions (a NaN gives NaN), not as
+    # the NaN-aware functions above; `median(F)`, `mean(F)` and `std(F)`
+    # fail with "'VariableNode' object is not callable" (F128). NumExpr's
+    # own reductions are sum, prod, min and max, plus its elementwise
+    # functions (log, log10, ...). The entries are kept as they are.
 }
 
 REGION_PRESETS = {
