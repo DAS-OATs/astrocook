@@ -25,6 +25,18 @@ def test_the_marker_is_next_to_the_archive(tmp_path):
     assert sorted(p.name for p in tmp_path.iterdir()) == ["s.acs2.follow.json"]
 
 
+def test_a_marker_without_pid_and_version_is_read(tmp_path):
+    """The marker of an earlier version (no pid, no version, or no version
+    only) still follows: it says nothing of its writer, taken as running."""
+    archive = tmp_path / "s.acs2"
+    follow.marker_path(archive).write_text('{"session_id": "s"}')
+    marker = follow.read_marker(archive)
+    assert marker == follow.FollowMarker("s", None, "")
+    assert marker.writer_alive()
+    follow.marker_path(archive).write_text('{"session_id": "s", "pid": 42}')
+    assert follow.read_marker(archive) == follow.FollowMarker("s", 42, "")
+
+
 @pytest.mark.parametrize("text", ["not json", "{}", '{"session_id": "s", "pid": "x"}'])
 def test_a_marker_that_cannot_be_read_is_none(tmp_path, text):
     archive = tmp_path / "s.acs2"

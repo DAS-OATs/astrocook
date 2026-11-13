@@ -10,7 +10,8 @@ can run here, and the command that launches it.
 
 The marker is a small JSON file next to the archive,
 ``<archive>.follow.json``, with the identifier of the session, the process
-that writes the archive and the version of Astrocook. The GUI looks for it
+that writes the archive and the version of Astrocook (the banner of the GUI
+says them; a marker without them is still read). The GUI looks for it
 whenever it opens an archive, whichever way the file arrives (the command
 line, the macOS ``open`` event, drag and drop): a flag of the command line
 would not reach an application already running on macOS. When the writer
@@ -59,19 +60,21 @@ class FollowMarker:
     """What the marker of a followed archive says."""
     #: The identifier of the session in the program that writes the archive
     session_id: str
-    #: The process that writes the archive
-    pid: int
-    #: The version of Astrocook of that program
-    version: str
+    #: The process that writes the archive (None in the marker of a program
+    #: that did not write it)
+    pid: Optional[int] = None
+    #: The version of Astrocook of that program ('' if the marker does not say)
+    version: str = ""
 
     def writer_alive(self) -> bool:
         """Whether the process that writes the archive is still running.
 
         Checked on macOS and Linux only (a signal 0 to the process); on
         Windows it is taken as running. A marker left behind by a writer that
-        did not stop cleanly (killed) belongs to a dead process.
+        did not stop cleanly (killed) belongs to a dead process. A marker
+        without a pid is taken as running.
         """
-        if os.name != "posix":
+        if os.name != "posix" or self.pid is None:
             return True
         try:
             os.kill(self.pid, 0)
@@ -104,7 +107,9 @@ def read_marker(archive: PathLike) -> Optional[FollowMarker]:
     path = marker_path(archive)
     try:
         data = json.loads(path.read_text())
-        return FollowMarker(session_id=str(data["session_id"]), pid=int(data["pid"]),
+        pid = data.get("pid")  # a marker of an earlier version may lack pid and version
+        return FollowMarker(session_id=str(data["session_id"]),
+                            pid=None if pid is None else int(pid),
                             version=str(data.get("version", "")))
     except FileNotFoundError:
         return None

@@ -192,6 +192,26 @@ parameters of the recipe, and:
 - `reason`: why the agent runs the recipe with these values, stored with
   the step in the session log.
 
+**The manual fits, which fit and which do not.** The tools of *Absorbers*
+overlap, and the instructions of the server say which does what, with an
+example of each workflow. `absorbers_add_component`,
+`absorbers_add_linked_system` and `absorbers_fit_component` fit the
+component with the components blended with it; `absorbers_refit_all` fits
+every group; `absorbers_optimize_system` adds components where the
+residuals call for them, keeping each only if the AIC improves.
+`absorbers_update_component`, `absorbers_update_components`,
+`absorbers_update_constraint` and `absorbers_update_constraints_column`
+**do not fit**: they change values, links or freedom, and the model drawn
+stays as it was until a fit, so they are followed by
+`absorbers_fit_component`. The workflows: *adapt a system* (read it with
+`components_list`, `absorbers_update_component`, `absorbers_fit_component`,
+judge with `spectrum_plot`, `absorbers_optimize_system` if the residuals
+need more components); *try a component* (`absorbers_add_component` fits
+it at once; `session_undo` drops it); *link ions*
+(`absorbers_add_linked_system` with `series_list='CIV,SiIV'` for new
+components, `absorbers_update_constraint` with an `expression` to tie a
+parameter of components that exist, then a fit).
+
 **The agent's decisions in the log.** The log is what you read when you
 review the work of an agent. Besides the recipes and their parameters, it
 holds the `reason` the agent gave for each recipe and the notes it wrote
@@ -289,7 +309,9 @@ session (a recipe, an undo or redo, a note) it shows the new state: you
 see the analysis as it goes. The view stays as you left it: the range and
 zoom of the plot, the System Inspector open with its selected row, the
 session shown. A banner over the plot says that the session is
-*followed*: it is **read only** in the GUI, so that you and the agent do
+*followed*, and by which process (its pid and the version of Astrocook, e.g.
+"Updated by an AI agent (pid 4121, Astrocook 2.6.0) after every change"; a
+server of an older version left running shows up here): it is **read only** in the GUI, so that you and the agent do
 not change it at the same time; nothing you do in the GUI reaches the
 agent. The recipes that change it, the continuum editor, Undo and Redo,
 the scripts and renaming are refused, with the offer of an editable copy;
@@ -318,7 +340,10 @@ archive as an ordinary session, not updated.
 
 How it works, for the curious: the server saves the session to an archive
 in a temporary folder of its own, with a small file next to it
-(`<archive>.follow.json`) that says it is followed, and saves the archive
+(`<archive>.follow.json`: the session, the pid of the server and its version
+of Astrocook; a file without the last two, written by an older version, is
+still read, and its banner does not name the process) that says it is
+followed, and saves the archive
 again after every change; the GUI watches the file and reloads it. The
 archive is replaced only when it is complete (written to a temporary file
 next to it, then renamed), so the GUI never reads it half written. This

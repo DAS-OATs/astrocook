@@ -104,6 +104,29 @@ def test_the_instructions_list_the_menus_of_the_registry():
         assert (tool_name(spec) in text) == (f"{spec.category}.{spec.name}" not in EXCLUDED)
 
 
+def test_the_workflows_of_the_instructions_use_existing_tools_and_parameters():
+    """Phase 6-quater, PR 12: every tool the paragraph of workflows names
+    exists, and every example, written as tool(parameter=value), gives the
+    parameters that tool has (and those it requires)."""
+    import ast
+    import re
+    from astrocook.mcp_server.server import INSTRUCTIONS_WORKFLOWS as text
+    assert text in instructions()
+    assert len(text) < 2000  # paid in every session
+    tools = list_tools(build_server())
+    names = set(re.findall(r"\b(?:absorbers|components|session|spectrum)_[a-z_]+\b", text))
+    assert names and names <= set(tools), names - set(tools)
+    calls_ = re.findall(r"\b([a-z]+_[a-z_]+)\(([^()]+)\)", text)
+    assert len(calls_) >= 6
+    for name, args in calls_:
+        keywords = ast.parse(f"f({args})", mode="eval").body.keywords
+        given = {k.arg for k in keywords}
+        schema = tools[name].input_schema
+        assert given <= set(schema["properties"]), (name, given)
+        # session_id is the one the examples leave out, as the paragraph says
+        assert set(schema["required"]) - {"session_id"} <= given, (name, given)
+
+
 def test_the_messages_name_the_tools():
     assert as_tools("set it with Set session properties (edit.set_properties).") == (
         "set it with Set session properties (tool edit_set_properties).")
