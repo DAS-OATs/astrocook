@@ -2,8 +2,8 @@
 
 Context for Claude Code sessions on Astrocook. The plan is in `ROADMAP.md`
 (about 1000 lines, 13 November 2026): do not read it whole. Read the section
-of the phase in progress (phase 7, once 2.7.0 is out), "Rules and decisions
-in force", and the open rows of the findings register (section 3.2) and of
+of the phase in progress (phase 7, with 7-bis interleaved; a PR of the
+phase: its row of the plan), "Rules and decisions in force", and the open rows of the findings register (section 3.2) and of
 the issues (section 3.1).
 `ROADMAP_HISTORY.md` is the archive of the concluded phases: search it with
 `grep` for a detail (a finding, an issue, a PR), never read it whole.
@@ -28,6 +28,16 @@ Guido gives each PR (except the smallest) a conversation of its own, and
 chooses its model. At the start of each phase, when its plan is written,
 say for each PR whether Sonnet is enough, with an estimate of its time,
 and write both in the plan of the phase in `ROADMAP.md`.
+
+Orchestration (agreed with Guido, 13 November 2026, the criterion that
+spends the fewest tokens): the state of a phase lives in `ROADMAP.md`,
+not in a conversation. A conversation of a PR starts from its row of the
+plan and reports through its PR description and the update of that row.
+A planning conversation lasts one block of a phase (e.g. 7a), not the
+whole phase: it writes the details of the block, reviews only the PRs of
+judgement (the description, `git diff --stat`, the central files), and
+closes with the block. No conversation reads the transcripts of another
+or creates sessions for Guido.
 Calibration (phase 6-quater): PRs 1-7 took one working day in all, about
 1 h for a mechanical PR (Sonnet) and 2-4 h for a review (Opus); the
 estimates of the plan had been 4-8 times longer. Later in the phase a
@@ -222,16 +232,27 @@ classes, mypy at zero errors, one set of column names, the units of the
 flux (`arb_flux`), the menus from the registry, the shorter MCP
 descriptions (`SHARED_PARAMS`); the numbers of the benchmark unchanged (full run
 on the final master identical to the baseline). What still holds is in "Rules and decisions in force"
-(`ROADMAP.md`). Next: phase 7 (robust components, measured on the benchmark of phase 4; the
-real analysis of the MCP server goes there) and phase 7-bis (small fixes: the
-register of 3.2 says which findings go to each).
+(`ROADMAP.md`).
+
+Phase 7 (robust components: emission model, identification, fit) is in
+progress, its plan agreed on 13 November 2026: four blocks, 7a (measure:
+new mocks, metrics, the twin, the real spectra, the evaluation of a model
+on fixed pixels), 7b (emission model), 7c (identification), 7d
+(components and fit), each component with a design document in `design/`
+first. Phase 7-bis (small technical fixes, PRs B1-B11) is interleaved
+with it. The proprietary real spectra of the benchmark live in the
+private `astrocook-data` (`benchmark/`): nothing of them, data or
+per-object results, enters this public repository (`ROADMAP.md`, phase
+7, "Data and blindness").
 
 Open constraints:
 - #549 (LICENSE and first PyPI publication) waits for INAF; while it is open
   each new PR goes on its own `claude/...` branch (say which).
 - Waiting for data from Guido: sessions for the log replay, sample files for
   the loaders, X-Shooter VIS/NIR data (F15).
-- One PR at a time: wait for the merge before opening the next.
+- One PR at a time: wait for the merge before opening the next; in
+  phase 7, at most one PR of 7 and one of 7-bis at a time (Guido,
+  13 November 2026).
 - Questionable behaviour found along the way goes in the findings register
   (`ROADMAP.md`, section 3.2), reviewed with Guido; anything that loses user
   data or crashes is reported at once. Update this section and the progress
