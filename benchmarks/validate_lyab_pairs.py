@@ -94,7 +94,7 @@ def lyb_detectable(comp, truth):
     fwhm = np.hypot(C_KMS / truth.resol, 1.665 * comp.b)
     lam = LAM_B * 10.0 * (1 + comp.z)
     sigma_ew = lam * truth.dv_kms / C_KMS * np.sqrt(max(1.0, 2 * fwhm / truth.dv_kms)) / truth.snr
-    return ew >= vm.DETECTION_SIGMA * sigma_ew
+    return bool(ew >= vm.DETECTION_SIGMA * sigma_ew)
 
 
 def _without_lyb(comp):
@@ -145,8 +145,8 @@ def pair_metrics(truth, candidates):
         sel = [i for i, c in enumerate(true_pairs) if lo <= c.logN < hi_]
         by_logn[f"{lo:g}-{hi_:g}"] = dict(
             n=len(sel), found=sum(found[i] for i in sel),
-            n_detectable=sum(detectable[i] for i in sel),
-            found_detectable=sum(found[i] and detectable[i] for i in sel))
+            n_detectable=int(sum(detectable[i] for i in sel)),
+            found_detectable=int(sum(found[i] and detectable[i] for i in sel)))
     return dict(n_true=len(true_pairs), n_detectable=int(sum(detectable)),
                 n_found=int(sum(found)),
                 n_found_detectable=int(sum(f and d for f, d in zip(found, detectable,
