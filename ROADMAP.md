@@ -613,6 +613,7 @@ Agreed with Guido in the review of the findings of PR 13 of 6-quater and with th
 | B9 | The outputs: F112 (the immediate contradiction of `IdentificationSummary`, before 7c.6 rebuilds it), F149 (the reason of a rejected candidate in the report of `optimize_system`, not "AIC changes by inf"), F157 (the chi2 of the groups in the result of every fit) | Sonnet | 2 h | |
 | B10 | F115, the mechanical part: the declared gaps out of the methods text, the name of the spectrum, `session_methods` writing the text to a file; the prose of the paragraphs after phase 7 (Guido's text) | Sonnet | 2 h | |
 | B11 | F158: the residuals under `spectrum_plot`, and a plot of several transitions in velocity around a redshift, as MCP tools (the plotting of `astrocook/plotting.py`) | Sonnet | 2-3 h | |
+| B12 | `SystemList._compute_fixed_aic` (`core/system_list.py`) removed: called by nobody since 7a.5 (`evaluate_model` computes the statistics of a model on fixed pixels); no change of behaviour (Guido, 16 November 2026) | Sonnet | 1 h | |
 
 F15 (`equalize_and_stitch` with narrow absorption) waits for the X-Shooter VIS/NIR data; if they have not arrived by the closing of phase 7, it is closed as not verifiable, the bias documented. F28 (the Bayesian samples in the archive) goes with 7c.3 (one mechanism for the structured data of the archive). Not in the phase (not scheduled yet): the technical issues of 3.1 (#424, #471, #478, #479, #446, #437, item 2 of #573) and the test of `gui/corner_plot.py`.
 
