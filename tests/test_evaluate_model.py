@@ -156,6 +156,32 @@ def test_a_better_model_has_lower_criteria(spec):
         assert getattr(with_siiv, name) < getattr(without, name), name
 
 
+def test_only_the_components_that_influence_the_pixels_are_counted(spec):
+    # A CIV far from the pixels (the SiIV doublet only) is in the model but
+    # not counted; with min_influence 0 it is (Guido, 16 November 2026)
+    full = _systs()
+    civ, siiv = (c.uuid for c in full.components)
+    siiv_only = _pixels(spec, RANGES[0])
+    ev = evaluate_model(spec, full, siiv_only)
+    assert ev.components == [siiv] and ev.k == 3 and ev.n_not_counted == 1
+    every = evaluate_model(spec, full, siiv_only, min_influence=0.0)
+    assert every.components == [civ, siiv] and every.k == 6
+    assert every.chi2 == ev.chi2 and every.aic == ev.aic + 6
+
+
+def test_the_influence_is_the_sum_of_the_squared_depth_over_the_error(spec):
+    full = _systs()
+    siiv = full.components[1].uuid
+    alone = full.delete_component(uuid=full.components[0].uuid)
+    pixels = _pixels(spec, RANGES[0])
+    _, model = VoigtFitter(spec, alone).compute_model_flux()
+    cont = spec.norm.value[pixels]
+    influence = np.sum(((1 - model[pixels] / cont) / (spec.dy.value[pixels] / cont)) ** 2)
+    assert evaluate_model(spec, full, pixels, min_influence=influence * 0.999).components \
+        == [siiv]
+    assert evaluate_model(spec, full, pixels, min_influence=influence * 1.001).components == []
+
+
 def test_no_valid_pixel_is_an_error(spec):
     with pytest.raises(ValueError, match="no valid pixel"):
         evaluate_model(spec, _systs(), np.zeros(len(spec.x), dtype=bool))
@@ -183,12 +209,12 @@ def test_recipe_reports_the_evaluation(session, caplog):
 
 
 def test_recipe_selection_and_residuals_column(session):
-    result = run(session, "absorbers.evaluate_model", x_ranges="463.8-465.2",
+    result = run(session, "absorbers.evaluate_model", x_ranges="417.5-420.0",
                  series="SiIV", z_min=1.9, z_max=2.1, residuals_col="resid")
     assert result.extra["evaluation"]["k"] == 2
     assert "resid" in result.changes.columns_added
     col = result.session.spec.get_column("resid").value
-    pixels = _pixels(session.spec, (463.8, 465.2))
+    pixels = _pixels(session.spec, RANGES[0])
     assert np.all(np.isfinite(col[pixels])) and np.all(np.isnan(col[~pixels]))
 
 
@@ -199,6 +225,16 @@ def test_recipe_mask_column(session):
     by_ranges = run(session, "absorbers.evaluate_model",
                     x_ranges="417.5-420.0, 463.8-465.2").extra["evaluation"]
     assert by_mask["chi2"] == by_ranges["chi2"] and by_mask["n_pixels"] == by_ranges["n_pixels"]
+
+
+def test_recipe_counts_the_uuids_given_whatever_their_influence(session, caplog):
+    caplog.set_level(logging.INFO, logger="astrocook")
+    civ, siiv = (c.uuid for c in session.systs.components)
+    by_influence = run(session, "absorbers.evaluate_model", x_ranges="417.5-420.0")
+    assert by_influence.extra["evaluation"]["components"] == [siiv]
+    assert "1 component not counted: influence on the pixels below 1.0." in caplog.messages
+    given = run(session, "absorbers.evaluate_model", x_ranges="417.5-420.0", uuids=[civ, siiv])
+    assert given.extra["evaluation"]["components"] == [civ, siiv]
 
 
 def test_recipe_warns_when_the_selection_matches_nothing(session):

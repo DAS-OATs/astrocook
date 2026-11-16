@@ -9,7 +9,8 @@ evaluation of an imported model (7a.3).
 
 The model is the whole system list; a selection of its components decides
 only which of them are counted: their free parameters (k) and their terms of
-the SpIC.
+the SpIC. Of the selection, only the components that influence the pixels
+are counted (:data:`MIN_INFLUENCE`).
 
 SpIC (Webb, Lee, Carswell & Milakovic 2021, MNRAS 501, 2268,
 doi:10.1093/mnras/staa3551, eq. 3, 5, 6)::
@@ -51,6 +52,18 @@ logger = logging.getLogger(__name__)
 #: SpIC_A and SpIC_B
 SPIC_WEIGHTS = {"spic": 0.5, "spic_a": 1.0, "spic_b": 0.0}
 
+#: The influence of a component on the pixels, sum_i ((1 - I_i) / sigma_i)^2,
+#: above which it is counted (its free parameters in k, its terms in the
+#: SpIC). For a weak, isolated component the sum is about the increase of the
+#: chi2 if it were removed: 1 means that the pixels see it at the level of
+#: 1 sigma. Without it, the components far from the pixels counted too (on a
+#: window of 5 nm of a mock with 140 components, k = 420 on 1286 pixels and a
+#: reduced chi2 of 1.47 for a chi2/n of 0.99); a rule on the centres of the
+#: lines missed the wings that do absorb in the pixels, so that a component
+#: at the edge of a window improved the chi2 for free (Guido, 16 November
+#: 2026: this criterion, threshold 1, variable)
+MIN_INFLUENCE = 1.0
+
 #: |residual| above which a pixel counts in ``frac_beyond_3sigma``
 OUTLIER_SIGMA = 3.0
 
@@ -86,6 +99,8 @@ class ModelEvaluation:
     resid_mean: Optional[float]
     frac_beyond_3sigma: Optional[float]
     components: List[str]
+    #: The candidates left out for their influence below the threshold
+    n_not_counted: int
     velocity_components: List[VelocityComponent]
     #: Normalized residuals on the whole spectrum, NaN out of the pixels
     residuals: np.ndarray = dataclasses.field(repr=False, compare=False)
@@ -162,10 +177,12 @@ def velocity_components(systs: SystemList, constraints: Dict[str, Dict[str, Any]
 
 
 def evaluate_model(spec: Spectrum, systs: SystemList, mask: np.ndarray,
-                   uuids: Optional[Sequence[str]] = None) -> ModelEvaluation:
+                   uuids: Optional[Sequence[str]] = None,
+                   min_influence: float = MIN_INFLUENCE) -> ModelEvaluation:
     """Measure the model of ``systs`` (all its components) on the pixels
     ``mask`` (those without a valid flux or error left out), counting the
-    components ``uuids`` (None: all).
+    components of ``uuids`` (None: all) whose influence on the pixels is at
+    least ``min_influence`` (0: all of them; see :data:`MIN_INFLUENCE`).
 
     Raises
     ------
@@ -187,24 +204,27 @@ def evaluate_model(spec: Spectrum, systs: SystemList, mask: np.ndarray,
     finite = resid[np.isfinite(resid)]
     n = int(np.sum(pixels))
 
-    counted = [c.uuid for c in systs.components] if uuids is None else list(uuids)
-    selected = set(counted)
+    candidates = [c.uuid for c in systs.components] if uuids is None else list(uuids)
     k_of = free_parameters(fitter) if systs.components else {}
-    k = sum(k_of[u] for u in counted)
-
+    counted: List[str] = []
     terms: List[VelocityComponent] = []
-    if counted:
+    if candidates:
         idx = np.flatnonzero(pixels)
         sl = slice(int(idx[0]), int(idx[-1]) + 1)
-        profiles = fitter.component_profiles(counted, sl)
+        profiles = fitter.component_profiles(candidates, sl)
         in_sl = pixels[sl]
         sigma = fitter._dy_norm[sl][in_sl]
-        r_of = {u: float(np.sum((1.0 - prof[in_sl]) / sigma)) for u, prof in profiles.items()}
+        depth = {u: (1.0 - prof[in_sl]) / sigma for u, prof in profiles.items()}
+        counted = [u for u in candidates
+                   if min_influence <= 0 or float(np.sum(depth[u] ** 2)) >= min_influence]
+        selected = set(counted)
+        r_of = {u: float(np.sum(depth[u])) for u in counted}
         for group in velocity_components(systs, fitter._constraints.v2_constraints_by_uuid):
             members = [u for u in group if u in selected]
             if members:
                 terms.append(VelocityComponent(members, sum(k_of[u] for u in members),
                                                sum(r_of[u] for u in members)))
+    k = sum(k_of[u] for u in counted)
 
     residuals = np.full(len(spec.x), np.nan)
     residuals[pixels] = resid
@@ -218,4 +238,5 @@ def evaluate_model(spec: Spectrum, systs: SystemList, mask: np.ndarray,
         resid_mean=float(np.mean(finite)) if finite.size else None,
         frac_beyond_3sigma=(float(np.mean(np.abs(finite) > OUTLIER_SIGMA))
                             if finite.size else None),
-        components=counted, velocity_components=terms, residuals=residuals)
+        components=counted, n_not_counted=len(candidates) - len(counted),
+        velocity_components=terms, residuals=residuals)

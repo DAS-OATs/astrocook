@@ -263,6 +263,8 @@ Astrocook provides a dedicated tool to filter these out:
 
 The model is always the whole list of components. A selection (by series, by a redshift range, or, in scripts and for agents, by `uuids`) decides only which components are *counted*: their free parameters and their terms of the SpIC. The free parameters `k` are those a fit would vary: frozen parameters and parameters linked to another one do not count.
 
+Of the selection (all the components, without one), only those that influence the pixels are counted: a component counts if $\sum_i ((1 - I_i)/\sigma_i)^2$ of its own profile $I$ on the pixels reaches **Min influence** (`min_influence`, default 1). For a weak, isolated component this is about the increase of $\chi^2$ if it were removed, so 1 means that the pixels see it at the level of 1σ. Without this, the components far from the pixels would inflate `k` (and the AICc and the reduced $\chi^2$); a rule on the centres of the lines would miss the wings that do absorb in the pixels (e.g. the damped wings of a strong H I line), making a component at the edge of a window free. `0` counts them all; the components given by `uuids` are always counted. The log says how many were left out (`n_not_counted`).
+
 The result, in the log and (in scripts and for agents) in `extra['evaluation']` of the result:
 
 | Field | Meaning |

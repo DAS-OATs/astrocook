@@ -227,6 +227,11 @@ def _methods_evaluate_model(p):
         hi = p['z_max'] if p.given('z_max') else "-"
         counted.append(f"the components at z {lo} to {hi}")
     which = (" counting " + ", ".join(counted)) if counted else ""
+    if not p.given('uuids'):
+        which += (f"{',' if which else ''} the components with an influence on the pixels "
+                  f"of at least {p['min_influence']} (sum of the squared depth over the error)"
+                  if p.raw('min_influence') else
+                  f"{',' if which else ''} all the components, whatever their influence")
     return (f"The model was evaluated on the pixels {where}{which}, without fitting "
             f"(chi2, AIC, AICc, BIC and the SpIC of Webb et al. 2021){p.menu}")
 
@@ -567,6 +572,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "series", "type": str, "default": "", "doc": "Count only the components of these series, comma-separated, e.g. 'CIV,SiIV'; empty: all."},
             {"name": "z_min", "type": float, "default": None, "optional": True, "gt": -1, "doc": "Count only the components at this redshift or above."},
             {"name": "z_max", "type": float, "default": None, "optional": True, "gt": -1, "doc": "Count only the components at this redshift or below."},
+            {"name": "min_influence", "type": float, "default": 1.0, "min": 0, "doc": "A component is counted if sum ((1 - its profile) / error)^2 on the pixels, about the chi2 change of removing it, reaches this; 0: all (uuids are always counted)."},
             {"name": "residuals_col", "type": str, "default": "", "doc": "Column where the normalized residuals (flux - model) / error are written, NaN out of the pixels; empty: none."}
         ],
     },
@@ -2736,7 +2742,7 @@ class RecipeAbsorbers:
     def evaluate_model(self, x_ranges: str = "", mask_col: str = "",
                        uuids: Optional[list] = None, series: str = "",
                        z_min: Optional[float] = None, z_max: Optional[float] = None,
-                       residuals_col: str = "") -> 'Session':
+                       min_influence: float = 1.0, residuals_col: str = "") -> 'Session':
         """
         Evaluate the model on a fixed set of pixels, without fitting (F154).
 
@@ -2763,6 +2769,13 @@ class RecipeAbsorbers:
         z_min, z_max : float, optional
             Count only the components within this redshift range.
             Defaults to ``None``: no limit.
+        min_influence : float, optional
+            Of these, count only those whose influence on the pixels,
+            sum ((1 - I) / sigma)^2 of their own profile I, reaches this
+            (about the change of the chi2 if they were removed; see
+            :data:`astrocook.fitting.model_evaluation.MIN_INFLUENCE`). The
+            components named in ``uuids`` are always counted. Defaults to
+            ``1.0``; ``0``: all.
         residuals_col : str, optional
             Column for the normalized residuals, NaN out of the pixels.
             Defaults to ``""``: none.
@@ -2787,10 +2800,14 @@ class RecipeAbsorbers:
         if selected and not counted:
             logger.warning("No component matches the selection: none is counted (k = 0).")
         try:
-            ev = evaluate_model(spec, systs, pixels, counted)
+            ev = evaluate_model(spec, systs, pixels, counted,
+                                min_influence=0.0 if uuids is not None else min_influence)
         except ValueError as e:
             raise InvalidParameter(f"x_ranges, mask_col: {e}") from None
         report("evaluation", ev.as_dict())
+        if ev.n_not_counted:
+            logger.info(f"{ev.n_not_counted} component{'s' if ev.n_not_counted != 1 else ''} "
+                        f"not counted: influence on the pixels below {min_influence}.")
 
         def fmt(v):
             return "n/a" if v is None else f"{v:.2f}"
