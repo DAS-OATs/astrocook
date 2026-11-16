@@ -66,6 +66,14 @@ def test_redshifts_default_to_z_em(qapp, name, param):
     assert float(params[param]) == pytest.approx(3.2)
 
 
+def test_z_ref_of_an_axis_in_velocity_is_its_own(qapp):
+    """An axis in velocity: the z_ref it keeps, not z_em (F84, phase 7-bis,
+    B6), so Run without editing converts it back where it was."""
+    conv = _session().edit.x_convert(z_ref="2.5", xunit="km/s")
+    dialog, params = _run(conv, "edit", "x_convert")
+    assert float(params["z_ref"]) == pytest.approx(2.5)
+
+
 # --- The kinds of the parameters (phase 6-bis, PR 6c) -------------------------
 
 def _window_with(*names):

@@ -9,10 +9,11 @@ would win without a word).
 from astrocook.core.spectrum import Spectrum
 
 #: Methods and properties of Spectrum before the split (2.2.0), and those
-#: added since: columns_in_range (phase 6-ter, PR 3)
+#: added since: columns_in_range (phase 6-ter, PR 3), axis_z_ref (phase
+#: 7-bis, B6)
 INTERFACE = {
     '_get_ne_contexts', '_renormalize_model', '_safe', '_xunit', '_xunit_old',
-    '_yunit', '_z_em', 'apply_expression', 'calc_intersection_expression',
+    '_yunit', '_z_em', 'apply_expression', 'axis_z_ref', 'calc_intersection_expression',
     'calculate_running_std', 'calibrate', 'coadd', 'columns_in_range', 'cont', 'detect_absorptions',
     'detect_doublet_z', 'dy', 'equalize_to_reference', 'find_absorbed',
     'fit_continuum', 'fit_powerlaw', 'get_column', 'get_region_bounds',

@@ -144,7 +144,8 @@ class CombineMixin(HostBase):
             dy=DataColumn(dy_final, y_u),
             aux_cols=new_aux,
             meta=new_meta,
-            z_em=self._data.z_em
+            z_em=self._data.z_em,
+            z_ref=self._data.z_ref
         )
         
         return self.__class__(new_data)
@@ -175,7 +176,9 @@ class CombineMixin(HostBase):
         """
         
         original_x_unit = self._data.x.unit 
-        z_ref = self._data.z_em if self._data.z_em is not None else 0.0 
+        # The zero of a velocity axis (F84): z_em for an axis in wavelength,
+        # where the conversion to velocity and back is a round trip
+        z_ref = self.axis_z_ref()
 
         if dx.unit.is_equivalent(au.km/au.s):
             target_calc_unit = au.km/au.s
@@ -255,7 +258,8 @@ class CombineMixin(HostBase):
             dy=DataColumn(dy_new.value, dy_new.unit),
             aux_cols=new_aux_cols, 
             meta=new_meta, 
-            z_em=self._data.z_em   # Propagate
+            z_em=self._data.z_em,   # Propagate
+            z_ref=self._data.z_ref
         )
         
         # 5. Return a NEW Spectrum instance
@@ -356,7 +360,13 @@ class CombineMixin(HostBase):
         
         # Calculation Unit (Target) comes from dx (usually km/s)
         calc_unit = dx.unit
-        z_em = ref_spec.meta.get('z_em', 0.0)
+        # The zero of the velocity: that of the axis of the reference when
+        # it is in velocity (F84, phase 7-bis, B6); for an axis in
+        # wavelength the conversion is a round trip, the zero as before
+        if original_x_unit.is_equivalent(au.km / au.s):
+            z_em = ref_spec.axis_z_ref()
+        else:
+            z_em = ref_spec.meta.get('z_em', 0.0)
 
         # 2. Accumulators
         big_x_list = []
@@ -504,7 +514,8 @@ class CombineMixin(HostBase):
             dy=DataColumn(reb_dy.value, reb_dy.unit),
             aux_cols=new_aux_cols,
             meta=new_meta, 
-            z_em=self._data.z_em
+            z_em=self._data.z_em,
+            z_ref=self._data.z_ref
         )
         
         return self.__class__(final_spec_data)
@@ -559,7 +570,8 @@ class CombineMixin(HostBase):
             dy=dy_col_new, 
             aux_cols=aux_cols_new, 
             meta=deepcopy(self.meta),
-            z_em=self._data.z_em   # Propagate
+            z_em=self._data.z_em,   # Propagate
+            z_ref=target_grid_spec._data.z_ref  # the axis of the target
         )
         new_history = self.history + [f"Resampled on grid of '{target_grid_spec.meta.get('name', 'unnamed')}'"]
         return self.__class__(data=new_data_core, history=new_history)

@@ -843,10 +843,11 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
         hi_lines_x = []
         metal_lines_x = []
         highlight_lines_x = []
-        # The reference of a velocity axis: z_em, as in the conversion of
-        # the axis by default and in the other conversions (F66: it read
-        # '_zem', which the spectrum does not have, so it was always 0)
-        zem = spec._data.z_em or 0.0
+        # The reference of a velocity axis: the z_ref of its conversion,
+        # kept with the spectrum (F84, phase 7-bis, B6; z_em when it is not
+        # known). F66: it read '_zem', which the spectrum does not have, so
+        # it was always 0
+        zem = spec.axis_z_ref()
 
         # The observed wavelengths of all the transitions first, then
         # converted to the x unit at once: one conversion per

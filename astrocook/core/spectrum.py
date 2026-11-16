@@ -4,8 +4,9 @@ import astropy.units as au
 from copy import deepcopy
 import dataclasses
 import logging
+import math
 import numpy as np
-from typing import Any, Dict, List, Optional, Union, overload
+from typing import Any, Dict, List, Optional, Union, cast, overload
 
 from astrocook.core.spectrum_operations import convert_x_axis, convert_y_axis
 from astrocook.core.structures import SpectrumData, DataColumn
@@ -807,14 +808,45 @@ class Spectrum(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, LinesM
         # as it happens very frequently during interactive fitting.
         return Spectrum(data=new_data, history=self.history)
     
-    def x_convert(self, z_ref: float, xunit: au.Unit) -> 'Spectrum':
+    def axis_z_ref(self) -> float:
+        """
+        The reference redshift of the x axis in velocity: the zero is the
+        Lyman-alpha emission at 121.567 nm * (1 + z_ref).
+
+        The ``z_ref`` kept by :meth:`x_convert` (F84, phase 7-bis, B6);
+        ``z_em`` when it is not known (an axis loaded in velocity, an
+        archive saved before B6), as all the conversions did before. For
+        an axis in wavelength the conversions to velocity and back are a
+        round trip, and the reference does not matter: ``z_em`` too.
+
+        Returns
+        -------
+        float
+            The reference redshift.
+        """
+        if self._data.z_ref is not None:
+            return float(self._data.z_ref)
+        return float(self._data.z_em or 0.0)
+
+    def x_convert(self, z_ref: Optional[float], xunit: au.Unit) -> 'Spectrum':
         """
         Convert the X-axis units and return a NEW Spectrum instance.
 
+        The zero of a velocity axis is the Lyman-alpha emission at
+        121.567 nm * (1 + z_ref); the new spectrum keeps ``z_ref``
+        (``SpectrumData.z_ref``, F84, phase 7-bis, B6), and the conversions
+        back use it.
+
         Parameters
         ----------
-        z_ref : float
-            Reference redshift for velocity conversion.
+        z_ref : float or None
+            Reference redshift of the velocity axis. From a wavelength to a
+            velocity: the zero of the new axis (None: ``z_em``). From a
+            velocity to a wavelength: the zero of the axis, which must be
+            the one it keeps, if it keeps one (None: that one, or
+            ``z_em``). From a velocity to a velocity: the zero of the new
+            axis, which is re-centred on it (None: the zero stays).
+            Not used from a wavelength to a wavelength.
         xunit : astropy.units.Unit
             Target unit (e.g., ``nm``, ``km/s``).
 
@@ -822,25 +854,69 @@ class Spectrum(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, LinesM
         -------
         Spectrum
             A new instance with the converted X-axis.
+
+        Raises
+        ------
+        ValueError
+            From a velocity to a wavelength, if ``z_ref`` is not the
+            reference the axis keeps.
         """
-        
+        kms = au.km / au.s
+        from_velocity = self._data.x.unit.is_equivalent(kms)
+        to_velocity = au.Unit(xunit).is_equivalent(kms)
+        stored = self._data.z_ref if from_velocity else None
+        data = self._data
+
+        if from_velocity and stored is None:
+            if z_ref is not None and not to_velocity:
+                # Declared by the caller: the zero of an axis loaded in velocity
+                current = float(z_ref)
+            else:
+                current = float(self._data.z_em or 0.0)
+                logger.warning("The reference redshift of the velocity axis is not "
+                               f"known: z_em ({current:g}) is used.")
+        elif from_velocity:
+            current = float(cast(float, stored))
+        else:
+            current = float(self._data.z_em or 0.0) if z_ref is None else float(z_ref)
+
+        if from_velocity and not to_velocity and z_ref is not None \
+                and stored is not None and not math.isclose(z_ref, stored, rel_tol=1e-12,
+                                                            abs_tol=1e-12):
+            raise ValueError(f"The velocity axis was converted at z_ref = {stored:g}: it is "
+                             f"converted back at the same, not at {z_ref:g}.")
+
+        new_z_ref: Optional[float] = None
+        if from_velocity and to_velocity:
+            new_z_ref = current if z_ref is None else float(z_ref)
+            if new_z_ref != current:
+                # Re-centred: back to wavelengths at the old zero, then to
+                # velocities at the new one
+                nm_x, nm_xmin, nm_xmax = convert_x_axis(self._data, current, au.nm)
+                data = dataclasses.replace(
+                    self._data, x=DataColumn(nm_x.value, au.nm),
+                    xmin=DataColumn(nm_xmin.value, au.nm),
+                    xmax=DataColumn(nm_xmax.value, au.nm))
+            used = new_z_ref
+        elif to_velocity:
+            new_z_ref = used = current
+        else:
+            used = current
+
         # 1. Execute pure conversion logic
-        x_new, xmin_new, xmax_new = convert_x_axis(self._data, z_ref, xunit)
-        
-        # 2. Build new SpectrumData, preserving the core vertical data
-        new_data = SpectrumData(
+        x_new, xmin_new, xmax_new = convert_x_axis(data, used, xunit)
+
+        # 2. The new axis; the rest as it is
+        new_data = dataclasses.replace(
+            self._data,
             x=DataColumn(x_new.value, xunit),
             xmin=DataColumn(xmin_new.value, xunit),
             xmax=DataColumn(xmax_new.value, xunit),
-            y=self._data.y, 
-            dy=self._data.dy,
-            aux_cols=self._data.aux_cols,
-            meta=self._data.meta,
-            z_em=self._data.z_em   # Propagate
+            z_ref=new_z_ref,
         )
-        
+
         # 3. Return a NEW Spectrum instance
-        new_history = self.history + [f"X-axis converted to {xunit} at z_ref={z_ref}"]
+        new_history = self.history + [f"X-axis converted to {xunit} at z_ref={used}"]
         return Spectrum(data=new_data, history=new_history)
 
     def y_convert(self, yunit: au.Unit) -> 'Spectrum':
@@ -870,7 +946,8 @@ class Spectrum(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, LinesM
             dy=new_dy, # Updated
             aux_cols=new_aux_cols, # Auxiliary columns should also be converted if unit-dependent
             meta=self._data.meta,
-            z_em=self._data.z_em   # Propagate
+            z_em=self._data.z_em,   # Propagate
+            z_ref=self._data.z_ref
         )
         
         # 3. Return a NEW Spectrum instance

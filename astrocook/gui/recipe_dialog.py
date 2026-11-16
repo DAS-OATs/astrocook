@@ -2,6 +2,7 @@ import logging
 from typing import Any, Dict, Optional, Set
 import html
 import webbrowser
+import astropy.units as au
 from PySide6.QtWidgets import (
     QDialog, QFormLayout, QFrame, QGridLayout, QLabel, QLineEdit, QCheckBox,
     QPushButton, QDialogButtonBox, QWidget, QComboBox, QMessageBox, QVBoxLayout, QApplication
@@ -605,6 +606,9 @@ class RecipeDialog(QDialog):
             return str(self.session.name or ""), ""
         if param_name == 'object':
             return str(spec.meta.get('OBJECT', '') or ""), "no object name"
+        if param_name == 'z_ref' and spec.x.unit.is_equivalent(au.km / au.s):
+            # The zero of the axis already in velocity (F84, phase 7-bis, B6)
+            return f"{spec.axis_z_ref():g}", ""
         if param_name in ('z_em', 'z_ref', 'z_target'):
             return f"{spec._data.z_em:g}", ""
         if param_name == 'resol':
