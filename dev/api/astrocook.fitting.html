@@ -472,6 +472,7 @@
 <li class="toctree-l1 current active has-children"><a aria-current="page" class="current reference internal" href="#">astrocook.fitting package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.bayesian_fitter.html">astrocook.fitting.bayesian_fitter module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.lsf.html">astrocook.fitting.lsf module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.model_evaluation.html">astrocook.fitting.model_evaluation module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.voigt_fitter.html">astrocook.fitting.voigt_fitter module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.voigt_model.html">astrocook.fitting.voigt_model module</a></li>
 </ul>
@@ -580,9 +581,51 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="astrocook.fitting.model_evaluation.html">astrocook.fitting.model_evaluation module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.model_evaluation.html#astrocook.fitting.model_evaluation.SPIC_WEIGHTS"><code class="docutils literal notranslate"><span class="pre">SPIC_WEIGHTS</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.model_evaluation.html#astrocook.fitting.model_evaluation.MIN_INFLUENCE"><code class="docutils literal notranslate"><span class="pre">MIN_INFLUENCE</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.model_evaluation.html#astrocook.fitting.model_evaluation.OUTLIER_SIGMA"><code class="docutils literal notranslate"><span class="pre">OUTLIER_SIGMA</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.model_evaluation.html#astrocook.fitting.model_evaluation.VelocityComponent"><code class="docutils literal notranslate"><span class="pre">VelocityComponent</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.model_evaluation.html#astrocook.fitting.model_evaluation.VelocityComponent.uuids"><code class="docutils literal notranslate"><span class="pre">VelocityComponent.uuids</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.model_evaluation.html#astrocook.fitting.model_evaluation.VelocityComponent.k"><code class="docutils literal notranslate"><span class="pre">VelocityComponent.k</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.model_evaluation.html#astrocook.fitting.model_evaluation.VelocityComponent.r"><code class="docutils literal notranslate"><span class="pre">VelocityComponent.r</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.model_evaluation.html#astrocook.fitting.model_evaluation.VelocityComponent.as_dict"><code class="docutils literal notranslate"><span class="pre">VelocityComponent.as_dict()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.model_evaluation.html#astrocook.fitting.model_evaluation.VelocityComponent.__init__"><code class="docutils literal notranslate"><span class="pre">VelocityComponent.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.model_evaluation.html#astrocook.fitting.model_evaluation.ModelEvaluation"><code class="docutils literal notranslate"><span class="pre">ModelEvaluation</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.model_evaluation.html#astrocook.fitting.model_evaluation.ModelEvaluation.chi2"><code class="docutils literal notranslate"><span class="pre">ModelEvaluation.chi2</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.model_evaluation.html#astrocook.fitting.model_evaluation.ModelEvaluation.n_pixels"><code class="docutils literal notranslate"><span class="pre">ModelEvaluation.n_pixels</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.model_evaluation.html#astrocook.fitting.model_evaluation.ModelEvaluation.k"><code class="docutils literal notranslate"><span class="pre">ModelEvaluation.k</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.model_evaluation.html#astrocook.fitting.model_evaluation.ModelEvaluation.dof"><code class="docutils literal notranslate"><span class="pre">ModelEvaluation.dof</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.model_evaluation.html#astrocook.fitting.model_evaluation.ModelEvaluation.chi2_reduced"><code class="docutils literal notranslate"><span class="pre">ModelEvaluation.chi2_reduced</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.model_evaluation.html#astrocook.fitting.model_evaluation.ModelEvaluation.aic"><code class="docutils literal notranslate"><span class="pre">ModelEvaluation.aic</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.model_evaluation.html#astrocook.fitting.model_evaluation.ModelEvaluation.aicc"><code class="docutils literal notranslate"><span class="pre">ModelEvaluation.aicc</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.model_evaluation.html#astrocook.fitting.model_evaluation.ModelEvaluation.bic"><code class="docutils literal notranslate"><span class="pre">ModelEvaluation.bic</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.model_evaluation.html#astrocook.fitting.model_evaluation.ModelEvaluation.spic"><code class="docutils literal notranslate"><span class="pre">ModelEvaluation.spic</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.model_evaluation.html#astrocook.fitting.model_evaluation.ModelEvaluation.spic_a"><code class="docutils literal notranslate"><span class="pre">ModelEvaluation.spic_a</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.model_evaluation.html#astrocook.fitting.model_evaluation.ModelEvaluation.spic_b"><code class="docutils literal notranslate"><span class="pre">ModelEvaluation.spic_b</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.model_evaluation.html#astrocook.fitting.model_evaluation.ModelEvaluation.resid_mean"><code class="docutils literal notranslate"><span class="pre">ModelEvaluation.resid_mean</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.model_evaluation.html#astrocook.fitting.model_evaluation.ModelEvaluation.frac_beyond_3sigma"><code class="docutils literal notranslate"><span class="pre">ModelEvaluation.frac_beyond_3sigma</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.model_evaluation.html#astrocook.fitting.model_evaluation.ModelEvaluation.components"><code class="docutils literal notranslate"><span class="pre">ModelEvaluation.components</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.model_evaluation.html#astrocook.fitting.model_evaluation.ModelEvaluation.n_not_counted"><code class="docutils literal notranslate"><span class="pre">ModelEvaluation.n_not_counted</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.model_evaluation.html#astrocook.fitting.model_evaluation.ModelEvaluation.velocity_components"><code class="docutils literal notranslate"><span class="pre">ModelEvaluation.velocity_components</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.model_evaluation.html#astrocook.fitting.model_evaluation.ModelEvaluation.residuals"><code class="docutils literal notranslate"><span class="pre">ModelEvaluation.residuals</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.model_evaluation.html#astrocook.fitting.model_evaluation.ModelEvaluation.as_dict"><code class="docutils literal notranslate"><span class="pre">ModelEvaluation.as_dict()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.model_evaluation.html#astrocook.fitting.model_evaluation.ModelEvaluation.__init__"><code class="docutils literal notranslate"><span class="pre">ModelEvaluation.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.model_evaluation.html#astrocook.fitting.model_evaluation.information_criteria"><code class="docutils literal notranslate"><span class="pre">information_criteria()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.model_evaluation.html#astrocook.fitting.model_evaluation.spic"><code class="docutils literal notranslate"><span class="pre">spic()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.model_evaluation.html#astrocook.fitting.model_evaluation.free_parameters"><code class="docutils literal notranslate"><span class="pre">free_parameters()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.model_evaluation.html#astrocook.fitting.model_evaluation.velocity_components"><code class="docutils literal notranslate"><span class="pre">velocity_components()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.model_evaluation.html#astrocook.fitting.model_evaluation.evaluate_model"><code class="docutils literal notranslate"><span class="pre">evaluate_model()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="astrocook.fitting.voigt_fitter.html">astrocook.fitting.voigt_fitter module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.TAU_CUT"><code class="docutils literal notranslate"><span class="pre">TAU_CUT</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.COMPONENT_FLAGS"><code class="docutils literal notranslate"><span class="pre">COMPONENT_FLAGS</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.chi2_of"><code class="docutils literal notranslate"><span class="pre">chi2_of()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.voigt_optical_depth"><code class="docutils literal notranslate"><span class="pre">voigt_optical_depth()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.NoPixelsToFit"><code class="docutils literal notranslate"><span class="pre">NoPixelsToFit</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.NoPixelsToFit.__init__"><code class="docutils literal notranslate"><span class="pre">NoPixelsToFit.__init__()</span></code></a></li>
@@ -597,7 +640,10 @@
 <li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitter.prepare_fit_context"><code class="docutils literal notranslate"><span class="pre">VoigtFitter.prepare_fit_context()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitter.get_fit_context_data"><code class="docutils literal notranslate"><span class="pre">VoigtFitter.get_fit_context_data()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitter.fit"><code class="docutils literal notranslate"><span class="pre">VoigtFitter.fit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitter.normalized_residuals"><code class="docutils literal notranslate"><span class="pre">VoigtFitter.normalized_residuals()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitter.valid_mask"><code class="docutils literal notranslate"><span class="pre">VoigtFitter.valid_mask</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitter.chi2_on_fit_pixels"><code class="docutils literal notranslate"><span class="pre">VoigtFitter.chi2_on_fit_pixels()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitter.component_profiles"><code class="docutils literal notranslate"><span class="pre">VoigtFitter.component_profiles()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitter.compute_model_flux"><code class="docutils literal notranslate"><span class="pre">VoigtFitter.compute_model_flux()</span></code></a></li>
 </ul>
 </li>

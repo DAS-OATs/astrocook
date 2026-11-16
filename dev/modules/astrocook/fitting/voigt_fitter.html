@@ -505,6 +505,14 @@
 <span class="n">AT_BOUND_RTOL</span> <span class="o">=</span> <span class="mf">1e-3</span>
 
 
+<div class="viewcode-block" id="chi2_of">
+<a class="viewcode-back" href="../../../api/astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.chi2_of">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">chi2_of</span><span class="p">(</span><span class="n">residuals</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The chi2 of normalized residuals, the non-finite ones left out."""</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">residuals</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">residuals</span><span class="p">)]</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span></div>
+
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_transitions</span><span class="p">(</span><span class="n">series</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">"""Transitions of a series in the atomic data (multiplet, single line</span>
 <span class="sd">    or comma-separated list)."""</span>
@@ -803,16 +811,8 @@
         <span class="c1"># with its own LSF and averaged over the pixel (#526)</span>
         <span class="n">final_model</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_calc</span><span class="p">)</span>
         
-        <span class="k">for</span> <span class="p">(</span><span class="n">res_val</span><span class="p">,</span> <span class="n">res_unit</span><span class="p">),</span> <span class="n">tau_arr</span> <span class="ow">in</span> <span class="n">tau_total_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="n">flux_fine</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">tau_arr</span><span class="p">)</span>
-            
-            <span class="k">if</span> <span class="n">res_unit</span> <span class="o">==</span> <span class="s1">'column'</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resol_calc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">r</span><span class="p">,</span> <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resol_calc</span><span class="p">,</span> <span class="s1">'column'</span>
-            <span class="k">elif</span> <span class="n">res_val</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">r</span><span class="p">,</span> <span class="n">key</span> <span class="o">=</span> <span class="n">res_val</span><span class="p">,</span> <span class="n">res_val</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">r</span><span class="p">,</span> <span class="n">key</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">'none'</span>
-            <span class="n">final_model</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lsf</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">flux_fine</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">res_key</span><span class="p">,</span> <span class="n">tau_arr</span> <span class="ow">in</span> <span class="n">tau_total_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">final_model</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_convolved</span><span class="p">(</span><span class="n">res_key</span><span class="p">,</span> <span class="n">tau_arr</span><span class="p">)</span>
             
         <span class="k">return</span> <span class="n">final_model</span>
 
@@ -1580,6 +1580,25 @@
         <span class="k">return</span> <span class="n">new_system_list</span><span class="p">,</span> <span class="n">final_model_flux</span><span class="p">,</span> <span class="n">res</span></div>
 
 
+<div class="viewcode-block" id="VoigtFitter.normalized_residuals">
+<a class="viewcode-back" href="../../../api/astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitter.normalized_residuals">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">normalized_residuals</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_flux</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">mask</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""(flux - model) / error on the pixels ``mask``, for a model flux in</span>
+<span class="sd">        the units of :meth:`fit` and :meth:`compute_model_flux` (on the whole</span>
+<span class="sd">        spectrum). The error is the one of the fits (bounded from below, a</span>
+<span class="sd">        continuum &lt;= 0 gives NaN). The one computation of the residuals of a</span>
+<span class="sd">        model on a fixed set of pixels: :meth:`chi2_on_fit_pixels`</span>
+<span class="sd">        (``metals_auto``, F111) and the evaluation of a model (F154, phase 7,</span>
+<span class="sd">        PR 7a.5)."""</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_y_norm</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">-</span> <span class="n">model_flux</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_norm</span><span class="p">[</span><span class="n">mask</span><span class="p">])</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dy_norm</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">valid_mask</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The pixels with a finite normalized flux and a positive error: the</span>
+<span class="sd">        only ones a fit or an evaluation can use."""</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_valid_mask</span>
+
 <div class="viewcode-block" id="VoigtFitter.chi2_on_fit_pixels">
 <a class="viewcode-back" href="../../../api/astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitter.chi2_on_fit_pixels">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">chi2_on_fit_pixels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_flux</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
@@ -1588,9 +1607,50 @@
 <span class="sd">        the last fit, and their number: two models compared on the same</span>
 <span class="sd">        pixels (``metals_auto``, F111)."""</span>
         <span class="n">mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fit_mask</span>
-        <span class="n">resid</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_y_norm</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">-</span> <span class="n">model_flux</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_norm</span><span class="p">[</span><span class="n">mask</span><span class="p">])</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dy_norm</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
-        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">resid</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">resid</span><span class="p">)]</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)),</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">mask</span><span class="p">))</span></div>
+        <span class="k">return</span> <span class="n">chi2_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">normalized_residuals</span><span class="p">(</span><span class="n">model_flux</span><span class="p">,</span> <span class="n">mask</span><span class="p">)),</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">mask</span><span class="p">))</span></div>
 
+
+<div class="viewcode-block" id="VoigtFitter.component_profiles">
+<a class="viewcode-back" href="../../../api/astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitter.component_profiles">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">component_profiles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">sl</span><span class="p">:</span> <span class="nb">slice</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""The normalized flux of each component of ``uuids`` alone, at the</span>
+<span class="sd">        current parameters, convolved with its resolution and averaged over</span>
+<span class="sd">        each pixel of ``sl`` (the profile I^a of Webb et al. 2021, eq. 6, as</span>
+<span class="sd">        the pixels see it: their model, eq. 7, is the product of these</span>
+<span class="sd">        profiles, which is exact only before the convolution)."""</span>
+        <span class="n">p_full</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="o">.</span><span class="n">map_p_free_to_full</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="o">.</span><span class="n">p_free_vector</span><span class="p">)</span>
+        <span class="n">saved</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_calc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resol_calc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x_tau</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lsf</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_x_calc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="p">[</span><span class="n">sl</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_resol_calc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resol_column</span><span class="p">[</span><span class="n">sl</span><span class="p">]</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_variable_resolution</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_lsf</span><span class="p">(</span><span class="n">sl</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="p">{</span><span class="n">c</span><span class="o">.</span><span class="n">uuid</span><span class="p">:</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_system_list</span><span class="o">.</span><span class="n">components</span><span class="p">)}</span>
+        <span class="n">profiles</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">uuid</span> <span class="ow">in</span> <span class="n">uuids</span><span class="p">:</span>
+                <span class="n">i</span> <span class="o">=</span> <span class="n">index</span><span class="p">[</span><span class="n">uuid</span><span class="p">]</span>
+                <span class="n">comp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_system_list</span><span class="o">.</span><span class="n">components</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="n">z</span><span class="p">,</span> <span class="n">logN</span><span class="p">,</span> <span class="n">b_val</span><span class="p">,</span> <span class="n">btur</span> <span class="o">=</span> <span class="n">p_full</span><span class="p">[</span><span class="mi">4</span> <span class="o">*</span> <span class="n">i</span><span class="p">:</span><span class="mi">4</span> <span class="o">*</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">4</span><span class="p">]</span>
+                <span class="n">tau</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_tau_component</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">logN</span><span class="p">,</span> <span class="n">b_val</span><span class="p">,</span> <span class="n">btur</span><span class="p">)</span>
+                <span class="n">profiles</span><span class="p">[</span><span class="n">uuid</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_convolved</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_component_resolution</span><span class="p">(</span><span class="n">comp</span><span class="p">),</span> <span class="n">tau</span><span class="p">)</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_x_calc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resol_calc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x_tau</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lsf</span> <span class="o">=</span> <span class="n">saved</span>
+        <span class="k">return</span> <span class="n">profiles</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_convolved</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_key</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">tau_arr</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The flux exp(-tau) of the fine grid convolved with the LSF of the</span>
+<span class="sd">        resolution ``res_key`` and averaged over the pixels (#526)."""</span>
+        <span class="n">res_val</span><span class="p">,</span> <span class="n">res_unit</span> <span class="o">=</span> <span class="n">res_key</span>
+        <span class="n">flux_fine</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">tau_arr</span><span class="p">)</span>
+        <span class="n">r</span><span class="p">:</span> <span class="n">Any</span>
+        <span class="n">key</span><span class="p">:</span> <span class="n">Any</span>
+        <span class="k">if</span> <span class="n">res_unit</span> <span class="o">==</span> <span class="s1">'column'</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resol_calc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">r</span><span class="p">,</span> <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resol_calc</span><span class="p">,</span> <span class="s1">'column'</span>
+        <span class="k">elif</span> <span class="n">res_val</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">r</span><span class="p">,</span> <span class="n">key</span> <span class="o">=</span> <span class="n">res_val</span><span class="p">,</span> <span class="n">res_val</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">r</span><span class="p">,</span> <span class="n">key</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">'none'</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lsf</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">flux_fine</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">)</span>
 
 <div class="viewcode-block" id="VoigtFitter.compute_model_flux">
 <a class="viewcode-back" href="../../../api/astrocook.fitting.voigt_fitter.html#astrocook.fitting.voigt_fitter.VoigtFitter.compute_model_flux">[docs]</a>

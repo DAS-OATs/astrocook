@@ -759,6 +759,56 @@ Once a Bayesian fit completes, Astrocook stores the posterior samples in the ses
 <li><p><strong>Combined Check:</strong> By default (<code class="docutils literal notranslate"><span class="pre">True</span></code>), broad lines are only removed if they are <em>also</em> very weak (<code class="docutils literal notranslate"><span class="pre">logN</span> <span class="pre">&lt;</span> <span class="pre">13.0</span></code>). This protects genuine broad features like DLA wings or OVI absorbers from being deleted.</p></li>
 </ol>
 </section>
+<section id="evaluating-a-model">
+<h3>Evaluating a Model<a class="headerlink" href="#evaluating-a-model" title="Link to this heading">#</a></h3>
+<p><strong>Absorbers &gt; Evaluate Model…</strong> measures the current model on a fixed set of pixels, without fitting, so that two alternative models (e.g. two identifications of the same lines, or a model before and after a component is added) can be compared on the same pixels. The pixels are given as wavelength ranges in nm (<code class="docutils literal notranslate"><span class="pre">x_ranges</span></code>, e.g. <code class="docutils literal notranslate"><span class="pre">403.5-407.5,</span> <span class="pre">448.5-450.5</span></code>), as a mask column (<code class="docutils literal notranslate"><span class="pre">mask_col</span></code>, True for the pixels to use), or both (their intersection); with neither, the whole spectrum. Pixels without a valid flux or error are left out.</p>
+<p>The model is always the whole list of components. A selection (by series, by a redshift range, or, in scripts and for agents, by <code class="docutils literal notranslate"><span class="pre">uuids</span></code>) decides only which components are <em>counted</em>: their free parameters and their terms of the SpIC. The free parameters <code class="docutils literal notranslate"><span class="pre">k</span></code> are those a fit would vary: frozen parameters and parameters linked to another one do not count.</p>
+<p>Of the selection (all the components, without one), only those that influence the pixels are counted: a component counts if <span class="math notranslate nohighlight">\(\sum_i ((1 - I_i)/\sigma_i)^2\)</span> of its own profile <span class="math notranslate nohighlight">\(I\)</span> on the pixels reaches <strong>Min influence</strong> (<code class="docutils literal notranslate"><span class="pre">min_influence</span></code>, default 1). For a weak, isolated component this is about the increase of <span class="math notranslate nohighlight">\(\chi^2\)</span> if it were removed, so 1 means that the pixels see it at the level of 1σ. Without this, the components far from the pixels would inflate <code class="docutils literal notranslate"><span class="pre">k</span></code> (and the AICc and the reduced <span class="math notranslate nohighlight">\(\chi^2\)</span>); a rule on the centres of the lines would miss the wings that do absorb in the pixels (e.g. the damped wings of a strong H I line), making a component at the edge of a window free. <code class="docutils literal notranslate"><span class="pre">0</span></code> counts them all; the components given by <code class="docutils literal notranslate"><span class="pre">uuids</span></code> are always counted. The log says how many were left out (<code class="docutils literal notranslate"><span class="pre">n_not_counted</span></code>).</p>
+<p>The result, in the log and (in scripts and for agents) in <code class="docutils literal notranslate"><span class="pre">extra['evaluation']</span></code> of the result:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Field</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">chi2</span></code>, <code class="docutils literal notranslate"><span class="pre">n_pixels</span></code></p></td>
+<td><p><span class="math notranslate nohighlight">\(\chi^2 = \sum_i ((F_i - M_i)/\sigma_i)^2\)</span> on the pixels, and their number <span class="math notranslate nohighlight">\(n\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">k</span></code>, <code class="docutils literal notranslate"><span class="pre">dof</span></code>, <code class="docutils literal notranslate"><span class="pre">chi2_reduced</span></code></p></td>
+<td><p>free parameters of the counted components, <span class="math notranslate nohighlight">\(n - k\)</span>, <span class="math notranslate nohighlight">\(\chi^2/(n-k)\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">aic</span></code>, <code class="docutils literal notranslate"><span class="pre">aicc</span></code>, <code class="docutils literal notranslate"><span class="pre">bic</span></code></p></td>
+<td><p><span class="math notranslate nohighlight">\(\chi^2 + 2k\)</span>; <span class="math notranslate nohighlight">\(\mathrm{AIC} + 2k(k+1)/(n-k-1)\)</span>; <span class="math notranslate nohighlight">\(\chi^2 + k\ln n\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">spic</span></code>, <code class="docutils literal notranslate"><span class="pre">spic_a</span></code>, <code class="docutils literal notranslate"><span class="pre">spic_b</span></code></p></td>
+<td><p>the SpIC of Webb et al. (2021) with <span class="math notranslate nohighlight">\(f = 1/2\)</span>, <span class="math notranslate nohighlight">\(1\)</span>, <span class="math notranslate nohighlight">\(0\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">resid_mean</span></code>, <code class="docutils literal notranslate"><span class="pre">frac_beyond_3sigma</span></code></p></td>
+<td><p>mean of the normalized residuals, fraction of them beyond 3</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">velocity_components</span></code></p></td>
+<td><p>the components grouped for the SpIC, with their <span class="math notranslate nohighlight">\(k_a\)</span> and <span class="math notranslate nohighlight">\(R_a\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><span class="math notranslate nohighlight">\(\chi^2\)</span> stands for <span class="math notranslate nohighlight">\(-2\ln L\)</span>: its constant is the same for models on the same pixels, so the differences of the criteria between two models are what matters, not their values.</p>
+<p><strong>SpIC</strong> (Webb, Lee, Carswell &amp; Milaković 2021, MNRAS 501, 2268): AICc and BIC penalize every parameter with the total number of pixels, while a narrow, weak line constrains its parameters only on a few pixels. The SpIC replaces that number, for each velocity component <span class="math notranslate nohighlight">\(a\)</span>, with</p>
+<div class="math notranslate nohighlight">
+\[R_a = \sum_i \frac{1 - I^a_i}{\sigma_i},\]</div>
+<p>the depth of its own profile <span class="math notranslate nohighlight">\(I^a\)</span> (convolved with the resolution) over the error of the normalized flux, summed over the pixels; then</p>
+<div class="math notranslate nohighlight">
+\[\mathrm{SpIC} = \chi^2 + \sum_a \left[\frac{2 f k_a R_a}{R_a - k_a - 1} + (1 - f)\, k_a \ln R_a\right],\]</div>
+<p>with <span class="math notranslate nohighlight">\(k_a\)</span> the free parameters of <span class="math notranslate nohighlight">\(a\)</span> and <span class="math notranslate nohighlight">\(R_a\)</span> bounded from below by <span class="math notranslate nohighlight">\(k_a + 2\)</span>. <span class="math notranslate nohighlight">\(f = 1\)</span> (<code class="docutils literal notranslate"><span class="pre">spic_a</span></code>) is the analogue of AICc, <span class="math notranslate nohighlight">\(f = 0\)</span> (<code class="docutils literal notranslate"><span class="pre">spic_b</span></code>) of BIC; the paper finds their hybrid, <span class="math notranslate nohighlight">\(f = 1/2\)</span> (<code class="docutils literal notranslate"><span class="pre">spic</span></code>), the best compromise. A velocity component of the paper is a redshift shared by several ions: here, the components whose redshifts are linked to each other (Parameter Linking, above), or a component alone. It is not the group of a fit, which also joins the blended components.</p>
+<p>With <strong>Residuals column</strong> set, the normalized residuals <span class="math notranslate nohighlight">\((F - M)/\sigma\)</span> are written in a column of the spectrum (NaN out of the pixels), to be plotted or used as a mask.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.result</span><span class="w"> </span><span class="kn">import</span> <span class="n">run</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">run</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="s2">"absorbers.evaluate_model"</span><span class="p">,</span> <span class="n">x_ranges</span><span class="o">=</span><span class="s2">"403.5-407.5, 448.5-450.5"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">extra</span><span class="p">[</span><span class="s2">"evaluation"</span><span class="p">][</span><span class="s2">"spic"</span><span class="p">])</span>
+</pre></div>
+</div>
+</section>
 </section>
 </section>
 
@@ -836,6 +886,7 @@ Once a Bayesian fit completes, Astrocook stores the posterior samples in the ses
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#refitting">Refitting</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#bayesian-fitting-experimental">Bayesian Fitting (Experimental)</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#cleaning-results">Cleaning Results</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#evaluating-a-model">Evaluating a Model</a></li>
 </ul>
 </li>
 </ul>

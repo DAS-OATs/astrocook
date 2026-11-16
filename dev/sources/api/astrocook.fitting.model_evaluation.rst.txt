@@ -1,0 +1,7 @@
+astrocook.fitting.model\_evaluation module
+==========================================
+
+.. automodule:: astrocook.fitting.model_evaluation
+   :members:
+   :show-inheritance:
+   :undoc-members:
