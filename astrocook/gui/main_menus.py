@@ -32,35 +32,6 @@ GEOMETRY_KEY = "window_geometry"
 PLOT_COLOURS_KEY = "plot_colours"
 
 
-#: The tooltips of the entries of the recipes (a longer text than the label)
-RECIPE_TOOLTIPS = {
-    'set_properties': 'Set core session properties (e.g., z_em)',
-    'apply_expression': "Apply a numerical expression to columns (e.g., 'y / 2.0')",
-    'mask_expression': "Mask a column using a boolean expression (e.g., 'x < 300')",
-    'smooth_column': 'Smooth one column of the spectrum (e.g. the continuum or an auxiliary column); Flux > Smooth Spectrum smooths the flux and the columns that go with it',
-    'delete': 'Delete columns or clear the line list',
-    'extract_preset': 'Extract standard regions (Forest, etc.) based on z_em',
-    'coadd': 'Combine multiple sessions and rebin to a single grid',
-    'calculate_running_std': 'Calculate running standard deviation on a column (e.g., y)',
-    'smooth': 'Smooth the flux and the columns that go with it (continuum, model, transmission); Edit > Smooth Column smooths one column',
-    'equalize': "Scale this spectrum to match another session's flux level.",
-    'resample': "Resample this spectrum onto another session's grid",
-    'calibrate_from_magnitudes': 'Rescale spectrum to match a photometric magnitude',
-    'estimate_auto': 'Find Absorbed regions and fit a continuum',
-    'find_absorbed': "Create a 'abs_mask' column using V1 'clip_flux' logic",
-    'fit_continuum': "Fit a continuum to the 'abs_mask' column (V1 logic)",
-    'fit_powerlaw': 'Fit a power-law to specified rest-frame regions',
-    'doublets_auto': 'Automated pipeline: Identify, populate, and fit metal doublets.',
-    'lya_auto': 'Automated pipeline: Identify, populate, and fit Ly-alpha lines.',
-    'forest_auto': 'Automated pipeline: Identify, populate, and fit the Lyman series.',
-    'metals_auto': 'Scans all existing systems and attempts to add other ions at the same redshift.',
-    'identify_lines': 'Automatically identify absorption regions using correlation signals',
-    'refit_all': 'Optimizes all components in the spectrum by fitting disjoint groups.',
-    'clean_negligible': 'Removes components with negligible column densities or broadening.',
-    'import_systems': 'Copy absorption systems from another open session.',
-    'import_systems_ascii': 'Read absorption systems from an ASCII/CSV table (series, z, logN, b, ...).',
-}
-
 #: The recipe entries of each menu, in order (``None``: a separator); the
 #: label of each is the ``menu`` key of the recipe in the registry. The File
 #: menu is arranged at the end of ``_create_menubar``.
@@ -192,8 +163,9 @@ class MainMenusMixin(HostBase):
         if spec.menu_title != (title or ""):
             raise ValueError(f"{name} is in the menu {spec.menu_title!r}, not in {title!r}")
         action = QAction((spec.menu_label or spec.brief.rstrip('.')) + "...", self)
-        if name in RECIPE_TOOLTIPS:
-            action.setToolTip(RECIPE_TOOLTIPS[name])
+        # The tooltip is the ``details`` of the registry (F151): one text, kept short
+        if spec.details:
+            action.setToolTip(spec.details)
         if handler is None:
             category = spec.category
 

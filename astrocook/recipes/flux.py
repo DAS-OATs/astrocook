@@ -116,7 +116,7 @@ FLUX_RECIPES_SCHEMAS = {
         "brief": "Equalize flux to reference.",
         "url": "tutorials/flux_operations.html#equalizing",
         "menu": "Flux > &Equalize to Reference",
-        "details": "Scales the flux of this session to match that of another session where they overlap, compared in the units of this session; a flux in arbitrary units takes the unit of the reference once scaled, a normalized flux is not scaled to one that is not.",
+        "details": "Scales the flux of this session to match that of another session where they overlap, in the units of this session; an arbitrary flux takes the unit of the reference once scaled.",
         "params": [
             # Required (phase 6-quater, PR 7: the default was the string 'None',
             # which still means "no session" and fails as before)
