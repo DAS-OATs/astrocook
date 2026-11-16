@@ -377,3 +377,19 @@ def test_documentation_opens_the_root_of_the_docs(empty, monkeypatch):
     monkeypatch.setattr(QDesktopServices, "openUrl", lambda url: urls.append(url.toString()))
     empty._open_docs()
     assert urls == [DOCS_URL]
+
+
+# --- Tooltips of the recipe entries (F151) ---------------------------------------------------
+
+def _recipe_names():
+    return [n for names in RECIPE_LAYOUT.values() for n in names if n] + list(RECIPES_OFF_MENU)
+
+
+def test_recipe_entry_tooltips_are_the_details(empty):
+    # F151: one text for the label's recipe, the details of the registry
+    # (before, a hand-written RECIPE_TOOLTIPS, with none for split and rebin)
+    for name in _recipe_names():
+        spec = find_recipe(name)
+        assert getattr(empty, f"{name}_action").toolTip() == spec.details, name
+        # Short: a tooltip is read at a glance (Guido, 16 November 2026)
+        assert len(spec.details) <= 200, name

@@ -163,7 +163,7 @@ EDIT_RECIPES_SCHEMAS = {
         "url": "tutorials/editing_data.html#setting-session-properties",
         "menu": "Edit > Set &Properties",
         "provides": ("z_em", "resolution"),
-        "details": "Sets the name of the session, the name of the object, the emission redshift, the resolution of the spectrum and the unit of its flux (a flux density per unit wavelength, declared, not converted: y_convert converts). A field left at '_current_' keeps its value.",
+        "details": "Sets the name of the session and of the object, the emission redshift, the resolution and the unit of the flux (declared, not converted). A field left at '_current_' keeps its value.",
         "params": [
             {"name": "name", "type": str, "default": "_current_", "keep": ("_current_",), "doc": "Name of the session, as shown in the session list (not empty)."},
             {"name": "object", "type": str, "default": "_current_", "keep": ("_current_",), "doc": "Name of the object (the OBJECT keyword of the header)."},
@@ -203,7 +203,7 @@ EDIT_RECIPES_SCHEMAS = {
         "brief": "Apply expression to columns.",
         "url": "tutorials/editing_data.html#arithmetic-on-columns",
         "menu": "Edit > Apply &Expression",
-        "details": "Evaluates an expression of the columns (NumExpr: + - * / **, comparisons, sqrt, exp, log, log10, abs, where, sum, min, max, ...) and writes it in a column, new or existing. The columns are named as in the GUI: λ (or lam), F, dF, cont, model, ...; e.g. 'F / cont', 'F * 2.0', 'log10(F)'. The axis (λ, λmin, λmax) is not written: x_convert converts it.",
+        "details": "Evaluates an expression of the columns (NumExpr syntax; λ or lam, F, dF, cont, model, ...; e.g. 'F / cont') and writes it in a column, new or existing. The axis is not written: x_convert converts it.",
         "params": [
             # Required (PR 8): with the defaults 'F' and 'F / dF' it
             # replaced the flux with its S/N
@@ -216,7 +216,7 @@ EDIT_RECIPES_SCHEMAS = {
         "brief": "Mask column by expression.",
         "url": "tutorials/editing_data.html#masking-data",
         "menu": "Edit > &Mask by Expression",
-        "details": "Sets a column to NaN where a boolean expression of the columns is true, e.g. '(λ < 300) | (λ > 400)' or 'dF <= 0'. The columns are named as in the GUI (λ or lam, F, dF, cont, ...). The axis (λ, λmin, λmax) is not masked.",
+        "details": "Sets a column to NaN where a boolean expression of the columns is true, e.g. '(λ < 300) | (λ > 400)' or 'dF <= 0'. The axis is not masked.",
         "params": [
             {"name": "target_col", "type": str, "default": "F", "doc": "Column to mask, e.g. 'F' (not the axis, λ, λmin, λmax).", "kind": "column"},
             {"name": "expression", "type": str, "default": "dF <= 0", "doc": "Boolean expression of the columns: the pixels where it is true are masked."},
@@ -286,7 +286,7 @@ EDIT_RECIPES_SCHEMAS = {
         "menu": "Edit > Extract &Preset Region",
         "branching": True,
         "requires": ("z_em",),
-        "details": "Copies a standard region into a new session, from the emission redshift: 'lya_forest' (between Ly-beta and Ly-alpha), 'all_ly_forest' (between the Lyman limit and Ly-alpha), 'red_side' (redward of Ly-alpha). Several regions, separated by commas, give one session each.",
+        "details": "Copies a standard region ('lya_forest', 'all_ly_forest', 'red_side') into a new session, from the emission redshift. Several regions, separated by commas, give one session each.",
         "params": [
             # We use a string for now. Options: 'lya_forest', 'all_ly_forest', 'red_side'
             {"name": "region", "type": str, "default": "lya_forest", "doc": "Region(s) to extract, comma-separated: 'lya_forest', 'all_ly_forest', 'red_side'."}
@@ -336,7 +336,7 @@ EDIT_RECIPES_SCHEMAS = {
         "url": "tutorials/editing_data.html#co-adding-spectra",
         "menu": "Edit > Co-&add Spectra",
         "branching": True,
-        "details": "Combines several sessions on one new grid with a constant step, weighting each pixel with its inverse variance, in one pass. The first session is the reference: the others are converted to its units and scaled to its flux; an arbitrary flux is co-added with a physical one only when scaled.",
+        "details": "Combines several sessions on one new grid with a constant step, weighting each pixel with its inverse variance. The first is the reference: the others are converted to its units and scaled.",
         "params": [
             {"name": "session_names", "type": str, "default": "", "kind": "sessions", "doc": "Comma-separated names of the sessions to co-add, this one among them (in a script, also a list of the sessions themselves); the first is the reference."},
             {"name": "xstart", "type": float, "default": None, "optional": True, "doc": "Start of the new grid (nm); None: the start of the data."},

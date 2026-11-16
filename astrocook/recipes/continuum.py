@@ -82,7 +82,7 @@ CONTINUUM_RECIPES_SCHEMAS = {
         "url": "tutorials/continuum_fitting.html#step-by-step-method",
         "menu": "Continuum > &Find Absorbed Regions",
         "requires": ("z_em",),
-        "details": "Finds the absorbed pixels with an iterative kappa-sigma clipping of the smoothed flux (the V1 'clip_flux' algorithm), with a longer smoothing in the Lyman-alpha forest; writes the 'abs_mask' column (True for the absorbed pixels).",
+        "details": "Finds the absorbed pixels with an iterative kappa-sigma clipping of the smoothed flux (the V1 'clip_flux' algorithm); writes the 'abs_mask' column.",
         "params": [
             {"name": "smooth_len_lya", "type": float, "default": 5000.0, "gt": 0, "doc": "Smoothing length in the Lyman-alpha forest (km/s): long, as most pixels there are absorbed."},
             {"name": "smooth_len_out", "type": float, "default": 400.0, "gt": 0, "doc": "Smoothing length outside the forest (km/s)."},
@@ -112,7 +112,7 @@ CONTINUUM_RECIPES_SCHEMAS = {
         "url": "tutorials/continuum_fitting.html#power-law-fitting",
         "menu": "Continuum > Fit &Power-Law",
         "requires": ("z_em",),
-        "details": "Fits a power law (a line in log flux vs log wavelength) to rest-frame regions free of emission and absorption, with clipping of outliers; writes 'cont_pl' (copy it to 'cont' with Apply expression to use it).",
+        "details": "Fits a power law (a line in log flux vs log wavelength) to rest-frame regions free of emission and absorption; writes 'cont_pl' (copy it to 'cont' to use it).",
         "params": [
             {"name": "regions", "type": str, "default": "128.0-129.0, 131.5-132.5, 134.5-136.0", "doc": "Comma-separated rest-frame wavelength ranges (nm), e.g. '128.0-129.0, 131.5-132.5'."},
             {"name": "kappa", "type": float, "default": 3.0, "gt": 0, "doc": "Threshold (in sigma) of the clipping of outliers in the regions."},

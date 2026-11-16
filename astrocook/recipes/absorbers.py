@@ -299,7 +299,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "brief": "Check for associated metals.",
         "url": "tutorials/absorption_systems.html#automated-detection-pipelines",
         "requires": ("z_em", "resolution", "continuum"),
-        "details": "For each system already in the list, tries to add other metal ions at its redshift and keeps each whose fit gives logN >= 12 and 2 <= b <= 50 km/s, not at the bounds of the fit, and decreases the AIC by the AIC penalty; skips the ions whose lines fall outside the spectrum; then refits all.",
+        "details": "For each system in the list, tries to add other metal ions at its redshift and keeps those whose fit is within the bounds and lowers the AIC by the AIC penalty; then refits all.",
         "params": [
             {"name": "ions", "type": str, "default": "CIV,SiIV,NV,OVI,CII,MgII", "doc": "Comma-separated ions to try, e.g. 'CIV,SiIV,NV,OVI,CII,MgII'."},
             {"name": "aic_penalty", "type": float, "default": 5.0, "min": 0, "doc": "Decrease of the AIC needed to keep a new ion (against the same model without it, on the pixels of its fit)."},
@@ -316,7 +316,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "menu": "Absorbers > &Identify Absorption Lines",
         "requires": ("z_em", "resolution", "continuum"),
         "branching": True,
-        "details": "Finds the absorbed regions from the mask, scores how well each multiplet matches them (the R^2 of the correlation of its lines) and keeps the best candidate systems; writes them in a new session, with the region and the score of each.",
+        "details": "Finds the absorbed regions from the mask, scores how well each multiplet matches them (R^2 of the correlation of its lines) and writes the best candidates in a new session.",
         "params": [
             {"name": "multiplets", "type": str, "default": "CIV,SiIV,MgII,Ly_ab", "doc": "Comma-separated multiplets to search for, e.g. 'CIV,SiIV,MgII,Ly_ab'."},
             {"name": "mask_col", "type": str, "default": "abs_mask", "doc": "Column of the mask (True for the absorbed pixels), e.g. 'abs_mask' of Find absorbed regions.", "kind": "column"},
