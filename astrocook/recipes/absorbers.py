@@ -641,6 +641,22 @@ def _without_components(session, uuids):
     return session
 
 
+def _redrawn(session):
+    """The session with the ``model`` column recomputed from its components,
+    without a fit (F152: ``update_component(s)`` and ``update_constraint``
+    changed the parameters and left the model drawn as it was). A session
+    without a model column (never fitted) or without a continuum (the model
+    cannot be computed) is returned as it is."""
+    from astrocook.fitting.voigt_fitter import VoigtFitter
+    spec, systs = session.spec, session.systs
+    if spec is None or not systs or not systs.components:
+        return session
+    if not spec.has_aux_column('model') or spec.norm is None:
+        return session
+    _, model_flux = VoigtFitter(spec, systs).compute_model_flux()
+    return session.with_new_spectrum(spec.update_model(model_flux))
+
+
 def _remove_narrow(session, series: str, min_b: float, refit_kwargs: dict):
     """Remove the components of ``series`` narrower than ``min_b`` and refit
     the rest, MIN_B_ROUNDS times; remove without a refit those still
@@ -1634,7 +1650,9 @@ class RecipeAbsorbers:
         """
         Update component parameters.
 
-        Modifies the physical parameters of an existing component.
+        Modifies the physical parameters of an existing component; the
+        ``model`` column, if any, is redrawn from the new parameters
+        (without a fit).
         Delegates to :meth:`astrocook.core.system_list.SystemList.update_component`.
 
         Parameters
@@ -1663,7 +1681,7 @@ class RecipeAbsorbers:
         check_uuids(self._session, [uuid], 'uuid')
         changes = _changes(z=z, logN=logN, b=b, btur=btur, series=series, resol=resol)
         new_systs = self._session.systs.update_component(uuid, **changes)
-        return self._session.with_new_system_list(new_systs)
+        return _redrawn(self._session.with_new_system_list(new_systs))
     @typed_recipe
     def update_components(self, uuids: list, z: Optional[float] = None,
                           logN: Optional[float] = None, b: Optional[float] = None,
@@ -1672,7 +1690,9 @@ class RecipeAbsorbers:
         """
         Batch update component parameters.
 
-        Modifies the physical parameters of multiple existing components simultaneously.
+        Modifies the physical parameters of multiple existing components
+        simultaneously; the ``model`` column, if any, is redrawn from the
+        new parameters (without a fit).
         Delegates to :meth:`astrocook.core.system_list.SystemList.update_components`.
 
         Parameters
@@ -1705,7 +1725,7 @@ class RecipeAbsorbers:
         changes = _changes(z=z, logN=logN, b=b, btur=btur, series=series, resol=resol)
 
         new_systs = self._session.systs.update_components(uuids, **changes)
-        return self._session.with_new_system_list(new_systs)
+        return _redrawn(self._session.with_new_system_list(new_systs))
             
     @typed_recipe
     def delete_component(self, uuid: Optional[str] = None, uuids: Optional[list] = None) -> 'Session':
@@ -1862,7 +1882,9 @@ class RecipeAbsorbers:
         """
         Update constraint.
 
-        Freeze, unfreeze, or link component parameters.
+        Freeze, unfreeze, or link component parameters. A link sets the
+        value of the parameter: the ``model`` column, if any, is redrawn
+        (without a fit).
         Delegates to :meth:`astrocook.core.system_list.SystemList.update_constraint`.
 
         Parameters
@@ -1923,7 +1945,10 @@ class RecipeAbsorbers:
                 logger.warning(f"The linked {param} could not be computed ({e}): it "
                                "keeps its value until the next fit.")
 
-        return self._session.with_new_system_list(new_systs)
+        session = self._session.with_new_system_list(new_systs)
+        # Freezing or freeing changes no value: the model is redrawn only
+        # for a link, which sets the value of the parameter
+        return _redrawn(session) if expression else session
             
     def _checked_constraint(self, uuid, is_free, expression, target_uuid):
         """The arguments of :meth:`update_constraint`, checked (phase

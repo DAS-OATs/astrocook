@@ -201,8 +201,8 @@ every group; `absorbers_optimize_system` adds components where the
 residuals call for them, keeping each only if the AIC improves.
 `absorbers_update_component`, `absorbers_update_components`,
 `absorbers_update_constraint` and `absorbers_update_constraints_column`
-**do not fit**: they change values, links or freedom, and the model drawn
-stays as it was until a fit, so they are followed by
+**do not fit**: they change values, links or freedom; the model is redrawn
+from the new values, but nothing is fitted, so they are followed by
 `absorbers_fit_component`. The workflows: *adapt a system* (read it with
 `components_list`, `absorbers_update_component`, `absorbers_fit_component`,
 judge with `spectrum_plot`, `absorbers_optimize_system` if the residuals

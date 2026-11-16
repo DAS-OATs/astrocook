@@ -713,11 +713,11 @@ CASES = [
     ('update_components', 'fitted', 'btur', '-1', {'uuids': [UUID]}, REFUSED),  # 2.4.0: accepted
     ('update_components', 'fitted', 'btur', '0', {'uuids': [UUID]}, 0.0),
     ('update_components', 'fitted', 'btur', '14', {'uuids': [UUID]}, 14.0),
-    ('update_component', 'fitted', 'resol', '2.0', {'uuid': UUID}, 2.0),
-    ('update_component', 'fitted', 'resol', 2.0, {'uuid': UUID}, 2.0),
-    ('update_component', 'fitted', 'resol', 2, {'uuid': UUID}, 2.0),
-    ('update_component', 'fitted', 'resol', ' 2 ', {'uuid': UUID}, 2.0),
-    ('update_component', 'fitted', 'resol', '1e1', {'uuid': UUID}, 10.0),
+    ('update_component', 'fitted', 'resol', '20000.0', {'uuid': UUID}, 20000.0),
+    ('update_component', 'fitted', 'resol', 20000.0, {'uuid': UUID}, 20000.0),
+    ('update_component', 'fitted', 'resol', 20000, {'uuid': UUID}, 20000.0),
+    ('update_component', 'fitted', 'resol', ' 20000 ', {'uuid': UUID}, 20000.0),
+    ('update_component', 'fitted', 'resol', '1e4', {'uuid': UUID}, 10000.0),
     ('update_component', 'fitted', 'resol', 'abc', {'uuid': UUID}, REFUSED),
     ('update_component', 'fitted', 'resol', '', {'uuid': UUID, 'z': 1.9301}, None),  # 2.4.0: refused (0); 6-quater PR 10: with another parameter (alone: nothing to change, refused)
     ('update_component', 'fitted', 'resol', 'None', {'uuid': UUID, 'z': 1.9301}, None),  # 6-quater PR 10: with another parameter (alone: nothing to change, refused)
@@ -728,11 +728,11 @@ CASES = [
     ('update_component', 'fitted', 'resol', '-1', {'uuid': UUID}, REFUSED),  # 2.4.0: accepted
     ('update_component', 'fitted', 'resol', '0', {'uuid': UUID}, 0.0),  # 6-quater PR 10: 0 removes the override of the component (refused before); was REFUSED (2.4.0: accepted)
     ('update_component', 'fitted', 'resol', '30000', {'uuid': UUID}, 30000.0),
-    ('update_components', 'fitted', 'resol', '2.0', {'uuids': [UUID]}, 2.0),
-    ('update_components', 'fitted', 'resol', 2.0, {'uuids': [UUID]}, 2.0),
-    ('update_components', 'fitted', 'resol', 2, {'uuids': [UUID]}, 2.0),
-    ('update_components', 'fitted', 'resol', ' 2 ', {'uuids': [UUID]}, 2.0),
-    ('update_components', 'fitted', 'resol', '1e1', {'uuids': [UUID]}, 10.0),
+    ('update_components', 'fitted', 'resol', '20000.0', {'uuids': [UUID]}, 20000.0),
+    ('update_components', 'fitted', 'resol', 20000.0, {'uuids': [UUID]}, 20000.0),
+    ('update_components', 'fitted', 'resol', 20000, {'uuids': [UUID]}, 20000.0),
+    ('update_components', 'fitted', 'resol', ' 20000 ', {'uuids': [UUID]}, 20000.0),
+    ('update_components', 'fitted', 'resol', '1e4', {'uuids': [UUID]}, 10000.0),
     ('update_components', 'fitted', 'resol', 'abc', {'uuids': [UUID]}, REFUSED),
     ('update_components', 'fitted', 'resol', '', {'uuids': [UUID], 'z': 1.9301}, None),  # 2.4.0: refused (0); 6-quater PR 10: with another parameter (alone: nothing to change, refused)
     ('update_components', 'fitted', 'resol', 'None', {'uuids': [UUID], 'z': 1.9301}, None),  # 6-quater PR 10: with another parameter (alone: nothing to change, refused)

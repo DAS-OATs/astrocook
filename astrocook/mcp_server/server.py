@@ -97,8 +97,8 @@ display.
 #: Typical workflows on the components. The tools of Absorbers overlap, and
 #: what an agent most needs to know is which of them fit and which do not
 #: (read from the recipes, phase 6-quater PR 12: update_component and
-#: update_constraint change values and links and run no fit; the model drawn
-#: stays as it was until the next fit, F152). Each example is a call written
+#: update_constraint change values and links and run no fit; the model
+#: is redrawn from the new values, F152, B2). Each example is a call written
 #: as ``tool(parameter=value, ...)``: a test reads them and checks the names
 #: of the tools and of the parameters against the registry.
 INSTRUCTIONS_WORKFLOWS = """
@@ -108,8 +108,9 @@ absorbers_fit_component; absorbers_refit_all fits every group;
 absorbers_optimize_system adds components where the residuals call for them,
 keeping each only if the AIC improves. These do not fit: absorbers_update_component,
 absorbers_update_components, absorbers_update_constraint,
-absorbers_update_constraints_column change values and links only, and the
-model stays as it was until a fit: follow them with absorbers_fit_component.
+absorbers_update_constraints_column change values and links only: the model
+column is redrawn from the new values (a link too), but nothing is fitted;
+follow them with absorbers_fit_component.
 - Adapt a system: components_list(series='CIV') gives the uuids and the fit
   of each component; absorbers_update_component(uuid='<uuid>', logN=14.2);
   absorbers_fit_component(uuid='<uuid>'); judge it with components_list and
