@@ -1150,6 +1150,7 @@ class SystemList:
                     new_systs.constraint_model.set_active_components(None)
                 
                 if not res or not res.success:
+                    # (the callers say why: the fit did not converge)
                     return float('inf'), systs_obj 
 
                 # Fixed AIC
@@ -1170,10 +1171,16 @@ class SystemList:
         logger.debug(f"Optimizing the components of {series_name}.")
         best_aic, best_systs = fit_and_evaluate(current_systs, [uuid_seed])
         logger.info(f"AIC of the starting model: {best_aic:.1f}.")
+        no_converge = f"did not converge within max_nfev = {max_nfev}"
+        if not np.isfinite(best_aic):
+            logger.warning(f"The starting fit {no_converge}: no candidate can "
+                           "be compared with it.")
         tried: List[Any] = []
         stopped = f"the {max_components} components allowed were tried"
         if trace is not None:
             trace.update(start_aic=float(best_aic), tried=tried)
+            if not np.isfinite(best_aic):
+                trace['start_fit'] = no_converge
         
         current_systs = best_systs
         trials_without_imp = 0
@@ -1236,7 +1243,22 @@ class SystemList:
             
             # F. Compare
             delta = trial_aic - best_aic
-            if delta < -aic_penalty:
+            if not np.isfinite(trial_aic):
+                # F149: the AIC is infinite when a fit does not converge (the
+                # delta, inf or NaN, says nothing); the candidate was
+                # rejected already, now with its reason
+                why = f"the fit of the candidate {no_converge}"
+                if not np.isfinite(best_aic):
+                    why += " (nor did the starting fit)"
+                logger.debug(f"Candidate at z = {z_new:.5f} rejected: {why}.")
+                tried.append({'z': float(z_new), 'residual_sigma': float(-min_val),
+                              'outcome': f"rejected: {why}", 'converged': False,
+                              'aic_before': float(best_aic),
+                              'aic_after': float(trial_aic)})
+                trials_without_imp += 1
+                sl = slice(max(0, min_idx-10), min(len(spec.x.value), min_idx+11))
+                rejected_mask[sl] = True
+            elif delta < -aic_penalty:
                 logger.info(f"Component added at z = {z_new:.5f}: AIC {best_aic:.1f} "
                             f"to {trial_aic:.1f}.")
                 tried.append({'z': float(z_new), 'residual_sigma': float(-min_val),

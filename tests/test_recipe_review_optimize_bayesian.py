@@ -293,3 +293,25 @@ def test_the_gui_passes_only_the_components_and_the_engine():
                                   "mcmc")
     window._on_recipe_requested.assert_called_once_with(
         "absorbers", "fit_bayesian", {"uuids": ["a", "b"], "engine": "mcmc"}, {})
+
+
+def test_a_candidate_whose_fit_does_not_converge_says_so():
+    # F149: the report said "AIC changes by inf"; the candidate is still
+    # rejected, now with its reason (and a failed starting fit is said)
+    from astrocook.recipes.result import run
+    sessions, u, lya = _ids()
+    fitted = sessions["fitted"]
+    result = _quiet(lambda: run(
+        fitted, "optimize_system", uuid=lya[0], max_components=2,
+        threshold_sigma=1.5, aic_penalty=0.0, z_window_kms=60.0, min_dv=5.0,
+        group_depth=0, patience=1, max_nfev=1))
+    opt = result.extra["optimization"]
+    assert opt["start_fit"] == "did not converge within max_nfev = 1"
+    fitted_tries = [t for t in opt["tried"] if "converged" in t]
+    assert fitted_tries
+    for t in fitted_tries:
+        assert t["converged"] is False
+        assert t["outcome"] == ("rejected: the fit of the candidate did not "
+                                "converge within max_nfev = 1 (nor did the "
+                                "starting fit)")
+        assert "inf" not in t["outcome"]

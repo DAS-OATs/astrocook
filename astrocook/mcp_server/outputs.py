@@ -212,10 +212,16 @@ def _json_meta(meta: dict, key: str) -> dict:
     return json.loads(value) if isinstance(value, str) else dict(value)
 
 
-def identification_summary(session: Session, max_listed: int
+def identification_summary(session: Session, max_listed: int,
+                           candidates: Optional[list] = None
                            ) -> IdentificationSummary:
     """Summarize the output of identify_lines, which lives in the
-    ``abs_ids`` column and in JSON strings in the metadata."""
+    ``abs_ids`` column and in JSON strings in the metadata.
+
+    ``candidates`` are the candidate systems the recipe reported
+    (``RecipeResult.extra['candidates']``). A pipeline leaves them out of the
+    metadata of its final spectrum, and the summary counted none while its
+    notes counted them (F112): when they are given, they are the systems."""
     spec = spec_of(session)
     meta = spec.meta
     x = spec.x.value
@@ -237,8 +243,13 @@ def identification_summary(session: Session, max_listed: int
             candidates=[Candidate(transition=t, score=s) for t, s in cands]))
     regions.sort(key=lambda r: -max((c.score for c in r.candidates), default=0))
 
-    systems = [SystemCandidate(series=series[k], z=z[k], logN_guess=logN[k],
-                               b_guess=b[k]) for k in series]
+    if candidates is not None:
+        systems = [SystemCandidate(series=c["series"], z=c["z"],
+                                   logN_guess=c["logN_guess"],
+                                   b_guess=c["b_guess"]) for c in candidates]
+    else:
+        systems = [SystemCandidate(series=series[k], z=z[k], logN_guess=logN[k],
+                                   b_guess=b[k]) for k in series]
     systems.sort(key=lambda s: (s.series.startswith("Ly"), s.z))
     by_series: dict[str, int] = {}
     for s in systems:
@@ -326,6 +337,17 @@ def fit_summary(before: Session, after: Session, max_listed: int) -> FitSummary:
         components=listed[:max_listed], truncated=len(listed) > max_listed)
 
 
+def _refitted(changes, before: Session, after: Session) -> bool:
+    """Whether a fit gave a new chi2 to a component that was already in the
+    session (F157): the summary of the fit is then given also when the
+    recipe added nothing."""
+    old = {c.uuid: c.chi2 for c in before.systs.components} if before.systs else {}
+    new = {c.uuid: c.chi2 for c in after.systs.components} if after.systs else {}
+    return any(c.component.uuid in new and new[c.component.uuid] is not None
+               and new[c.component.uuid] != old.get(c.component.uuid)
+               for c in changes.components_changed)
+
+
 # --- The result of any recipe (phase 6-ter, PR 1) -----------------------
 #
 # Built from the RecipeResult in the same way for every recipe: nothing
@@ -348,6 +370,9 @@ class ComponentChanged(BaseModel):
     z: float = Field(description="Redshift after the call.")
     changed: dict[str, list] = Field(description=(
         "The parameters that changed, each as [before, after]."))
+    chi2r: Optional[float] = Field(None, description=(
+        "Reduced chi2 of the fit group of the component after the call, "
+        "when it was fitted (null if it was not)."))
 
 
 class ChangesSummary(BaseModel):
@@ -426,13 +451,19 @@ def _jsonable(value):
     return str(value)
 
 
-def changes_summary(changes, removed_reasons: dict, max_listed: int) -> ChangesSummary:
-    """The :class:`~astrocook.recipes.result.Changes` of a recipe, listed."""
+def changes_summary(changes, removed_reasons: dict, max_listed: int,
+                    after: Optional[Session] = None) -> ChangesSummary:
+    """The :class:`~astrocook.recipes.result.Changes` of a recipe, listed;
+    ``after`` is the session after the recipe, for the chi2 of the groups
+    that were refitted (F157)."""
+    chi2 = ({c.uuid: c.chi2 for c in after.systs.components}
+            if after is not None and after.systs else {})
     removed = [ComponentRemoved(uuid=c.uuid, series=c.series, z=c.z, logN=c.logN,
                                 b=c.b, reason=removed_reasons.get(c.uuid))
                for c in changes.components_removed]
     changed = [ComponentChanged(uuid=c.component.uuid, series=c.component.series,
                                 z=c.component.z,
+                                chi2r=_optional(chi2.get(c.component.uuid)),
                                 changed={k: [_jsonable(a), _jsonable(b)]
                                          for k, (a, b) in c.changed.items()})
                for c in changes.components_changed]
@@ -490,8 +521,9 @@ def summaries(result, before: Session, after: Session, provides,
     if ("candidates" in result.extra or "regions" in result.extra) \
             and spec_of(after).has_aux_column("abs_ids") \
             and "region_identifications" in spec_of(after).meta:
-        out["identification"] = identification_summary(after, max_listed)
-    if changes.components_added:
+        out["identification"] = identification_summary(
+            after, max_listed, result.extra.get("candidates"))
+    if changes.components_added or _refitted(changes, before, after):
         out["fit"] = fit_summary(before, after, max_listed)
     return out
 
