@@ -1,5 +1,8 @@
 ## [Unreleased]
 
+### Changed
+- **The methods text** (phase 7-bis, PR B10, F115, mechanical part). The gaps declared with `session_note` (kind `gap`) are no longer in the text, which is meant for a paper: `MethodsText.gaps` and the new field `gaps` of the result of `session_methods` list them. The first sentence does not name the spectrum by a generic name of the session (`spectrum`, `session`, ...): "The spectrum (N pixels, ...) was analysed". `session_methods` has the new parameters `path` and `overwrite`: the text is written to a file (`astrocook.methods_text.write_methods` for scripts) and the result gives its `path`. The paragraphs are unchanged. No number changes.
+
 ### Added
 - **Absorbers > Evaluate Model...** (`absorbers.evaluate_model`; MCP tool `absorbers_evaluate_model`; phase 7, PR 7a.5, F154): measures the current model on a fixed set of pixels, without fitting, so that two alternative models can be compared on the same pixels. The pixels are wavelength ranges (nm), a mask column, or both; the model is always the whole list of components, and a selection (series, redshift range, `uuids`) decides only which components are counted. It reports the chi2, the number of pixels, the free parameters `k` (frozen and linked parameters do not count), the reduced chi2, AIC, AICc, BIC and the SpIC of Webb et al. (2021, MNRAS 501, 2268) with f = 1/2 (and f = 1, 0), the mean of the normalized residuals and their fraction beyond 3 sigma, in the log and in `extra['evaluation']` of the result; optionally it writes the normalized residuals in a column. No other result changes: the chi2 that `metals_auto` compares goes through the same function, to the bit.
 

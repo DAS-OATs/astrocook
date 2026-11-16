@@ -48,7 +48,8 @@ tool a 'reason' (why this recipe, why these values), and write with
 session_note what you did or decided outside the tools (e.g. a value
 measured with your own code, a range you chose by eye). Notes make no new
 state and the replay skips them. session_methods writes the log as the
-text of a methods section, with your reasons and notes in it.
+text of a methods section, with your reasons and notes in it (not your gaps), to
+a file if you give it a path: do not write it yourself.
 
 Whenever you work outside the tools because no recipe does what the analysis
 needs (e.g. z_em measured with your own code), declare a gap: session_note

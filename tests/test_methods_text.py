@@ -12,7 +12,7 @@ from astrocook.session.history import SessionHistory
 from astrocook.core.structures import HistoryLog
 from astrocook.methods_text import (
     REFERENCES, MethodsValues, fmt, methods_file_name, methods_text, series_list,
-    series_name)
+    series_name, write_methods)
 from astrocook.mocks import MockComponent, MockTruth, generate
 from astrocook.recipes import registry
 from astrocook.recipes.registry import all_recipes, build_spec
@@ -157,9 +157,37 @@ def test_notes_before_the_first_recipe_and_gaps():
     h = SessionHistory(_mock(), HistoryLog())
     h.log_manager.add_note("z_em from the Ly-a peak")
     h.log_manager.add_note("Needed z_em: measured by hand.", kind="gap")
-    out = methods_text(h).paragraphs
+    result = methods_text(h)
+    out = result.paragraphs
     assert out[1].kind == "note"
-    assert out[1].text == "z_em from the Ly-a peak. Needed z_em: measured by hand."
+    # The declared gaps are for the development: out of the text (F115)
+    assert out[1].text == "z_em from the Ly-a peak."
+    assert "Needed z_em" not in result.text
+    assert result.gaps == ("Needed z_em: measured by hand.",)
+
+
+def test_the_name_of_the_spectrum():
+    """A generic name of the session is not used as the name of the object (F115)."""
+    h = SessionHistory(_mock(), HistoryLog())
+    assert methods_text(h).text.startswith("The spectrum of mock (")
+    for generic in ("spectrum", "Session", "Unnamed Session"):
+        h.display_name = generic
+        assert methods_text(h).text.startswith("The spectrum (")
+
+
+def test_write_methods(tmp_path):
+    h = SessionHistory(_mock(), HistoryLog())
+    out = methods_text(h)
+    path = write_methods(out, str(tmp_path / "m"))
+    assert path == str(tmp_path / "m.txt")
+    with open(path, encoding="utf-8") as f:
+        assert f.read() == out.text + "\n"
+    with pytest.raises(FileExistsError):
+        write_methods(out, path)
+    write_methods(out, path, overwrite=True)
+    assert write_methods(out, str(tmp_path), name="J01 x") == str(tmp_path / "J01_x_methods.txt")
+    with pytest.raises(FileNotFoundError):
+        write_methods(out, str(tmp_path / "no" / "m.txt"))
 
 
 def test_an_unknown_recipe():

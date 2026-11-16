@@ -17,9 +17,9 @@ A paragraph of a recipe is made of:
   after it (:func:`~astrocook.recipes.result.compare_sessions`, as
   ``RecipeResult`` does): the components added, removed and changed, the
   columns, the pixels; and the warnings the fit left on the components;
-- the notes written at its state (``LogNote``: notes and gaps declared,
-  as written; the gaps seen by the MCP server are for the development and
-  are left out).
+- the notes written at its state (``LogNote``: the notes, as written; the
+  gaps, declared or seen by the MCP server, are for the development and are
+  left out of the text: ``MethodsText.gaps`` lists the declared ones).
 
 The recipes undone are left out. The text is made from the log each time it
 is asked for, never stored: a better wording reaches the sessions saved
@@ -95,8 +95,13 @@ FLAG_NAMES: Dict[str, str] = {
     'not_fitted': "the values from before the fit (the fit of the group failed)",
 }
 
-#: The kinds of notes left out of the text
-NOTES_LEFT_OUT = ('gap_seen',)
+#: The kinds of notes left out of the text (the declared gaps are listed in
+#: ``MethodsText.gaps``)
+NOTES_LEFT_OUT = ('gap', 'gap_seen')
+
+#: Names of a session that say nothing about the object (the default names
+#: and the generic ones): the text does not name the spectrum by them
+GENERIC_NAMES = ('', 'spectrum', 'session', 'unnamed session', 'the object')
 
 _C_KMS = 299792.458
 _QUANTITIES = (('wave', "rest wavelengths"), ('f', "oscillator strengths"),
@@ -234,6 +239,9 @@ class MethodsText:
     paragraphs: Tuple[MethodsParagraph, ...]
     #: The list of references, one entry each, sorted
     references: Tuple[str, ...]
+    #: The gaps declared (notes of kind ``gap``), as written, in the order
+    #: of the log: for the developers, not part of the text (F115)
+    gaps: Tuple[str, ...] = ()
 
     @property
     def text(self) -> str:
@@ -581,10 +589,10 @@ def _source(source):
     return states, current, log
 
 
-def _spectrum_sentence(name: str, state, n_steps: int) -> str:
+def _spectrum_sentence(name: Optional[str], state, n_steps: int) -> str:
     from astrocook import __version__
     spec = getattr(state, 'spec', None)
-    what = f"The spectrum of {name}"
+    what = f"The spectrum of {name}" if name else "The spectrum"
     if spec is not None and len(spec.x):
         x = np.asarray(spec.x.value, dtype=float)
         x = x[np.isfinite(x)]
@@ -599,12 +607,16 @@ def _spectrum_sentence(name: str, state, n_steps: int) -> str:
     return f"{what} was analysed with {software} {steps}."
 
 
-def _name(source, state) -> str:
+def _name(source, state) -> Optional[str]:
+    """The name of the object, or None when only a generic name is known."""
     spec = getattr(state, 'spec', None)
     obj = spec.meta.get('OBJECT') if spec is not None else None
     if isinstance(obj, str) and obj.strip() and not obj.strip().isdigit():
         return obj.strip()
-    return getattr(source, 'display_name', None) or getattr(state, 'name', None) or "the object"
+    name = getattr(source, 'display_name', None) or getattr(state, 'name', None)
+    if not isinstance(name, str) or name.strip().lower() in GENERIC_NAMES:
+        return None
+    return name.strip()
 
 
 def methods_text(source, *, menus: bool = True) -> MethodsText:
@@ -642,6 +654,7 @@ def methods_text(source, *, menus: bool = True) -> MethodsText:
     first = states[0] if states else None
     entries = [item for item, _ in timeline if hasattr(item, 'recipe_name')]
     paragraphs: List[MethodsParagraph] = []
+    gaps: List[str] = []
     keys: List[str] = [SOFTWARE_REFERENCE]
 
     opening = [_spectrum_sentence(_name(source, first), first, len(entries))]
@@ -662,6 +675,8 @@ def methods_text(source, *, menus: bool = True) -> MethodsText:
     index = -1
     for item, _ in timeline:
         if not hasattr(item, 'recipe_name'):
+            if item.kind == 'gap':
+                gaps.append(item.text)
             if item.kind in NOTES_LEFT_OUT:
                 continue
             note = _as_written(item.text)
@@ -706,7 +721,8 @@ def methods_text(source, *, menus: bool = True) -> MethodsText:
 
     references = sorted({REFERENCES[k][1] for k in keys
                          if k in REFERENCES and REFERENCES[k][1]})
-    return MethodsText(paragraphs=tuple(paragraphs), references=tuple(references))
+    return MethodsText(paragraphs=tuple(paragraphs), references=tuple(references),
+                       gaps=tuple(gaps))
 
 
 def methods_file_name(session_name: str) -> str:
@@ -715,8 +731,30 @@ def methods_file_name(session_name: str) -> str:
     return f"{stem}_methods.txt"
 
 
+def write_methods(out: MethodsText, path: str, overwrite: bool = False,
+                  name: str = "") -> str:
+    """Write the text to a file, in UTF-8, and return its absolute path.
+
+    ``path`` is a file (``.txt`` is added when it has no suffix) or an
+    existing folder (the file is then ``<name>_methods.txt``, as the GUI
+    proposes it).
+    """
+    target = os.path.abspath(os.path.expanduser(path))
+    if os.path.isdir(target):
+        target = os.path.join(target, methods_file_name(name))
+    elif not os.path.splitext(target)[1]:
+        target += ".txt"
+    if os.path.exists(target) and not overwrite:
+        raise FileExistsError(f"{target} exists; pass overwrite=true to replace it.")
+    if not os.path.isdir(os.path.dirname(target)):
+        raise FileNotFoundError(f"No such folder: {os.path.dirname(target)}")
+    with open(target, "w", encoding="utf-8") as f:
+        f.write(out.text + "\n")
+    return target
+
+
 __all__ = ['MethodsParagraph', 'MethodsText', 'MethodsValues', 'REFERENCES',
            'atomic_data_sentence', 'changes_text', 'file_name', 'fit_bounds', 'fmt',
            'given', 'mask_words', 'series_list', 'methods_file_name', 'methods_text',
-           'region_words', 'series_name']
+           'region_words', 'series_name', 'write_methods']
 
