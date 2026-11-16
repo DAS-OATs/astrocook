@@ -617,7 +617,7 @@ as a step of its own, before the recipe.</p>
 <h2>4. Looking at a Session<a class="headerlink" href="#looking-at-a-session" title="Link to this heading">#</a></h2>
 <p>A few functions read a session without changing it, as the System
 Inspector and the main plot of the GUI do (the AI agents use them too):</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.plotting</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_spectrum</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.plotting</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_spectrum</span><span class="p">,</span> <span class="n">plot_velocity</span>
 
 <span class="c1"># The flux, error, continuum and model in a range (nm), averaged in</span>
 <span class="c1"># blocks of pixels if there are more than 200</span>
@@ -632,6 +632,11 @@ Inspector and the main plot of the GUI do (the AI agents use them too):</p>
 <span class="c1"># of each component; in a notebook, the figure shows itself</span>
 <span class="n">fig</span> <span class="o">=</span> <span class="n">plot_spectrum</span><span class="p">(</span><span class="n">fitted</span><span class="p">,</span> <span class="mi">445</span><span class="p">,</span> <span class="mi">452</span><span class="p">,</span> <span class="n">normalized</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s2">"doublet.png"</span><span class="p">)</span>
+<span class="n">plot_spectrum</span><span class="p">(</span><span class="n">fitted</span><span class="p">,</span> <span class="mi">445</span><span class="p">,</span> <span class="mi">452</span><span class="p">,</span> <span class="n">residuals</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># + the residuals in sigma (needs a model)</span>
+
+<span class="c1"># Several transitions in velocity around z = 1.9: one panel each, v = 0 at z</span>
+<span class="c1"># (None: those of the components near z)</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plot_velocity</span><span class="p">(</span><span class="n">fitted</span><span class="p">,</span> <span class="mf">1.9</span><span class="p">,</span> <span class="p">[</span><span class="s2">"CIV_1548"</span><span class="p">,</span> <span class="s2">"CIV_1550"</span><span class="p">],</span> <span class="n">half_width_kms</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>The log of a session as the text of a methods section, as <em>File &gt; Export

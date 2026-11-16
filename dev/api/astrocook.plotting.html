@@ -483,6 +483,19 @@ headless Docker image of the server (no PySide6). The colours of the plots
 of the GUI are defined here (moved from <code class="docutils literal notranslate"><span class="pre">gui/plot_style.py</span></code>, which
 imports them), so that the two look alike.</p>
 <dl class="py data">
+<dt class="sig sig-object py" id="astrocook.plotting.C_KMS">
+<span class="sig-prename descclassname"><span class="pre">astrocook.plotting.</span></span><span class="sig-name descname"><span class="pre">C_KMS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">299792.458</span></span><a class="headerlink" href="#astrocook.plotting.C_KMS" title="Link to this definition">#</a></dt>
+<dd><p>The speed of light (km/s)</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="astrocook.plotting.RESIDUALS_YLIM">
+<span class="sig-prename descclassname"><span class="pre">astrocook.plotting.</span></span><span class="sig-name descname"><span class="pre">RESIDUALS_YLIM</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">5.0</span></span><a class="headerlink" href="#astrocook.plotting.RESIDUALS_YLIM" title="Link to this definition">#</a></dt>
+<dd><p>The residuals panel shows the residuals in sigma between these limits (as
+the residuals of the velocity plot of the System Inspector)</p>
+</dd></dl>
+
+<dl class="py data">
 <dt class="sig sig-object py" id="astrocook.plotting.ERROR_COLOR">
 <span class="sig-prename descclassname"><span class="pre">astrocook.plotting.</span></span><span class="sig-name descname"><span class="pre">ERROR_COLOR</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'#aaaaaa'</span></span><a class="headerlink" href="#astrocook.plotting.ERROR_COLOR" title="Link to this definition">#</a></dt>
 <dd><p>The error of the flux (band, line or bars), in every plot</p>
@@ -523,7 +536,7 @@ blindness (Machado et al. 2009) before the choice (Guido).</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="astrocook.plotting.plot_spectrum">
-<span class="sig-prename descclassname"><span class="pre">astrocook.plotting.</span></span><span class="sig-name descname"><span class="pre">plot_spectrum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalized</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">palette</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'standard'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/plotting.html#plot_spectrum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.plotting.plot_spectrum" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">astrocook.plotting.</span></span><span class="sig-name descname"><span class="pre">plot_spectrum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalized</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">palette</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'standard'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">residuals</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/plotting.html#plot_spectrum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.plotting.plot_spectrum" title="Link to this definition">#</a></dt>
 <dd><p>A figure of the spectrum of a session in a range of x.</p>
 <p>The flux and its error, the continuum and the model (if any), and a
 tick at each line of each component, labelled with its series (the HI
@@ -536,13 +549,139 @@ series in the colour of the HI ticks of the GUI).</p>
 <li><p><strong>x_max</strong> (<em>float</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – The range, in the unit of x; None: the start (end) of the spectrum.</p></li>
 <li><p><strong>normalized</strong> (<em>bool</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Divide by the continuum, if there is one.</p></li>
 <li><p><strong>palette</strong> (<em>str</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – <code class="docutils literal notranslate"><span class="pre">'standard'</span></code> or <code class="docutils literal notranslate"><span class="pre">'colorblind'</span></code> (<a class="reference internal" href="#astrocook.plotting.PLOT_PALETTES" title="astrocook.plotting.PLOT_PALETTES"><code class="xref py py-data docutils literal notranslate"><span class="pre">PLOT_PALETTES</span></code></a>).</p></li>
+<li><p><strong>residuals</strong> (<em>bool</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Add a panel below with the residuals, <code class="docutils literal notranslate"><span class="pre">(flux</span> <span class="pre">-</span> <span class="pre">model)</span> <span class="pre">/</span> <span class="pre">error</span></code>
+(in sigma, so the same with or without <code class="docutils literal notranslate"><span class="pre">normalized</span></code>; F158).</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>matplotlib.figure.Figure</p>
 </dd>
 <dt class="field-odd">Raises<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>ValueError</strong> – If the range is empty or outside the spectrum.</p>
+<dd class="field-odd"><p><strong>ValueError</strong> – If the range is empty or outside the spectrum, or the residuals are
+    asked for and the spectrum has no model.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.plotting.residuals_sigma">
+<span class="sig-prename descclassname"><span class="pre">astrocook.plotting.</span></span><span class="sig-name descname"><span class="pre">residuals_sigma</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/plotting.html#residuals_sigma"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.plotting.residuals_sigma" title="Link to this definition">#</a></dt>
+<dd><p>The residuals <code class="docutils literal notranslate"><span class="pre">(y</span> <span class="pre">-</span> <span class="pre">model)</span> <span class="pre">/</span> <span class="pre">dy</span></code>, in sigma (NaN where <code class="docutils literal notranslate"><span class="pre">dy</span></code> is 0).</p>
+<p>The same as the residuals of the velocity plot of the System Inspector;
+dividing flux, model and error by the continuum leaves them unchanged.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="astrocook.plotting.MAX_PANELS">
+<span class="sig-prename descclassname"><span class="pre">astrocook.plotting.</span></span><span class="sig-name descname"><span class="pre">MAX_PANELS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">12</span></span><a class="headerlink" href="#astrocook.plotting.MAX_PANELS" title="Link to this definition">#</a></dt>
+<dd><p>more would be unreadable</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The most transitions of one plot (panels)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.plotting.line_velocity">
+<span class="sig-prename descclassname"><span class="pre">astrocook.plotting.</span></span><span class="sig-name descname"><span class="pre">line_velocity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">w_rest</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w_rest_ref</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_ref</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/plotting.html#line_velocity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.plotting.line_velocity" title="Link to this definition">#</a></dt>
+<dd><p>The velocity (km/s) of the line of rest wavelength <code class="docutils literal notranslate"><span class="pre">w_rest</span></code> at
+redshift <code class="docutils literal notranslate"><span class="pre">z</span></code> from the line <code class="docutils literal notranslate"><span class="pre">w_rest_ref</span></code> at redshift <code class="docutils literal notranslate"><span class="pre">z_ref</span></code>.</p>
+<p>The one formula of the ticks of the velocity plots, the System
+Inspector’s among them (for the same transition it is
+<code class="docutils literal notranslate"><span class="pre">c</span> <span class="pre">(z</span> <span class="pre">-</span> <span class="pre">z_ref)</span> <span class="pre">/</span> <span class="pre">(1</span> <span class="pre">+</span> <span class="pre">z_ref)</span></code>).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.plotting.component_lines">
+<span class="sig-prename descclassname"><span class="pre">astrocook.plotting.</span></span><span class="sig-name descname"><span class="pre">component_lines</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">series</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/plotting.html#component_lines"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.plotting.component_lines" title="Link to this definition">#</a></dt>
+<dd><p>The transitions (names with a wavelength in the atomic data) of the
+series of a component.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="astrocook.plotting.BOUND_FLAGS">
+<span class="sig-prename descclassname"><span class="pre">astrocook.plotting.</span></span><span class="sig-name descname"><span class="pre">BOUND_FLAGS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('z_at_window',</span> <span class="pre">'logN_at_lower_bound',</span> <span class="pre">'logN_at_upper_bound',</span> <span class="pre">'b_at_lower_bound',</span> <span class="pre">'b_at_upper_bound')</span></span><a class="headerlink" href="#astrocook.plotting.BOUND_FLAGS" title="Link to this definition">#</a></dt>
+<dd><p>The flags of the last fit that put a component in the colour of a bound
+(<code class="docutils literal notranslate"><span class="pre">'flag_bound'</span></code>); the others that matter are <code class="docutils literal notranslate"><span class="pre">nan_errors</span></code> and
+<code class="docutils literal notranslate"><span class="pre">not_fitted</span></code> (<code class="docutils literal notranslate"><span class="pre">'flag_nan'</span></code>). The same as <code class="docutils literal notranslate"><span class="pre">flag_cue</span></code> of the System
+Inspector (<code class="docutils literal notranslate"><span class="pre">gui/inspector_table.py</span></code>, #517), which carries the messages
+too: a test compares the colours.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.plotting.flag_colour">
+<span class="sig-prename descclassname"><span class="pre">astrocook.plotting.</span></span><span class="sig-name descname"><span class="pre">flag_colour</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colours</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/plotting.html#flag_colour"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.plotting.flag_colour" title="Link to this definition">#</a></dt>
+<dd><p>The colour of the flags of a component in a plot (None if it has none):
+that of a parameter at a bound, else that of the errors not computed or
+of a fit that failed.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.plotting.tick_velocities">
+<span class="sig-prename descclassname"><span class="pre">astrocook.plotting.</span></span><span class="sig-name descname"><span class="pre">tick_velocities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">components</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transition</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_min</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_max</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/plotting.html#tick_velocities"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.plotting.tick_velocities" title="Link to this definition">#</a></dt>
+<dd><p>The lines of the components that fall in the velocity window of a
+panel: <code class="docutils literal notranslate"><span class="pre">(v,</span> <span class="pre">component)</span></code> for each, <code class="docutils literal notranslate"><span class="pre">v</span></code> from <code class="docutils literal notranslate"><span class="pre">transition</span></code> at <code class="docutils literal notranslate"><span class="pre">z</span></code>.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.plotting.velocity_transitions">
+<span class="sig-prename descclassname"><span class="pre">astrocook.plotting.</span></span><span class="sig-name descname"><span class="pre">velocity_transitions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transitions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">half_width_kms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">300.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_panels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">12</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/plotting.html#velocity_transitions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.plotting.velocity_transitions" title="Link to this definition">#</a></dt>
+<dd><p>The transitions of a plot in velocity, and those left out.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>session</strong> (<a class="reference internal" href="astrocook.session.session.html#astrocook.session.session.Session" title="astrocook.session.session.Session"><em>Session</em></a>)</p></li>
+<li><p><strong>z</strong> (<em>float</em>) – The redshift at v = 0.</p></li>
+<li><p><strong>transitions</strong> (<em>list</em><em> of </em><em>str</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Names of transitions (<code class="docutils literal notranslate"><span class="pre">'Ly_a'</span></code>, <code class="docutils literal notranslate"><span class="pre">'CIV_1548'</span></code>) or of multiplets
+(<code class="docutils literal notranslate"><span class="pre">'CIV'</span></code>, expanded); None: the transitions of the components of the
+session that have a line within the window around <code class="docutils literal notranslate"><span class="pre">z</span></code>.</p></li>
+<li><p><strong>half_width_kms</strong> (<em>float</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Half of the window.</p></li>
+<li><p><strong>max_panels</strong> (<em>int</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>plotted</strong> (<em>list of str</em>) – In the order given (by rest wavelength if chosen here).</p></li>
+<li><p><strong>skipped</strong> (<em>dict of str to str</em>) – The transitions with no pixel in the window, and why.</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – An unknown transition, nothing to plot or too many transitions.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.plotting.plot_velocity">
+<span class="sig-prename descclassname"><span class="pre">astrocook.plotting.</span></span><span class="sig-name descname"><span class="pre">plot_velocity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transitions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">half_width_kms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">300.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalized</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">residuals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">palette</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'standard'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/plotting.html#plot_velocity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.plotting.plot_velocity" title="Link to this definition">#</a></dt>
+<dd><p>A figure of several transitions in velocity around a redshift.</p>
+<p>One panel per transition, with <code class="docutils literal notranslate"><span class="pre">v</span> <span class="pre">=</span> <span class="pre">0</span></code> at <code class="docutils literal notranslate"><span class="pre">z</span></code>, laid out in 1, 2 or 3
+columns: the flux and its error, the model (if any), the continuum
+(if not normalized), the levels 0 and 1 (if normalized) and, at the bottom
+of each panel, a tick for each line of each component in the window (HI in
+the colour of the HI ticks; dashed and in the colour of the flag for a
+component the fit flagged, e.g. a parameter at a bound). The panels are those of
+<a class="reference internal" href="#astrocook.plotting.velocity_transitions" title="astrocook.plotting.velocity_transitions"><code class="xref py py-func docutils literal notranslate"><span class="pre">velocity_transitions()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>session</strong> (<a class="reference internal" href="astrocook.session.session.html#astrocook.session.session.Session" title="astrocook.session.session.Session"><em>Session</em></a>)</p></li>
+<li><p><strong>z</strong> (<em>float</em>)</p></li>
+<li><p><strong>transitions</strong> (<em>list</em><em> of </em><em>str</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – As in <a class="reference internal" href="#astrocook.plotting.velocity_transitions" title="astrocook.plotting.velocity_transitions"><code class="xref py py-func docutils literal notranslate"><span class="pre">velocity_transitions()</span></code></a>; None: those of the components.</p></li>
+<li><p><strong>half_width_kms</strong> (<em>float</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>)</p></li>
+<li><p><strong>normalized</strong> (<em>bool</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Divide by the continuum, if there is one.</p></li>
+<li><p><strong>residuals</strong> (<em>bool</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Under each panel, the residuals in sigma (needs a model).</p></li>
+<li><p><strong>palette</strong> (<em>str</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>matplotlib.figure.Figure</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – As <a class="reference internal" href="#astrocook.plotting.velocity_transitions" title="astrocook.plotting.velocity_transitions"><code class="xref py py-func docutils literal notranslate"><span class="pre">velocity_transitions()</span></code></a>, or the residuals are asked for
+    and the spectrum has no model.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -584,11 +723,22 @@ series in the colour of the HI ticks of the GUI).</p>
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.plotting.C_KMS"><code class="docutils literal notranslate"><span class="pre">C_KMS</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.plotting.RESIDUALS_YLIM"><code class="docutils literal notranslate"><span class="pre">RESIDUALS_YLIM</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.plotting.ERROR_COLOR"><code class="docutils literal notranslate"><span class="pre">ERROR_COLOR</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.plotting.HI_TICK_COLOR"><code class="docutils literal notranslate"><span class="pre">HI_TICK_COLOR</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.plotting.PLOT_PALETTES"><code class="docutils literal notranslate"><span class="pre">PLOT_PALETTES</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.plotting.CONTINUUM_COLOR"><code class="docutils literal notranslate"><span class="pre">CONTINUUM_COLOR</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.plotting.plot_spectrum"><code class="docutils literal notranslate"><span class="pre">plot_spectrum()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.plotting.residuals_sigma"><code class="docutils literal notranslate"><span class="pre">residuals_sigma()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.plotting.MAX_PANELS"><code class="docutils literal notranslate"><span class="pre">MAX_PANELS</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.plotting.line_velocity"><code class="docutils literal notranslate"><span class="pre">line_velocity()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.plotting.component_lines"><code class="docutils literal notranslate"><span class="pre">component_lines()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.plotting.BOUND_FLAGS"><code class="docutils literal notranslate"><span class="pre">BOUND_FLAGS</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.plotting.flag_colour"><code class="docutils literal notranslate"><span class="pre">flag_colour()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.plotting.tick_velocities"><code class="docutils literal notranslate"><span class="pre">tick_velocities()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.plotting.velocity_transitions"><code class="docutils literal notranslate"><span class="pre">velocity_transitions()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.plotting.plot_velocity"><code class="docutils literal notranslate"><span class="pre">plot_velocity()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.plotting.figure_png"><code class="docutils literal notranslate"><span class="pre">figure_png()</span></code></a></li>
 </ul>
   </nav></div>
