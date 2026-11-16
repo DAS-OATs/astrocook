@@ -199,11 +199,12 @@ def make_truth(snr, resol, z_em, seed):
 
 def _bal_trough(rng):
     """A BAL trough: its start 2000-10000 km/s, its width 2000-10000 km/s,
-    its CIV optical depth 0.5-4."""
+    its CIV optical depth 0.3-3 (SiIV has 2.4 times that, at the same
+    column: the troughs range from shallow to black)."""
     v_min = rng.uniform(2000.0, 10000.0)
     width = rng.uniform(2000.0, 10000.0)
     return BALTrough(float(v_min), float(v_min + width),
-                     float(rng.uniform(0.5, 4.0)), edge_kms=min(1000.0, width / 4))
+                     float(rng.uniform(0.3, 3.0)), edge_kms=min(1000.0, width / 4))
 
 
 def _emission_lines(rng):
