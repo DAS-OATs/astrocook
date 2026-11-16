@@ -107,3 +107,48 @@ def convolve_velocity(flux: np.ndarray, dv_kms: float,
         num += w * padded[half + k: half + k + n]
         den += w
     return num / den
+
+
+def outflow_velocity(lam_ang: np.ndarray, lam0_ang: float,
+                     z_em: float) -> np.ndarray:
+    """Outflow velocity (km/s, positive to the blue of z_em) at which a
+    line of rest wavelength ``lam0_ang`` absorbs at ``lam_ang``
+    (relativistic Doppler formula)."""
+    r2 = (np.asarray(lam_ang, dtype=float) / (lam0_ang * (1.0 + z_em))) ** 2
+    return C_KMS * (1.0 - r2) / (1.0 + r2)
+
+
+def trough_profile(v_kms: np.ndarray, v_min: float, v_max: float,
+                   edge: float) -> np.ndarray:
+    """1 between ``v_min + edge`` and ``v_max - edge``, falling to 0 at
+    ``v_min`` and ``v_max`` as a half cosine, 0 outside."""
+    if not v_max > v_min:
+        raise ValueError(f"v_max_kms ({v_max}) must be above v_min_kms ({v_min})")
+    edge = min(float(edge), (v_max - v_min) / 2.0)
+    v = np.asarray(v_kms, dtype=float)
+    out = ((v >= v_min) & (v <= v_max)).astype(float)
+    if edge > 0:
+        lo = (v >= v_min) & (v < v_min + edge)
+        hi = (v > v_max - edge) & (v <= v_max)
+        out[lo] = 0.5 * (1.0 - np.cos(np.pi * (v[lo] - v_min) / edge))
+        out[hi] = 0.5 * (1.0 - np.cos(np.pi * (v_max - v[hi]) / edge))
+    return out
+
+
+def bal_optical_depth(lam_ang: np.ndarray, z_em: float, trough) -> np.ndarray:
+    """Optical depth of a :class:`~astrocook.mocks.BALTrough` at observed
+    wavelengths (Angstrom): every line of its ions, in the ratio of their
+    f lambda to that of CIV 1548 (times the ratio of the columns)."""
+    ref = ATOM_DATA["CIV_1548"]["f"] * ATOM_DATA["CIV_1548"]["wave"]
+    ratios = trough.column_ratios or (1.0,) * len(trough.ions)
+    if len(ratios) != len(trough.ions):
+        raise ValueError("column_ratios must have one value per ion")
+    tau = np.zeros(np.shape(lam_ang))
+    for ion, ratio in zip(trough.ions, ratios, strict=True):
+        for name in transitions(ion):
+            atom = ATOM_DATA[name]
+            v = outflow_velocity(lam_ang, atom["wave"], z_em)
+            tau += (trough.tau_max * ratio * atom["f"] * atom["wave"] / ref
+                    * trough_profile(v, trough.v_min_kms, trough.v_max_kms,
+                                     trough.edge_kms))
+    return tau

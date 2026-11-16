@@ -7,9 +7,10 @@ import astropy.units as au
 from astrocook.core.spectrum import Spectrum
 from astrocook.core.structures import DataColumn, SpectrumData
 from astrocook.mocks.physics import (
-    C_KMS, FWHM_TO_SIGMA, convolve_velocity, is_hydrogen,
+    C_KMS, FWHM_TO_SIGMA, bal_optical_depth, convolve_velocity, is_hydrogen,
     lyman_limit_optical_depth, optical_depth,
 )
+from astrocook.mocks.telluric import telluric_optical_depth
 from astrocook.mocks.truth import MockTruth
 
 
@@ -29,39 +30,80 @@ def make_grid(lam_min_nm: float, lam_max_nm: float,
     return x, edges[:-1], edges[1:]
 
 
+def subpixel_grid(truth: MockTruth) -> Tuple[np.ndarray, np.ndarray]:
+    """Pixel centres and the ``oversample`` sub-pixels per pixel (nm) on
+    which the model of ``truth`` is computed."""
+    x, xmin, _ = make_grid(truth.lam_min_nm, truth.lam_max_nm, truth.dv_kms)
+    k = int(truth.oversample)
+    step = np.log1p(truth.dv_kms / C_KMS)
+    sub = np.repeat(xmin, k) * np.exp(step * (np.tile(np.arange(k), len(x)) + 0.5) / k)
+    return x, sub
+
+
+def components_optical_depth(truth: MockTruth, sub_nm: np.ndarray,
+                             components) -> np.ndarray:
+    """Optical depth of ``components`` (with their Lyman limit, if
+    ``truth.lyman_limit``) at the wavelengths ``sub_nm``."""
+    tau = np.zeros_like(sub_nm)
+    for comp in components:
+        tau += optical_depth(sub_nm * 10.0, comp.series, comp.z, comp.logN,
+                             comp.b, comp.btur)
+        if truth.lyman_limit and is_hydrogen(comp.series):
+            tau += lyman_limit_optical_depth(sub_nm * 10.0, comp.z, comp.logN)
+    return tau
+
+
+def bal_tau(truth: MockTruth, sub_nm: np.ndarray) -> np.ndarray:
+    """Optical depth of the BAL troughs of ``truth``."""
+    tau = np.zeros_like(sub_nm)
+    for trough in truth.bal_troughs:
+        tau += bal_optical_depth(sub_nm * 10.0, truth.z_em, trough)
+    return tau
+
+
+def pixel_transmission(truth: MockTruth, transmission_sub: np.ndarray,
+                       n_pixels: int) -> np.ndarray:
+    """A transmission on the sub-pixels, convolved with the instrumental
+    profile and averaged over each pixel."""
+    k = int(truth.oversample)
+    flux_sub = convolve_velocity(transmission_sub, truth.dv_kms / k, truth.resol)
+    return flux_sub.reshape(n_pixels, k).mean(axis=1)
+
+
 def normalized_flux(truth: MockTruth) -> Tuple[np.ndarray, np.ndarray]:
     """Noiseless normalised flux, convolved and averaged over each pixel.
 
     The model is computed on ``oversample`` sub-pixels per pixel, convolved
     with the instrumental profile on that grid, then averaged over the
-    sub-pixels of each pixel.
+    sub-pixels of each pixel. The absorbers, the BAL troughs and the
+    tellurics (in the observed frame) all come before the convolution.
 
     Returns
     -------
     x_nm, flux : np.ndarray
     """
-    x, xmin, _ = make_grid(truth.lam_min_nm, truth.lam_max_nm, truth.dv_kms)
-    k = int(truth.oversample)
-    step = np.log1p(truth.dv_kms / C_KMS)
-    sub = np.repeat(xmin, k) * np.exp(step * (np.tile(np.arange(k), len(x)) + 0.5) / k)
-
-    tau = np.zeros_like(sub)
-    for comp in truth.components:
-        tau += optical_depth(sub * 10.0, comp.series, comp.z, comp.logN,
-                             comp.b, comp.btur)
-        if truth.lyman_limit and is_hydrogen(comp.series):
-            tau += lyman_limit_optical_depth(sub * 10.0, comp.z, comp.logN)
-    flux_sub = convolve_velocity(np.exp(-tau), truth.dv_kms / k, truth.resol)
-    return x, flux_sub.reshape(len(x), k).mean(axis=1)
+    x, sub = subpixel_grid(truth)
+    tau = components_optical_depth(truth, sub, truth.components)
+    if truth.bal_troughs:
+        tau += bal_tau(truth, sub)
+    if truth.telluric is not None:
+        tau += telluric_optical_depth(sub, truth.telluric)
+    return x, pixel_transmission(truth, np.exp(-tau), len(x))
 
 
 def continuum(truth: MockTruth, x_nm: np.ndarray) -> np.ndarray:
-    """Power law plus the Gaussian emission lines of ``truth``."""
+    """Power law plus the Gaussian emission lines of ``truth`` (each with
+    its shift from the systemic z_em and its asymmetry)."""
     power_law = truth.cont_amplitude * (x_nm / truth.cont_ref_nm) ** truth.cont_slope
     bumps = np.zeros_like(x_nm)
     for line in truth.emission_lines:
-        centre = line.rest_nm * (1.0 + truth.z_em)
-        sigma = line.fwhm_kms / C_KMS * centre * FWHM_TO_SIGMA
+        centre = line.rest_nm * (1.0 + truth.z_em) * (1.0 + line.shift_kms / C_KMS)
+        if not -1.0 < line.asymmetry < 1.0:
+            raise ValueError(f"asymmetry must be between -1 and 1, not {line.asymmetry}")
+        # Two half-Gaussians (the same one when asymmetry = 0)
+        fwhm = np.where(x_nm < centre, line.fwhm_kms * (1.0 + line.asymmetry),
+                        line.fwhm_kms * (1.0 - line.asymmetry))
+        sigma = fwhm / C_KMS * centre * FWHM_TO_SIGMA
         bumps += line.amplitude * np.exp(-0.5 * ((x_nm - centre) / sigma) ** 2)
     return power_law * (1.0 + bumps)
 
