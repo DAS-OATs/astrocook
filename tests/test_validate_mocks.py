@@ -289,3 +289,21 @@ def test_reduced_grid_does_not_regress():
     assert abs(column["diff"]["median"]) < 0.05                        # 0.000; -0.022 (F49)
     assert column["diff"]["sigma"] < 0.4                               # 0.236; 0.175 (F49)
     assert column["pull"]["sigma"] < 3.0                               # 1.21; 2.00 (F49)
+
+
+def test_full_grid_mock_is_unchanged(snapshot):
+    """A mock of the grid ``full`` (with the DLA of seed 0), its truth and
+    its flux, as before the robustness mocks of phase 7 (PR 7a.1): the
+    options added since are off by default, so the baseline of ``full``
+    stays valid."""
+    truth, systems, strong = vm.make_truth(30.0, 8900.0, 3.5, 0)
+    spec = generate(truth, truth_columns=False)
+    comps = truth.components
+    snapshot.check("validate_mocks_full_mock", {
+        "x": spec.x.value, "y": spec.y.value, "dy": spec.dy.value,
+        "z": np.array([c.z for c in comps]),
+        "logN": np.array([c.logN for c in comps]),
+        "b": np.array([c.b for c in comps]),
+        "n_systems": np.array([len(systems)]),
+    })
+    assert strong == "DLA"
