@@ -1,5 +1,6 @@
 # Headless image of the MCP server of Astrocook (phase 6-ter, PR 6): the
-# package and the [mcp] extra without PySide6, so no Qt libraries and no GUI
+# package and the [mcp] and [bayes] extras without PySide6, so no Qt
+# libraries and no GUI
 # (the tool gui_open says that the GUI is not available). Not published: the
 # users build it (docs: "Using Astrocook from an AI Agent").
 #
@@ -19,10 +20,12 @@ ENV PYTHONUNBUFFERED=1 \
 # The dependencies of the package, listed here and not read from
 # pyproject.toml, so that PySide6 is left out without changing the
 # dependencies of the package. tests/test_docker_image.py checks that this
-# list is that of pyproject.toml (the dependencies and the [mcp] extra), but
-# for what only the GUI needs (PySide6, qtawesome): do not edit one without
+# list is that of pyproject.toml (the dependencies and the [mcp] and [bayes]
+# extras), but for what only the GUI needs (PySide6, qtawesome): do not edit one without
 # the other. The block between the
-# markers is read by that test.
+# markers is read by that test. The [bayes] extra (emcee, dynesty, corner:
+# ~1.7 MB, pure Python, no new dependencies) is in so that
+# absorbers_fit_bayesian works (F114).
 # deps:begin
 RUN pip install \
     "astropy>=6.1" \
@@ -31,7 +34,10 @@ RUN pip install \
     "matplotlib>=3.9" \
     "numexpr" \
     "mcp>=2.3,<3" \
-    "anyio>=4.11"
+    "anyio>=4.11" \
+    "emcee" \
+    "dynesty" \
+    "corner"
 # deps:end
 
 # Layers in order of change: the package last

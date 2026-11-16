@@ -5,7 +5,7 @@ The image installs the package with ``pip install --no-deps`` and lists the
 other dependencies by hand, to leave out PySide6 without changing the
 dependencies of the package. Nothing can build the image in the suite (no
 Docker), so these tests read the file: the list must be that of
-``pyproject.toml`` (the dependencies and the ``[mcp]`` extra) but for what
+``pyproject.toml`` (the dependencies and the ``[mcp]`` and ``[bayes]`` extras) but for what
 only the GUI needs, and what only the GUI needs must really be used only by
 it. The CI job ``docker`` builds the image and runs the server in it.
 """
@@ -38,7 +38,8 @@ def _normalized(spec):
 def pyproject_dependencies():
     data = tomllib.loads((ROOT / "pyproject.toml").read_text())
     return (data["project"]["dependencies"]
-            + data["project"]["optional-dependencies"]["mcp"])
+            + data["project"]["optional-dependencies"]["mcp"]
+            + data["project"]["optional-dependencies"]["bayes"])
 
 
 def dockerfile_dependencies():
@@ -138,3 +139,10 @@ def test_the_build_context_has_what_the_dockerfile_copies():
 def test_dockerignore_leaves_out_the_heavy_folders(pattern):
     lines = [line.strip() for line in (ROOT / ".dockerignore").read_text().splitlines()]
     assert pattern in lines
+
+
+def test_the_image_has_what_the_bayesian_fit_needs():
+    # F114: absorbers_fit_bayesian is a tool of the image, and without
+    # emcee and dynesty it failed with an ImportError
+    names = {_name(s) for s in dockerfile_dependencies()}
+    assert {"emcee", "dynesty", "corner"} <= names
