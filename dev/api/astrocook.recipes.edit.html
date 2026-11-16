@@ -611,9 +611,16 @@ Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#as
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>z_ref</strong> (<em>float</em><em> or </em><em>str</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Reference redshift for velocity conversion, above -1 and finite;
-<code class="docutils literal notranslate"><span class="pre">'_current_'</span></code> uses the session’s z_em. Defaults to
-<code class="docutils literal notranslate"><span class="pre">'_current_'</span></code>, as the GUI.</p></li>
+<li><p><strong>z_ref</strong> (<em>float</em><em> or </em><em>str</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Reference redshift for velocity conversion, above -1 and finite:
+the zero of the velocity axis is the Lyman-alpha emission at
+121.567 nm * (1 + z_ref), kept with the spectrum (F84). From a
+wavelength to a velocity, the zero of the new axis
+(<code class="docutils literal notranslate"><span class="pre">'_current_'</span></code>: the session’s z_em). From a velocity to a
+wavelength, the axis is converted back at the z_ref it keeps
+(<code class="docutils literal notranslate"><span class="pre">'_current_'</span></code>, or the same value; z_em if it keeps none, or
+the value given). From a velocity to a velocity, the axis is
+re-centred at the new z_ref (<code class="docutils literal notranslate"><span class="pre">'_current_'</span></code>: only the unit
+changes). Defaults to <code class="docutils literal notranslate"><span class="pre">'_current_'</span></code>, as the GUI.</p></li>
 <li><p><strong>xunit</strong> (<em>str</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Unit of wavelength or velocity (e.g., <code class="docutils literal notranslate"><span class="pre">'nm'</span></code>, <code class="docutils literal notranslate"><span class="pre">'km/s'</span></code>).
 Defaults to <code class="docutils literal notranslate"><span class="pre">'km/s'</span></code>.</p></li>
 </ul>
@@ -623,6 +630,11 @@ Defaults to <code class="docutils literal notranslate"><span class="pre">'km/s'<
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="astrocook.session.session.html#astrocook.session.session.Session" title="astrocook.session.session.Session">Session</a></p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="astrocook.recipes.errors.html#astrocook.recipes.errors.InvalidParameter" title="astrocook.recipes.errors.InvalidParameter"><strong>InvalidParameter</strong></a> – If <code class="docutils literal notranslate"><span class="pre">xunit</span></code> is neither a wavelength nor a velocity, or if an
+    axis in velocity is converted back to a wavelength at a z_ref
+    that is not the one it keeps.</p>
 </dd>
 </dl>
 </dd></dl>

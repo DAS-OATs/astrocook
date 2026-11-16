@@ -637,6 +637,11 @@
     <span class="c1"># Session properties</span>
     <span class="n">z_em</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span> <span class="c1"># Emission redshift</span>
     <span class="n">resol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span> <span class="c1"># Median resolution</span>
+    <span class="c1"># Reference redshift of an x axis in velocity: its zero is the</span>
+    <span class="c1"># Lyman-alpha emission at 121.567 nm * (1 + z_ref), set by x_convert</span>
+    <span class="c1"># (F84, phase 7-bis, B6). None: an axis in wavelength, or an axis in</span>
+    <span class="c1"># velocity whose reference is not known (z_em is used, as before B6)</span>
+    <span class="n">z_ref</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="SpectrumData.from_flat_data">
 <a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.SpectrumData.from_flat_data">[docs]</a>
@@ -650,7 +655,8 @@
                        <span class="n">aux_data</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="c1"># {'col_name': (values, unit, desc)}</span>
                        <span class="n">meta</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                        <span class="n">z_em</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
-                       <span class="n">resol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SpectrumData'</span><span class="p">:</span>
+                       <span class="n">resol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+                       <span class="n">z_ref</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'SpectrumData'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Factory method to create a SpectrumData from raw NumPy arrays.</span>
 
@@ -676,6 +682,10 @@
 <span class="sd">            Metadata dictionary.</span>
 <span class="sd">        z_em : float, optional</span>
 <span class="sd">            Emission redshift. Defaults to ``0.0``.</span>
+<span class="sd">        resol : float, optional</span>
+<span class="sd">            Median resolution. Defaults to ``0.0``.</span>
+<span class="sd">        z_ref : float, optional</span>
+<span class="sd">            Reference redshift of an x axis in velocity. Defaults to None.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -705,7 +715,8 @@
                    <span class="n">aux_cols</span><span class="o">=</span><span class="n">aux_cols</span><span class="p">,</span> 
                    <span class="n">meta</span><span class="o">=</span><span class="n">meta</span> <span class="k">if</span> <span class="n">meta</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">{},</span>
                    <span class="n">z_em</span><span class="o">=</span><span class="n">z_em</span><span class="p">,</span>
-                   <span class="n">resol</span><span class="o">=</span><span class="n">resol</span><span class="p">)</span></div>
+                   <span class="n">resol</span><span class="o">=</span><span class="n">resol</span><span class="p">,</span>
+                   <span class="n">z_ref</span><span class="o">=</span><span class="n">z_ref</span><span class="p">)</span></div>
 </div>
 
     

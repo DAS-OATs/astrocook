@@ -545,7 +545,9 @@
     <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
         <span class="n">velocity</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="k">if</span> <span class="n">velocity</span><span class="p">:</span>
-        <span class="n">z</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"z = </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'z_ref'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">given</span><span class="p">(</span><span class="s1">'z_ref'</span><span class="p">)</span> <span class="k">else</span> <span class="s2">"z_em"</span>
+        <span class="c1"># Not given: z_em, or the reference of an axis already in velocity</span>
+        <span class="c1"># (F84, phase 7-bis, B6)</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"z = </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'z_ref'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">given</span><span class="p">(</span><span class="s1">'z_ref'</span><span class="p">)</span> <span class="k">else</span> <span class="s2">"the reference redshift"</span>
         <span class="k">return</span> <span class="sa">f</span><span class="s2">"The x axis was converted to velocity (</span><span class="si">{</span><span class="n">unit</span><span class="si">}</span><span class="s2">) relative to </span><span class="si">{</span><span class="n">z</span><span class="si">}{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">"</span>
     <span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'z_ref'</span><span class="p">)</span>
     <span class="k">return</span> <span class="sa">f</span><span class="s2">"The x axis was converted to </span><span class="si">{</span><span class="n">unit</span><span class="si">}{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">"</span>
@@ -658,7 +660,7 @@
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"tutorials/editing_data.html#converting-the-axes"</span><span class="p">,</span>
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Converts the x axis to another unit of wavelength (e.g. nm, Angstrom) or to velocity (e.g. km/s); the zero of the velocity is the Lyman-alpha emission at the reference redshift, 121.567 nm * (1 + z_ref)."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
-            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"z_ref"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"_current_"</span><span class="p">,</span> <span class="s2">"keep"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"_current_"</span><span class="p">,),</span> <span class="s2">"gt"</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Redshift of the zero of the velocity axis, the Lyman-alpha emission at 121.567 nm * (1 + z_ref) ('_current_': z_em); not used for a unit of wavelength."</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"z_ref"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"_current_"</span><span class="p">,</span> <span class="s2">"keep"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"_current_"</span><span class="p">,),</span> <span class="s2">"gt"</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Redshift of the zero of the velocity axis, Lyman-alpha at 121.567 nm * (1 + z_ref), kept with the spectrum ('_current_': z_em, or the z_ref of an axis in velocity). An axis in velocity goes back to wavelength at its z_ref, or is re-centred at a new one."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"xunit"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"km/s"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Unit of the new x axis: a wavelength (e.g. 'nm', 'Angstrom') or a velocity (e.g. 'km/s')."</span><span class="p">},</span>
         <span class="p">],</span>
     <span class="p">},</span>
@@ -1131,9 +1133,16 @@
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        z_ref : float or str, optional</span>
-<span class="sd">            Reference redshift for velocity conversion, above -1 and finite;</span>
-<span class="sd">            ``'_current_'`` uses the session's z_em. Defaults to</span>
-<span class="sd">            ``'_current_'``, as the GUI.</span>
+<span class="sd">            Reference redshift for velocity conversion, above -1 and finite:</span>
+<span class="sd">            the zero of the velocity axis is the Lyman-alpha emission at</span>
+<span class="sd">            121.567 nm * (1 + z_ref), kept with the spectrum (F84). From a</span>
+<span class="sd">            wavelength to a velocity, the zero of the new axis</span>
+<span class="sd">            (``'_current_'``: the session's z_em). From a velocity to a</span>
+<span class="sd">            wavelength, the axis is converted back at the z_ref it keeps</span>
+<span class="sd">            (``'_current_'``, or the same value; z_em if it keeps none, or</span>
+<span class="sd">            the value given). From a velocity to a velocity, the axis is</span>
+<span class="sd">            re-centred at the new z_ref (``'_current_'``: only the unit</span>
+<span class="sd">            changes). Defaults to ``'_current_'``, as the GUI.</span>
 <span class="sd">        xunit : str, optional</span>
 <span class="sd">            Unit of wavelength or velocity (e.g., ``'nm'``, ``'km/s'``).</span>
 <span class="sd">            Defaults to ``'km/s'``.</span>
@@ -1142,12 +1151,16 @@
 <span class="sd">        -------</span>
 <span class="sd">        Session</span>
 <span class="sd">            A new :class:`~astrocook.session.session.Session` with the converted X-axis.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        InvalidParameter</span>
+<span class="sd">            If ``xunit`` is neither a wavelength nor a velocity, or if an</span>
+<span class="sd">            axis in velocity is converted back to a wavelength at a z_ref</span>
+<span class="sd">            that is not the one it keeps.</span>
 <span class="sd">        """</span>
-        <span class="c1"># Handle default logic here</span>
-        <span class="k">if</span> <span class="n">z_ref</span> <span class="o">==</span> <span class="s1">'_current_'</span><span class="p">:</span>
-            <span class="n">z_ref_float</span> <span class="o">=</span> <span class="n">spec_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">z_ref_float</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">z_ref</span><span class="p">)</span>
+        <span class="c1"># '_current_': chosen by the spectrum (z_em, or the z_ref kept)</span>
+        <span class="n">z_ref_float</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">z_ref</span> <span class="o">==</span> <span class="s1">'_current_'</span> <span class="k">else</span> <span class="n">cast</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">z_ref</span><span class="p">)</span>
             
         <span class="k">try</span><span class="p">:</span>
             <span class="n">xunit_obj</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">Unit</span><span class="p">(</span><span class="n">xunit</span><span class="p">)</span>
@@ -1159,7 +1172,13 @@
                                    <span class="s2">"nor a velocity (e.g. km/s)"</span><span class="p">)</span>
 
         <span class="c1"># 1. Get the new Spectrum instance (the immutable operation)</span>
-        <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="n">spec_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span><span class="o">.</span><span class="n">x_convert</span><span class="p">(</span><span class="n">z_ref</span><span class="o">=</span><span class="n">z_ref_float</span><span class="p">,</span> <span class="n">xunit</span><span class="o">=</span><span class="n">xunit_obj</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="n">spec_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span><span class="o">.</span><span class="n">x_convert</span><span class="p">(</span><span class="n">z_ref</span><span class="o">=</span><span class="n">z_ref_float</span><span class="p">,</span> <span class="n">xunit</span><span class="o">=</span><span class="n">xunit_obj</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">au</span><span class="o">.</span><span class="n">UnitsError</span><span class="p">):</span>
+                <span class="k">raise</span>
+            <span class="c1"># Back to wavelengths at another z_ref than the one of the axis</span>
+            <span class="k">raise</span> <span class="n">InvalidParameter</span><span class="p">(</span><span class="sa">f</span><span class="s2">"z_ref: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
         
         <span class="c1"># 2. Return a NEW Session instance with the updated spectrum</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span> </div>

@@ -81,11 +81,16 @@ To exclude bad data points (e.g., dead pixels or negative errors) without deleti
 
 ### Converting the Axes
 
-* **Edit > Convert X axis...**: converts the axis to another unit of wavelength (`nm`, `Angstrom`) or to velocity (`km/s`). The zero of the velocity is the Lyman-α emission at the reference redshift, 121.567 nm × (1 + `z_ref`); `z_ref` is $z_\mathrm{em}$ if left at `_current_`.
+* **Edit > Convert X axis...**: converts the axis to another unit of wavelength (`nm`, `Angstrom`) or to velocity (`km/s`). The zero of the velocity is the Lyman-α emission at the reference redshift, 121.567 nm × (1 + `z_ref`); `z_ref` is $z_\mathrm{em}$ if left at `_current_`. The spectrum keeps the `z_ref` of the conversion (in the session, in its undo history and in the `.acs2` archive), and the conversions back use it:
+    * back to wavelength, the axis is converted at that `z_ref`, whatever $z_\mathrm{em}$ is now (leave `z_ref` at `_current_`; another value is refused);
+    * to velocity again, the axis is re-centred at the new `z_ref` (at `_current_` only the unit changes, e.g. `km/s` to `m/s`);
+    * the ticks of the systems on the plot are drawn at that `z_ref`.
+
+    An axis loaded in velocity, or saved in velocity by an earlier version (2.7.0 or before), has no `z_ref`: $z_\mathrm{em}$ is used, with a warning in the log, unless a `z_ref` is given to convert it back to wavelength.
 * **Edit > Convert Y axis...**: converts the flux, its error and the columns in the same unit (`cont`, `model`, ...) to another unit of flux density per unit wavelength, e.g. `erg/(Angstrom s cm^2)`. A unit per frequency (`Jy`) is not converted. A continuum or a model without a unit (in archives saved by earlier versions) is taken in the unit of the flux and converted with it. A flux in arbitrary units cannot be converted: declare its unit with **Set Properties**, or calibrate it.
 
-:::{warning}
-The spectrum does not remember the `z_ref` of a conversion to velocity: to go back to wavelength, convert with the same `z_ref`, and without changing $z_\mathrm{em}$ in between if `z_ref` was left at `_current_`; otherwise the wavelengths come back shifted.
+:::{note}
+Most recipes need an axis in wavelength (the continuum, the identification, *Rebin*, *Resample*, *Split*): convert the axis back before running them.
 :::
 
 ### Smoothing Single Columns
@@ -140,7 +145,7 @@ If you have multiple exposures of the same object, you can combine them directly
 
 The recipes that combine sessions name the other sessions by the names of the Session List, separated by commas; a name that is not that of an open session stops the recipe. In a Python script, where no other session is open, give the sessions themselves (e.g. `session.edit.stitch([red, nir])`, `session.edit.coadd([session, other])`); the session log records their names.
 
-**Units.** The sessions are combined in the units of one of them, the *reference* (this session for *Stitch*, the bluest arm for *Equalize and Stitch*, the first session listed for *Co-add*): the others are converted to the unit of its axis (e.g. Å to nm) and of its flux (e.g. erg cm⁻² s⁻¹ nm⁻¹ to erg cm⁻² s⁻¹ Å⁻¹) before they are scaled or joined. A flux in arbitrary units (`arb_flux`, see [Setting Session Properties](#editing-properties)) cannot be converted to a physical one: it is combined with it only when it is scaled to it (by *Equalize and Stitch*, or by *Co-add* with `equalize_order` not None), and then takes its unit. A normalized flux (no unit) is never combined with one that is not. An axis in velocity is converted to wavelengths first with *Convert X axis*.
+**Units.** The sessions are combined in the units of one of them, the *reference* (this session for *Stitch*, the bluest arm for *Equalize and Stitch*, the first session listed for *Co-add*): the others are converted to the unit of its axis (e.g. Å to nm) and of its flux (e.g. erg cm⁻² s⁻¹ nm⁻¹ to erg cm⁻² s⁻¹ Å⁻¹) before they are scaled or joined. A flux in arbitrary units (`arb_flux`, see [Setting Session Properties](#editing-properties)) cannot be converted to a physical one: it is combined with it only when it is scaled to it (by *Equalize and Stitch*, or by *Co-add* with `equalize_order` not None), and then takes its unit. A normalized flux (no unit) is never combined with one that is not. An axis in velocity is converted to wavelengths first with *Convert X axis*; two axes in velocity are combined only if they have the same `z_ref`.
 
 ### Co-adding Spectra
 

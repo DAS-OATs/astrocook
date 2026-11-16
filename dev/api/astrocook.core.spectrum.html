@@ -842,6 +842,23 @@ mapping dictionaries) before saving the session to disk.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="astrocook.core.spectrum.Spectrum.remove_columns">
+<span class="sig-name descname"><span class="pre">remove_columns</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.spectrum.Spectrum" title="astrocook.core.spectrum.Spectrum"><span class="pre">Spectrum</span></a></span></span><a class="reference internal" href="../modules/astrocook/core/spectrum.html#Spectrum.remove_columns"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.Spectrum.remove_columns" title="Link to this definition">#</a></dt>
+<dd><p>Return a NEW Spectrum with specified auxiliary columns removed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>col_names</strong> (<em>list</em><em> of </em><em>str</em>) – Names of the columns to delete.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new instance with the columns removed.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#astrocook.core.spectrum.Spectrum" title="astrocook.core.spectrum.Spectrum">Spectrum</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="astrocook.core.spectrum.Spectrum.apply_expression">
 <span class="sig-name descname"><span class="pre">apply_expression</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expression</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_vars</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#astrocook.core.spectrum.Spectrum.apply_expression" title="Link to this definition">#</a></dt>
 <dd><p>Apply a numerical expression to columns and return a new spectrum.</p>
@@ -1257,6 +1274,27 @@ associated absorbers and the uncertainty of <code class="docutils literal notran
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="astrocook.core.spectrum.Spectrum.merge_column">
+<span class="sig-name descname"><span class="pre">merge_column</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">other_values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.spectrum.Spectrum" title="astrocook.core.spectrum.Spectrum"><span class="pre">Spectrum</span></a></span></span><a class="reference internal" href="../modules/astrocook/core/spectrum.html#Spectrum.merge_column"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.Spectrum.merge_column" title="Link to this definition">#</a></dt>
+<dd><p>Merge new values into an existing column.</p>
+<p>Strategy: Use new value if it’s non-zero, otherwise keep old value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>col_name</strong> (<em>str</em>) – Name of the column.</p></li>
+<li><p><strong>other_values</strong> (<em>np.ndarray</em>) – Array of new values.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new instance with merged data.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#astrocook.core.spectrum.Spectrum" title="astrocook.core.spectrum.Spectrum">Spectrum</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="astrocook.core.spectrum.Spectrum.prepare_expression_context">
 <span class="sig-name descname"><span class="pre">prepare_expression_context</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">expression</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">other_specs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#astrocook.core.spectrum.Spectrum" title="astrocook.core.spectrum.Spectrum"><span class="pre">Spectrum</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#astrocook.core.spectrum.Spectrum.prepare_expression_context" title="Link to this definition">#</a></dt>
 <dd><p>Prepare context for cross-spectrum arithmetic expressions.</p>
@@ -1297,23 +1335,6 @@ spectrum’s grid.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A new instance with the rebinned data.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#astrocook.core.spectrum.Spectrum" title="astrocook.core.spectrum.Spectrum">Spectrum</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="astrocook.core.spectrum.Spectrum.remove_columns">
-<span class="sig-name descname"><span class="pre">remove_columns</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.spectrum.Spectrum" title="astrocook.core.spectrum.Spectrum"><span class="pre">Spectrum</span></a></span></span><a class="reference internal" href="../modules/astrocook/core/spectrum.html#Spectrum.remove_columns"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.Spectrum.remove_columns" title="Link to this definition">#</a></dt>
-<dd><p>Return a NEW Spectrum with specified auxiliary columns removed.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>col_names</strong> (<em>list</em><em> of </em><em>str</em>) – Names of the columns to delete.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A new instance with the columns removed.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#astrocook.core.spectrum.Spectrum" title="astrocook.core.spectrum.Spectrum">Spectrum</a></p>
@@ -1484,27 +1505,6 @@ dimensionless (a dimensionless quality flag is not a flux).</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="astrocook.core.spectrum.Spectrum.merge_column">
-<span class="sig-name descname"><span class="pre">merge_column</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">other_values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.spectrum.Spectrum" title="astrocook.core.spectrum.Spectrum"><span class="pre">Spectrum</span></a></span></span><a class="reference internal" href="../modules/astrocook/core/spectrum.html#Spectrum.merge_column"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.Spectrum.merge_column" title="Link to this definition">#</a></dt>
-<dd><p>Merge new values into an existing column.</p>
-<p>Strategy: Use new value if it’s non-zero, otherwise keep old value.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>col_name</strong> (<em>str</em>) – Name of the column.</p></li>
-<li><p><strong>other_values</strong> (<em>np.ndarray</em>) – Array of new values.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A new instance with merged data.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference internal" href="#astrocook.core.spectrum.Spectrum" title="astrocook.core.spectrum.Spectrum">Spectrum</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="astrocook.core.spectrum.Spectrum.update_model">
 <span class="sig-name descname"><span class="pre">update_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_flux</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.spectrum.Spectrum" title="astrocook.core.spectrum.Spectrum"><span class="pre">Spectrum</span></a></span></span><a class="reference internal" href="../modules/astrocook/core/spectrum.html#Spectrum.update_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.Spectrum.update_model" title="Link to this definition">#</a></dt>
 <dd><p>Update the ‘model’ auxiliary column with new flux values.</p>
@@ -1522,13 +1522,43 @@ dimensionless (a dimensionless quality flag is not a flux).</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="astrocook.core.spectrum.Spectrum.axis_z_ref">
+<span class="sig-name descname"><span class="pre">axis_z_ref</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../modules/astrocook/core/spectrum.html#Spectrum.axis_z_ref"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.Spectrum.axis_z_ref" title="Link to this definition">#</a></dt>
+<dd><p>The reference redshift of the x axis in velocity: the zero is the
+Lyman-alpha emission at 121.567 nm * (1 + z_ref).</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">z_ref</span></code> kept by <a class="reference internal" href="#astrocook.core.spectrum.Spectrum.x_convert" title="astrocook.core.spectrum.Spectrum.x_convert"><code class="xref py py-meth docutils literal notranslate"><span class="pre">x_convert()</span></code></a> (F84, phase 7-bis, B6);
+<code class="docutils literal notranslate"><span class="pre">z_em</span></code> when it is not known (an axis loaded in velocity, an
+archive saved before B6), as all the conversions did before. For
+an axis in wavelength the conversions to velocity and back are a
+round trip, and the reference does not matter: <code class="docutils literal notranslate"><span class="pre">z_em</span></code> too.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The reference redshift.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="astrocook.core.spectrum.Spectrum.x_convert">
-<span class="sig-name descname"><span class="pre">x_convert</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z_ref</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xunit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Unit</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.spectrum.Spectrum" title="astrocook.core.spectrum.Spectrum"><span class="pre">Spectrum</span></a></span></span><a class="reference internal" href="../modules/astrocook/core/spectrum.html#Spectrum.x_convert"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.Spectrum.x_convert" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">x_convert</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z_ref</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xunit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Unit</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#astrocook.core.spectrum.Spectrum" title="astrocook.core.spectrum.Spectrum"><span class="pre">Spectrum</span></a></span></span><a class="reference internal" href="../modules/astrocook/core/spectrum.html#Spectrum.x_convert"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.core.spectrum.Spectrum.x_convert" title="Link to this definition">#</a></dt>
 <dd><p>Convert the X-axis units and return a NEW Spectrum instance.</p>
+<p>The zero of a velocity axis is the Lyman-alpha emission at
+121.567 nm * (1 + z_ref); the new spectrum keeps <code class="docutils literal notranslate"><span class="pre">z_ref</span></code>
+(<code class="docutils literal notranslate"><span class="pre">SpectrumData.z_ref</span></code>, F84, phase 7-bis, B6), and the conversions
+back use it.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>z_ref</strong> (<em>float</em>) – Reference redshift for velocity conversion.</p></li>
+<li><p><strong>z_ref</strong> (<em>float</em><em> or </em><em>None</em>) – Reference redshift of the velocity axis. From a wavelength to a
+velocity: the zero of the new axis (None: <code class="docutils literal notranslate"><span class="pre">z_em</span></code>). From a
+velocity to a wavelength: the zero of the axis, which must be
+the one it keeps, if it keeps one (None: that one, or
+<code class="docutils literal notranslate"><span class="pre">z_em</span></code>). From a velocity to a velocity: the zero of the new
+axis, which is re-centred on it (None: the zero stays).
+Not used from a wavelength to a wavelength.</p></li>
 <li><p><strong>xunit</strong> (<em>astropy.units.Unit</em>) – Target unit (e.g., <code class="docutils literal notranslate"><span class="pre">nm</span></code>, <code class="docutils literal notranslate"><span class="pre">km/s</span></code>).</p></li>
 </ul>
 </dd>
@@ -1537,6 +1567,10 @@ dimensionless (a dimensionless quality flag is not a flux).</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#astrocook.core.spectrum.Spectrum" title="astrocook.core.spectrum.Spectrum">Spectrum</a></p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – From a velocity to a wavelength, if <code class="docutils literal notranslate"><span class="pre">z_ref</span></code> is not the
+    reference the axis keeps.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1633,6 +1667,7 @@ dimensionless (a dimensionless quality flag is not a flux).</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.Spectrum.sanitize_legacy_tellurics"><code class="docutils literal notranslate"><span class="pre">Spectrum.sanitize_legacy_tellurics()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.Spectrum.update_column"><code class="docutils literal notranslate"><span class="pre">Spectrum.update_column()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.Spectrum.remove_meta_keys"><code class="docutils literal notranslate"><span class="pre">Spectrum.remove_meta_keys()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.Spectrum.remove_columns"><code class="docutils literal notranslate"><span class="pre">Spectrum.remove_columns()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.Spectrum.apply_expression"><code class="docutils literal notranslate"><span class="pre">Spectrum.apply_expression()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.Spectrum.calc_intersection_expression"><code class="docutils literal notranslate"><span class="pre">Spectrum.calc_intersection_expression()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.Spectrum.calculate_running_std"><code class="docutils literal notranslate"><span class="pre">Spectrum.calculate_running_std()</span></code></a></li>
@@ -1650,9 +1685,9 @@ dimensionless (a dimensionless quality flag is not a flux).</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.Spectrum.identify_lines"><code class="docutils literal notranslate"><span class="pre">Spectrum.identify_lines()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.Spectrum.mask_expression"><code class="docutils literal notranslate"><span class="pre">Spectrum.mask_expression()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.Spectrum.mask_region"><code class="docutils literal notranslate"><span class="pre">Spectrum.mask_region()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.Spectrum.merge_column"><code class="docutils literal notranslate"><span class="pre">Spectrum.merge_column()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.Spectrum.prepare_expression_context"><code class="docutils literal notranslate"><span class="pre">Spectrum.prepare_expression_context()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.Spectrum.rebin"><code class="docutils literal notranslate"><span class="pre">Spectrum.rebin()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.Spectrum.remove_columns"><code class="docutils literal notranslate"><span class="pre">Spectrum.remove_columns()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.Spectrum.resample_on_grid"><code class="docutils literal notranslate"><span class="pre">Spectrum.resample_on_grid()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.Spectrum.scale_flux"><code class="docutils literal notranslate"><span class="pre">Spectrum.scale_flux()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.Spectrum.smooth"><code class="docutils literal notranslate"><span class="pre">Spectrum.smooth()</span></code></a></li>
@@ -1661,8 +1696,8 @@ dimensionless (a dimensionless quality flag is not a flux).</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.Spectrum.stitch"><code class="docutils literal notranslate"><span class="pre">Spectrum.stitch()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.Spectrum.update_continuum_from_knots"><code class="docutils literal notranslate"><span class="pre">Spectrum.update_continuum_from_knots()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.Spectrum.with_flux_unit"><code class="docutils literal notranslate"><span class="pre">Spectrum.with_flux_unit()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.Spectrum.merge_column"><code class="docutils literal notranslate"><span class="pre">Spectrum.merge_column()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.Spectrum.update_model"><code class="docutils literal notranslate"><span class="pre">Spectrum.update_model()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.Spectrum.axis_z_ref"><code class="docutils literal notranslate"><span class="pre">Spectrum.axis_z_ref()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.Spectrum.x_convert"><code class="docutils literal notranslate"><span class="pre">Spectrum.x_convert()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.Spectrum.y_convert"><code class="docutils literal notranslate"><span class="pre">Spectrum.y_convert()</span></code></a></li>
 </ul>

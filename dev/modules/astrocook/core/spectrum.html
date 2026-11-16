@@ -477,8 +477,9 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">overload</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">overload</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum_operations</span><span class="w"> </span><span class="kn">import</span> <span class="n">convert_x_axis</span><span class="p">,</span> <span class="n">convert_y_axis</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">SpectrumData</span><span class="p">,</span> <span class="n">DataColumn</span>
@@ -1324,16 +1325,50 @@
         <span class="k">return</span> <span class="n">Spectrum</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">new_data</span><span class="p">,</span> <span class="n">history</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="p">)</span></div>
 
     
+<div class="viewcode-block" id="Spectrum.axis_z_ref">
+<a class="viewcode-back" href="../../../api/astrocook.core.spectrum.html#astrocook.core.spectrum.Spectrum.axis_z_ref">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">axis_z_ref</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        The reference redshift of the x axis in velocity: the zero is the</span>
+<span class="sd">        Lyman-alpha emission at 121.567 nm * (1 + z_ref).</span>
+
+<span class="sd">        The ``z_ref`` kept by :meth:`x_convert` (F84, phase 7-bis, B6);</span>
+<span class="sd">        ``z_em`` when it is not known (an axis loaded in velocity, an</span>
+<span class="sd">        archive saved before B6), as all the conversions did before. For</span>
+<span class="sd">        an axis in wavelength the conversions to velocity and back are a</span>
+<span class="sd">        round trip, and the reference does not matter: ``z_em`` too.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            The reference redshift.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_ref</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_ref</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span> <span class="ow">or</span> <span class="mf">0.0</span><span class="p">)</span></div>
+
+
 <div class="viewcode-block" id="Spectrum.x_convert">
 <a class="viewcode-back" href="../../../api/astrocook.core.spectrum.html#astrocook.core.spectrum.Spectrum.x_convert">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">x_convert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z_ref</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">xunit</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Unit</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'Spectrum'</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">x_convert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z_ref</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">xunit</span><span class="p">:</span> <span class="n">au</span><span class="o">.</span><span class="n">Unit</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'Spectrum'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Convert the X-axis units and return a NEW Spectrum instance.</span>
 
+<span class="sd">        The zero of a velocity axis is the Lyman-alpha emission at</span>
+<span class="sd">        121.567 nm * (1 + z_ref); the new spectrum keeps ``z_ref``</span>
+<span class="sd">        (``SpectrumData.z_ref``, F84, phase 7-bis, B6), and the conversions</span>
+<span class="sd">        back use it.</span>
+
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        z_ref : float</span>
-<span class="sd">            Reference redshift for velocity conversion.</span>
+<span class="sd">        z_ref : float or None</span>
+<span class="sd">            Reference redshift of the velocity axis. From a wavelength to a</span>
+<span class="sd">            velocity: the zero of the new axis (None: ``z_em``). From a</span>
+<span class="sd">            velocity to a wavelength: the zero of the axis, which must be</span>
+<span class="sd">            the one it keeps, if it keeps one (None: that one, or</span>
+<span class="sd">            ``z_em``). From a velocity to a velocity: the zero of the new</span>
+<span class="sd">            axis, which is re-centred on it (None: the zero stays).</span>
+<span class="sd">            Not used from a wavelength to a wavelength.</span>
 <span class="sd">        xunit : astropy.units.Unit</span>
 <span class="sd">            Target unit (e.g., ``nm``, ``km/s``).</span>
 
@@ -1341,25 +1376,69 @@
 <span class="sd">        -------</span>
 <span class="sd">        Spectrum</span>
 <span class="sd">            A new instance with the converted X-axis.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            From a velocity to a wavelength, if ``z_ref`` is not the</span>
+<span class="sd">            reference the axis keeps.</span>
 <span class="sd">        """</span>
-        
+        <span class="n">kms</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">km</span> <span class="o">/</span> <span class="n">au</span><span class="o">.</span><span class="n">s</span>
+        <span class="n">from_velocity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">unit</span><span class="o">.</span><span class="n">is_equivalent</span><span class="p">(</span><span class="n">kms</span><span class="p">)</span>
+        <span class="n">to_velocity</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">Unit</span><span class="p">(</span><span class="n">xunit</span><span class="p">)</span><span class="o">.</span><span class="n">is_equivalent</span><span class="p">(</span><span class="n">kms</span><span class="p">)</span>
+        <span class="n">stored</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_ref</span> <span class="k">if</span> <span class="n">from_velocity</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span>
+
+        <span class="k">if</span> <span class="n">from_velocity</span> <span class="ow">and</span> <span class="n">stored</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">z_ref</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">to_velocity</span><span class="p">:</span>
+                <span class="c1"># Declared by the caller: the zero of an axis loaded in velocity</span>
+                <span class="n">current</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">z_ref</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">current</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span> <span class="ow">or</span> <span class="mf">0.0</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"The reference redshift of the velocity axis is not "</span>
+                               <span class="sa">f</span><span class="s2">"known: z_em (</span><span class="si">{</span><span class="n">current</span><span class="si">:</span><span class="s2">g</span><span class="si">}</span><span class="s2">) is used."</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">from_velocity</span><span class="p">:</span>
+            <span class="n">current</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">cast</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">stored</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">current</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span> <span class="ow">or</span> <span class="mf">0.0</span><span class="p">)</span> <span class="k">if</span> <span class="n">z_ref</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="n">z_ref</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">from_velocity</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">to_velocity</span> <span class="ow">and</span> <span class="n">z_ref</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> \
+                <span class="ow">and</span> <span class="n">stored</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">math</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">z_ref</span><span class="p">,</span> <span class="n">stored</span><span class="p">,</span> <span class="n">rel_tol</span><span class="o">=</span><span class="mf">1e-12</span><span class="p">,</span>
+                                                            <span class="n">abs_tol</span><span class="o">=</span><span class="mf">1e-12</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The velocity axis was converted at z_ref = </span><span class="si">{</span><span class="n">stored</span><span class="si">:</span><span class="s2">g</span><span class="si">}</span><span class="s2">: it is "</span>
+                             <span class="sa">f</span><span class="s2">"converted back at the same, not at </span><span class="si">{</span><span class="n">z_ref</span><span class="si">:</span><span class="s2">g</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+
+        <span class="n">new_z_ref</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">from_velocity</span> <span class="ow">and</span> <span class="n">to_velocity</span><span class="p">:</span>
+            <span class="n">new_z_ref</span> <span class="o">=</span> <span class="n">current</span> <span class="k">if</span> <span class="n">z_ref</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="n">z_ref</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">new_z_ref</span> <span class="o">!=</span> <span class="n">current</span><span class="p">:</span>
+                <span class="c1"># Re-centred: back to wavelengths at the old zero, then to</span>
+                <span class="c1"># velocities at the new one</span>
+                <span class="n">nm_x</span><span class="p">,</span> <span class="n">nm_xmin</span><span class="p">,</span> <span class="n">nm_xmax</span> <span class="o">=</span> <span class="n">convert_x_axis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">current</span><span class="p">,</span> <span class="n">au</span><span class="o">.</span><span class="n">nm</span><span class="p">)</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">DataColumn</span><span class="p">(</span><span class="n">nm_x</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">au</span><span class="o">.</span><span class="n">nm</span><span class="p">),</span>
+                    <span class="n">xmin</span><span class="o">=</span><span class="n">DataColumn</span><span class="p">(</span><span class="n">nm_xmin</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">au</span><span class="o">.</span><span class="n">nm</span><span class="p">),</span>
+                    <span class="n">xmax</span><span class="o">=</span><span class="n">DataColumn</span><span class="p">(</span><span class="n">nm_xmax</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">au</span><span class="o">.</span><span class="n">nm</span><span class="p">))</span>
+            <span class="n">used</span> <span class="o">=</span> <span class="n">new_z_ref</span>
+        <span class="k">elif</span> <span class="n">to_velocity</span><span class="p">:</span>
+            <span class="n">new_z_ref</span> <span class="o">=</span> <span class="n">used</span> <span class="o">=</span> <span class="n">current</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">used</span> <span class="o">=</span> <span class="n">current</span>
+
         <span class="c1"># 1. Execute pure conversion logic</span>
-        <span class="n">x_new</span><span class="p">,</span> <span class="n">xmin_new</span><span class="p">,</span> <span class="n">xmax_new</span> <span class="o">=</span> <span class="n">convert_x_axis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">z_ref</span><span class="p">,</span> <span class="n">xunit</span><span class="p">)</span>
-        
-        <span class="c1"># 2. Build new SpectrumData, preserving the core vertical data</span>
-        <span class="n">new_data</span> <span class="o">=</span> <span class="n">SpectrumData</span><span class="p">(</span>
+        <span class="n">x_new</span><span class="p">,</span> <span class="n">xmin_new</span><span class="p">,</span> <span class="n">xmax_new</span> <span class="o">=</span> <span class="n">convert_x_axis</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">used</span><span class="p">,</span> <span class="n">xunit</span><span class="p">)</span>
+
+        <span class="c1"># 2. The new axis; the rest as it is</span>
+        <span class="n">new_data</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span>
             <span class="n">x</span><span class="o">=</span><span class="n">DataColumn</span><span class="p">(</span><span class="n">x_new</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">xunit</span><span class="p">),</span>
             <span class="n">xmin</span><span class="o">=</span><span class="n">DataColumn</span><span class="p">(</span><span class="n">xmin_new</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">xunit</span><span class="p">),</span>
             <span class="n">xmax</span><span class="o">=</span><span class="n">DataColumn</span><span class="p">(</span><span class="n">xmax_new</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">xunit</span><span class="p">),</span>
-            <span class="n">y</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> 
-            <span class="n">dy</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">dy</span><span class="p">,</span>
-            <span class="n">aux_cols</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">,</span>
-            <span class="n">meta</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">meta</span><span class="p">,</span>
-            <span class="n">z_em</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span>   <span class="c1"># Propagate</span>
+            <span class="n">z_ref</span><span class="o">=</span><span class="n">new_z_ref</span><span class="p">,</span>
         <span class="p">)</span>
-        
+
         <span class="c1"># 3. Return a NEW Spectrum instance</span>
-        <span class="n">new_history</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="o">+</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"X-axis converted to </span><span class="si">{</span><span class="n">xunit</span><span class="si">}</span><span class="s2"> at z_ref=</span><span class="si">{</span><span class="n">z_ref</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span>
+        <span class="n">new_history</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="o">+</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"X-axis converted to </span><span class="si">{</span><span class="n">xunit</span><span class="si">}</span><span class="s2"> at z_ref=</span><span class="si">{</span><span class="n">used</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">Spectrum</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">new_data</span><span class="p">,</span> <span class="n">history</span><span class="o">=</span><span class="n">new_history</span><span class="p">)</span></div>
 
 
@@ -1392,7 +1471,8 @@
             <span class="n">dy</span><span class="o">=</span><span class="n">new_dy</span><span class="p">,</span> <span class="c1"># Updated</span>
             <span class="n">aux_cols</span><span class="o">=</span><span class="n">new_aux_cols</span><span class="p">,</span> <span class="c1"># Auxiliary columns should also be converted if unit-dependent</span>
             <span class="n">meta</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">meta</span><span class="p">,</span>
-            <span class="n">z_em</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span>   <span class="c1"># Propagate</span>
+            <span class="n">z_em</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_em</span><span class="p">,</span>   <span class="c1"># Propagate</span>
+            <span class="n">z_ref</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">z_ref</span>
         <span class="p">)</span>
         
         <span class="c1"># 3. Return a NEW Spectrum instance</span>
