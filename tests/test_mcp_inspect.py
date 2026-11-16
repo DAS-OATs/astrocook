@@ -205,3 +205,37 @@ def test_what_a_recipe_reports_reaches_the_agent_in_details(mock_archive):
                 {"session_id": "mock", "uuid": listed["components"][0]["uuid"]})
     optimization = ok(asyncio.run(optimize()))["details"]["optimization"]
     assert optimization["stopped"] and isinstance(optimization["tried"], list)
+
+
+def test_the_identification_of_a_pipeline_counts_its_candidate_systems(mock_archive):
+    # F112: the summary said n_systems 0 while the notes said "3 candidate
+    # systems found" (the pipeline leaves them out of the metadata)
+    *_, fitted = calls(
+        build_server(), open_mock(mock_archive),
+        ("continuum_estimate_auto", {"session_id": "mock"}),
+        ("absorbers_doublets_auto", {"session_id": "mock"}))
+    info = ok(fitted)
+    ident = info["identification"]
+    # one component is fitted for each candidate system of this mock
+    assert ident["n_systems"] == info["fit"]["n_added"] > 0
+    assert sum(ident["systems_by_series"].values()) == ident["n_systems"]
+    assert len(ident["systems"]) == ident["n_systems"]
+
+
+def test_a_refitted_component_reports_the_chi2_of_its_group(mock_archive):
+    # F157: the chi2 was only in the components added, not in those changed
+    server = build_server()
+
+    async def refit():
+        async with Client(server) as client:
+            await client.call_tool(*open_mock(mock_archive))
+            await client.call_tool("continuum_estimate_auto", {"session_id": "mock"})
+            await client.call_tool(*add("CIV", Z1))
+            listed = ok(await client.call_tool("components_list", {"session_id": "mock"}))
+            u = listed["components"][0]["uuid"]
+            return await client.call_tool("absorbers_refit_all",
+                                          {"session_id": "mock", "selected_uuids": [u]})
+    info = ok(asyncio.run(refit()))
+    changed = info["changes"]["components_changed"]
+    assert changed and all(c["chi2r"] is not None and c["chi2r"] > 0 for c in changed)
+    assert info["fit"]["n_added"] == 0

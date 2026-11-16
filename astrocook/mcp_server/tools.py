@@ -257,7 +257,8 @@ def _store_result(store: SessionStore, spec: RecipeSpec, session_id: str,
     elif result.session is not None:
         store.apply(session_id, result.session, spec.name, result.params,
                     provided=result.provided, reason=reason)
-        out["changes"] = changes_summary(result.changes, removed, max_listed)
+        out["changes"] = changes_summary(result.changes, removed, max_listed,
+                                        result.session)
         if result.changes.components_removed or result.changes.columns_removed:
             # Decision 1 of the phase: what a recipe removed can be had
             # back from the history of the session
