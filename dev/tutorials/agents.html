@@ -1047,9 +1047,9 @@ archive if needed.</p></li>
 live in it while it runs: save before closing the client. The GUI that
 follows a session cannot change it, and what you do in the GUI does not
 reach the agent (a copy you make is yours).</p></li>
-<li><p><strong>The Docker image</strong> has no GUI (<code class="docutils literal notranslate"><span class="pre">gui_open</span></code> says so) and no emcee and
-dynesty, so <code class="docutils literal notranslate"><span class="pre">absorbers_fit_bayesian</span></code> fails with the message that names
-the extra to install; it is not published, you build it (section 2.1).</p></li>
+<li><p><strong>The Docker image</strong> has no GUI (<code class="docutils literal notranslate"><span class="pre">gui_open</span></code> says so); it includes the
+<code class="docutils literal notranslate"><span class="pre">[bayes]</span></code> extra (emcee, dynesty), so <code class="docutils literal notranslate"><span class="pre">absorbers_fit_bayesian</span></code> works. It
+is not published, you build it (section 2.1).</p></li>
 <li><p>Some recipes name the same thing differently in the GUI and in the tools
 (the label of a menu is not always the title of the recipe): the tools
 are named after the recipe, see the list of the instructions of the
