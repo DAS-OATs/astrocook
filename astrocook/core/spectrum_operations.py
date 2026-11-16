@@ -447,22 +447,33 @@ def rebin_spectrum(
     
     return x_out, xmin_out, xmax_out, y_out, dy_out, resol_out
 
+def _window_counts(n: int, window_size: int) -> np.ndarray:
+    """Number of pixels of the array inside a centred window, at each pixel
+    (``window_size`` in the interior, fewer within h pixels of the edges)."""
+    return np.convolve(np.ones(n), np.ones(window_size), mode='same')
+
+
 def running_mean(y: np.ndarray, h: int) -> np.ndarray:
     """
-    Computes a running mean of an array.
+    Computes a running mean of an array, over a window of ``2h + 1`` pixels.
+
+    Within h pixels of the edges the window is truncated: the mean is taken
+    over the pixels that exist (F30; zero padding used to bias it towards 0).
     """
     window_size = 2 * h + 1
     if window_size > len(y):
         logger.warning(f"The running-mean window ({window_size} pixels) is longer than "
                        f"the array ({len(y)} pixels): the mean of the whole array is used.")
         return np.full_like(y, np.mean(y))
-        
-    # Use 'same' mode to keep array length, symmetric padding
-    return np.convolve(y, np.ones(window_size) / window_size, mode='same')
+
+    kernel = np.ones(window_size)
+    return np.convolve(y, kernel, mode='same') / _window_counts(len(y), window_size)
 
 def running_std(y: np.ndarray, h: int) -> np.ndarray:
     """
-    Computes a running standard deviation (RMS with respect to the local mean).
+    Computes a running standard deviation (RMS with respect to the local mean),
+    over a window of ``2h + 1`` pixels, truncated within h pixels of the edges
+    (F30: the statistics use the pixels that exist, no zero padding).
     Uses the identity: var = <y^2> - <y>^2
     """
     window_size = 2 * h + 1
@@ -471,21 +482,22 @@ def running_std(y: np.ndarray, h: int) -> np.ndarray:
                        f"the array ({len(y)} pixels): the standard deviation of the "
                        "whole array is used.")
         return np.full_like(y, np.nanstd(y))
-        
-    kernel = np.ones(window_size) / window_size
-    
-    # 1. Calculate running mean of y: <y>
-    mean_y = np.convolve(y, kernel, mode='same')
-    
-    # 2. Calculate running mean of y squared: <y^2>
-    mean_y_sq = np.convolve(y**2, kernel, mode='same')
-    
-    # 3. Calculate variance: <y^2> - <y>^2
+
+    kernel = np.ones(window_size)
+    counts = _window_counts(len(y), window_size)
+
+    # 1. Running mean of y: <y>
+    mean_y = np.convolve(y, kernel, mode='same') / counts
+
+    # 2. Running mean of y squared: <y^2>
+    mean_y_sq = np.convolve(y**2, kernel, mode='same') / counts
+
+    # 3. Variance: <y^2> - <y>^2
     running_var = mean_y_sq - mean_y**2
-    
+
     # 4. Clip small negative values due to floating-point errors
     running_var[running_var < 0] = 0
-    
+
     return np.sqrt(running_var)
 
 #: find_absorbed_regions: a pixel above the running mean by more than
