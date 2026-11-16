@@ -508,9 +508,9 @@ to keep its own log (e.g. the text of `session_methods`).
   live in it while it runs: save before closing the client. The GUI that
   follows a session cannot change it, and what you do in the GUI does not
   reach the agent (a copy you make is yours).
-- **The Docker image** has no GUI (`gui_open` says so) and no emcee and
-  dynesty, so `absorbers_fit_bayesian` fails with the message that names
-  the extra to install; it is not published, you build it (section 2.1).
+- **The Docker image** has no GUI (`gui_open` says so); it includes the
+  `[bayes]` extra (emcee, dynesty), so `absorbers_fit_bayesian` works. It
+  is not published, you build it (section 2.1).
 - Some recipes name the same thing differently in the GUI and in the tools
   (the label of a menu is not always the title of the recipe): the tools
   are named after the recipe, see the list of the instructions of the
