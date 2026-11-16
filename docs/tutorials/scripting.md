@@ -145,6 +145,8 @@ from astrocook.methods_text import methods_text
 text = methods_text(history)        # a SessionHistory: the states and the log
 print(text)                          # or text.paragraphs, text.references
 methods_text(history, menus=False)  # without the menus, for a paper
+text.gaps                            # the gaps declared: not in the text
+write_methods(text, "methods.txt")   # from astrocook.methods_text; returns the path
 ```
 A session alone (`methods_text(session)`) gives its log, without what each
 recipe changed: the states before and after it are kept by the history (the

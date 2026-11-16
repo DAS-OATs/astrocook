@@ -21,7 +21,7 @@ from pydantic import Field
 
 from astrocook import gaps
 from astrocook.core.column_names import display_column
-from astrocook.methods_text import methods_text
+from astrocook.methods_text import methods_text, write_methods
 from astrocook.session.session import Session
 from astrocook.recipes._spectrum import spec_of
 from astrocook.mcp_server.errors import run_recipe
@@ -304,20 +304,36 @@ def register_session_tools(server: MCPServer, store: SessionStore) -> None:
         menus: Annotated[bool, Field(description=(
             "Name the menu of the GUI of each recipe, in parentheses (for who "
             "reruns the analysis in the GUI; false for a paper)."))] = True,
+        path: Annotated[Optional[str], Field(description=(
+            "Write the text to this file (UTF-8; .txt is added if it has no "
+            "suffix) or, if it is an existing folder, to <session>_methods.txt "
+            "in it, and return the path. The text is also in the result."))] = None,
+        overwrite: Annotated[bool, Field(description=(
+            "Replace the file if it exists."))] = False,
     ) -> MethodsResult:
         """Write the log of a session as the text of a methods section, in
         English, ready to paste in a paper: one paragraph per recipe, with
         the reason you gave it, what it did (with its parameters and the
         works it relies on), what it changed and the notes you wrote; then
         the fit and the atomic data, and the references. The recipes undone
-        are left out. It changes nothing in the session. Give it to the user
-        as it is; do not rewrite the numbers."""
+        are left out, and so are the gaps you declared (they come in ``gaps``).
+        It changes nothing in the session but the file, if you give a path:
+        do not write the text to a file yourself. Give it to the user as it
+        is; do not rewrite the numbers."""
         with store.state_lock:
             history = store.get(session_id)
             out = methods_text(history, menus=menus)
+            written = None
+            if path is not None:
+                try:
+                    written = write_methods(out, path, overwrite,
+                                            name=history.display_name)
+                except OSError as exc:
+                    raise ToolError(str(exc)) from exc
             return MethodsResult(session_id=session_id, text=out.text,
                                  paragraphs=[p.text for p in out.paragraphs],
-                                 references=list(out.references))
+                                 references=list(out.references),
+                                 gaps=list(out.gaps), path=written)
 
     @server.tool()
     def session_undo(

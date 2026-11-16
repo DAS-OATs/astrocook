@@ -229,7 +229,12 @@ agent gave, what the recipe did (its parameters, the works it relies on),
 what it changed and the notes written there; then the fit, the sources of
 the atomic data of the transitions fitted, and the references. The recipes
 undone are left out; `menus=false` leaves out the menus of the GUI that
-follow each recipe. The text is made by Astrocook from the log, not by the
+follow each recipe. The gaps the agent declared are not in the text (they are
+for the development): the result lists them apart, in `gaps`. With `path`
+(a file, or an existing folder: `<session>_methods.txt`; `overwrite=true` to
+replace) the tool also writes the text to a file and returns its path, so the
+agent need not write it itself. A session with no name of its own (the
+default `spectrum`) is not named in the first sentence. The text is made by Astrocook from the log, not by the
 agent: the same log gives the same text. So the reasons and notes are the
 only words of the agent in it: the instructions of the server tell the
 agent so.

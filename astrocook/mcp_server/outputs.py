@@ -630,6 +630,11 @@ class MethodsResult(BaseModel):
         "fit and the atomic data, and the references."))
     paragraphs: list[str] = Field(description="The paragraphs of the text, in order.")
     references: list[str] = Field(description="The works the text cites.")
+    gaps: list[str] = Field(default_factory=list, description=(
+        "The gaps declared with session_note (kind 'gap'), as written: for the "
+        "development of Astrocook, not part of the text."))
+    path: Optional[str] = Field(default=None, description=(
+        "Absolute path of the file the text was written to, when a path was given."))
 
 
 class SessionDescription(SessionListItem):
