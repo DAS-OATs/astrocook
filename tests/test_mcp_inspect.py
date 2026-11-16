@@ -239,3 +239,50 @@ def test_a_refitted_component_reports_the_chi2_of_its_group(mock_archive):
     changed = info["changes"]["components_changed"]
     assert changed and all(c["chi2r"] is not None and c["chi2r"] > 0 for c in changed)
     assert info["fit"]["n_added"] == 0
+
+
+def test_spectrum_plot_with_residuals(mock_archive):
+    _, _, res, nores = calls(
+        build_server(), open_mock(mock_archive), add("CIV", Z1),
+        ("spectrum_plot", {"session_id": "mock", "x_min": 445, "x_max": 452, "residuals": True}),
+        ("spectrum_plot", {"session_id": "mock", "residuals": True, "x_min": 400, "x_max": 401}))
+    assert not res.is_error, res.content[0].text
+    assert res.content[1].text == "mock: spectrum plotted with residuals"
+    assert nores.is_error  # no pixel there (the range, not the residuals)
+
+
+def test_spectrum_plot_residuals_need_a_model(mock_archive):
+    # F158: no model, a clear error
+    _, res = calls(build_server(), open_mock(mock_archive),
+                   ("spectrum_plot", {"session_id": "mock", "residuals": True}))
+    assert "no model" in error_text(res)
+
+
+def test_spectrum_plot_velocity(mock_archive):
+    _, _, default, explicit, resid = calls(
+        build_server(), open_mock(mock_archive), add("CIV", Z1),
+        ("spectrum_plot_velocity", {"session_id": "mock", "z": Z1}),
+        ("spectrum_plot_velocity", {"session_id": "mock", "z": Z1, "half_width_kms": 150,
+                                    "transitions": ["CIV", "Ly_a"], "normalized": False}),
+        ("spectrum_plot_velocity", {"session_id": "mock", "z": Z1, "residuals": True}))
+    for result in (default, explicit, resid):
+        assert not result.is_error, result.content[0].text
+        image, _ = result.content
+        assert image.type == "image" and image.mime_type == "image/png"
+        assert base64.b64decode(image.data)[:8] == b"\x89PNG\r\n\x1a\n"
+    assert default.content[1].text == (
+        "mock: z = 1.9, ±300 km/s, CIV_1548, CIV_1550 (normalized)")
+    assert explicit.content[1].text.endswith(
+        "±150 km/s, CIV_1548, CIV_1550; left out: Ly_a (outside the spectrum)")
+    assert "with residuals" in resid.content[1].text
+
+
+def test_spectrum_plot_velocity_errors(mock_archive):
+    _, nocomp, unknown, window = calls(
+        build_server(), open_mock(mock_archive),
+        ("spectrum_plot_velocity", {"session_id": "mock", "z": 1.9}),
+        ("spectrum_plot_velocity", {"session_id": "mock", "z": 1.9, "transitions": ["XX_1"]}),
+        ("spectrum_plot_velocity", {"session_id": "mock", "z": 1.9, "half_width_kms": 1}))
+    assert "give the transitions" in error_text(nocomp)
+    assert "Unknown transitions: XX_1" in error_text(unknown)
+    assert window.is_error  # below the minimum of the schema

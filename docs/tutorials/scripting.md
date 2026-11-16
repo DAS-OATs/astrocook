@@ -118,7 +118,7 @@ as a step of its own, before the recipe.
 A few functions read a session without changing it, as the System
 Inspector and the main plot of the GUI do (the AI agents use them too):
 ```python
-from astrocook.plotting import plot_spectrum
+from astrocook.plotting import plot_spectrum, plot_velocity
 
 # The flux, error, continuum and model in a range (nm), averaged in
 # blocks of pixels if there are more than 200
@@ -133,6 +133,11 @@ groups = fitted.systs.fit_groups(uuids, max_depth=2, spec=fitted.spec)
 # of each component; in a notebook, the figure shows itself
 fig = plot_spectrum(fitted, 445, 452, normalized=True)
 fig.savefig("doublet.png")
+plot_spectrum(fitted, 445, 452, residuals=True)  # + the residuals in sigma (needs a model)
+
+# Several transitions in velocity around z = 1.9: one panel each, v = 0 at z
+# (None: those of the components near z)
+fig = plot_velocity(fitted, 1.9, ["CIV_1548", "CIV_1550"], half_width_kms=300)
 ```
 
 The log of a session as the text of a methods section, as *File > Export
