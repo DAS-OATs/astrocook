@@ -18,7 +18,7 @@ Not a test (not collected by pytest): run it by hand, before and after a
 change, and compare the summaries. Usage::
 
     python benchmarks/validate_mocks.py [--grid full|reduced|tiny]
-        [--workers N] [--json out.json]
+        [--workers N] [--json out.json] [--compare] [--save-reference]
 
 The full grid (135 mocks: S/N 10, 30, 100; R 8900, 45000, 140000; z_em
 2.5, 3.5, 4.5; 5 seeds) was agreed with Guido at the start of phase 4,
@@ -41,8 +41,23 @@ proximity zone with associated absorbers, or all of them (``combined``).
 The forest and metals of a grid point are the same for every case (the
 draws of each case come from a generator of their own). The recipes get
 a z_em perturbed by a draw of sigma 500 km/s (reproducible from the
-seed; ``z_em_used`` in the records, ``z_em`` the true one). Its metrics
-for the new cases come in PR 7a.2.
+seed; ``z_em_used`` in the records, ``z_em`` the true one).
+
+The metrics of phase 7 (PR 7a.2, ``phase7`` in the records and the
+summaries, on both grids) use the truth map of each mock
+(:func:`astrocook.mocks.truth_map`): the continuum on the damped wings of
+the DLAs and sub-DLAs, across the BAL troughs, on the peaks of the
+emission lines and in the proximity zone (ratio, integrated deviation, and
+the pull against the column ``dcont`` when it exists); what the truth
+leaves to constrain the continuum in the forest; z_em of an estimator
+against the truth (when the chain has one, F153); the false candidates on
+tellurics; the absorbed pixels against the regions and identifications of
+identify_lines (the Lyman-alpha by default of F51 apart); a confusion
+table of the flags of the fitted components against their errors. Their
+reference, the current algorithms on both grids, is
+``results/validate_mocks_robustness_baseline.json`` (``--save-reference``,
+``--compare``); the baseline of phase 4 stays that of ``full``. The truth
+map costs 15-60 s per mock.
 """
 import argparse
 import dataclasses
@@ -62,13 +77,17 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from astrocook.core.atomic_data import ATOM_DATA, STANDARD_MULTIPLETS  # noqa: E402
+from astrocook.fitting.voigt_fitter import COMPONENT_FLAGS  # noqa: E402
 from astrocook.mocks import (  # noqa: E402
     DLA_LOGN, LYMAN_SERIES, QSO_EMISSION_LINES, QSO_EMISSION_LINES_FULL,
     SUBDLA_LOGN, BALTrough, MockTruth, TelluricModel, associated_absorbers,
     continuum, generate, lya_forest, metal_systems, optical_depth,
     strong_hi_systems,
 )
-from astrocook.mocks.physics import C_KMS  # noqa: E402
+from astrocook.mocks.physics import C_KMS, transitions  # noqa: E402
+from astrocook.mocks.truthmap import (  # noqa: E402
+    CATEGORIES, component_category, truth_map,
+)
 
 GRIDS = {
     "full": dict(snr=(10.0, 30.0, 100.0), resol=(8900.0, 45000.0, 140000.0),
@@ -393,6 +412,9 @@ def identification_metrics(truth, systems, spec):
     A candidate is correct when a true system of the same species has a
     component within MATCH_KMS; a second candidate on the same system is
     a duplicate (F49); candidates beyond z_em are counted apart (F55).
+    Of the false ones, those on a component of their species in the truth
+    but not in ``systems`` (the associated absorbers of the grid
+    robustness) are counted apart too (``n_false_associated``, PR 7a.2).
     """
     candidates = _candidates(spec)
     out = {"n_lya": sum(1 for s, _ in candidates if s.startswith("Ly")),
@@ -403,12 +425,15 @@ def identification_metrics(truth, systems, spec):
         detectable = [d[0] for d in detection]
         cands = [z for s, z in candidates if s == species]
         found, duplicates, false, beyond = set(), 0, 0, 0
+        false_associated = 0
         for z in cands:
             beyond += z > truth.z_em
             hits = [i for i, s in enumerate(true)
                     if min(_dv(z, c.z) for c in s["components"]) <= MATCH_KMS]
             if not hits:
                 false += 1
+                false_associated += any(c.series == species and _dv(z, c.z) <= MATCH_KMS
+                                        for c in truth.components)
             elif hits[0] in found:
                 duplicates += 1
             else:
@@ -417,7 +442,8 @@ def identification_metrics(truth, systems, spec):
             n_true=len(true), n_detectable=int(sum(detectable)),
             n_candidates=len(cands), n_found=len(found),
             n_found_detectable=sum(1 for i in found if detectable[i]),
-            n_duplicates=duplicates, n_false=false, n_beyond_z_em=beyond)
+            n_duplicates=duplicates, n_false=false, n_beyond_z_em=beyond,
+            n_false_associated=int(false_associated))
         # Significance of the weaker line and outcome, per system, to
         # check the detection limit
         out["systems"] += [dict(species=species, significance=d[1] / d[2],
@@ -494,6 +520,7 @@ def fit_metrics(truth, systems, systs):
                     for j, t in enumerate(true) if f.series == t.series),
                    key=lambda p: p[0])
     used_f, used_t, matches = set(), set(), []
+    classes = ["spurious"] * len(fitted)
     for dv, i, j in pairs:
         if dv > MATCH_KMS:
             break
@@ -501,6 +528,7 @@ def fit_metrics(truth, systems, systs):
             used_f.add(i)
             used_t.add(j)
             matches.append((fitted[i], true[j], j))
+            classes[i] = _truth_class(fitted[i], true[j])
     pulls = {"z": [], "logN": [], "b": []}
     diffs = {"z": [], "logN": [], "b": []}
     by_category = {k: {"z": [], "logN": [], "b": []} for k in PULL_CATEGORIES}
@@ -524,7 +552,312 @@ def fit_metrics(truth, systems, systs):
         flags={k: sum(k in f for f in flags)
                for k in ("nan_errors", "absurd_errors", "logN_at_bound", "b_at_bound")},
         diffs=diffs, pulls=pulls, pulls_by_category=by_category,
+        flag_confusion=flag_confusion(fitted, classes),
         chi2r=[float(c.chi2) for c in fitted if c.chi2 is not None])
+
+
+# --- Metrics of phase 7 (PR 7a.2) --------------------------------------
+#
+# On the truth map of the mock (astrocook.mocks.truth_map): what absorbs
+# each pixel, as a depth 1 - T per category (agreed with Guido, 16 November
+# 2026).
+
+#: Depth (1 - T) above which a pixel of the truth map is absorbed: the full
+#: account of the absorption, detectable or not
+ABSORBED_DEPTH = 0.01
+#: True transmission of the H I Lyman-alpha line of a DLA or sub-DLA that
+#: bounds its damped wings: between the two, the saturated core (below the
+#: first) excluded
+WING_T = (0.1, 0.95)
+#: Telluric transmission below which a pixel is on a telluric line
+TELLURIC_T = 0.9
+#: True transmission above which a forest pixel is nearly unabsorbed (what
+#: is left to constrain the continuum there)
+FOREST_FREE_T = 0.97
+#: Name of the column of the uncertainty of the continuum (fixed here for
+#: PR 7b.2): the pull of the continuum is measured when it exists
+DCONT_COLUMN = "dcont"
+#: Regions of the continuum metrics
+CONTINUUM_REGIONS = ("forest", "red", "dla_wings", "subdla_wings", "bal",
+                     "emission_peaks", "proximity")
+#: Outcomes of an absorbed pixel (pixel_metrics)
+PIXEL_OUTCOMES = ("undetected", "unidentified", "lya_default_right",
+                  "lya_default_wrong", "right", "wrong")
+#: Rows of the pixel table: the category that absorbs a pixel most, and
+#: ``none`` for the unabsorbed pixels inside a region
+PIXEL_ROWS = (*CATEGORIES, "none")
+#: Flags of the confusion table: those of the fit (#517) and those of the
+#: benchmark (errors not finite or absurd, F52)
+CONFUSION_FLAGS = (*COMPONENT_FLAGS, "absurd_errors")
+#: Classes of the fitted components against the truth (confusion table)
+TRUTH_CLASSES = ("good", "pull_gt3", "spurious")
+
+
+def detectable_depth(snr):
+    """Depth of a pixel detected at DETECTION_SIGMA over a resolution
+    element (PIXELS_PER_FWHM pixels), not below ABSORBED_DEPTH."""
+    return max(ABSORBED_DEPTH, DETECTION_SIGMA / (snr * np.sqrt(PIXELS_PER_FWHM)))
+
+
+def total_depth(tmap):
+    """Depth of all the categories together (the product of their
+    transmissions)."""
+    return 1.0 - np.prod([1.0 - d for d in tmap.depth.values()], axis=0)
+
+
+def dominant_row(tmap):
+    """Index in PIXEL_ROWS of each pixel: the category that absorbs it
+    most, or ``none`` below ABSORBED_DEPTH."""
+    depth = np.vstack([tmap.depth[c] for c in CATEGORIES])
+    return np.where(total_depth(tmap) > ABSORBED_DEPTH, np.argmax(depth, axis=0),
+                    len(CATEGORIES))
+
+
+def _hi_rows(row):
+    return np.isin(row, [CATEGORIES.index("forest"), CATEGORIES.index("strong_hi")])
+
+
+def _strong_hi(truth, logN_range):
+    return [c for c in truth.components if component_category(c) == "strong_hi"
+            and logN_range[0] <= c.logN < logN_range[1]]
+
+
+def continuum_regions(truth, tmap):
+    """Masks of the regions of the continuum metrics, from the truth:
+
+    - ``forest``, ``red``: as in phase 4 (rest frame of the true z_em);
+    - ``dla_wings``, ``subdla_wings``: the damped wings of the strong H I
+      systems, where the true transmission of their Lyman-alpha line alone
+      is within WING_T (the saturated core excluded);
+    - ``bal``: the pixels absorbed by the BAL troughs (ABSORBED_DEPTH);
+    - ``emission_peaks``: within half a FWHM of the peak of each emission
+      line (one FWHM in all), at its shift;
+    - ``proximity``: from ``proximity_kms`` to the blue of the Lyman-alpha
+      emission to the emission itself.
+    """
+    x = tmap.x_nm
+    rest = x / (1 + truth.z_em)
+    out = {"forest": (rest > LYB_NM) & (rest < LYA_NM),
+           "red": (rest > LYA_NM + 1.0) & (rest < REST_WINDOW_NM[1])}
+    for name, logN_range in (("dla_wings", (DLA_LOGN[0], np.inf)),
+                             ("subdla_wings", SUBDLA_LOGN)):
+        mask = np.zeros(len(x), dtype=bool)
+        for c in _strong_hi(truth, logN_range):
+            t = np.exp(-optical_depth(x * 10.0, "Ly_a", c.z, c.logN, c.b, c.btur))
+            mask |= (t >= WING_T[0]) & (t <= WING_T[1])
+        out[name] = mask
+    out["bal"] = tmap.absorbed("bal", ABSORBED_DEPTH)
+    mask = np.zeros(len(x), dtype=bool)
+    for line in truth.emission_lines:
+        dv = np.log(rest / line.rest_nm) * C_KMS - line.shift_kms
+        mask |= np.abs(dv) <= line.fwhm_kms / 2
+    out["emission_peaks"] = mask
+    mask = np.zeros(len(x), dtype=bool)
+    if truth.proximity_kms:
+        dv = np.log(rest / LYA_NM) * C_KMS
+        mask = (dv >= -truth.proximity_kms) & (dv <= 0)
+    out["proximity"] = mask
+    return out
+
+
+def region_continuum_metrics(truth, spec, regions):
+    """The continuum estimated against the true one in each region: the
+    ratio (median, p05, p95), the integrated deviation (signed, in units of
+    the true continuum integrated over the region: a bias of the
+    equivalent widths; and absolute), and the pull against DCONT_COLUMN
+    when the spectrum has it (None otherwise)."""
+    x = spec.x.value
+    true = continuum(truth, x)
+    est = spec.cont.value
+    width = x  # pixels uniform in velocity: their width goes as x
+    dcont = (np.asarray(spec.get_column(DCONT_COLUMN).value, dtype=float)
+             if spec.has_aux_column(DCONT_COLUMN) else None)
+    out = {}
+    for name, mask in regions.items():
+        sel = mask & np.isfinite(est) & np.isfinite(true)
+        if not sel.any():
+            out[name] = None
+            continue
+        r = est[sel] / true[sel]
+        norm = np.sum(width[sel] * true[sel])
+        diff = width[sel] * (est[sel] - true[sel])
+        pull = None
+        if dcont is not None:
+            ok = sel & np.isfinite(dcont) & (dcont > 0)
+            pull = _stats((est[ok] - true[ok]) / dcont[ok])
+        out[name] = dict(n=int(sel.sum()), median=float(np.median(r)),
+                         p05=float(np.percentile(r, 5)),
+                         p95=float(np.percentile(r, 95)),
+                         dev=float(np.sum(diff) / norm),
+                         abs_dev=float(np.sum(np.abs(diff)) / norm), pull=pull)
+    return out
+
+
+def forest_truth(truth, tmap):
+    """What the truth leaves to constrain the continuum in the forest: the
+    mean true transmission and the fraction of pixels with T above
+    FOREST_FREE_T."""
+    rest = tmap.x_nm / (1 + truth.z_em)
+    t = 1.0 - total_depth(tmap)[(rest > LYB_NM) & (rest < LYA_NM)]
+    return dict(mean_t=float(np.mean(t)), frac_free=float(np.mean(t > FOREST_FREE_T)))
+
+
+def z_em_estimate(session):
+    """The z_em estimated by the chain, if it has an estimator (F153, PR
+    7b.3); None until then."""
+    return None
+
+
+def _decode_meta(meta, key):
+    value = meta.get(key) or {}
+    return json.loads(value) if isinstance(value, str) else dict(value)
+
+
+def candidate_list(spec):
+    """The candidates of identify_lines: series, z, region and score."""
+    meta = spec.meta
+    maps = {k: _decode_meta(meta, f"{k}_map_json")
+            for k in ("series", "z", "region", "score")}
+    return [dict(series=s, z=float(maps["z"][k]),
+                 region=int(float(maps["region"].get(k, 0) or 0)),
+                 score=float(maps["score"].get(k, np.nan)))
+            for k, s in maps["series"].items()]
+
+
+def _is_lyman(series):
+    return series.startswith("Ly")
+
+
+def _is_default_lya(cand):
+    """The Lyman-alpha of F51: assigned to a region without a test (score
+    0)."""
+    return cand["series"] == "Ly_a" and cand["score"] == 0.0
+
+
+def _matches_truth(cand, truth):
+    """A metal candidate with a true component of its series within
+    MATCH_KMS (associated absorbers included)."""
+    return any(c.series == cand["series"] and _dv(cand["z"], c.z) <= MATCH_KMS
+               for c in truth.components)
+
+
+def _line_pixels(cand, x):
+    """Pixels of the lines of a candidate (nearest pixel of each line in
+    the spectrum)."""
+    out = []
+    for t in transitions(cand["series"]):
+        lam = ATOM_DATA[t]["wave"] / 10.0 * (1 + cand["z"])
+        if x[0] <= lam <= x[-1]:
+            out.append(int(np.argmin(np.abs(x - lam))))
+    return out
+
+
+def telluric_false(truth, tmap, candidates):
+    """False candidates on tellurics, by series: no true absorber of the
+    series within MATCH_KMS (for H I: none of its pixels in an H I row of
+    :func:`dominant_row`), and a line on a pixel of telluric transmission
+    below TELLURIC_T. Counted apart from (and also in) the false ones of
+    identification_metrics."""
+    out = {}
+    if not tmap.depth["telluric"].any():
+        return out
+    tell = tmap.depth["telluric"] > 1.0 - TELLURIC_T
+    hi = _hi_rows(dominant_row(tmap))
+    for cand in candidates:
+        pixels = _line_pixels(cand, tmap.x_nm)
+        if _is_lyman(cand["series"]):
+            false = not any(hi[i] for i in pixels)
+        else:
+            false = not _matches_truth(cand, truth)
+        if false and any(tell[i] for i in pixels):
+            out[cand["series"]] = out.get(cand["series"], 0) + 1
+    return out
+
+
+def pixel_metrics(truth, tmap, spec, candidates):
+    """The absorbed pixels of the truth map against the regions and the
+    identifications of identify_lines.
+
+    Each pixel is in the row of the category that absorbs it most (or
+    ``none``, unabsorbed, counted only inside a region), and has one
+    outcome: ``undetected`` (in no region), ``unidentified`` (in a region
+    without candidates), ``lya_default_right`` or ``lya_default_wrong``
+    (the region has only the Lyman-alpha of F51: right if the pixel is in
+    the row ``forest`` or ``strong_hi``), ``right`` (a metal candidate of
+    the region matches a true component of its series and the pixel is in
+    the row ``metal``, or an H I candidate tested by the identification
+    and the pixel is in an H I row) or ``wrong``. The row decides, not any
+    absorption above ABSORBED_DEPTH: in the forest nearly every pixel has
+    some H I, also those of a BAL trough or of a metal line. Two tables: the pixels with total depth above
+    ABSORBED_DEPTH (``absorbed``) and above :func:`detectable_depth`
+    (``detectable``).
+    """
+    n = len(tmap.x_nm)
+    ids = (np.asarray(spec.get_column("abs_ids").value).astype(int)
+           if spec.has_aux_column("abs_ids") else np.zeros(n, dtype=int))
+    total = total_depth(tmap)
+    row = dominant_row(tmap)
+    metal_px = row == CATEGORIES.index("metal")
+    hi_px = _hi_rows(row)
+    by_region = {}
+    for cand in candidates:
+        by_region.setdefault(cand["region"], []).append(cand)
+    outcome = np.zeros(n, dtype=int)  # undetected
+    for rid in np.unique(ids[ids > 0]):
+        inside = ids == rid
+        cands = by_region.get(int(rid), [])
+        if not cands:
+            outcome[inside] = PIXEL_OUTCOMES.index("unidentified")
+            continue
+        if all(_is_default_lya(c) for c in cands):
+            outcome[inside] = np.where(hi_px[inside],
+                                       PIXEL_OUTCOMES.index("lya_default_right"),
+                                       PIXEL_OUTCOMES.index("lya_default_wrong"))
+            continue
+        metal_ok = any(not _is_lyman(c["series"]) and _matches_truth(c, truth)
+                       for c in cands)
+        hi_ok = any(_is_lyman(c["series"]) and not _is_default_lya(c) for c in cands)
+        right = (metal_ok & metal_px[inside]) | (hi_ok & hi_px[inside])
+        outcome[inside] = np.where(right, PIXEL_OUTCOMES.index("right"),
+                                   PIXEL_OUTCOMES.index("wrong"))
+    unabsorbed_in_region = (row == len(CATEGORIES)) & (ids > 0)
+    out = {}
+    for name, depth_min in (("absorbed", ABSORBED_DEPTH),
+                            ("detectable", detectable_depth(truth.snr))):
+        sel = (total > depth_min) | unabsorbed_in_region
+        table = {}
+        for r, row_name in enumerate(PIXEL_ROWS):
+            in_row = sel & (row == r)
+            if row_name == "none":
+                in_row &= ids > 0
+            table[row_name] = {o: int(np.sum(in_row & (outcome == k)))
+                               for k, o in enumerate(PIXEL_OUTCOMES)}
+        out[name] = table
+    return out
+
+
+def _truth_class(f, t):
+    """``good`` or ``pull_gt3`` for a matched component (any pull above 3,
+    or an error not finite or not positive)."""
+    for par, err in (("z", f.dz), ("logN", f.dlogN), ("b", f.db)):
+        if err is None or not np.isfinite(err) or err <= 0:
+            return "pull_gt3"
+        if abs(getattr(f, par) - getattr(t, par)) / err > 3:
+            return "pull_gt3"
+    return "good"
+
+
+def flag_confusion(fitted, classes):
+    """Counts of the fitted components by flag (CONFUSION_FLAGS, plus
+    ``any`` and ``none``) and class against the truth (TRUTH_CLASSES)."""
+    table = {k: dict.fromkeys(TRUTH_CLASSES, 0) for k in (*CONFUSION_FLAGS, "any", "none")}
+    for f, cls in zip(fitted, classes, strict=True):
+        flags = set(f.flags or ()) | ({"absurd_errors"} & set(_flags(f)))
+        flags |= {"nan_errors"} & set(_flags(f))
+        for k in flags & set(CONFUSION_FLAGS):
+            table[k][cls] += 1
+        table["any" if flags else "none"][cls] += 1
+    return table
 
 
 def run_point(point):
@@ -552,12 +885,25 @@ def run_point(point):
         spec = spec.with_properties(z_em=extra["z_em_used"])
     t_mock = time.time() - t0
     cont, ident, fit, times = run_chain(spec)
+    t0 = time.time()
+    tmap = truth_map(truth)
+    regions = continuum_regions(truth, tmap)
+    candidates = candidate_list(ident.spec)
+    z_est = z_em_estimate(fit)
+    phase7 = dict(
+        continuum=region_continuum_metrics(truth, cont.spec, regions),
+        forest_truth=forest_truth(truth, tmap),
+        dz_em_est_kms=(None if z_est is None else
+                       float((z_est - z_em) / (1 + z_em) * C_KMS)),
+        telluric_false=telluric_false(truth, tmap, candidates),
+        pixels=pixel_metrics(truth, tmap, ident.spec, candidates))
+    times["metrics"] = time.time() - t0
     return dict(
         snr=snr, resol=resol, z_em=z_em, seed=seed, strong=strong, **extra,
         n_pixels=len(cont.spec.x), times=dict(mock=t_mock, **times),
         continuum=continuum_metrics(truth, cont.spec),
         identification=identification_metrics(truth, systems, ident.spec),
-        fit=fit_metrics(truth, systems, fit.systs))
+        fit=fit_metrics(truth, systems, fit.systs), phase7=phase7)
 
 
 # --- Summary ------------------------------------------------------------
@@ -629,8 +975,68 @@ def summarize(records, key=None):
         for cat in PULL_CATEGORIES}
     out["fit"] = fit
     out["completeness_by_significance"] = completeness_by_significance(records)
+    if all("phase7" in r for r in records):
+        out["phase7"] = summarize_phase7(records)
     out["seconds"] = {k: float(np.sum([r["times"][k] for r in records]))
                       for k in records[0]["times"]}
+    return out
+
+
+def _median(values):
+    v = [x for x in values if x is not None]
+    return float(np.median(v)) if v else None
+
+
+def summarize_phase7(records):
+    """Pool the metrics of phase 7 (PR 7a.2): medians over the mocks for
+    the continuum and the forest, sums for the counts."""
+    out = {}
+    cont = {}
+    for region in CONTINUUM_REGIONS:
+        rs = [r["phase7"]["continuum"].get(region) for r in records]
+        rs = [m for m in rs if m]
+        pulls = [m["pull"] for m in rs if m["pull"]]
+        cont[region] = dict(
+            n_mocks=len(rs),
+            **{f"median_{k}": _median([m[k] for m in rs])
+               for k in ("median", "p05", "p95", "dev", "abs_dev")},
+            pull=(dict(median=_median([p["median"] for p in pulls]),
+                       sigma=_median([p["sigma"] for p in pulls]),
+                       frac_gt3=_median([p["frac_gt3"] for p in pulls]))
+                  if pulls else None))
+    out["continuum"] = cont
+    out["forest_truth"] = {k: _median([r["phase7"]["forest_truth"][k] for r in records])
+                           for k in ("mean_t", "frac_free")}
+    dz = [r["phase7"]["dz_em_est_kms"] for r in records
+          if r["phase7"]["dz_em_est_kms"] is not None]
+    out["z_em_estimate"] = (dict(**_stats(dz), frac_gt500=float(np.mean(np.abs(dz) > 500)))
+                            if dz else None)
+    tell = {}
+    for r in records:
+        for k, v in r["phase7"]["telluric_false"].items():
+            tell[k] = tell.get(k, 0) + v
+    out["telluric_false"] = tell
+    pixels = {}
+    for name in ("absorbed", "detectable"):
+        table = {row: {o: sum(r["phase7"]["pixels"][name][row][o] for r in records)
+                       for o in PIXEL_OUTCOMES} for row in PIXEL_ROWS}
+        fractions = {}
+        for row, counts in table.items():
+            n = sum(counts.values())
+            fractions[row] = ({o: c / n for o, c in counts.items()} if n else None)
+        pixels[name] = dict(counts=table, fractions=fractions)
+    out["pixels"] = pixels
+    conf = {k: {c: sum(r["fit"]["flag_confusion"][k][c] for r in records)
+                for c in TRUTH_CLASSES}
+            for k in records[0]["fit"]["flag_confusion"]}
+    n_bad = sum(conf[k][c] for k in ("any", "none") for c in ("pull_gt3", "spurious"))
+    rates = {}
+    for k, counts in conf.items():
+        n = sum(counts.values())
+        bad = counts["pull_gt3"] + counts["spurious"]
+        rates[k] = dict(n=n, frac_bad=bad / n if n else None,
+                        frac_of_bad=bad / n_bad if n_bad else None)
+    out["flag_confusion"] = dict(counts=conf, rates=rates)
     return out
 
 
@@ -745,6 +1151,78 @@ def compare(summary, baseline):
         print(f"{key:28s}{fmt(old):>12s}{fmt(value):>12s}{mark}")
 
 
+#: The reference of phase 7 (PR 7a.2): the summaries of the current
+#: algorithms on the grids robustness and full, each under its name (the
+#: baseline of full above stays that of phase 4)
+REFERENCE = ROOT / "benchmarks" / "results" / "validate_mocks_robustness_baseline.json"
+
+
+def pixel_fractions(pixels):
+    """Fraction of each outcome over the absorbed pixels of every
+    category (the row ``none`` left out)."""
+    counts = {o: sum(pixels["counts"][row][o] for row in CATEGORIES)
+              for o in PIXEL_OUTCOMES}
+    n = sum(counts.values())
+    return {o: c / n if n else None for o, c in counts.items()}
+
+
+def key_numbers_phase7(summary):
+    """The numbers of the metrics of phase 7 compared against the
+    reference."""
+    p7 = summary["phase7"]
+    out = {}
+    for region, c in p7["continuum"].items():
+        out[f"cont_{region}_median"] = c["median_median"]
+        out[f"cont_{region}_dev"] = c["median_dev"]
+    out["forest_mean_t"] = p7["forest_truth"]["mean_t"]
+    out["forest_frac_free"] = p7["forest_truth"]["frac_free"]
+    z = p7["z_em_estimate"]
+    out["z_em_est_sigma"] = z["sigma"] if z else None
+    out["telluric_false"] = sum(p7["telluric_false"].values())
+    for name in ("absorbed", "detectable"):
+        for o, f in pixel_fractions(p7["pixels"][name]).items():
+            out[f"pix_{name[:6]}_{o}"] = f
+    for k in ("any", "none"):
+        out[f"flags_{k}_frac_bad"] = p7["flag_confusion"]["rates"][k]["frac_bad"]
+    return out
+
+
+def compare_phase7(summary, reference):
+    """Print the numbers of phase 7 of a run next to the reference."""
+    now, before = key_numbers_phase7(summary), key_numbers_phase7(reference)
+    fmt = (lambda v: "-" if v is None else
+           (f"{v:.3f}" if isinstance(v, float) else str(v)))
+    print(f"{'':32s}{'reference':>12s}{'now':>12s}")
+    for key, value in now.items():
+        old = before.get(key)
+        mark = "" if old == value else "  *"
+        print(f"{key:32s}{fmt(old):>12s}{fmt(value):>12s}{mark}")
+
+
+def print_phase7(summary):
+    """Print the key numbers of the metrics of phase 7."""
+    p7 = summary.get("phase7")
+    if not p7:
+        return
+    for region, c in p7["continuum"].items():
+        if c["n_mocks"]:
+            print(f"continuum {region} ({c['n_mocks']} mocks): median ratio "
+                  f"{c['median_median']:.3f} (p05 {c['median_p05']:.3f}, p95 "
+                  f"{c['median_p95']:.3f}), deviation {c['median_dev']:+.3f} "
+                  f"(abs {c['median_abs_dev']:.3f})")
+    f = p7["forest_truth"]
+    print(f"forest: mean T {f['mean_t']:.3f}, T > {FOREST_FREE_T}: {f['frac_free']:.3f}")
+    print(f"false candidates on tellurics: {p7['telluric_false']}")
+    for name in ("absorbed", "detectable"):
+        print(f"pixels {name}: " + ", ".join(
+            f"{o} {v:.3f}" for o, v in pixel_fractions(p7["pixels"][name]).items()
+            if v is not None))
+    rates = p7["flag_confusion"]["rates"]
+    print("flags (n, bad fraction, fraction of the bad): " + ", ".join(
+        f"{k} ({r['n']}, {r['frac_bad']:.2f}, {r['frac_of_bad']:.2f})"
+        for k, r in rates.items() if r["n"]))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--grid", choices=sorted(GRIDS), default="full")
@@ -753,12 +1231,18 @@ def main():
     parser.add_argument("--save-baseline", action="store_true",
                         help="write the summary of a full run as the baseline")
     parser.add_argument("--compare", action="store_true",
-                        help="compare the summary of a full run with the baseline")
+                        help="compare the summary of a full run with the baseline, "
+                             "and the metrics of phase 7 of a full or robustness "
+                             "run with the reference")
+    parser.add_argument("--save-reference", action="store_true",
+                        help="write the summary of a full or robustness run in the "
+                             "reference of phase 7")
     args = parser.parse_args()
     t0 = time.time()
     result = run(args.grid, args.workers)
     result["seconds"] = time.time() - t0
     print_summary(result)
+    print_phase7(result["summary"]["all"])
     print(f"{result['seconds']:.0f} s")
     if args.json:
         with open(args.json, "w") as f:
@@ -766,6 +1250,14 @@ def main():
     if args.compare and args.grid == "full":
         with open(BASELINE) as f:
             compare(result["summary"]["all"], json.load(f)["summary"]["all"])
+    reference = json.loads(REFERENCE.read_text()) if REFERENCE.exists() else {}
+    if args.compare and args.grid in reference:
+        compare_phase7(result["summary"]["all"], reference[args.grid]["summary"]["all"])
+    if args.save_reference and args.grid in ("full", "robustness"):
+        from astrocook import __version__
+        reference[args.grid] = dict(astrocook_version=__version__, match_kms=MATCH_KMS,
+                                    summary=result["summary"])
+        REFERENCE.write_text(json.dumps(reference, indent=1))
     if args.save_baseline and args.grid == "full":
         from astrocook import __version__
         BASELINE.parent.mkdir(exist_ok=True)

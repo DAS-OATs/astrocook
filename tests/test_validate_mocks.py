@@ -1,6 +1,7 @@
 """The validation benchmark on mocks (benchmarks/validate_mocks.py, phase 4):
 its mocks, its detection limit and its metrics, on cases with a known
 answer, and a run on the smallest grid."""
+import json
 import sys
 from pathlib import Path
 
@@ -14,7 +15,10 @@ import validate_mocks as vm  # noqa: E402
 
 from astrocook.core.atomic_data import ATOM_DATA, STANDARD_MULTIPLETS  # noqa: E402
 from astrocook.core.structures import ComponentData  # noqa: E402
-from astrocook.mocks import LYMAN_SERIES, MockComponent, generate  # noqa: E402
+from astrocook.mocks import (  # noqa: E402
+    LYMAN_SERIES, BALTrough, MockComponent, MockTruth, generate,
+)
+from astrocook.mocks.truthmap import CATEGORIES, TruthMap  # noqa: E402
 from astrocook.mocks.physics import C_KMS  # noqa: E402
 
 
@@ -122,6 +126,16 @@ def test_identification_metrics():
     assert civ["n_false"] == 2 and civ["n_beyond_z_em"] == 1
     assert m["SiIV"]["n_found"] == 1 and m["SiIV"]["n_false"] == 0
     assert m["MgII"]["n_candidates"] == 0
+    # A false candidate on a CIV of the truth not in the systems (an
+    # associated absorber) is counted apart, and still false
+    associated = MockComponent("CIV", 2.15, 14.0, 10.0)
+    truth_assoc = MockTruth(components=[*truth.components, associated],
+                            **{k: getattr(truth, k) for k in (
+                                "lam_min_nm", "lam_max_nm", "dv_kms", "resol", "snr",
+                                "z_em", "seed")})
+    civ = vm.identification_metrics(truth_assoc, _systems(), _Spec(cands))["CIV"]
+    assert civ["n_false"] == 2 and civ["n_false_associated"] == 1
+    assert m["CIV"]["n_false_associated"] == 0
 
 
 def _comp(series, z, logN, b, dz=1e-5, dlogN=0.05, db=0.5, chi2=1.0):
@@ -187,9 +201,19 @@ def test_tiny_grid():
     result = vm.run("tiny")
     (record,) = result["records"]
     assert record["n_pixels"] > 1000
-    assert set(record["times"]) == {"mock", "continuum", "identify", "doublets"}
+    assert set(record["times"]) == {"mock", "continuum", "identify", "doublets",
+                                    "metrics"}
     s = result["summary"]["all"]
     assert s["n_mocks"] == 1
+    # The metrics of phase 7 on the grid full too (PR 7a.2)
+    p7 = s["phase7"]
+    assert p7["continuum"]["forest"]["n_mocks"] == 1
+    assert p7["continuum"]["bal"]["n_mocks"] == 0  # no BAL in full
+    assert 0 < p7["forest_truth"]["mean_t"] < 1
+    assert p7["z_em_estimate"] is None and p7["telluric_false"] == {}
+    fractions = vm.pixel_fractions(p7["pixels"]["absorbed"])
+    assert sum(fractions.values()) == pytest.approx(1.0)
+    assert set(vm.key_numbers_phase7(s)) >= {"cont_forest_median", "pix_detect_right"}
     assert 0.5 < s["continuum_red"]["median_of_medians"] < 1.5
     for species in vm.METALS:
         assert 0 <= s["identification"][species]["n_found"] <= vm.METAL_SYSTEMS[species]
@@ -384,6 +408,187 @@ def test_robustness_point(monkeypatch):
     assert record["z_em"] == 3.5
     assert record["z_em_used"] == vm.z_em_perturbed(30.0, 8900.0, 3.5, 2)[0]
     assert len(record["associated"]) == 3
-    assert set(record["times"]) == {"mock", "continuum", "identify", "doublets"}
+    assert set(record["times"]) == {"mock", "continuum", "identify", "doublets",
+                                    "metrics"}
     summary = vm.summarize([record, record], "case")
+    p7 = summary["combined"]["phase7"]
+    for region in ("dla_wings", "subdla_wings", "bal", "proximity", "emission_peaks"):
+        assert p7["continuum"][region]["n_mocks"] == 2, region
     assert set(summary) == {"combined"}
+
+
+# --- Metrics of phase 7 (PR 7a.2) -------------------------------------------
+
+def _tmap(x, **depths):
+    depth = {c: np.zeros(len(x)) for c in CATEGORIES}
+    depth.update({k: np.asarray(v, dtype=float) for k, v in depths.items()})
+    return TruthMap(np.asarray(x, dtype=float), depth)
+
+
+class _Column:
+    def __init__(self, value):
+        self.value = np.asarray(value)
+
+
+class _PixSpec:
+    """The parts of a spectrum the metrics of phase 7 read."""
+    def __init__(self, x, cont=None, columns=None, candidates=()):
+        self.x = _Column(x)
+        self.cont = _Column(cont if cont is not None else np.ones(len(x)))
+        self._columns = columns or {}
+        keys = [str(i) for i in range(len(candidates))]
+        self.meta = {f"{k}_map_json": {key: c[k] for key, c in zip(keys, candidates, strict=True)}
+                     for k in ("series", "z", "region", "score")}
+
+    def has_aux_column(self, name):
+        return name in self._columns
+
+    def get_column(self, name):
+        return _Column(self._columns[name])
+
+
+def test_detectable_depth():
+    assert vm.detectable_depth(10.0) == pytest.approx(3 / (10 * np.sqrt(2.5)))
+    assert vm.detectable_depth(100.0) == pytest.approx(0.019, abs=1e-3)
+    assert vm.detectable_depth(1e5) == vm.ABSORBED_DEPTH
+
+
+def test_dominant_row():
+    tmap = _tmap(np.arange(4.0), forest=[0.005, 0.3, 0.3, 0.0],
+                 bal=[0.0, 0.5, 0.1, 0.0], telluric=[0.008, 0.0, 0.0, 0.0])
+    row = vm.dominant_row(tmap)
+    names = [vm.PIXEL_ROWS[i] for i in row]
+    # Pixel 0: 0.013 in all, above the threshold, telluric the largest
+    assert names == ["telluric", "bal", "forest", "none"]
+
+
+def test_candidate_list():
+    cands = [dict(series="CIV", z=2.0, region=3, score=0.9),
+             dict(series="Ly_a", z=2.5, region=4, score=0.0)]
+    spec = _PixSpec(np.arange(3.0), candidates=cands)
+    spec.meta = {k: json.dumps(v) for k, v in spec.meta.items()}  # as stored
+    assert vm.candidate_list(spec) == cands
+
+
+def _metal_truth(snr=30.0):
+    return MockTruth(components=[MockComponent("CIV", 2.0, 14.0, 10.0)],
+                     lam_min_nm=400.0, lam_max_nm=500.0, dv_kms=5.0, resol=30000.0,
+                     snr=snr, z_em=3.0, seed=0)
+
+
+def test_pixel_metrics():
+    truth = _metal_truth()
+    x = np.arange(10.0)
+    #            0     1     2     3     4     5     6     7     8     9
+    forest = [0.5,  0.5,  0.5,  0.0,  0.0,  0.0,  0.5,  0.02, 0.0,  0.0]
+    metal = [0.0,  0.0,  0.0,  0.5,  0.5,  0.0,  0.0,  0.0,  0.0,  0.0]
+    bal = [0.0,  0.0,  0.0,  0.0,  0.0,  0.5,  0.0,  0.0,  0.0,  0.0]
+    ids = [0,    1,    2,    3,    4,    2,    5,    5,    0,    3]
+    cands = [dict(series="Ly_a", z=2.5, region=2, score=0.0),     # F51
+             dict(series="CIV", z=2.0, region=3, score=0.9),      # true
+             dict(series="CIV", z=2.3, region=4, score=0.9),      # false
+             dict(series="Ly_a", z=2.6, region=5, score=0.8)]     # tested
+    tmap = _tmap(x, forest=forest, metal=metal, bal=bal)
+    spec = _PixSpec(x, columns={"abs_ids": ids}, candidates=cands)
+    m = vm.pixel_metrics(truth, tmap, spec, vm.candidate_list(spec))
+    t = m["absorbed"]
+    assert t["forest"]["undetected"] == 1                       # 0
+    assert t["forest"]["unidentified"] == 1                     # 1: region 1, no candidates
+    assert t["forest"]["lya_default_right"] == 1                # 2
+    assert t["bal"]["lya_default_wrong"] == 1                   # 5
+    assert t["metal"]["right"] == 1 and t["metal"]["wrong"] == 1  # 3, 4
+    assert t["forest"]["right"] == 2                            # 6, 7
+    assert t["none"]["right"] == 0 and t["none"]["wrong"] == 1  # 9: region 3, unabsorbed
+    assert sum(t["none"].values()) == 1                         # 8 not counted
+    # Above 3 sigma at S/N 30 (0.063): pixel 7 (0.02) drops out
+    assert m["detectable"]["forest"]["right"] == 1
+
+
+def test_telluric_false():
+    truth = _metal_truth()
+    lam_civ = ATOM_DATA["CIV_1548"]["wave"] / 10.0
+    x = np.linspace(600.0, 640.0, 4001)
+    z_false = 615.0 / lam_civ - 1
+    z_lya = 630.0 / (ATOM_DATA["Ly_a"]["wave"] / 10.0) - 1
+    tell = np.where(np.abs(x - 615.0) < 0.05, 0.3, 0.0)
+    tell += np.where(np.abs(x - 630.0) < 0.05, 0.3, 0.0)
+    cands = [dict(series="CIV", z=z_false, region=1, score=0.9),
+             dict(series="Ly_a", z=z_lya, region=2, score=0.0),
+             dict(series="CIV", z=620.0 / lam_civ - 1, region=3, score=0.9)]  # no telluric
+    assert vm.telluric_false(truth, _tmap(x, telluric=tell), cands) == {"CIV": 1, "Ly_a": 1}
+    # The Lyman-alpha is not false where the forest dominates
+    forest = np.where(np.abs(x - 630.0) < 0.05, 0.6, 0.0)
+    assert vm.telluric_false(truth, _tmap(x, telluric=tell, forest=forest),
+                             cands) == {"CIV": 1}
+    assert vm.telluric_false(truth, _tmap(x), cands) == {}
+
+
+def test_continuum_regions():
+    z_em = 3.0
+    dla = MockComponent(LYMAN_SERIES, 2.8, 20.8, 20.0)
+    truth = MockTruth(components=[dla], lam_min_nm=104.0 * 4, lam_max_nm=160.0 * 4,
+                      dv_kms=20.0, resol=8900.0, snr=30.0, z_em=z_em, seed=0,
+                      proximity_kms=2000.0, emission_lines=vm.QSO_EMISSION_LINES,
+                      bal_troughs=[BALTrough(5000.0, 9000.0, 1.0)])
+    from astrocook.mocks import truth_map
+    tmap = truth_map(truth)
+    r = vm.continuum_regions(truth, tmap)
+    x = tmap.x_nm
+    lya_dla = vm.LYA_NM * (1 + dla.z)
+    wings = x[r["dla_wings"]]
+    assert wings.size and not r["subdla_wings"].any()
+    # The core is excluded, the wings are on both sides of it
+    assert not r["dla_wings"][np.argmin(np.abs(x - lya_dla))]
+    assert wings.min() < lya_dla < wings.max()
+    assert r["bal"].any() and r["emission_peaks"].any()
+    # The peak of Ly-a emission is in, half a FWHM (2000 km/s) and beyond not
+    lya_em = vm.LYA_NM * (1 + z_em)
+    i = np.argmin(np.abs(x - lya_em))
+    assert r["emission_peaks"][i]
+    assert not r["emission_peaks"][np.argmin(np.abs(x - lya_em * (1 + 2100 / C_KMS)))]
+    prox = x[r["proximity"]]
+    assert prox.max() <= lya_em and prox.min() == pytest.approx(
+        lya_em * np.exp(-2000.0 / C_KMS), rel=1e-4)
+
+
+def test_region_continuum_metrics():
+    truth = _metal_truth()
+    x = np.linspace(400.0, 500.0, 101)
+    true = vm.continuum(truth, x)
+    regions = {"a": x < 450, "b": x >= 450, "empty": np.zeros(len(x), dtype=bool)}
+    m = vm.region_continuum_metrics(truth, _PixSpec(x, cont=true), regions)
+    assert m["empty"] is None
+    assert m["a"]["median"] == pytest.approx(1.0) and m["a"]["dev"] == pytest.approx(0.0)
+    assert m["a"]["pull"] is None  # no dcont
+    est = true * np.where(x < 450, 0.9, 1.0)
+    dcont = 0.05 * true
+    m = vm.region_continuum_metrics(truth, _PixSpec(x, cont=est, columns={"dcont": dcont}),
+                                    regions)
+    assert m["a"]["dev"] == pytest.approx(-0.1) and m["a"]["abs_dev"] == pytest.approx(0.1)
+    assert m["a"]["pull"]["median"] == pytest.approx(-2.0)
+    assert m["b"]["pull"]["median"] == pytest.approx(0.0)
+
+
+def test_forest_truth():
+    truth = _metal_truth()
+    x = np.array([400.0, 412.0, 420.0, 430.0, 500.0])  # rest 100-125 nm at z_em 3
+    m = vm.forest_truth(truth, _tmap(x, forest=[0.0, 0.5, 0.02, 0.1, 0.9]))
+    # Pixels 1-3 are in the forest (rest 103-107.5 nm)
+    assert m["mean_t"] == pytest.approx(np.mean([0.5, 0.98, 0.9]))
+    assert m["frac_free"] == pytest.approx(1 / 3)
+
+
+def test_flag_confusion():
+    true = [dict(species="CIV", z=2.0, components=[MockComponent("CIV", 2.0, 14.0, 10.0)]),
+            dict(species="CIV", z=2.3, components=[MockComponent("CIV", 2.3, 14.0, 10.0)])]
+    good = _comp("CIV", 2.0, 14.02, 10.2)
+    bad = ComponentData(id=2, z=2.3, dz=1e-5, logN=14.5, dlogN=0.05, b=10.0, db=0.5,
+                        series="CIV", chi2=1.0, flags=("logN_at_upper_bound",))
+    spurious = ComponentData(id=3, z=2.6, dz=1e-5, logN=12.0, dlogN=3.0, b=1.0, db=0.5,
+                             series="CIV", chi2=1.0, flags=("b_at_lower_bound",))
+    m = vm.fit_metrics(None, true, _Systs([good, bad, spurious]))
+    t = m["flag_confusion"]
+    assert t["none"] == dict(good=1, pull_gt3=0, spurious=0)
+    assert t["logN_at_upper_bound"] == dict(good=0, pull_gt3=1, spurious=0)
+    assert t["b_at_lower_bound"]["spurious"] == 1 and t["absurd_errors"]["spurious"] == 1
+    assert t["any"] == dict(good=0, pull_gt3=1, spurious=1)
