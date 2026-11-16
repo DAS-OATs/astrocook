@@ -229,10 +229,14 @@ Phases 0, 1, 1-bis, 2, 2-bis, 3, 3-bis, 4, 5, 5-bis, 6, 6-bis, 6-ter and
 each in `ROADMAP.md`, the detail in `ROADMAP_HISTORY.md`). Release 2.7.0
 (13 November 2026; 2.6.0 was 10 November) is published by Guido on GitHub
 with the macOS app, not on PyPI. The
-results on the mock benchmark are those of 2.2.0
-(`benchmarks/results/validate_mocks_baseline.json`) except `metals_auto`,
-which the benchmark does not run (phase 6-ter, PR 7-quater): phases that
-must not change them are checked with `validate_mocks.py --compare`.
+reference of the mock benchmark, on both grids (`full` and `robustness`),
+is `benchmarks/results/validate_mocks_robustness_baseline.json`,
+regenerated in phase 7, PR 7c.1 (the scoring of the doublets, F68): a PR
+that must not change the results is checked with
+`validate_mocks.py --compare` against it; the results of 2.2.0
+(`validate_mocks_baseline.json`) are kept as history
+(`--compare-baseline`). `metals_auto` is not run by the benchmark (phase
+6-ter, PR 7-quater).
 
 Phase 6-quater (review of the recipe parameters, PRs #752-#768, closed in
 PR 13 on 13 November 2026) left: aliases for renamed parameters and
