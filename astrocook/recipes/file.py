@@ -74,6 +74,9 @@ def _spectrum_table(spec, columns) -> Table:
             np.asarray(getattr(q, 'value', q)),
             unit=None if unit == au.dimensionless_unscaled else unit)
     table.meta['z_em'] = float(spec._data.z_em)
+    if spec._data.z_ref is not None:
+        # The zero of an axis in velocity (F84, phase 7-bis, B6)
+        table.meta['z_ref'] = float(spec._data.z_ref)
     return table
 
 

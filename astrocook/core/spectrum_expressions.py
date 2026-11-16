@@ -238,7 +238,8 @@ class ExpressionsMixin(HostBase):
             y=core_cols['y'], dy=core_cols['dy'],
             aux_cols=aux_cols,
             meta=deepcopy(self._data.meta),
-            z_em=self._data.z_em   # Propagate
+            z_em=self._data.z_em,   # Propagate
+            z_ref=self._data.z_ref
         )
 
         # 8. Return a NEW Spectrum instance
@@ -311,7 +312,8 @@ class ExpressionsMixin(HostBase):
             y=core_cols['y'], dy=core_cols['dy'],
             aux_cols=aux_cols,
             meta=deepcopy(self._data.meta),
-            z_em=self._data.z_em   # Propagate
+            z_em=self._data.z_em,   # Propagate
+            z_ref=self._data.z_ref
         )
 
         # 8. Return a NEW Spectrum instance
@@ -440,7 +442,8 @@ class ExpressionsMixin(HostBase):
             dy=new_data_cols.pop('dy'),
             aux_cols=new_data_cols, # Remaining items are aux_cols
             meta=deepcopy(self._data.meta),
-            z_em=self._data.z_em
+            z_em=self._data.z_em,
+            z_ref=self._data.z_ref
         )
         
         # 6. Return NEW Spectrum

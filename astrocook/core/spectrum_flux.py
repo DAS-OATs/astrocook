@@ -295,7 +295,8 @@ class FluxMixin(HostBase):
             y=core_cols['y'], dy=core_cols['dy'],
             aux_cols=aux_cols,
             meta=deepcopy(self._data.meta),
-            z_em=self._data.z_em
+            z_em=self._data.z_em,
+            z_ref=self._data.z_ref
         )
 
         # 8. Return a NEW Spectrum instance

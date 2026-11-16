@@ -102,3 +102,20 @@ def test_system_ticks_in_velocity_with_z_em(window):
     assert len(ticks["selected"]) == 3
     lo, hi = window.plot_viewer.canvas.axes.get_xlim()
     assert lo <= ticks["x"].min() and ticks["x"].max() <= hi
+
+
+def test_system_ticks_in_velocity_follow_the_z_ref_of_the_axis(window):
+    """The axis converted at a z_ref that is not z_em, or z_em changed
+    after the conversion: the ticks at the z_ref of the axis (F84, phase
+    7-bis, B6; before, at z_em, so they were off by the difference)."""
+    state = window.active_history.current_state
+    at_2 = state.edit.x_convert(z_ref="2.0", xunit="km/s")
+    expected = _ticks(window.plot_viewer, at_2, _selection(state))
+    moved = at_2.edit.set_properties(z_em="4.072")
+    ticks = _ticks(window.plot_viewer, moved, _selection(state))
+    np.testing.assert_array_equal(ticks["id"], expected["id"])
+    np.testing.assert_allclose(ticks["x"], expected["x"], rtol=0, atol=1e-6)
+    with_z_em = state.edit.set_properties(z_em="4.072")
+    converted = with_z_em.edit.x_convert(z_ref="2.0", xunit="km/s")
+    np.testing.assert_allclose(_ticks(window.plot_viewer, converted, _selection(state))["x"],
+                               expected["x"], rtol=0, atol=1e-6)

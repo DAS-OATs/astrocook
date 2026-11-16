@@ -271,7 +271,11 @@ def rebin_spectrum(
     """
     # 1. Prepare Units and Arrays
     xunit_target = dx.unit
-    z_ref = spec_data.z_em if spec_data.z_em else 0.0
+    # The zero of a velocity axis (F84): z_em when it is not kept
+    if spec_data.z_ref is not None:
+        z_ref = spec_data.z_ref
+    else:
+        z_ref = spec_data.z_em if spec_data.z_em else 0.0
 
     def _to_target_val(q: au.Quantity):
         if q is None: return None

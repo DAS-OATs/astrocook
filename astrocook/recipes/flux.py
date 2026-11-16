@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Optional, Union
 from astrocook.core.column_names import CORE_COLUMNS as CORE_COLUMN_NAMES, internal_column, is_core_column
 from astrocook.core.photometry import STANDARD_FILTERS
 from astrocook.recipes.errors import InvalidParameter, RecipeFailed
-from astrocook.recipes._combine import check_axes, flux_relation
+from astrocook.recipes._combine import check_axes, check_velocity_zeros, flux_relation
 from astrocook.recipes._sessions import is_session, open_session
 from astrocook.recipes._spectrum import spec_of
 from astrocook.recipes.params import typed_recipe
@@ -383,6 +383,7 @@ class RecipeFlux:
         spec, ref = spec_of(self._session), spec_of(reference)
         ref_name = reference.name if is_session(reference_session) else reference_session
         check_axes(spec.x.unit, ref.x.unit, self._session.name, ref_name)
+        check_velocity_zeros(spec, ref, self._session.name, ref_name)
         how = flux_relation(spec.y.unit, ref.y.unit, self._session.name, ref_name, scaled=True)
         new_spec = spec.equalize_to_reference(ref, order=order)
         if how == 'declare':
