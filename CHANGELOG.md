@@ -1,5 +1,8 @@
 ## [Unreleased]
 
+### Added
+- **Absorbers > Evaluate Model...** (`absorbers.evaluate_model`; MCP tool `absorbers_evaluate_model`; phase 7, PR 7a.5, F154): measures the current model on a fixed set of pixels, without fitting, so that two alternative models can be compared on the same pixels. The pixels are wavelength ranges (nm), a mask column, or both; the model is always the whole list of components, and a selection (series, redshift range, `uuids`) decides only which components are counted. It reports the chi2, the number of pixels, the free parameters `k` (frozen and linked parameters do not count), the reduced chi2, AIC, AICc, BIC and the SpIC of Webb et al. (2021, MNRAS 501, 2268) with f = 1/2 (and f = 1, 0), the mean of the normalized residuals and their fraction beyond 3 sigma, in the log and in `extra['evaluation']` of the result; optionally it writes the normalized residuals in a column. No other result changes: the chi2 that `metals_auto` compares goes through the same function, to the bit.
+
 ## [2.7.0] - 2026-11-13
 
 Phase 6-quater of the consolidation: the review of the parameters and interfaces of the recipes, recipe by recipe, for the recipes that phase 7 does not rewrite (file, flux, edit and the manual fits of the absorbers). A minor version: the interface of the scripts changes (names, refusals), the results of a valid call do not but in the cases below. What changes for a user or a script:

@@ -65,6 +65,23 @@ def test_the_ions_found_are_kept(civ_and_siiv, caplog):
     assert trials == [0, 20, 40, 60, 80, 100]
 
 
+def test_chi2_on_fit_pixels_is_unchanged(civ_and_siiv):
+    # Characterization (phase 7, PR 7a.5): the chi2 that metals_auto compares
+    # now goes through VoigtFitter.normalized_residuals, shared with the
+    # evaluation of a model (F154); the values of master before it
+    session = civ_and_siiv.absorbers.add_component("SiIV", str(Z), "13.0", "10.0")
+    systs, spec = session.systs, session.spec
+    uuid = systs.components[-1].uuid
+    fitter = VoigtFitter(spec, systs)
+    fitted, model, _ = fitter.fit(max_nfev=100, z_window_kms=20.0, verbose=0)
+    chi2_with, n_pix = fitter.chi2_on_fit_pixels(model)
+    _, without = VoigtFitter(spec, fitted.delete_component(uuid=uuid)).compute_model_flux()
+    chi2_without, _ = fitter.chi2_on_fit_pixels(without)
+    assert n_pix == 88
+    assert chi2_with == pytest.approx(86.62223896456908, rel=1e-9)
+    assert chi2_without == pytest.approx(7018.995304906754, rel=1e-9)
+
+
 @pytest.mark.parametrize("params, reason", [
     # b of the SiIV is 12: a bound of 10 holds it there
     ({"max_b": "10"}, "b at its bound (10 km/s)"),

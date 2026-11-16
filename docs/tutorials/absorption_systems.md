@@ -257,3 +257,40 @@ Astrocook provides a dedicated tool to filter these out:
 2.  **Min logN:** Components weaker than this threshold (default `11.5`) are removed.
 3.  **Min/Max b:** Components narrower than `min_b` (default `3.0` km/s) are removed; those broader than `max_b` (default `80.0` km/s) are removed too if they are also weak (logN < 13), unless the combined check is turned off, which removes them all.
 4.  **Combined Check:** By default (`True`), broad lines are only removed if they are *also* very weak (`logN < 13.0`). This protects genuine broad features like DLA wings or OVI absorbers from being deleted.
+### Evaluating a Model
+
+**Absorbers > Evaluate Model...** measures the current model on a fixed set of pixels, without fitting, so that two alternative models (e.g. two identifications of the same lines, or a model before and after a component is added) can be compared on the same pixels. The pixels are given as wavelength ranges in nm (`x_ranges`, e.g. `403.5-407.5, 448.5-450.5`), as a mask column (`mask_col`, True for the pixels to use), or both (their intersection); with neither, the whole spectrum. Pixels without a valid flux or error are left out.
+
+The model is always the whole list of components. A selection (by series, by a redshift range, or, in scripts and for agents, by `uuids`) decides only which components are *counted*: their free parameters and their terms of the SpIC. The free parameters `k` are those a fit would vary: frozen parameters and parameters linked to another one do not count.
+
+The result, in the log and (in scripts and for agents) in `extra['evaluation']` of the result:
+
+| Field | Meaning |
+|---|---|
+| `chi2`, `n_pixels` | $\chi^2 = \sum_i ((F_i - M_i)/\sigma_i)^2$ on the pixels, and their number $n$ |
+| `k`, `dof`, `chi2_reduced` | free parameters of the counted components, $n - k$, $\chi^2/(n-k)$ |
+| `aic`, `aicc`, `bic` | $\chi^2 + 2k$; $\mathrm{AIC} + 2k(k+1)/(n-k-1)$; $\chi^2 + k\ln n$ |
+| `spic`, `spic_a`, `spic_b` | the SpIC of Webb et al. (2021) with $f = 1/2$, $1$, $0$ |
+| `resid_mean`, `frac_beyond_3sigma` | mean of the normalized residuals, fraction of them beyond 3 |
+| `velocity_components` | the components grouped for the SpIC, with their $k_a$ and $R_a$ |
+
+$\chi^2$ stands for $-2\ln L$: its constant is the same for models on the same pixels, so the differences of the criteria between two models are what matters, not their values.
+
+**SpIC** (Webb, Lee, Carswell & Milaković 2021, MNRAS 501, 2268): AICc and BIC penalize every parameter with the total number of pixels, while a narrow, weak line constrains its parameters only on a few pixels. The SpIC replaces that number, for each velocity component $a$, with
+
+$$R_a = \sum_i \frac{1 - I^a_i}{\sigma_i},$$
+
+the depth of its own profile $I^a$ (convolved with the resolution) over the error of the normalized flux, summed over the pixels; then
+
+$$\mathrm{SpIC} = \chi^2 + \sum_a \left[\frac{2 f k_a R_a}{R_a - k_a - 1} + (1 - f)\, k_a \ln R_a\right],$$
+
+with $k_a$ the free parameters of $a$ and $R_a$ bounded from below by $k_a + 2$. $f = 1$ (`spic_a`) is the analogue of AICc, $f = 0$ (`spic_b`) of BIC; the paper finds their hybrid, $f = 1/2$ (`spic`), the best compromise. A velocity component of the paper is a redshift shared by several ions: here, the components whose redshifts are linked to each other (Parameter Linking, above), or a component alone. It is not the group of a fit, which also joins the blended components.
+
+With **Residuals column** set, the normalized residuals $(F - M)/\sigma$ are written in a column of the spectrum (NaN out of the pixels), to be plotted or used as a mask.
+
+```python
+from astrocook.recipes.result import run
+
+result = run(session, "absorbers.evaluate_model", x_ranges="403.5-407.5, 448.5-450.5")
+print(result.extra["evaluation"]["spic"])
+```

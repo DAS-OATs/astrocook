@@ -209,6 +209,28 @@ def _methods_refit_all(p):
             f"of the model. The fit allowed {fit_bounds(p)}")
 
 
+def _methods_evaluate_model(p):
+    pixels = []
+    if p.given('x_ranges'):
+        pixels.append(f"in {p['x_ranges']} nm")
+    if p.given('mask_col'):
+        pixels.append(f"where '{p['mask_col']}' is true")
+    where = " and ".join(pixels) if pixels else "on the whole spectrum"
+    counted = []
+    if p.given('uuids'):
+        n = len(p.raw('uuids') or [])
+        counted.append(f"{n} selected component{'s' if n != 1 else ''}")
+    if p.given('series'):
+        counted.append(f"the components of {series_list(p.raw('series'))}")
+    if p.given('z_min') or p.given('z_max'):
+        lo = p['z_min'] if p.given('z_min') else "-"
+        hi = p['z_max'] if p.given('z_max') else "-"
+        counted.append(f"the components at z {lo} to {hi}")
+    which = (" counting " + ", ".join(counted)) if counted else ""
+    return (f"The model was evaluated on the pixels {where}{which}, without fitting "
+            f"(chi2, AIC, AICc, BIC and the SpIC of Webb et al. 2021){p.menu}")
+
+
 def _methods_clean_negligible(p):
     broad = (f"b > {p['max_b']} km/s and log N < 13" if p.raw('combined_check')
              else f"b > {p['max_b']} km/s")
@@ -528,6 +550,24 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "max_logN", "type": float, "default": 23.0, "gt": 10, "max": 23, "doc": "Upper bound on logN in the fits (log cm^-2)."},
             {"name": "region_limit", "type": str, "default": "None", "doc": "Fit only the components in a region: 'red_side', 'lya_forest', 'all_ly_forest', or 'None' for all.", "choices": ["None", "lya_forest", "all_ly_forest", "red_side"]},
             {"name": "selected_uuids", "type": list, "default": None, "optional": True, "gui_hidden": True, "doc": "Fit only these components, with their groups (None: all)."}
+        ],
+    },
+    "evaluate_model": {
+        "methods": _methods_evaluate_model,
+        "references": ("W21",),
+        "brief": "Evaluate the model on fixed pixels.",
+        "url": "tutorials/absorption_systems.html#evaluating-a-model",
+        "menu": "Absorbers > &Evaluate Model",
+        "requires": ("resolution", "continuum"),
+        "details": "Measures the whole model on fixed pixels, without fitting: chi2, k, AIC, AICc, BIC, SpIC (Webb et al. 2021) and the residuals. The selection decides only which components are counted.",
+        "params": [
+            {"name": "x_ranges", "type": str, "default": "", "doc": "Comma-separated wavelength ranges (nm) of the pixels, e.g. '403.5-407.5, 448.5-450.5'; empty: the whole spectrum (or the mask alone)."},
+            {"name": "mask_col", "type": str, "default": "", "doc": "Column of a mask (True for the pixels to use), combined with the ranges; empty: no mask.", "kind": "column"},
+            {"name": "uuids", "type": list, "default": None, "optional": True, "gui_hidden": True, "doc": "Identifiers of the components counted (None: all, or those of series and z_min, z_max)."},
+            {"name": "series", "type": str, "default": "", "doc": "Count only the components of these series, comma-separated, e.g. 'CIV,SiIV'; empty: all."},
+            {"name": "z_min", "type": float, "default": None, "optional": True, "gt": -1, "doc": "Count only the components at this redshift or above."},
+            {"name": "z_max", "type": float, "default": None, "optional": True, "gt": -1, "doc": "Count only the components at this redshift or below."},
+            {"name": "residuals_col", "type": str, "default": "", "doc": "Column where the normalized residuals (flux - model) / error are written, NaN out of the pixels; empty: none."}
         ],
     },
     "clean_negligible": {
@@ -2691,6 +2731,129 @@ class RecipeAbsorbers:
         else:
             logger.info("No components to remove.")
             return self._session
+
+    @typed_recipe
+    def evaluate_model(self, x_ranges: str = "", mask_col: str = "",
+                       uuids: Optional[list] = None, series: str = "",
+                       z_min: Optional[float] = None, z_max: Optional[float] = None,
+                       residuals_col: str = "") -> 'Session':
+        """
+        Evaluate the model on a fixed set of pixels, without fitting (F154).
+
+        The model is the whole system list; the selection (``uuids``,
+        ``series``, ``z_min``, ``z_max``, all combined) decides only which
+        components are counted: their free parameters (k: frozen and linked
+        parameters do not count) and their terms of the SpIC (Webb et al.
+        2021, MNRAS 501, 2268; see :mod:`astrocook.fitting.model_evaluation`).
+        Delegates to :func:`astrocook.fitting.model_evaluation.evaluate_model`.
+
+        Parameters
+        ----------
+        x_ranges : str, optional
+            Comma-separated wavelength ranges in nm, ``'min-max, min-max'``.
+            Defaults to ``""``: the whole spectrum (or the mask alone).
+        mask_col : str, optional
+            Column of a mask, True for the pixels to use, combined with the
+            ranges. Defaults to ``""``: no mask.
+        uuids : list of str, optional
+            The components counted. Defaults to ``None``: all.
+        series : str, optional
+            Count only the components of these series (comma-separated).
+            Defaults to ``""``: all.
+        z_min, z_max : float, optional
+            Count only the components within this redshift range.
+            Defaults to ``None``: no limit.
+        residuals_col : str, optional
+            Column for the normalized residuals, NaN out of the pixels.
+            Defaults to ``""``: none.
+
+        Returns
+        -------
+        Session
+            The same session, or a new one with the column of the residuals.
+            The numbers are reported in ``extra['evaluation']`` of the result
+            (:func:`astrocook.recipes.result.run`) and logged.
+        """
+        from astrocook.fitting.model_evaluation import evaluate_model
+
+        spec = spec_of(self._session)
+        pixels = _evaluation_pixels(spec, x_ranges, mask_col)
+        if residuals_col.strip() in CORE_COLUMNS:
+            raise InvalidParameter(f"residuals_col: {residuals_col!r} is a column of the "
+                                   "spectrum itself; give another name")
+        systs = self._session.systs
+        counted = _counted_components(self._session, systs, uuids, series, z_min, z_max)
+        selected = uuids is not None or series.strip() or z_min is not None or z_max is not None
+        if selected and not counted:
+            logger.warning("No component matches the selection: none is counted (k = 0).")
+        try:
+            ev = evaluate_model(spec, systs, pixels, counted)
+        except ValueError as e:
+            raise InvalidParameter(f"x_ranges, mask_col: {e}") from None
+        report("evaluation", ev.as_dict())
+
+        def fmt(v):
+            return "n/a" if v is None else f"{v:.2f}"
+        logger.info(f"Model evaluated on {ev.n_pixels} pixels, {len(ev.components)} "
+                    f"component{'s' if len(ev.components) != 1 else ''} counted: chi2 = "
+                    f"{ev.chi2:.2f}, k = {ev.k}, reduced chi2 = {fmt(ev.chi2_reduced)}, "
+                    f"AIC = {ev.aic:.2f}, AICc = {fmt(ev.aicc)}, BIC = {fmt(ev.bic)}, "
+                    f"SpIC = {ev.spic:.2f}; mean residual {fmt(ev.resid_mean)}, "
+                    f"{100 * (ev.frac_beyond_3sigma or 0.0):.1f}% beyond 3 sigma.")
+        if not residuals_col.strip():
+            return self._session
+        new_spec = spec.update_column(residuals_col.strip(), ev.residuals,
+                                      unit=au.dimensionless_unscaled,
+                                      description="Normalized residuals of the model")
+        return self._session.with_new_spectrum(new_spec)
+
+
+#: The columns of the spectrum itself, which the residuals cannot replace
+CORE_COLUMNS = ("x", "xmin", "xmax", "y", "dy", "cont", "model")
+
+
+def _evaluation_pixels(spec, x_ranges: str, mask_col: str) -> np.ndarray:
+    """The pixels of ``evaluate_model``: in the ranges (all if none) and in
+    the mask (if any)."""
+    x = spec.x.to_value(au.nm)
+    pixels = np.ones(len(x), dtype=bool)
+    if x_ranges.strip():
+        in_ranges = np.zeros(len(x), dtype=bool)
+        for part in x_ranges.split(","):
+            try:
+                lo, hi = (float(v) for v in part.strip().split("-"))
+            except ValueError:
+                raise InvalidParameter(f"x_ranges: {part.strip()!r} is not a range "
+                                       "'min-max' in nm") from None
+            if not (np.isfinite(lo) and np.isfinite(hi) and lo < hi):
+                raise InvalidParameter(f"x_ranges: {part.strip()!r} is not a range "
+                                       "'min-max' with min < max")
+            in_ranges |= (x >= lo) & (x <= hi)
+        pixels &= in_ranges
+    if mask_col.strip():
+        col = spec.get_column(mask_col.strip())
+        if col is None:
+            raise InvalidParameter(f"mask_col: the spectrum has no column {mask_col.strip()!r}")
+        values = np.asarray(getattr(col, 'value', col))
+        pixels &= np.isfinite(values) & (values != 0) if values.dtype.kind == 'f' \
+            else values.astype(bool)
+    return pixels
+
+
+def _counted_components(session, systs, uuids, series: str, z_min, z_max) -> list:
+    """The components counted by ``evaluate_model``: those of ``uuids`` (all
+    if None) of the series and in the redshift range."""
+    if uuids is not None:
+        check_uuids(session, uuids, "uuids")
+    if z_min is not None and z_max is not None and z_min > z_max:
+        raise InvalidParameter(f"z_min, z_max: {z_min} is above {z_max}")
+    wanted = {s.strip() for s in series.split(",") if s.strip()}
+    chosen = set(uuids) if uuids is not None else None
+    return [c.uuid for c in systs.components
+            if (chosen is None or c.uuid in chosen)
+            and (not wanted or c.series in wanted or c.series == series.strip())
+            and (z_min is None or c.z >= z_min) and (z_max is None or c.z <= z_max)]
+
 
 # Old names (phase 6-quater, PR 6): see astrocook/_renamed.py
 __getattr__ = renamed(__name__, {"RecipeAbsorbersV2": "RecipeAbsorbers"})

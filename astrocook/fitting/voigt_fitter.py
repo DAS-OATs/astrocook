@@ -32,6 +32,11 @@ COMPONENT_FLAGS = ('z_at_window', 'logN_at_lower_bound', 'logN_at_upper_bound',
 AT_BOUND_RTOL = 1e-3
 
 
+def chi2_of(residuals: np.ndarray) -> float:
+    """The chi2 of normalized residuals, the non-finite ones left out."""
+    return float(np.sum(residuals[np.isfinite(residuals)] ** 2))
+
+
 def _transitions(series: str) -> List[str]:
     """Transitions of a series in the atomic data (multiplet, single line
     or comma-separated list)."""
@@ -319,16 +324,8 @@ class VoigtFitter:
         # with its own LSF and averaged over the pixel (#526)
         final_model = np.ones_like(self._x_calc)
         
-        for (res_val, res_unit), tau_arr in tau_total_dict.items():
-            flux_fine = np.exp(-tau_arr)
-            
-            if res_unit == 'column' and self._resol_calc is not None:
-                r, key = self._resol_calc, 'column'
-            elif res_val > 0:
-                r, key = res_val, res_val
-            else:
-                r, key = None, 'none'
-            final_model *= self._lsf.apply(flux_fine, r, key=key)
+        for res_key, tau_arr in tau_total_dict.items():
+            final_model *= self._convolved(res_key, tau_arr)
             
         return final_model
 
@@ -1084,14 +1081,68 @@ class VoigtFitter:
         logger.debug(f"Fit complete. Reduced chi2 (constraining pixels): {red_chi2:.2f}.")
         return new_system_list, final_model_flux, res
 
+    def normalized_residuals(self, model_flux: np.ndarray, mask: np.ndarray) -> np.ndarray:
+        """(flux - model) / error on the pixels ``mask``, for a model flux in
+        the units of :meth:`fit` and :meth:`compute_model_flux` (on the whole
+        spectrum). The error is the one of the fits (bounded from below, a
+        continuum <= 0 gives NaN). The one computation of the residuals of a
+        model on a fixed set of pixels: :meth:`chi2_on_fit_pixels`
+        (``metals_auto``, F111) and the evaluation of a model (F154, phase 7,
+        PR 7a.5)."""
+        return (self._y_norm[mask] - model_flux[mask] / self._norm[mask]) / self._dy_norm[mask]
+
+    @property
+    def valid_mask(self) -> np.ndarray:
+        """The pixels with a finite normalized flux and a positive error: the
+        only ones a fit or an evaluation can use."""
+        return self._valid_mask
+
     def chi2_on_fit_pixels(self, model_flux: np.ndarray) -> Tuple[float, int]:
         """The chi2 of a model flux (in the units of :meth:`fit` and
         :meth:`compute_model_flux`, on the whole spectrum) on the pixels of
         the last fit, and their number: two models compared on the same
         pixels (``metals_auto``, F111)."""
         mask = self._fit_mask
-        resid = (self._y_norm[mask] - model_flux[mask] / self._norm[mask]) / self._dy_norm[mask]
-        return float(np.sum(resid[np.isfinite(resid)] ** 2)), int(np.sum(mask))
+        return chi2_of(self.normalized_residuals(model_flux, mask)), int(np.sum(mask))
+
+    def component_profiles(self, uuids: List[str], sl: slice) -> Dict[str, np.ndarray]:
+        """The normalized flux of each component of ``uuids`` alone, at the
+        current parameters, convolved with its resolution and averaged over
+        each pixel of ``sl`` (the profile I^a of Webb et al. 2021, eq. 6, as
+        the pixels see it: their model, eq. 7, is the product of these
+        profiles, which is exact only before the convolution)."""
+        p_full = self._constraints.map_p_free_to_full(self._constraints.p_free_vector)
+        saved = (self._x_calc, self._resol_calc, self._x_tau, self._lsf)
+        self._x_calc = self._x_ang[sl]
+        self._resol_calc = self._resol_column[sl] if self._use_variable_resolution else None
+        self._set_lsf(sl, cache=False)
+        index = {c.uuid: i for i, c in enumerate(self._system_list.components)}
+        profiles = {}
+        try:
+            for uuid in uuids:
+                i = index[uuid]
+                comp = self._system_list.components[i]
+                z, logN, b_val, btur = p_full[4 * i:4 * i + 4]
+                tau = self._compute_tau_component(comp, z, logN, b_val, btur)
+                profiles[uuid] = self._convolved(self._get_component_resolution(comp), tau)
+        finally:
+            self._x_calc, self._resol_calc, self._x_tau, self._lsf = saved
+        return profiles
+
+    def _convolved(self, res_key: Tuple[float, str], tau_arr: np.ndarray) -> np.ndarray:
+        """The flux exp(-tau) of the fine grid convolved with the LSF of the
+        resolution ``res_key`` and averaged over the pixels (#526)."""
+        res_val, res_unit = res_key
+        flux_fine = np.exp(-tau_arr)
+        r: Any
+        key: Any
+        if res_unit == 'column' and self._resol_calc is not None:
+            r, key = self._resol_calc, 'column'
+        elif res_val > 0:
+            r, key = res_val, res_val
+        else:
+            r, key = None, 'none'
+        return self._lsf.apply(flux_fine, r, key=key)
 
     def compute_model_flux(self) -> Tuple[np.ndarray, np.ndarray]:
         """
