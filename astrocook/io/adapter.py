@@ -105,6 +105,7 @@ def load_and_migrate_structure(archive_root, structure_name, gui_context, format
 def _v2_table_to_spectrum_data(spec_table: Table) -> SpectrumData:
     t = spec_table
     meta = t.meta
+    _join_meta_chunks(meta)
     for name in t.colnames:
         # arb_flux, read by astropy as an unrecognized unit (PR 8-bis)
         t[name].unit = known_unit(t[name].unit)
@@ -216,7 +217,8 @@ def load_systs_data_v2_from_archive(systs_fits_path: str, v2_metadata: Dict) -> 
     components, id_to_uuid_map = _v2_table_to_component_list(systs_table)
     v2_constraints_map = _parse_v2_metadata_constraints(v2_metadata)
     meta = systs_table.meta
-    
+    _join_meta_chunks(meta)
+
     data_core = SystemListData(
         components=components,
         parsed_constraints={},
@@ -295,8 +297,61 @@ def _fits_meta(meta: dict) -> dict:
                 logger.warning(f"The metadata '{key}' (a dictionary) cannot be saved "
                                "in the archive.")
             continue
+        if isinstance(value, str) and len(key) > 8:
+            # A HIERARCH card cannot continue on other cards: a long string
+            # (e.g. region_map_json after the automatic identification, #781)
+            # made astropy raise "value is too long" at save. It is split in
+            # chunks, joined back at load (_join_meta_chunks)
+            chunks = _split_meta_string(key, value)
+            if chunks is not None:
+                for i, chunk in enumerate(chunks):
+                    kept[f"{key}{_CHUNK_SEP}{i:03d}"] = chunk
+                continue
         kept[key] = value
     return kept
+
+
+_CHUNK_SEP = "__part"
+_CARD_LENGTH = 80
+
+
+def _split_meta_string(key: str, value: str) -> list[str] | None:
+    """Chunks of ``value`` that fit a HIERARCH card each; ``None`` if the
+    whole value fits one (``HIERARCH key = 'value'``, quotes doubled)."""
+    def room(k: str) -> int:
+        return _CARD_LENGTH - (len("HIERARCH ") + len(k) + len(" = ''")) - 1
+    if len(value.replace("'", "''")) <= room(key):
+        return None
+    size = room(f"{key}{_CHUNK_SEP}000")
+    chunks: list[str] = []
+    rest = value
+    while rest:
+        n, used = 0, 0
+        while n < len(rest) and used + (2 if rest[n] == "'" else 1) <= size:
+            used += 2 if rest[n] == "'" else 1
+            n += 1
+        # FITS strips the trailing spaces of a string: they go to the next chunk
+        while n > 1 and n < len(rest) and rest[n - 1] == ' ':
+            n -= 1
+        chunks.append(rest[:n])
+        rest = rest[n:]
+    if chunks[-1] != chunks[-1].rstrip():
+        return None  # trailing spaces of the whole value: cannot be restored
+    return chunks
+
+
+def _join_meta_chunks(meta: dict) -> None:
+    """Join in place the chunks written by ``_fits_meta`` (case-insensitive
+    on the keyword, as a HIERARCH card may be read back in either case)."""
+    import re
+    pattern = re.compile(rf"^(.*){_CHUNK_SEP}(\d{{3}})$", re.IGNORECASE)
+    parts: dict[str, dict[int, str]] = {}
+    for key in list(meta.keys()):
+        m = pattern.match(str(key))
+        if m and isinstance(meta[key], str):
+            parts.setdefault(m.group(1), {})[int(m.group(2))] = meta.pop(key)
+    for base, pieces in parts.items():
+        meta[base] = ''.join(pieces[i] for i in sorted(pieces))
 
 
 def _write_fits_table(table: Table, path: str) -> None:
