@@ -45,8 +45,9 @@ SESSION_TOOLS = {"session_open", "session_save", "session_list", "session_descri
                  "session_duplicate", "session_close", "session_note", "session_cancel",
                  "gaps_summary", "session_methods"}
 #: The tools that read a session (phase 6-ter, PR 3)
-INSPECT_TOOLS = {"components_list", "spectrum_read", "spectrum_plot"}
-IMAGE_TOOLS = {"spectrum_plot"}
+INSPECT_TOOLS = {"components_list", "spectrum_read", "spectrum_plot",
+                 "spectrum_plot_velocity"}
+IMAGE_TOOLS = {"spectrum_plot", "spectrum_plot_velocity"}
 #: The GUI launched by the server (phase 6-ter, PR 5-bis)
 GUI_TOOLS = {"gui_open"}
 TOOLS = SESSION_TOOLS | INSPECT_TOOLS | GUI_TOOLS | {

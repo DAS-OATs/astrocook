@@ -80,9 +80,10 @@ was before it.
 
 To look into a session: session_describe (its columns), components_list
 (the components with their errors, flags, fit groups and constraints),
-spectrum_read (the columns in a range, as numbers) and spectrum_plot (a
-plot of a range, with the continuum, the model and the components). They
-change nothing.
+spectrum_read (the columns in a range, as numbers), spectrum_plot (a
+plot of a range, with the continuum, the model and the components, and
+optionally the residuals) and spectrum_plot_velocity (several transitions
+in velocity around a redshift). They change nothing.
 
 The columns have the names of the GUI everywhere (reads, expressions,
 parameters): λ (wavelength), F (flux), dF (its error), cont, model, ...;

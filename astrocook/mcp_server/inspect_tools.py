@@ -220,17 +220,62 @@ def register_inspect_tools(server: MCPServer, store: SessionStore) -> None:
             "End of the range; null: the end of the spectrum."))] = None,
         normalized: Annotated[bool, Field(description=(
             "Divide by the continuum (if any)."))] = False,
+        residuals: Annotated[bool, Field(description=(
+            "Add a panel with the residuals (flux - model) / error, in "
+            "sigma; needs a model."))] = False,
     ) -> list:
         """Plot the spectrum of a session in a range of x, as a PNG image:
         the flux and its error, the continuum and the model (if any), and a
-        tick at each line of each component, labelled with its series."""
+        tick at each line of each component, labelled with its series; with
+        residuals, a panel below with the residuals in sigma."""
         from astrocook.plotting import figure_png, plot_spectrum
         with store.state_lock:
             session = store.get(session_id).current_state
             try:
-                fig = plot_spectrum(session, x_min, x_max, normalized)
+                fig = plot_spectrum(session, x_min, x_max, normalized, residuals=residuals)
             except ValueError as e:
                 raise ToolError(str(e)) from None
             return [Image(data=figure_png(fig), format="png"),
                     f"{session_id}: spectrum plotted"
+                    + (" with residuals" if residuals else "")
                     + (" (normalized)" if normalized and spec_of(session).cont is not None else "")]
+
+    @server.tool()
+    def spectrum_plot_velocity(
+        session_id: SESSION_ID,
+        z: Annotated[float, Field(gt=-1, description=(
+            "Redshift at v = 0 (the centre of every panel)."))],
+        transitions: Annotated[Optional[list[str]], Field(description=(
+            "Transitions to plot, one panel each: names ('Ly_a', 'CIV_1548') or "
+            "multiplets ('CIV', expanded). Null: the transitions of the "
+            "components with a line near z."))] = None,
+        half_width_kms: Annotated[float, Field(ge=10, le=5000, description=(
+            "Half of the window, in km/s."))] = 300.0,
+        normalized: Annotated[bool, Field(description=(
+            "Divide by the continuum (if any)."))] = True,
+        residuals: Annotated[bool, Field(description=(
+            "Add the residuals in sigma under each panel; needs a model."))] = False,
+    ) -> list:
+        """Plot several transitions in velocity around a redshift, as a PNG
+        image: one panel per transition (at most 12), v = 0 at z, with the
+        flux, its error, the model (if any) and a tick at each line of each
+        component in the window (HI in red; dashed if the fit flagged it). To judge an absorption system
+        across its lines."""
+        from astrocook.plotting import figure_png, plot_velocity, velocity_transitions
+        with store.state_lock:
+            session = store.get(session_id).current_state
+            try:
+                plotted, skipped = velocity_transitions(
+                    session, z, transitions, half_width_kms)
+                fig = plot_velocity(session, z, plotted, half_width_kms, normalized, residuals)
+            except ValueError as e:
+                raise ToolError(str(e)) from None
+            has_cont = spec_of(session).cont is not None
+            text = (f"{session_id}: z = {z:g}, ±{half_width_kms:g} km/s, "
+                    f"{', '.join(plotted)}"
+                    + (" with residuals" if residuals else "")
+                    + (" (normalized)" if normalized and has_cont else
+                       " (not normalized: the session has no continuum)" if normalized else ""))
+            if skipped:
+                text += "; left out: " + ", ".join(f"{n} ({r})" for n, r in skipped.items())
+            return [Image(data=figure_png(fig), format="png"), text]
