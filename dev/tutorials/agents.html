@@ -745,8 +745,8 @@ every group; <code class="docutils literal notranslate"><span class="pre">absorb
 residuals call for them, keeping each only if the AIC improves.
 <code class="docutils literal notranslate"><span class="pre">absorbers_update_component</span></code>, <code class="docutils literal notranslate"><span class="pre">absorbers_update_components</span></code>,
 <code class="docutils literal notranslate"><span class="pre">absorbers_update_constraint</span></code> and <code class="docutils literal notranslate"><span class="pre">absorbers_update_constraints_column</span></code>
-<strong>do not fit</strong>: they change values, links or freedom, and the model drawn
-stays as it was until a fit, so they are followed by
+<strong>do not fit</strong>: they change values, links or freedom; the model is redrawn
+from the new values, but nothing is fitted, so they are followed by
 <code class="docutils literal notranslate"><span class="pre">absorbers_fit_component</span></code>. The workflows: <em>adapt a system</em> (read it with
 <code class="docutils literal notranslate"><span class="pre">components_list</span></code>, <code class="docutils literal notranslate"><span class="pre">absorbers_update_component</span></code>, <code class="docutils literal notranslate"><span class="pre">absorbers_fit_component</span></code>,
 judge with <code class="docutils literal notranslate"><span class="pre">spectrum_plot</span></code>, <code class="docutils literal notranslate"><span class="pre">absorbers_optimize_system</span></code> if the residuals
