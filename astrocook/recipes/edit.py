@@ -72,7 +72,9 @@ def _methods_x_convert(p):
     except ValueError:
         velocity = False
     if velocity:
-        z = f"z = {p['z_ref']}" if p.given('z_ref') else "z_em"
+        # Not given: z_em, or the reference of an axis already in velocity
+        # (F84, phase 7-bis, B6)
+        z = f"z = {p['z_ref']}" if p.given('z_ref') else "the reference redshift"
         return f"The x axis was converted to velocity ({unit}) relative to {z}{p.menu}"
     p.raw('z_ref')
     return f"The x axis was converted to {unit}{p.menu}"
@@ -185,7 +187,7 @@ EDIT_RECIPES_SCHEMAS = {
         "url": "tutorials/editing_data.html#converting-the-axes",
         "details": "Converts the x axis to another unit of wavelength (e.g. nm, Angstrom) or to velocity (e.g. km/s); the zero of the velocity is the Lyman-alpha emission at the reference redshift, 121.567 nm * (1 + z_ref).",
         "params": [
-            {"name": "z_ref", "type": float, "default": "_current_", "keep": ("_current_",), "gt": -1, "doc": "Redshift of the zero of the velocity axis, the Lyman-alpha emission at 121.567 nm * (1 + z_ref) ('_current_': z_em); not used for a unit of wavelength."},
+            {"name": "z_ref", "type": float, "default": "_current_", "keep": ("_current_",), "gt": -1, "doc": "Redshift of the zero of the velocity axis, Lyman-alpha at 121.567 nm * (1 + z_ref), kept with the spectrum ('_current_': z_em, or the z_ref of an axis in velocity). An axis in velocity goes back to wavelength at its z_ref, or is re-centred at a new one."},
             {"name": "xunit", "type": str, "default": "km/s", "doc": "Unit of the new x axis: a wavelength (e.g. 'nm', 'Angstrom') or a velocity (e.g. 'km/s')."},
         ],
     },
@@ -648,9 +650,16 @@ class RecipeEdit:
         Parameters
         ----------
         z_ref : float or str, optional
-            Reference redshift for velocity conversion, above -1 and finite;
-            ``'_current_'`` uses the session's z_em. Defaults to
-            ``'_current_'``, as the GUI.
+            Reference redshift for velocity conversion, above -1 and finite:
+            the zero of the velocity axis is the Lyman-alpha emission at
+            121.567 nm * (1 + z_ref), kept with the spectrum (F84). From a
+            wavelength to a velocity, the zero of the new axis
+            (``'_current_'``: the session's z_em). From a velocity to a
+            wavelength, the axis is converted back at the z_ref it keeps
+            (``'_current_'``, or the same value; z_em if it keeps none, or
+            the value given). From a velocity to a velocity, the axis is
+            re-centred at the new z_ref (``'_current_'``: only the unit
+            changes). Defaults to ``'_current_'``, as the GUI.
         xunit : str, optional
             Unit of wavelength or velocity (e.g., ``'nm'``, ``'km/s'``).
             Defaults to ``'km/s'``.
@@ -659,12 +668,16 @@ class RecipeEdit:
         -------
         Session
             A new :class:`~astrocook.session.session.Session` with the converted X-axis.
+
+        Raises
+        ------
+        InvalidParameter
+            If ``xunit`` is neither a wavelength nor a velocity, or if an
+            axis in velocity is converted back to a wavelength at a z_ref
+            that is not the one it keeps.
         """
-        # Handle default logic here
-        if z_ref == '_current_':
-            z_ref_float = spec_of(self._session)._data.z_em
-        else:
-            z_ref_float = cast(float, z_ref)
+        # '_current_': chosen by the spectrum (z_em, or the z_ref kept)
+        z_ref_float = None if z_ref == '_current_' else cast(float, z_ref)
             
         try:
             xunit_obj = au.Unit(xunit)
@@ -676,7 +689,13 @@ class RecipeEdit:
                                    "nor a velocity (e.g. km/s)")
 
         # 1. Get the new Spectrum instance (the immutable operation)
-        new_spec_v2 = spec_of(self._session).x_convert(z_ref=z_ref_float, xunit=xunit_obj)
+        try:
+            new_spec_v2 = spec_of(self._session).x_convert(z_ref=z_ref_float, xunit=xunit_obj)
+        except ValueError as e:
+            if isinstance(e, au.UnitsError):
+                raise
+            # Back to wavelengths at another z_ref than the one of the axis
+            raise InvalidParameter(f"z_ref: {e}") from None
         
         # 2. Return a NEW Session instance with the updated spectrum
         return self._session.with_new_spectrum(new_spec_v2) 

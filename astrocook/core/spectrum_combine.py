@@ -12,7 +12,7 @@ import logging
 import numpy as np
 from typing import TYPE_CHECKING, Self, cast, Dict, List, Optional
 
-from astrocook.core.spectrum_operations import convert_axis_velocity, rebin_spectrum
+from astrocook.core.spectrum_operations import convert_axis_velocity, follow_mask, rebin_spectrum
 from astrocook.core.structures import DataColumn, SpectrumData
 from astrocook.core._spectrum_host import HostBase
 
@@ -144,7 +144,8 @@ class CombineMixin(HostBase):
             dy=DataColumn(dy_final, y_u),
             aux_cols=new_aux,
             meta=new_meta,
-            z_em=self._data.z_em
+            z_em=self._data.z_em,
+            z_ref=self._data.z_ref
         )
         
         return self.__class__(new_data)
@@ -175,7 +176,9 @@ class CombineMixin(HostBase):
         """
         
         original_x_unit = self._data.x.unit 
-        z_ref = self._data.z_em if self._data.z_em is not None else 0.0 
+        # The zero of a velocity axis (F84): z_em for an axis in wavelength,
+        # where the conversion to velocity and back is a round trip
+        z_ref = self.axis_z_ref()
 
         if dx.unit.is_equivalent(au.km/au.s):
             target_calc_unit = au.km/au.s
@@ -217,7 +220,14 @@ class CombineMixin(HostBase):
                 continue
             # --- *** END FIX 1 *** ---
 
-            if col_data.values.dtype.kind in 'fiub': # Check for float, int, unsigned, or bool
+            if col_data.values.dtype.kind == 'b':
+                # A boolean mask follows the new pixels (F72): masked if any
+                # old pixel in it was
+                new_aux_cols[name] = DataColumn(
+                    follow_mask(xmin_calc.value, xmax_calc.value, col_data.values,
+                                xmin_new.value, xmax_new.value),
+                    col_data.unit, description=col_data.description)
+            elif col_data.values.dtype.kind in 'fiu':  # float, int, unsigned
                 try:
                     logger.debug(f"Rebin: Interpolating aux column '{name}'...")
                     interp_values = self.get_resampled_column(
@@ -255,7 +265,8 @@ class CombineMixin(HostBase):
             dy=DataColumn(dy_new.value, dy_new.unit),
             aux_cols=new_aux_cols, 
             meta=new_meta, 
-            z_em=self._data.z_em   # Propagate
+            z_em=self._data.z_em,   # Propagate
+            z_ref=self._data.z_ref
         )
         
         # 5. Return a NEW Spectrum instance
@@ -356,7 +367,13 @@ class CombineMixin(HostBase):
         
         # Calculation Unit (Target) comes from dx (usually km/s)
         calc_unit = dx.unit
-        z_em = ref_spec.meta.get('z_em', 0.0)
+        # The zero of the velocity: that of the axis of the reference when
+        # it is in velocity (F84, phase 7-bis, B6); for an axis in
+        # wavelength the conversion is a round trip, the zero as before
+        if original_x_unit.is_equivalent(au.km / au.s):
+            z_em = ref_spec.axis_z_ref()
+        else:
+            z_em = ref_spec.meta.get('z_em', 0.0)
 
         # 2. Accumulators
         big_x_list = []
@@ -491,6 +508,14 @@ class CombineMixin(HostBase):
 
         # --- Restore the co-added resolution array ---
         new_aux_cols = {}
+
+        # The other columns (masks included) are not carried: those of
+        # spectra of different S/N are to be made again on the result (F72,
+        # agreed with Guido); say so instead of dropping them silently
+        dropped = sorted({n for s in all_specs for n in s._data.aux_cols} - {'resol'})
+        if dropped:
+            logger.warning(f"The columns {dropped} of the spectra are not carried to "
+                           "the co-added spectrum: make them again on the result.")
         
         if reb_resol is not None:
             new_aux_cols['resol'] = DataColumn(reb_resol, au.dimensionless_unscaled, description="Co-added IVW resolution")
@@ -504,7 +529,8 @@ class CombineMixin(HostBase):
             dy=DataColumn(reb_dy.value, reb_dy.unit),
             aux_cols=new_aux_cols,
             meta=new_meta, 
-            z_em=self._data.z_em
+            z_em=self._data.z_em,
+            z_ref=self._data.z_ref
         )
         
         return self.__class__(final_spec_data)
@@ -538,7 +564,15 @@ class CombineMixin(HostBase):
         for name, col_q in all_cols_old.items():
             if name in ('x', 'xmin', 'xmax'):
                 continue
-            if col_q.dtype.kind in 'fiu': 
+            if col_q.dtype.kind == 'b':
+                # A boolean mask follows the new pixels (F72): masked if any
+                # old pixel in it was
+                aux_cols_new[name] = DataColumn(
+                    follow_mask(self.xmin.to_value(au.nm), self.xmax.to_value(au.nm),
+                                col_q.value, target_grid_spec.xmin.to_value(au.nm),
+                                target_grid_spec.xmax.to_value(au.nm)),
+                    au.dimensionless_unscaled)
+            elif col_q.dtype.kind in 'fiu':
                 logger.debug(f"Resampling column '{name}'...")
                 y_interp = np.interp(x_new, x_old, col_q.value,
                                      left=fill_value, right=fill_value)
@@ -559,7 +593,8 @@ class CombineMixin(HostBase):
             dy=dy_col_new, 
             aux_cols=aux_cols_new, 
             meta=deepcopy(self.meta),
-            z_em=self._data.z_em   # Propagate
+            z_em=self._data.z_em,   # Propagate
+            z_ref=target_grid_spec._data.z_ref  # the axis of the target
         )
         new_history = self.history + [f"Resampled on grid of '{target_grid_spec.meta.get('name', 'unnamed')}'"]
         return self.__class__(data=new_data_core, history=new_history)

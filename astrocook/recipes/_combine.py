@@ -4,7 +4,9 @@ The rule agreed with Guido (F132-F134, F138): spectra are combined, or one
 is scaled to another, in the units of a reference.
 
 - An axis is converted between wavelengths (e.g. Å to nm); an axis in
-  velocity against one in wavelength is refused (``x_convert`` first).
+  velocity against one in wavelength is refused (``x_convert`` first), and
+  so are two axes in velocity with different zeros (F84, phase 7-bis, B6:
+  their values were joined as they were).
 - A flux is converted when its unit is of the same kind as that of the
   reference (e.g. per nm to per Å). A flux in arbitrary units (``arb_flux``)
   against a physical one is combined only when it is scaled to it, and then
@@ -16,6 +18,7 @@ is scaled to another, in the units of a reference.
 from __future__ import annotations
 
 import logging
+import math
 from typing import List
 
 import astropy.units as au
@@ -44,6 +47,20 @@ def check_axes(x_unit, ref_unit, name: str, ref_name: str) -> None:
                            f"{x_ref}: convert them to wavelengths with x_convert.")
 
 
+def check_velocity_zeros(spec, ref, name: str, ref_name: str) -> None:
+    """RecipeFailed if the axes of ``spec`` and ``ref`` are in velocity with
+    different zeros (``axis_z_ref``, F84): the same velocity would be
+    another wavelength in the two spectra."""
+    kms = au.km / au.s
+    if not (au.Unit(spec.x.unit).is_equivalent(kms) and au.Unit(ref.x.unit).is_equivalent(kms)):
+        return
+    z, z_ref = spec.axis_z_ref(), ref.axis_z_ref()
+    if not math.isclose(z, z_ref, rel_tol=1e-12, abs_tol=1e-12):
+        raise RecipeFailed(f"The velocity axis of {name} has its zero at z_ref = {z:g} and "
+                           f"that of {ref_name} at z_ref = {z_ref:g}: convert them to "
+                           "wavelengths, or to the same z_ref, with x_convert.")
+
+
 def flux_relation(y_unit, ref_unit, name: str, ref_name: str, scaled: bool) -> str:
     """How the flux of ``name`` joins that of ``ref_name``: ``'same'`` (the
     same unit), ``'convert'`` (a unit of the same kind), ``'declare'`` (an
@@ -69,6 +86,7 @@ def in_units_of(spec, ref, name: str, ref_name: str, scaled: bool):
     """``spec`` with the axis and the flux in the units of ``ref`` (see the
     rule of the module)."""
     check_axes(spec.x.unit, ref.x.unit, name, ref_name)
+    check_velocity_zeros(spec, ref, name, ref_name)
     if au.Unit(spec.x.unit) != au.Unit(ref.x.unit):
         spec = spec.x_convert(spec._data.z_em or 0.0, au.Unit(ref.x.unit))
     how = flux_relation(spec.y.unit, ref.y.unit, name, ref_name, scaled)

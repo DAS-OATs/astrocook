@@ -134,13 +134,17 @@ def _v2_table_to_spectrum_data(spec_table: Table) -> SpectrumData:
             aux_cols[colname] = DataColumn(col_data.value, col_unit, description=f"Auxiliary column: {colname}")
             
     z_em = float(meta.pop('Z_EM', 0.0))
+    # The zero of an axis in velocity (F84, phase 7-bis, B6); absent in
+    # the archives saved before, and for an axis in wavelength
+    z_ref_raw = meta.pop('Z_REF', None)
+    z_ref = float(z_ref_raw) if z_ref_raw is not None else None
     
     # The resolution in the meta keys (resol_fwhm, RESOL) is moved into the
     # resol column when the spectrum is built (core/resolution.py, #526)
     return SpectrumData(
         x=x_col, xmin=xmin_col, xmax=xmax_col, 
         y=y_col, dy=dy_col, 
-        aux_cols=aux_cols, meta=meta, z_em=z_em
+        aux_cols=aux_cols, meta=meta, z_em=z_em, z_ref=z_ref
     )
 
 def load_spec_data_v2_from_archive(spec_fits_path: str) -> 'Spectrum':
@@ -344,6 +348,8 @@ def _convert_spec_data_to_table(spec_data: SpectrumData) -> Table:
 
     t.meta['ORIGIN'] = 'Astrocook V2'
     t.meta['Z_EM'] = spec_data.z_em
+    if spec_data.z_ref is not None:
+        t.meta['Z_REF'] = spec_data.z_ref
     return t
 
 def _convert_syst_list_to_table(systs_data: SystemListData) -> Table:

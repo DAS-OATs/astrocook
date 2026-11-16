@@ -156,6 +156,11 @@ class SpectrumData:
     # Session properties
     z_em: float = 0.0 # Emission redshift
     resol: float = 0.0 # Median resolution
+    # Reference redshift of an x axis in velocity: its zero is the
+    # Lyman-alpha emission at 121.567 nm * (1 + z_ref), set by x_convert
+    # (F84, phase 7-bis, B6). None: an axis in wavelength, or an axis in
+    # velocity whose reference is not known (z_em is used, as before B6)
+    z_ref: Optional[float] = None
 
     @classmethod
     def from_flat_data(cls, 
@@ -167,7 +172,8 @@ class SpectrumData:
                        aux_data: Optional[Dict[str, tuple]] = None, # {'col_name': (values, unit, desc)}
                        meta: Optional[Dict[str, Any]] = None,
                        z_em: float = 0.0,
-                       resol: float = 0.0) -> 'SpectrumData':
+                       resol: float = 0.0,
+                       z_ref: Optional[float] = None) -> 'SpectrumData':
         """
         Factory method to create a SpectrumData from raw NumPy arrays.
 
@@ -193,6 +199,10 @@ class SpectrumData:
             Metadata dictionary.
         z_em : float, optional
             Emission redshift. Defaults to ``0.0``.
+        resol : float, optional
+            Median resolution. Defaults to ``0.0``.
+        z_ref : float, optional
+            Reference redshift of an x axis in velocity. Defaults to None.
 
         Returns
         -------
@@ -222,7 +232,8 @@ class SpectrumData:
                    aux_cols=aux_cols, 
                    meta=meta if meta is not None else {},
                    z_em=z_em,
-                   resol=resol)
+                   resol=resol,
+                   z_ref=z_ref)
     
 @dataclass(frozen=True)
 class ComponentData:

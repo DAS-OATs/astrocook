@@ -646,7 +646,11 @@ def _load_named_csv(table: Table, file_path: str) -> SpectrumData:
         y=DataColumn(np.asarray(y, dtype=float), y_unit, "Flux"),
         dy=DataColumn(np.asarray(dy, dtype=float), dy_unit or y_unit, "Error"),
         aux_cols=aux, meta={'ORIGIN': 'simple_csv_loader', 'FILE': file_path},
-        z_em=float(table.meta.get('z_em', 0.0)))
+        z_em=float(table.meta.get('z_em', 0.0)),
+        # The zero of an axis in velocity, written by Astrocook (F84)
+        z_ref=(float(table.meta['z_ref'])
+               if table.meta.get('z_ref') is not None and x_unit.is_equivalent(au.km / au.s)
+               else None))
 
 
 @register_loader("ascii_telluric_model")
