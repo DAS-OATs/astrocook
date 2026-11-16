@@ -606,6 +606,18 @@ dynesty fails or does not end; phase 6-quater, PR 10-bis, Guido)</p>
 </dd></dl>
 
 <dl class="py data">
+<dt class="sig sig-object py" id="astrocook.recipes.absorbers.FOREST_AUTO_REGION">
+<span class="sig-prename descclassname"><span class="pre">astrocook.recipes.absorbers.</span></span><span class="sig-name descname"><span class="pre">FOREST_AUTO_REGION</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'all_ly_forest'</span></span><a class="headerlink" href="#astrocook.recipes.absorbers.FOREST_AUTO_REGION" title="Link to this definition">#</a></dt>
+<dd><p>from the Lyman limit to the Lyman-alpha
+emission, where the lines of the Lyman series lie (phase 7-bis, PR B8, F102)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The region of <code class="docutils literal notranslate"><span class="pre">forest_auto</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
 <dt class="sig sig-object py" id="astrocook.recipes.absorbers.NOT_FITTED">
 <span class="sig-prename descclassname"><span class="pre">astrocook.recipes.absorbers.</span></span><span class="sig-name descname"><span class="pre">NOT_FITTED</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'not_fitted'</span></span><a class="headerlink" href="#astrocook.recipes.absorbers.NOT_FITTED" title="Link to this definition">#</a></dt>
 <dd><p>The flag of the components whose group refit_all could not fit (phase
@@ -751,7 +763,12 @@ Defaults to <code class="docutils literal notranslate"><span class="pre">3000.0<
 <span class="sig-name descname"><span class="pre">forest_auto</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">score_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_b</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_window_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_b</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">50.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_logN</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">19.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_em_margin_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3000.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.session.session.html#astrocook.session.session.Session" title="astrocook.session.session.Session"><span class="pre">Session</span></a></span></span><a class="reference internal" href="../modules/astrocook/recipes/absorbers.html#RecipeAbsorbers.forest_auto"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.absorbers.RecipeAbsorbers.forest_auto" title="Link to this definition">#</a></dt>
 <dd><p>Auto-fit full Lyman series.</p>
 <p>Pipeline that models the entire Lyman series (Ly-alpha to Ly-limit)
-simultaneously. Uses ‘Ly_a’ detection but maps it to ‘Lyman’ series.</p>
+simultaneously. Uses ‘Ly_a’ detection but maps it to ‘Lyman’ series.
+It works in the region <code class="docutils literal notranslate"><span class="pre">'all_ly_forest'</span></code>, from the Lyman limit to the
+Lyman-alpha emission: the lines are searched for there, and the fits
+take only the components there (with the neighbours of their groups);
+the other components of the session, e.g. the metals of the red side,
+are not refitted.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -1357,6 +1374,7 @@ The numbers are reported in <code class="docutils literal notranslate"><span cla
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.FIT_ERRORS"><code class="docutils literal notranslate"><span class="pre">FIT_ERRORS</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.AT_BOUND_RTOL"><code class="docutils literal notranslate"><span class="pre">AT_BOUND_RTOL</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.NLIVE_PER_PARAMETER"><code class="docutils literal notranslate"><span class="pre">NLIVE_PER_PARAMETER</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.FOREST_AUTO_REGION"><code class="docutils literal notranslate"><span class="pre">FOREST_AUTO_REGION</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.NOT_FITTED"><code class="docutils literal notranslate"><span class="pre">NOT_FITTED</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.RecipeAbsorbers"><code class="docutils literal notranslate"><span class="pre">RecipeAbsorbers</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.absorbers.RecipeAbsorbers.__init__"><code class="docutils literal notranslate"><span class="pre">RecipeAbsorbers.__init__()</span></code></a></li>

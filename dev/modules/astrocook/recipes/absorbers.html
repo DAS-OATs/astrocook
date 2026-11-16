@@ -541,7 +541,8 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_methods_forest_auto</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
-    <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"Lyman-alpha lines were searched for and fitted each as a Lyman series, "</span>
+    <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"Lyman-alpha lines were searched for in the forest, between the Lyman "</span>
+            <span class="sa">f</span><span class="s2">"limit and Lyman-alpha, and fitted each as a Lyman series, "</span>
             <span class="sa">f</span><span class="s2">"from Lyman-alpha to the Lyman limit, so that the higher-order lines "</span>
             <span class="sa">f</span><span class="s2">"constrain the column density</span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">. The lines were accepted for a "</span>
             <span class="sa">f</span><span class="s2">"score &gt;= </span><span class="si">{</span><span class="n">p</span><span class="p">[</span><span class="s1">'score_threshold'</span><span class="p">]</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">_beyond</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="si">}</span><span class="s2">; Cupani et al. 2026) and "</span>
@@ -783,7 +784,7 @@
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Auto-fit full Lyman series."</span><span class="p">,</span>
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"tutorials/absorption_systems.html#automated-detection-pipelines"</span><span class="p">,</span>
         <span class="s2">"requires"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"z_em"</span><span class="p">,</span> <span class="s2">"resolution"</span><span class="p">,</span> <span class="s2">"continuum"</span><span class="p">),</span>
-        <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Finds Lyman-alpha lines and fits each as a Lyman series (Ly-alpha to the Lyman limit), so that the higher-order lines constrain the column density; systems narrower than min_b are removed."</span><span class="p">,</span>
+        <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Fits the Lyman-alpha lines of the forest (Lyman limit to Ly-alpha) each as a Lyman series; systems narrower than min_b are removed. The components outside are not refitted."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"score_threshold"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span> <span class="s2">"min"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"max"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Minimum score (0-1) to accept a line."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"min_b"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="mf">10.0</span><span class="p">,</span> <span class="s2">"min"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Lyman systems narrower than this (km/s) are removed."</span><span class="p">},</span>
@@ -1294,6 +1295,27 @@
         <span class="k">raise</span> <span class="n">RecipeFailed</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The region '</span><span class="si">{</span><span class="n">region_limit</span><span class="si">}</span><span class="s2">' cannot be used: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
 
 
+<span class="c1">#: The region of ``forest_auto``: from the Lyman limit to the Lyman-alpha</span>
+<span class="c1">#: emission, where the lines of the Lyman series lie (phase 7-bis, PR B8, F102)</span>
+<span class="n">FOREST_AUTO_REGION</span> <span class="o">=</span> <span class="s1">'all_ly_forest'</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_restricted_mask</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">mask_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">region</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""The session with ``mask_col`` set to False outside ``region``, and the</span>
+<span class="sd">    column of the mask to give back with the result. A missing mask is made</span>
+<span class="sd">    with the defaults of ``find_absorbed``, as ``identify_lines`` does."""</span>
+    <span class="n">spec</span> <span class="o">=</span> <span class="n">spec_of</span><span class="p">(</span><span class="n">session</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">spec</span><span class="o">.</span><span class="n">has_aux_column</span><span class="p">(</span><span class="n">mask_col</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"There is no column '</span><span class="si">{</span><span class="n">mask_col</span><span class="si">}</span><span class="s2">': the absorbed regions are "</span>
+                    <span class="s2">"found with find_absorbed and its defaults."</span><span class="p">)</span>
+        <span class="n">spec</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">find_absorbed</span><span class="p">(</span><span class="n">smooth_len_lya</span><span class="o">=</span><span class="mf">5000.0</span> <span class="o">*</span> <span class="n">au</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">au</span><span class="o">.</span><span class="n">s</span><span class="p">,</span>
+                                  <span class="n">smooth_len_out</span><span class="o">=</span><span class="mf">400.0</span> <span class="o">*</span> <span class="n">au</span><span class="o">.</span><span class="n">km</span><span class="o">/</span><span class="n">au</span><span class="o">.</span><span class="n">s</span><span class="p">,</span>
+                                  <span class="n">kappa</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">template</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">kept_mask</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">_data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">[</span><span class="n">mask_col</span><span class="p">]</span>
+    <span class="n">obs_min</span><span class="p">,</span> <span class="n">obs_max</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">get_region_bounds</span><span class="p">(</span><span class="n">region</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">mask_region</span><span class="p">(</span><span class="n">mask_col</span><span class="p">,</span> <span class="n">obs_min</span><span class="p">,</span> <span class="n">obs_max</span><span class="p">)),</span> <span class="n">kept_mask</span>
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_drop_negligible</span><span class="p">(</span><span class="n">session</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">"""The automatic pipelines remove the components that end at the lower</span>
 <span class="sd">    bound of logN (10, flag ``logN_at_lower_bound``, #517): they absorb</span>
@@ -1755,6 +1777,11 @@
 
 <span class="sd">        Pipeline that models the entire Lyman series (Ly-alpha to Ly-limit)</span>
 <span class="sd">        simultaneously. Uses 'Ly_a' detection but maps it to 'Lyman' series.</span>
+<span class="sd">        It works in the region ``'all_ly_forest'``, from the Lyman limit to the</span>
+<span class="sd">        Lyman-alpha emission: the lines are searched for there, and the fits</span>
+<span class="sd">        take only the components there (with the neighbours of their groups);</span>
+<span class="sd">        the other components of the session, e.g. the metals of the red side,</span>
+<span class="sd">        are not refitted.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -1780,23 +1807,27 @@
 <span class="sd">            A new :class:`~astrocook.session.session.Session` with Lyman series systems.</span>
 <span class="sd">        """</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Fitting the Lyman series in the forest."</span><span class="p">)</span>
-        
-        <span class="c1"># 1. IDENTIFY 'Ly_a' lines</span>
-        <span class="c1"># (We can use components_auto logic, but we need to intercept the map before populate)</span>
-        <span class="c1"># So we manually call steps 1 &amp; 2.</span>
-        
-        <span class="c1"># Force forest region</span>
-        <span class="n">session_id_only</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">identify_lines</span><span class="p">(</span>
-            <span class="n">multiplets</span><span class="o">=</span><span class="s2">"Ly_a"</span><span class="p">,</span> 
+        <span class="c1"># Before phase 7-bis (PR B8, F102, Guido's decision) the pipeline had</span>
+        <span class="c1"># no region: it identified on the whole mask (identify_lines looks for</span>
+        <span class="c1"># single Ly-a lines in the forest only, but a region across its edges</span>
+        <span class="c1"># was taken whole) and its two refits took every component of the</span>
+        <span class="c1"># session, e.g. the metals of the red side</span>
+        <span class="n">region</span> <span class="o">=</span> <span class="n">FOREST_AUTO_REGION</span>
+        <span class="n">_check_region</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="n">region</span><span class="p">)</span>
+
+        <span class="c1"># 1. IDENTIFY 'Ly_a' lines in the region, on a copy of the mask</span>
+        <span class="c1"># restricted to it; the mask of the session is given back as it was</span>
+        <span class="n">session_masked</span><span class="p">,</span> <span class="n">kept_mask</span> <span class="o">=</span> <span class="n">_restricted_mask</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">,</span> <span class="s1">'abs_mask'</span><span class="p">,</span> <span class="n">region</span><span class="p">)</span>
+        <span class="n">session_id_only</span> <span class="o">=</span> <span class="n">RecipeAbsorbers</span><span class="p">(</span><span class="n">session_masked</span><span class="p">)</span><span class="o">.</span><span class="n">identify_lines</span><span class="p">(</span>
+            <span class="n">multiplets</span><span class="o">=</span><span class="s2">"Ly_a"</span><span class="p">,</span>
             <span class="n">score_threshold</span><span class="o">=</span><span class="n">score_threshold</span><span class="p">,</span>
             <span class="n">z_em_margin_kms</span><span class="o">=</span><span class="n">z_em_margin_kms</span><span class="p">,</span>
-            <span class="c1"># We can't easily pass region mask to identify_lines directly via public API without</span>
-            <span class="c1"># duplicating the logic in components_auto. </span>
-            <span class="c1"># Ideally, identify_lines should support region_limit, but for now, </span>
-            <span class="c1"># let's trust the user or just run on whole spectrum (since forest is dominant).</span>
-            <span class="c1"># OR better: Use components_auto but hacking the 'multiplets' is hard.</span>
         <span class="p">)</span>
-        
+        <span class="n">session_id_only</span> <span class="o">=</span> <span class="n">session_id_only</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span>
+            <span class="n">spec_of</span><span class="p">(</span><span class="n">session_id_only</span><span class="p">)</span><span class="o">.</span><span class="n">update_column</span><span class="p">(</span>
+                <span class="s1">'abs_mask'</span><span class="p">,</span> <span class="n">kept_mask</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">kept_mask</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span>
+                <span class="n">description</span><span class="o">=</span><span class="n">kept_mask</span><span class="o">.</span><span class="n">description</span><span class="p">))</span>
+
         <span class="c1"># 2. MODIFY MAPS: Swap 'Ly_a' -&gt; 'Lyman'</span>
         <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
         <span class="n">spec_meta</span> <span class="o">=</span> <span class="n">session_id_only</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">meta</span>
@@ -1821,7 +1852,8 @@
         <span class="n">rec_step3</span> <span class="o">=</span> <span class="n">RecipeAbsorbers</span><span class="p">(</span><span class="n">session_step2</span><span class="p">)</span>
         <span class="c1"># max_nfev as before the defaults were aligned with the GUI (#573)</span>
         <span class="n">refit_kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">z_window_kms</span><span class="o">=</span><span class="n">z_window_kms</span><span class="p">,</span> <span class="n">group_depth</span><span class="o">=</span><span class="s1">'1'</span><span class="p">,</span>
-                            <span class="n">max_nfev</span><span class="o">=</span><span class="s1">'100'</span><span class="p">,</span> <span class="n">max_b</span><span class="o">=</span><span class="n">max_b</span><span class="p">,</span> <span class="n">max_logN</span><span class="o">=</span><span class="n">max_logN</span><span class="p">)</span>
+                            <span class="n">max_nfev</span><span class="o">=</span><span class="s1">'100'</span><span class="p">,</span> <span class="n">max_b</span><span class="o">=</span><span class="n">max_b</span><span class="p">,</span> <span class="n">max_logN</span><span class="o">=</span><span class="n">max_logN</span><span class="p">,</span>
+                            <span class="n">region_limit</span><span class="o">=</span><span class="n">region</span><span class="p">)</span>
         <span class="n">fitted</span> <span class="o">=</span> <span class="n">rec_step3</span><span class="o">.</span><span class="n">refit_all</span><span class="p">(</span><span class="o">**</span><span class="n">refit_kwargs</span><span class="p">)</span>
         <span class="c1"># The Lyman systems narrower than min_b are removed as in lya_auto</span>
         <span class="c1"># (F65: before, min_b was taken and not used)</span>
