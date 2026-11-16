@@ -11,6 +11,9 @@ values, to be calibrated against the literature before scientific use:
   2008), at z = 3 and 3.8.
 - Metal systems: a few components within a small velocity range,
   optionally with an H I component at the system redshift.
+- Associated absorbers: metal systems within a few thousand km/s of
+  z_em, beyond it too; and a proximity zone of the forest
+  (:func:`lya_forest`, ``proximity_kms``), phase 7, PR 7a.1.
 - Strong H I absorbers (Lyman-limit systems, sub-DLAs, DLAs): column
   densities from f(N) ~ N^-beta (beta = 1.7) within a range, uniform
   Doppler parameters, uniform redshifts, all the Lyman lines of the
@@ -61,7 +64,8 @@ def lya_forest(rng: np.random.Generator, z_min: float, z_max: float,
                b_min: float = 10.0, dndz_at_3: float = 1700.0,
                gamma: float = 2.5, series: str = "Ly_a",
                strong_series: Optional[str] = None,
-               strong_logN: float = 15.0) -> List[MockComponent]:
+               strong_logN: float = 15.0, z_em: Optional[float] = None,
+               proximity_kms: Optional[float] = None) -> List[MockComponent]:
     """Random Lyman-alpha forest between ``z_min`` and ``z_max``.
 
     The number of lines is Poisson-distributed around
@@ -73,11 +77,25 @@ def lya_forest(rng: np.random.Generator, z_min: float, z_max: float,
     series instead, e.g. the whole Lyman series only where the higher
     lines matter (a few percent of the lines with the defaults, so the
     mock stays fast); the draws are the same.
+
+    With ``z_em`` and ``proximity_kms`` the forest has a proximity zone
+    (phase 7, PR 7a.1): the column of each line is divided by 1 + omega,
+    the ratio of the ionizing flux of the quasar to the background, with
+    omega = (``proximity_kms`` / dv)^2 at the velocity dv from ``z_em``
+    (the 1/r^2 of the flux, with the distance proportional to dv near the
+    quasar), so that ``proximity_kms`` is where the two are equal. With
+    f(N) ~ N^-beta this reduces the density of the lines above any column
+    by (1 + omega)^(1 - beta). The draws are the same as without it, and
+    the series of a line follows its reduced column.
     """
     n = rng.poisson(expected_forest_lines(z_min, z_max, dndz_at_3, gamma))
     z = _redshifts(rng, n, z_min, z_max, gamma)
     logN = np.log10(_power_law(rng, n, 10**logN_range[0], 10**logN_range[1], beta))
     b = np.maximum(b_median * 10 ** (b_sigma_dex * rng.standard_normal(n)), b_min)
+    if proximity_kms is not None:
+        if z_em is None:
+            raise ValueError("proximity_kms needs z_em")
+        logN = logN - np.log10(1.0 + proximity_omega(z, z_em, proximity_kms))
     order = np.argsort(z)
     def series_of(n):
         if strong_series is not None and n >= strong_logN:
@@ -85,6 +103,16 @@ def lya_forest(rng: np.random.Generator, z_min: float, z_max: float,
         return series
     return [MockComponent(series_of(logN[i]), float(z[i]), float(logN[i]),
                           float(b[i])) for i in order]
+
+
+def proximity_omega(z, z_em: float, proximity_kms: float) -> np.ndarray:
+    """Ratio of the ionizing flux of the quasar to the background at
+    redshift ``z`` (see :func:`lya_forest`); infinite at and beyond
+    ``z_em``."""
+    dv = (z_em - np.asarray(z, dtype=float)) / (1.0 + z_em) * C_KMS
+    with np.errstate(divide="ignore"):
+        return np.where(dv > 0, (proximity_kms / np.where(dv > 0, dv, 1.0)) ** 2,
+                        np.inf)
 
 
 def metal_systems(rng: np.random.Generator, n_systems: int, z_min: float,
@@ -135,3 +163,25 @@ def strong_hi_systems(rng: np.random.Generator, n_systems: int, z_min: float,
     order = np.argsort(z)
     return [MockComponent(LYMAN_SERIES, float(z[i]), float(logN[i]), float(b[i]))
             for i in order]
+
+
+def associated_absorbers(rng: np.random.Generator, n_systems: int, z_em: float,
+                         v_range_kms: Tuple[float, float] = (-2000.0, 3000.0),
+                         species: Sequence[str] = ("CIV", "NV", "SiIV"),
+                         max_components: int = 3, dv_kms: float = 50.0,
+                         logN_range: Tuple[float, float] = (13.0, 15.0),
+                         b_range: Tuple[float, float] = (4.0, 15.0),
+                         hi_logN_range: Optional[Tuple[float, float]] = (14.0, 17.0)
+                         ) -> List[MockComponent]:
+    """Random associated absorbers (phase 7, PR 7a.1): metal systems (each
+    with its H I) at velocities from ``z_em`` in ``v_range_kms``, positive
+    beyond z_em (z > z_em, as for infall or a z_em underestimated), i.e.
+    redshifts uniform in z_em + v / c (1 + z_em). The margin of the
+    identification beyond z_em is 3000 km/s (F55, ``z_em_margin_kms``): a
+    range beyond it gives systems that the identification should reject.
+    The systems are those of :func:`metal_systems`."""
+    z_lo, z_hi = (z_em + v / C_KMS * (1.0 + z_em) for v in v_range_kms)
+    return metal_systems(rng, n_systems, z_lo, z_hi, species=species,
+                         max_components=max_components, dv_kms=dv_kms,
+                         logN_range=logN_range, b_range=b_range,
+                         hi_logN_range=hi_logN_range)

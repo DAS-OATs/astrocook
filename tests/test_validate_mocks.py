@@ -296,7 +296,7 @@ def test_full_grid_mock_is_unchanged(snapshot):
     its flux, as before the robustness mocks of phase 7 (PR 7a.1): the
     options added since are off by default, so the baseline of ``full``
     stays valid."""
-    truth, systems, strong = vm.make_truth(30.0, 8900.0, 3.5, 0)
+    truth, systems, strong = vm.make_truth(30.0, 8900.0, 2.5, 0)
     spec = generate(truth, truth_columns=False)
     comps = truth.components
     snapshot.check("validate_mocks_full_mock", {
@@ -307,3 +307,83 @@ def test_full_grid_mock_is_unchanged(snapshot):
         "n_systems": np.array([len(systems)]),
     })
     assert strong == "DLA"
+
+
+# --- Robustness grid (phase 7, PR 7a.1) -------------------------------------
+
+def test_robustness_grid_points():
+    points = vm.grid_points("robustness")
+    assert len(points) == 252
+    assert {p[4] for p in points} == set(vm.ROBUSTNESS_CASES)
+    assert {p[2] for p in points} == {3.5, 4.5}
+    assert all(len(p) == 4 for p in vm.grid_points("full"))
+
+
+def _robust(case, seed=2, z_em=3.5):
+    return vm.make_robust_truth(30.0, 8900.0, z_em, seed, case)
+
+
+def test_robustness_cases():
+    base, systems, extra = _robust("bal")
+    assert extra == dict(strong=None, associated=[])
+    assert len(base.bal_troughs) == 1 and base.telluric is None
+    assert base.emission_lines == vm.QSO_EMISSION_LINES
+    # The same forest and metals for every case without the proximity zone
+    for case in ("dla", "subdla", "emission", "telluric"):
+        truth, other_systems, extra = _robust(case)
+        assert set(base.components) <= set(truth.components)
+        assert len(other_systems) == len(systems)
+    assert _robust("dla")[2]["strong"] == "DLA"
+    assert _robust("subdla")[2]["strong"] == "subDLA"
+    assert _robust("telluric")[0].telluric is not None
+    emission = _robust("emission")[0].emission_lines
+    assert len(emission) == len(vm.QSO_EMISSION_LINES_FULL)
+    # No DLA nor sub-DLA in the base, unlike seeds 0 and 1 of the grid full
+    assert max(c.logN for c in _robust("bal", seed=0)[0].components) < 19.0
+    with pytest.raises(ValueError):
+        _robust("unknown")
+
+
+def test_robustness_proximity_and_associated():
+    truth, _, extra = _robust("proximity", seed=2)
+    assert 1000.0 <= truth.proximity_kms <= 3000.0
+    beyond = [a for a in extra["associated"] if a["beyond_margin"]]
+    within = [a for a in extra["associated"] if not a["beyond_margin"]]
+    assert len(beyond) == 1 and len(within) == 2
+    assert beyond[0]["v_kms"] > 3000.0
+    assert all(-2100.0 < a["v_kms"] < 3100.0 for a in within)
+    # Seeds 0 and 1: only the associated within the margin
+    _, _, extra0 = _robust("proximity", seed=0)
+    assert not any(a["beyond_margin"] for a in extra0["associated"])
+    combined, _, extra = _robust("combined")
+    assert extra["strong"] == "DLA+subDLA"
+    assert combined.bal_troughs and combined.telluric and combined.proximity_kms
+
+
+def test_robustness_tellurics_in_the_window():
+    for z_em in (3.5, 4.5):
+        truth = _robust("telluric", z_em=z_em)[0]
+        assert truth.lam_min_nm < 690.0 < truth.lam_max_nm
+
+
+def test_z_em_perturbed():
+    z_used, dv = vm.z_em_perturbed(30.0, 8900.0, 3.5, 2)
+    assert (z_used, dv) == vm.z_em_perturbed(30.0, 8900.0, 3.5, 2)
+    assert (z_used - 3.5) / 4.5 * const.c.to_value("km/s") == pytest.approx(dv)
+    dvs = [vm.z_em_perturbed(snr, resol, z_em, seed)[1]
+           for snr, resol, z_em, seed in vm.grid_points("full")]
+    assert np.std(dvs) == pytest.approx(vm.Z_EM_SIGMA_KMS, rel=0.2)
+
+
+def test_robustness_point(monkeypatch):
+    """One point of the grid, on a narrow window to keep it fast: the
+    recipes get the perturbed z_em, the record says which."""
+    monkeypatch.setattr(vm, "REST_WINDOW_NM", (112.0, 160.0))
+    record = vm.run_point((30.0, 8900.0, 3.5, 2, "combined"))
+    assert record["case"] == "combined" and record["strong"] == "DLA+subDLA"
+    assert record["z_em"] == 3.5
+    assert record["z_em_used"] == vm.z_em_perturbed(30.0, 8900.0, 3.5, 2)[0]
+    assert len(record["associated"]) == 3
+    assert set(record["times"]) == {"mock", "continuum", "identify", "doublets"}
+    summary = vm.summarize([record, record], "case")
+    assert set(summary) == {"combined"}

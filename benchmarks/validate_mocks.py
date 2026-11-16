@@ -31,8 +31,21 @@ Lyman-alpha forest (the whole Lyman series for logN >= 15), metal systems
 on the red side with their H I, the Lyman limit, and a noise that follows
 the flux. Seeds 0 and 1 also have a DLA and a sub-DLA in the forest
 (``strong`` in the records).
+
+The grid ``robustness`` (phase 7, PR 7a.1; 252 mocks: the cases of
+``ROBUSTNESS_CASES``, S/N 10, 30, 100; R 8900, 45000; z_em 3.5, 4.5, with
+the tellurics in the window; 3 seeds) adds one case at a time to the same
+forest and metals (without the DLA and the sub-DLA of ``full``): a DLA, a
+sub-DLA, a BAL trough, the richer emission lines, the tellurics, the
+proximity zone with associated absorbers, or all of them (``combined``).
+The forest and metals of a grid point are the same for every case (the
+draws of each case come from a generator of their own). The recipes get
+a z_em perturbed by a draw of sigma 500 km/s (reproducible from the
+seed; ``z_em_used`` in the records, ``z_em`` the true one). Its metrics
+for the new cases come in PR 7a.2.
 """
 import argparse
+import dataclasses
 import json
 import logging
 import sys
@@ -50,7 +63,8 @@ if str(ROOT) not in sys.path:
 
 from astrocook.core.atomic_data import ATOM_DATA, STANDARD_MULTIPLETS  # noqa: E402
 from astrocook.mocks import (  # noqa: E402
-    DLA_LOGN, LYMAN_SERIES, QSO_EMISSION_LINES, SUBDLA_LOGN, MockTruth,
+    DLA_LOGN, LYMAN_SERIES, QSO_EMISSION_LINES, QSO_EMISSION_LINES_FULL,
+    SUBDLA_LOGN, BALTrough, MockTruth, TelluricModel, associated_absorbers,
     continuum, generate, lya_forest, metal_systems, optical_depth,
     strong_hi_systems,
 )
@@ -62,7 +76,21 @@ GRIDS = {
     "reduced": dict(snr=(10.0, 30.0), resol=(8900.0, 45000.0), z_em=(2.5, 3.5),
                     seeds=(0, 2)),
     "tiny": dict(snr=(30.0,), resol=(8900.0,), z_em=(2.5,), seeds=(2,)),
+    "robustness": dict(snr=(10.0, 30.0, 100.0), resol=(8900.0, 45000.0),
+                       z_em=(3.5, 4.5), seeds=(0, 1, 2),
+                       cases=("dla", "subdla", "bal", "emission", "telluric",
+                              "proximity", "combined")),
 }
+#: The cases of the grid robustness (phase 7, PR 7a.1)
+ROBUSTNESS_CASES = GRIDS["robustness"]["cases"]
+#: Sigma of the perturbation of the z_em given to the recipes in the grid
+#: robustness (km/s; Guido, 13 November 2026)
+Z_EM_SIGMA_KMS = 500.0
+#: Velocity range of the associated absorbers from z_em (km/s, positive
+#: beyond it), within the margin of the identification (F55, 3000 km/s),
+#: and that of the one beyond the margin, in the mocks of seed 2
+ASSOCIATED_KMS = (-2000.0, 3000.0)
+ASSOCIATED_BEYOND_KMS = (3500.0, 6000.0)
 
 #: Matching tolerance between candidates or fitted components and the truth
 MATCH_KMS = 20.0
@@ -100,21 +128,21 @@ def _doublet_z_range(species, z_em):
     return lo + 0.01, min(hi, z_em) - 0.01
 
 
-def make_truth(snr, resol, z_em, seed):
-    """Mock of one grid point, and its metal systems.
+def _rng(snr, resol, z_em, seed, *extra):
+    return np.random.default_rng([int(seed), int(snr), int(resol), int(z_em * 10),
+                                  *extra])
 
-    Returns
-    -------
-    truth : MockTruth
-    systems : list of dict
-        ``{"species", "z", "components": [MockComponent, ...]}``, one per
-        metal system (without its H I).
-    """
-    rng = np.random.default_rng([int(seed), int(snr), int(resol), int(z_em * 10)])
-    lam_min, lam_max = (w * (1 + z_em) for w in REST_WINDOW_NM)
-    dv = C_KMS / resol / PIXELS_PER_FWHM
+
+def _window(z_em):
+    return tuple(w * (1 + z_em) for w in REST_WINDOW_NM)
+
+
+def _forest_and_metals(rng, z_em, proximity_kms=None):
+    """The forest and the metal systems on the red side of a mock."""
+    lam_min, _ = _window(z_em)
     forest = lya_forest(rng, lam_min / LYA_NM - 1, z_em, series="Ly_ab",
-                        strong_series=LYMAN_SERIES)
+                        strong_series=LYMAN_SERIES, z_em=z_em,
+                        proximity_kms=proximity_kms)
     comps, systems = list(forest), []
     for species, n in METAL_SYSTEMS.items():
         z_lo, z_hi = _doublet_z_range(species, z_em)
@@ -126,19 +154,137 @@ def make_truth(snr, resol, z_em, seed):
             z_sys = float(np.sum(weights * [c.z for c in metals]) / weights.sum())
             systems.append(dict(species=species, z=z_sys, components=metals))
             comps += system
-    strong = None
-    if seed in (0, 1):
-        # Its Lyman-alpha in the forest of the window, away from the edges
-        strong = "DLA" if seed == 0 else "subDLA"
-        comps += strong_hi_systems(rng, 1, lam_min * 1.05 / LYA_NM - 1, z_em - 0.05,
-                                   logN_range=DLA_LOGN if seed == 0 else SUBDLA_LOGN)
-    truth = MockTruth(
+    return comps, systems
+
+
+def _strong(rng, z_em, logN_range):
+    """One strong H I absorber, its Lyman-alpha in the forest of the
+    window, away from the edges."""
+    lam_min, _ = _window(z_em)
+    return strong_hi_systems(rng, 1, lam_min * 1.05 / LYA_NM - 1, z_em - 0.05,
+                             logN_range=logN_range)
+
+
+def _truth(comps, snr, resol, z_em, seed, **kwargs):
+    lam_min, lam_max = _window(z_em)
+    dv = C_KMS / resol / PIXELS_PER_FWHM
+    kwargs.setdefault("emission_lines", QSO_EMISSION_LINES)
+    return MockTruth(
         components=sorted(comps, key=lambda c: c.z), lam_min_nm=lam_min,
         lam_max_nm=lam_max, dv_kms=dv, resol=resol, snr=snr, z_em=z_em,
         seed=int(seed), oversample=max(1, int(np.ceil(dv / MAX_SUBPIXEL_KMS))),
-        emission_lines=QSO_EMISSION_LINES, cont_slope=-1.0, lyman_limit=True,
-        noise_floor=NOISE_FLOOR)
-    return truth, systems, strong
+        cont_slope=-1.0, lyman_limit=True, noise_floor=NOISE_FLOOR, **kwargs)
+
+
+def make_truth(snr, resol, z_em, seed):
+    """Mock of one grid point, and its metal systems.
+
+    Returns
+    -------
+    truth : MockTruth
+    systems : list of dict
+        ``{"species", "z", "components": [MockComponent, ...]}``, one per
+        metal system (without its H I).
+    """
+    rng = _rng(snr, resol, z_em, seed)
+    comps, systems = _forest_and_metals(rng, z_em)
+    strong = None
+    if seed in (0, 1):
+        strong = "DLA" if seed == 0 else "subDLA"
+        comps += _strong(rng, z_em, DLA_LOGN if seed == 0 else SUBDLA_LOGN)
+    return _truth(comps, snr, resol, z_em, seed), systems, strong
+
+
+# --- Robustness grid (phase 7, PR 7a.1) ---------------------------------
+
+def _bal_trough(rng):
+    """A BAL trough: its start 2000-10000 km/s, its width 2000-10000 km/s,
+    its CIV optical depth 0.5-4."""
+    v_min = rng.uniform(2000.0, 10000.0)
+    width = rng.uniform(2000.0, 10000.0)
+    return BALTrough(float(v_min), float(v_min + width),
+                     float(rng.uniform(0.5, 4.0)), edge_kms=min(1000.0, width / 4))
+
+
+def _emission_lines(rng):
+    """QSO_EMISSION_LINES_FULL with the amplitudes scaled by 0.7-1.3, the
+    shifts drawn around theirs (sigma 300 km/s; CIV 0-2000 km/s to the
+    blue, its asymmetry 0-0.3)."""
+    lines = []
+    for line in QSO_EMISSION_LINES_FULL:
+        amp = line.amplitude * rng.uniform(0.7, 1.3)
+        if abs(line.rest_nm - 154.9) < 0.1:
+            shift, asym = -rng.uniform(0.0, 2000.0), rng.uniform(0.0, 0.3)
+        else:
+            shift, asym = line.shift_kms + 300.0 * rng.standard_normal(), line.asymmetry
+        lines.append(dataclasses.replace(line, amplitude=float(amp),
+                                         shift_kms=float(shift), asymmetry=float(asym)))
+    return lines
+
+
+def _telluric(rng):
+    """Tellurics at airmass 1-2, PWV 0.5-10 mm, shifted by up to 2 km/s."""
+    return TelluricModel(airmass=float(rng.uniform(1.0, 2.0)),
+                         pwv_mm=float(rng.uniform(0.5, 10.0)),
+                         shift_kms=float(rng.uniform(-2.0, 2.0)))
+
+
+def z_em_perturbed(snr, resol, z_em, seed):
+    """The z_em given to the recipes: the true one shifted by a draw of
+    sigma Z_EM_SIGMA_KMS, reproducible from the grid point."""
+    dv = Z_EM_SIGMA_KMS * _rng(snr, resol, z_em, seed, 99).standard_normal()
+    return float(z_em + dv / C_KMS * (1 + z_em)), float(dv)
+
+
+def make_robust_truth(snr, resol, z_em, seed, case):
+    """Mock of one point of the grid robustness.
+
+    Returns
+    -------
+    truth : MockTruth
+    systems : list of dict
+        The metal systems on the red side, as :func:`make_truth`.
+    extra : dict
+        What the case added: ``strong`` (``"DLA"``, ``"subDLA"``, both
+        joined by ``+``, or None) and ``associated``, the associated
+        systems (species, z, velocity from z_em, beyond the margin of
+        F55 or not).
+    """
+    if case not in ROBUSTNESS_CASES:
+        raise ValueError(f"Unknown case {case!r}")
+    every = case == "combined"
+    case_rng = _rng(snr, resol, z_em, seed, 100 + ROBUSTNESS_CASES.index(case))
+    proximity_kms = (float(case_rng.uniform(1000.0, 3000.0))
+                     if every or case == "proximity" else None)
+    comps, systems = _forest_and_metals(_rng(snr, resol, z_em, seed), z_em,
+                                        proximity_kms)
+    kwargs, strong, associated = {}, [], []
+    if every or case == "dla":
+        comps += _strong(case_rng, z_em, DLA_LOGN)
+        strong.append("DLA")
+    if every or case == "subdla":
+        comps += _strong(case_rng, z_em, SUBDLA_LOGN)
+        strong.append("subDLA")
+    if every or case == "bal":
+        kwargs["bal_troughs"] = [_bal_trough(case_rng)]
+    if every or case == "emission":
+        kwargs["emission_lines"] = _emission_lines(case_rng)
+    if every or case == "telluric":
+        kwargs["telluric"] = _telluric(case_rng)
+    if proximity_kms is not None:
+        kwargs["proximity_kms"] = proximity_kms
+        ranges = [ASSOCIATED_KMS] * 2 + ([ASSOCIATED_BEYOND_KMS] if seed == 2 else [])
+        for v_range in ranges:
+            system = associated_absorbers(case_rng, 1, z_em, v_range_kms=v_range)
+            metals = [c for c in system if c.series != LYMAN_SERIES]
+            z_sys = float(np.mean([c.z for c in metals]))
+            v = (z_sys - z_em) / (1 + z_em) * C_KMS
+            associated.append(dict(species=metals[0].series, z=z_sys, v_kms=v,
+                                   beyond_margin=v_range is ASSOCIATED_BEYOND_KMS))
+            comps += system
+    truth = _truth(comps, snr, resol, z_em, seed, **kwargs)
+    return truth, systems, dict(strong="+".join(strong) or None,
+                                associated=associated)
 
 
 # --- Detection limit ----------------------------------------------------
@@ -381,17 +527,32 @@ def fit_metrics(truth, systems, systs):
 
 
 def run_point(point):
-    """Mock, chain and metrics of one grid point (a record)."""
-    snr, resol, z_em, seed = point
+    """Mock, chain and metrics of one grid point (a record).
+
+    A point of the grid robustness has a fifth element, the case: its
+    record adds ``case``, ``associated``, ``z_em_used`` (the z_em given to
+    the recipes) and ``dz_em_kms`` (its difference from the true one).
+    """
+    snr, resol, z_em, seed = point[:4]
     logging.disable(logging.WARNING)
     t0 = time.time()
-    truth, systems, strong = make_truth(snr, resol, z_em, seed)
+    extra = {}
+    if len(point) > 4:
+        truth, systems, added = make_robust_truth(*point)
+        strong = added["strong"]
+        z_used, dv = z_em_perturbed(snr, resol, z_em, seed)
+        extra = dict(case=point[4], associated=added["associated"],
+                     z_em_used=z_used, dz_em_kms=dv)
+    else:
+        truth, systems, strong = make_truth(snr, resol, z_em, seed)
     # The true continuum is not in the spectrum, as for an observed one
     spec = generate(truth, truth_columns=False)
+    if extra:
+        spec = spec.with_properties(z_em=extra["z_em_used"])
     t_mock = time.time() - t0
     cont, ident, fit, times = run_chain(spec)
     return dict(
-        snr=snr, resol=resol, z_em=z_em, seed=seed, strong=strong,
+        snr=snr, resol=resol, z_em=z_em, seed=seed, strong=strong, **extra,
         n_pixels=len(cont.spec.x), times=dict(mock=t_mock, **times),
         continuum=continuum_metrics(truth, cont.spec),
         identification=identification_metrics(truth, systems, ident.spec),
@@ -490,8 +651,11 @@ def completeness_by_significance(records):
 
 def grid_points(grid):
     g = GRIDS[grid]
-    return [(snr, resol, z_em, seed) for snr in g["snr"] for resol in g["resol"]
-            for z_em in g["z_em"] for seed in g["seeds"]]
+    points = [(snr, resol, z_em, seed) for snr in g["snr"] for resol in g["resol"]
+              for z_em in g["z_em"] for seed in g["seeds"]]
+    if "cases" in g:
+        points = [(*p, case) for case in g["cases"] for p in points]
+    return points
 
 
 def run(grid="full", workers=1):
@@ -501,11 +665,12 @@ def run(grid="full", workers=1):
             records = pool.map(run_point, points, chunksize=1)
     else:
         records = [run_point(p) for p in points]
-    return dict(grid=grid, match_kms=MATCH_KMS, records=records,
-                summary=dict(all=summarize(records),
-                             by_snr=summarize(records, "snr"),
-                             by_resol=summarize(records, "resol"),
-                             by_z_em=summarize(records, "z_em")))
+    summary = dict(all=summarize(records), by_snr=summarize(records, "snr"),
+                   by_resol=summarize(records, "resol"),
+                   by_z_em=summarize(records, "z_em"))
+    if "cases" in GRIDS[grid]:
+        summary["by_case"] = summarize(records, "case")
+    return dict(grid=grid, match_kms=MATCH_KMS, records=records, summary=summary)
 
 
 def print_summary(result):
