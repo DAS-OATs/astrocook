@@ -40,7 +40,7 @@ MENUS = {
                   "Fit Continuum to Mask...", SEP, "Fit Power-Law..."],
     "Absorbers": ["Auto-detect Doublets...", "Auto-fit Ly-alpha Forest...", SEP,
                   "Identify Absorption Lines...", "Refit All Systems...",
-                  "Clean Negligible Components..."],
+                  "Clean Negligible Components...", SEP, "Evaluate Model..."],
     "Help": ["Online Documentation", SEP, "About Astrocook..."],
 }
 
@@ -70,6 +70,7 @@ RECIPE_ENTRIES = {
     "Identify Absorption Lines...": ("absorbers", "identify_lines"),
     "Refit All Systems...": ("absorbers", "refit_all"),
     "Clean Negligible Components...": ("absorbers", "clean_negligible"),
+    "Evaluate Model...": ("absorbers", "evaluate_model"),
     "Export to ASCII...": ("file", "export_ascii"),
 }
 

@@ -52,6 +52,9 @@ REFERENCES: Dict[str, Tuple[str, str]] = {
     'emcee': ("Foreman-Mackey et al. 2013",
               "Foreman-Mackey D. et al. 2013, PASP 125, 306"),
     'dynesty': ("Speagle 2020", "Speagle J. S. 2020, MNRAS 493, 3132"),
+    'W21': ("Webb et al. 2021",
+            "Webb J. K., Lee C.-C., Carswell R. F., Milakovic D. 2021, MNRAS 501, "
+            "2268, doi:10.1093/mnras/staa3551"),
     # The sources of the atomic data
     'M03': ("Morton 2003", "Morton D. C. 2003, ApJS 149, 205"),
     'K14': ("Kisielius et al. 2014", "Kisielius R. et al. 2014, ApJ 780, 76"),

@@ -1154,6 +1154,7 @@ class MainPanelsMixin(HostBase):
         if hasattr(self, 'identify_lines_action'): self.identify_lines_action.setEnabled(enable_recipes)
         if hasattr(self, 'refit_all_action'): self.refit_all_action.setEnabled(enable_recipes)
         if hasattr(self, 'clean_negligible_action'): self.clean_negligible_action.setEnabled(enable_recipes)
+        if hasattr(self, 'evaluate_model_action'): self.evaluate_model_action.setEnabled(enable_recipes)
         # --- *** END NEW RECIPES *** ---
         
         # ... enable/disable other recipe actions ...

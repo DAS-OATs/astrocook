@@ -41,7 +41,7 @@ REQUIRING_RESOLUTION = {"fit_component", "add_component", "doublets_auto", "lya_
 
 def test_categories_in_the_order_of_the_menus():
     assert tuple(RECIPES) == registry.CATEGORIES
-    assert len(list(registry.all_recipes())) == 48
+    assert len(list(registry.all_recipes())) == 49
 
 
 @pytest.mark.parametrize("category", registry.CATEGORIES)
@@ -117,7 +117,9 @@ def test_recipe_names_are_unique_and_found_by_name():
 #: (F99), components_auto z_em as the pipelines that wrap it
 ADDED_Z_EM = {"components_auto"}
 ADDED_RESOLUTION = {"components_auto", "refit_all", "optimize_system", "fit_bayesian",
-                    "add_linked_system"}
+                    "add_linked_system",
+                    # Phase 7, PR 7a.5: the model it evaluates is convolved
+                    "evaluate_model"}
 
 
 def test_flags_as_before_the_registry():
