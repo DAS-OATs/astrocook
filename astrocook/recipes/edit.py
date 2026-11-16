@@ -208,7 +208,7 @@ EDIT_RECIPES_SCHEMAS = {
             # Required (PR 8): with the defaults 'F' and 'F / dF' it
             # replaced the flux with its S/N
             {"name": "target_col", "type": str, "default": "", "doc": "Column to write, e.g. 'snr': replaced if it exists, created otherwise; a name of letters, digits and _ (not the axis, λ, λmin, λmax).", "kind": "column"},
-            {"name": "expression", "type": str, "default": "", "doc": "Expression of the columns, e.g. 'F / dF' or 'F / cont'."},
+            {"name": "expression", "type": str, "default": "", "doc": "Expression of the columns, e.g. 'F / dF' or 'F / cont' (NumExpr: + - * / **, comparisons, sqrt, exp, log, log10, abs, sin, cos, where; sum, prod, min, max reduce a column to one number)."},
         ],
     },
     "mask_expression": {
