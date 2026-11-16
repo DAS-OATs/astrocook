@@ -68,7 +68,8 @@ def _methods_lya_auto(p):
 
 
 def _methods_forest_auto(p):
-    return (f"Lyman-alpha lines were searched for and fitted each as a Lyman series, "
+    return (f"Lyman-alpha lines were searched for in the forest, between the Lyman "
+            f"limit and Lyman-alpha, and fitted each as a Lyman series, "
             f"from Lyman-alpha to the Lyman limit, so that the higher-order lines "
             f"constrain the column density{p.menu}. The lines were accepted for a "
             f"score >= {p['score_threshold']} ({_beyond(p)}; Cupani et al. 2026) and "
@@ -283,7 +284,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
         "brief": "Auto-fit full Lyman series.",
         "url": "tutorials/absorption_systems.html#automated-detection-pipelines",
         "requires": ("z_em", "resolution", "continuum"),
-        "details": "Finds Lyman-alpha lines and fits each as a Lyman series (Ly-alpha to the Lyman limit), so that the higher-order lines constrain the column density; systems narrower than min_b are removed.",
+        "details": "Fits the Lyman-alpha lines of the forest (Lyman limit to Ly-alpha) each as a Lyman series; systems narrower than min_b are removed. The components outside are not refitted.",
         "params": [
             {"name": "score_threshold", "type": float, "default": 0.1, "min": 0, "max": 1, "doc": "Minimum score (0-1) to accept a line."},
             {"name": "min_b", "type": float, "default": 10.0, "min": 0, "doc": "Lyman systems narrower than this (km/s) are removed."},
@@ -772,6 +773,27 @@ def _check_region(spec, region_limit: str) -> None:
         raise RecipeFailed(f"The region '{region_limit}' cannot be used: {e}") from e
 
 
+#: The region of ``forest_auto``: from the Lyman limit to the Lyman-alpha
+#: emission, where the lines of the Lyman series lie (phase 7-bis, PR B8, F102)
+FOREST_AUTO_REGION = 'all_ly_forest'
+
+
+def _restricted_mask(session, mask_col: str, region: str):
+    """The session with ``mask_col`` set to False outside ``region``, and the
+    column of the mask to give back with the result. A missing mask is made
+    with the defaults of ``find_absorbed``, as ``identify_lines`` does."""
+    spec = spec_of(session)
+    if not spec.has_aux_column(mask_col):
+        logger.info(f"There is no column '{mask_col}': the absorbed regions are "
+                    "found with find_absorbed and its defaults.")
+        spec = spec.find_absorbed(smooth_len_lya=5000.0 * au.km/au.s,
+                                  smooth_len_out=400.0 * au.km/au.s,
+                                  kappa=2.0, template=False)
+    kept_mask = spec._data.aux_cols[mask_col]
+    obs_min, obs_max = spec.get_region_bounds(region)
+    return session.with_new_spectrum(spec.mask_region(mask_col, obs_min, obs_max)), kept_mask
+
+
 def _drop_negligible(session):
     """The automatic pipelines remove the components that end at the lower
     bound of logN (10, flag ``logN_at_lower_bound``, #517): they absorb
@@ -1217,6 +1239,11 @@ class RecipeAbsorbers:
 
         Pipeline that models the entire Lyman series (Ly-alpha to Ly-limit)
         simultaneously. Uses 'Ly_a' detection but maps it to 'Lyman' series.
+        It works in the region ``'all_ly_forest'``, from the Lyman limit to the
+        Lyman-alpha emission: the lines are searched for there, and the fits
+        take only the components there (with the neighbours of their groups);
+        the other components of the session, e.g. the metals of the red side,
+        are not refitted.
 
         Parameters
         ----------
@@ -1242,23 +1269,27 @@ class RecipeAbsorbers:
             A new :class:`~astrocook.session.session.Session` with Lyman series systems.
         """
         logger.info("Fitting the Lyman series in the forest.")
-        
-        # 1. IDENTIFY 'Ly_a' lines
-        # (We can use components_auto logic, but we need to intercept the map before populate)
-        # So we manually call steps 1 & 2.
-        
-        # Force forest region
-        session_id_only = self.identify_lines(
-            multiplets="Ly_a", 
+        # Before phase 7-bis (PR B8, F102, Guido's decision) the pipeline had
+        # no region: it identified on the whole mask (identify_lines looks for
+        # single Ly-a lines in the forest only, but a region across its edges
+        # was taken whole) and its two refits took every component of the
+        # session, e.g. the metals of the red side
+        region = FOREST_AUTO_REGION
+        _check_region(self._session.spec, region)
+
+        # 1. IDENTIFY 'Ly_a' lines in the region, on a copy of the mask
+        # restricted to it; the mask of the session is given back as it was
+        session_masked, kept_mask = _restricted_mask(self._session, 'abs_mask', region)
+        session_id_only = RecipeAbsorbers(session_masked).identify_lines(
+            multiplets="Ly_a",
             score_threshold=score_threshold,
             z_em_margin_kms=z_em_margin_kms,
-            # We can't easily pass region mask to identify_lines directly via public API without
-            # duplicating the logic in components_auto. 
-            # Ideally, identify_lines should support region_limit, but for now, 
-            # let's trust the user or just run on whole spectrum (since forest is dominant).
-            # OR better: Use components_auto but hacking the 'multiplets' is hard.
         )
-        
+        session_id_only = session_id_only.with_new_spectrum(
+            spec_of(session_id_only).update_column(
+                'abs_mask', kept_mask.values, unit=kept_mask.unit,
+                description=kept_mask.description))
+
         # 2. MODIFY MAPS: Swap 'Ly_a' -> 'Lyman'
         import json
         spec_meta = session_id_only.spec.meta
@@ -1283,7 +1314,8 @@ class RecipeAbsorbers:
         rec_step3 = RecipeAbsorbers(session_step2)
         # max_nfev as before the defaults were aligned with the GUI (#573)
         refit_kwargs = dict(z_window_kms=z_window_kms, group_depth='1',
-                            max_nfev='100', max_b=max_b, max_logN=max_logN)
+                            max_nfev='100', max_b=max_b, max_logN=max_logN,
+                            region_limit=region)
         fitted = rec_step3.refit_all(**refit_kwargs)
         # The Lyman systems narrower than min_b are removed as in lya_auto
         # (F65: before, min_b was taken and not used)
