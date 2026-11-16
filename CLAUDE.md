@@ -218,9 +218,10 @@ Current version: 2.7.0 (prepared in PR 14, 13 November 2026). Python ≥3.12.
   identifications and credibility, generated automatically in under an hour.
 - Papers (`ROADMAP.md`, section 6; the full plan in the private
   `astrocook-data`, `papers/plan.md`): a reference paper (MNRAS) with the
-  validation on mocks and the automatic re-analysis of HE0940–1050, after
-  phase 7. The real spectrum stays blind until then: develop only on the
-  mocks and on its synthetic twin.
+  validation on mocks and the automatic re-analysis of the 28 UVES quasars
+  of D'Odorico et al. (2010) (SQUAD DR1 reductions), after phase 7. Its
+  test part (20 spectra, HE0940–1050 among them) stays blind until then:
+  develop only on the mocks, the 8 development spectra and the twins.
 
 ## Current status
 Phases 0, 1, 1-bis, 2, 2-bis, 3, 3-bis, 4, 5, 5-bis, 6, 6-bis, 6-ter and
@@ -247,7 +248,8 @@ new mocks, metrics, the twin, the real spectra, the evaluation of a model
 on fixed pixels), 7b (emission model), 7c (identification), 7d
 (components and fit), each component with a design document in `design/`
 first. Phase 7-bis (small technical fixes, PRs B1-B11) is interleaved
-with it. The proprietary real spectra of the benchmark live in the
+with it. The real spectra of the benchmark (the sample of D'Odorico et
+al. 2010, public, kept private for the blindness) live in the
 private `astrocook-data` (`benchmark/`): nothing of them, data or
 per-object results, enters this public repository (`ROADMAP.md`, phase
 7, "Data and blindness").
