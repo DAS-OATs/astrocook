@@ -412,6 +412,9 @@ def identification_metrics(truth, systems, spec):
     A candidate is correct when a true system of the same species has a
     component within MATCH_KMS; a second candidate on the same system is
     a duplicate (F49); candidates beyond z_em are counted apart (F55).
+    Of the false ones, those on a component of their species in the truth
+    but not in ``systems`` (the associated absorbers of the grid
+    robustness) are counted apart too (``n_false_associated``, PR 7a.2).
     """
     candidates = _candidates(spec)
     out = {"n_lya": sum(1 for s, _ in candidates if s.startswith("Ly")),
@@ -422,12 +425,15 @@ def identification_metrics(truth, systems, spec):
         detectable = [d[0] for d in detection]
         cands = [z for s, z in candidates if s == species]
         found, duplicates, false, beyond = set(), 0, 0, 0
+        false_associated = 0
         for z in cands:
             beyond += z > truth.z_em
             hits = [i for i, s in enumerate(true)
                     if min(_dv(z, c.z) for c in s["components"]) <= MATCH_KMS]
             if not hits:
                 false += 1
+                false_associated += any(c.series == species and _dv(z, c.z) <= MATCH_KMS
+                                        for c in truth.components)
             elif hits[0] in found:
                 duplicates += 1
             else:
@@ -436,7 +442,8 @@ def identification_metrics(truth, systems, spec):
             n_true=len(true), n_detectable=int(sum(detectable)),
             n_candidates=len(cands), n_found=len(found),
             n_found_detectable=sum(1 for i in found if detectable[i]),
-            n_duplicates=duplicates, n_false=false, n_beyond_z_em=beyond)
+            n_duplicates=duplicates, n_false=false, n_beyond_z_em=beyond,
+            n_false_associated=int(false_associated))
         # Significance of the weaker line and outcome, per system, to
         # check the detection limit
         out["systems"] += [dict(species=species, significance=d[1] / d[2],

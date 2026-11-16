@@ -126,6 +126,16 @@ def test_identification_metrics():
     assert civ["n_false"] == 2 and civ["n_beyond_z_em"] == 1
     assert m["SiIV"]["n_found"] == 1 and m["SiIV"]["n_false"] == 0
     assert m["MgII"]["n_candidates"] == 0
+    # A false candidate on a CIV of the truth not in the systems (an
+    # associated absorber) is counted apart, and still false
+    associated = MockComponent("CIV", 2.15, 14.0, 10.0)
+    truth_assoc = MockTruth(components=[*truth.components, associated],
+                            **{k: getattr(truth, k) for k in (
+                                "lam_min_nm", "lam_max_nm", "dv_kms", "resol", "snr",
+                                "z_em", "seed")})
+    civ = vm.identification_metrics(truth_assoc, _systems(), _Spec(cands))["CIV"]
+    assert civ["n_false"] == 2 and civ["n_false_associated"] == 1
+    assert m["CIV"]["n_false_associated"] == 0
 
 
 def _comp(series, z, logN, b, dz=1e-5, dlogN=0.05, db=0.5, chi2=1.0):
