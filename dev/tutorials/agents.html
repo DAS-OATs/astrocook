@@ -771,7 +771,12 @@ agent gave, what the recipe did (its parameters, the works it relies on),
 what it changed and the notes written there; then the fit, the sources of
 the atomic data of the transitions fitted, and the references. The recipes
 undone are left out; <code class="docutils literal notranslate"><span class="pre">menus=false</span></code> leaves out the menus of the GUI that
-follow each recipe. The text is made by Astrocook from the log, not by the
+follow each recipe. The gaps the agent declared are not in the text (they are
+for the development): the result lists them apart, in <code class="docutils literal notranslate"><span class="pre">gaps</span></code>. With <code class="docutils literal notranslate"><span class="pre">path</span></code>
+(a file, or an existing folder: <code class="docutils literal notranslate"><span class="pre">&lt;session&gt;_methods.txt</span></code>; <code class="docutils literal notranslate"><span class="pre">overwrite=true</span></code> to
+replace) the tool also writes the text to a file and returns its path, so the
+agent need not write it itself. A session with no name of its own (the
+default <code class="docutils literal notranslate"><span class="pre">spectrum</span></code>) is not named in the first sentence. The text is made by Astrocook from the log, not by the
 agent: the same log gives the same text. So the reasons and notes are the
 only words of the agent in it: the instructions of the server tell the
 agent so.</p>

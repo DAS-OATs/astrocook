@@ -643,6 +643,8 @@ changed and the notes, then the references):</p>
 <span class="n">text</span> <span class="o">=</span> <span class="n">methods_text</span><span class="p">(</span><span class="n">history</span><span class="p">)</span>        <span class="c1"># a SessionHistory: the states and the log</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>                          <span class="c1"># or text.paragraphs, text.references</span>
 <span class="n">methods_text</span><span class="p">(</span><span class="n">history</span><span class="p">,</span> <span class="n">menus</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>  <span class="c1"># without the menus, for a paper</span>
+<span class="n">text</span><span class="o">.</span><span class="n">gaps</span>                            <span class="c1"># the gaps declared: not in the text</span>
+<span class="n">write_methods</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">"methods.txt"</span><span class="p">)</span>   <span class="c1"># from astrocook.methods_text; returns the path</span>
 </pre></div>
 </div>
 <p>A session alone (<code class="docutils literal notranslate"><span class="pre">methods_text(session)</span></code>) gives its log, without what each

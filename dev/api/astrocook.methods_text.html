@@ -491,9 +491,9 @@ does not quote that differ from their defaults;</p></li>
 after it (<a class="reference internal" href="astrocook.recipes.result.html#astrocook.recipes.result.compare_sessions" title="astrocook.recipes.result.compare_sessions"><code class="xref py py-func docutils literal notranslate"><span class="pre">compare_sessions()</span></code></a>, as
 <code class="docutils literal notranslate"><span class="pre">RecipeResult</span></code> does): the components added, removed and changed, the
 columns, the pixels; and the warnings the fit left on the components;</p></li>
-<li><p>the notes written at its state (<code class="docutils literal notranslate"><span class="pre">LogNote</span></code>: notes and gaps declared,
-as written; the gaps seen by the MCP server are for the development and
-are left out).</p></li>
+<li><p>the notes written at its state (<code class="docutils literal notranslate"><span class="pre">LogNote</span></code>: the notes, as written; the
+gaps, declared or seen by the MCP server, are for the development and are
+left out of the text: <code class="docutils literal notranslate"><span class="pre">MethodsText.gaps</span></code> lists the declared ones).</p></li>
 </ul>
 <p>The recipes undone are left out. The text is made from the log each time it
 is asked for, never stored: a better wording reaches the sessions saved
@@ -548,8 +548,16 @@ follow from what the text says, e.g. the resolution of Set properties)</p>
 
 <dl class="py data">
 <dt class="sig sig-object py" id="astrocook.methods_text.NOTES_LEFT_OUT">
-<span class="sig-prename descclassname"><span class="pre">astrocook.methods_text.</span></span><span class="sig-name descname"><span class="pre">NOTES_LEFT_OUT</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('gap_seen',)</span></span><a class="headerlink" href="#astrocook.methods_text.NOTES_LEFT_OUT" title="Link to this definition">#</a></dt>
-<dd><p>The kinds of notes left out of the text</p>
+<span class="sig-prename descclassname"><span class="pre">astrocook.methods_text.</span></span><span class="sig-name descname"><span class="pre">NOTES_LEFT_OUT</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('gap',</span> <span class="pre">'gap_seen')</span></span><a class="headerlink" href="#astrocook.methods_text.NOTES_LEFT_OUT" title="Link to this definition">#</a></dt>
+<dd><p>The kinds of notes left out of the text (the declared gaps are listed in
+<code class="docutils literal notranslate"><span class="pre">MethodsText.gaps</span></code>)</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="astrocook.methods_text.GENERIC_NAMES">
+<span class="sig-prename descclassname"><span class="pre">astrocook.methods_text.</span></span><span class="sig-name descname"><span class="pre">GENERIC_NAMES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('',</span> <span class="pre">'spectrum',</span> <span class="pre">'session',</span> <span class="pre">'unnamed</span> <span class="pre">session',</span> <span class="pre">'the</span> <span class="pre">object')</span></span><a class="headerlink" href="#astrocook.methods_text.GENERIC_NAMES" title="Link to this definition">#</a></dt>
+<dd><p>Names of a session that say nothing about the object (the default names
+and the generic ones): the text does not name the spectrum by them</p>
 </dd></dl>
 
 <dl class="py function">
@@ -670,7 +678,7 @@ before the first recipe) or <code class="docutils literal notranslate"><span cla
 
 <dl class="py class">
 <dt class="sig sig-object py" id="astrocook.methods_text.MethodsText">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">astrocook.methods_text.</span></span><span class="sig-name descname"><span class="pre">MethodsText</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">paragraphs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#astrocook.methods_text.MethodsParagraph" title="astrocook.methods_text.MethodsParagraph"><span class="pre">MethodsParagraph</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">references</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/methods_text.html#MethodsText"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.methods_text.MethodsText" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">astrocook.methods_text.</span></span><span class="sig-name descname"><span class="pre">MethodsText</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">paragraphs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#astrocook.methods_text.MethodsParagraph" title="astrocook.methods_text.MethodsParagraph"><span class="pre">MethodsParagraph</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">references</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gaps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">()</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/methods_text.html#MethodsText"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.methods_text.MethodsText" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>The text of the methods of a session (<a class="reference internal" href="#astrocook.methods_text.methods_text" title="astrocook.methods_text.methods_text"><code class="xref py py-func docutils literal notranslate"><span class="pre">methods_text()</span></code></a>).</p>
 <dl class="py attribute">
@@ -684,6 +692,13 @@ before the first recipe) or <code class="docutils literal notranslate"><span cla
 <dd><p>The list of references, one entry each, sorted</p>
 </dd></dl>
 
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.methods_text.MethodsText.gaps">
+<span class="sig-name descname"><span class="pre">gaps</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">()</span></span><a class="headerlink" href="#astrocook.methods_text.MethodsText.gaps" title="Link to this definition">#</a></dt>
+<dd><p>The gaps declared (notes of kind <code class="docutils literal notranslate"><span class="pre">gap</span></code>), as written, in the order
+of the log: for the developers, not part of the text (F115)</p>
+</dd></dl>
+
 <dl class="py property">
 <dt class="sig sig-object py" id="astrocook.methods_text.MethodsText.text">
 <span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">text</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#astrocook.methods_text.MethodsText.text" title="Link to this definition">#</a></dt>
@@ -692,7 +707,7 @@ before the first recipe) or <code class="docutils literal notranslate"><span cla
 
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.methods_text.MethodsText.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">paragraphs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#astrocook.methods_text.MethodsParagraph" title="astrocook.methods_text.MethodsParagraph"><span class="pre">MethodsParagraph</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">references</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#astrocook.methods_text.MethodsText.__init__" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">paragraphs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#astrocook.methods_text.MethodsParagraph" title="astrocook.methods_text.MethodsParagraph"><span class="pre">MethodsParagraph</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">references</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gaps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">()</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#astrocook.methods_text.MethodsText.__init__" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -756,6 +771,15 @@ text.</p>
 <dd><p>A file name for the text of a session: <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;_methods.txt</span></code>.</p>
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.methods_text.write_methods">
+<span class="sig-prename descclassname"><span class="pre">astrocook.methods_text.</span></span><span class="sig-name descname"><span class="pre">write_methods</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">out</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#astrocook.methods_text.MethodsText" title="astrocook.methods_text.MethodsText"><span class="pre">MethodsText</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../modules/astrocook/methods_text.html#write_methods"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.methods_text.write_methods" title="Link to this definition">#</a></dt>
+<dd><p>Write the text to a file, in UTF-8, and return its absolute path.</p>
+<p><code class="docutils literal notranslate"><span class="pre">path</span></code> is a file (<code class="docutils literal notranslate"><span class="pre">.txt</span></code> is added when it has no suffix) or an
+existing folder (the file is then <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;_methods.txt</span></code>, as the GUI
+proposes it).</p>
+</dd></dl>
+
 </section>
 
 
@@ -793,6 +817,7 @@ text.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.COLUMN_NAMES"><code class="docutils literal notranslate"><span class="pre">COLUMN_NAMES</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.FLAG_NAMES"><code class="docutils literal notranslate"><span class="pre">FLAG_NAMES</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.NOTES_LEFT_OUT"><code class="docutils literal notranslate"><span class="pre">NOTES_LEFT_OUT</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.GENERIC_NAMES"><code class="docutils literal notranslate"><span class="pre">GENERIC_NAMES</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.fmt"><code class="docutils literal notranslate"><span class="pre">fmt()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.given"><code class="docutils literal notranslate"><span class="pre">given()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.MethodsValues"><code class="docutils literal notranslate"><span class="pre">MethodsValues</span></code></a><ul class="nav section-nav flex-column">
@@ -818,6 +843,7 @@ text.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.MethodsText"><code class="docutils literal notranslate"><span class="pre">MethodsText</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.MethodsText.paragraphs"><code class="docutils literal notranslate"><span class="pre">MethodsText.paragraphs</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.MethodsText.references"><code class="docutils literal notranslate"><span class="pre">MethodsText.references</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.MethodsText.gaps"><code class="docutils literal notranslate"><span class="pre">MethodsText.gaps</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.MethodsText.text"><code class="docutils literal notranslate"><span class="pre">MethodsText.text</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.MethodsText.__init__"><code class="docutils literal notranslate"><span class="pre">MethodsText.__init__()</span></code></a></li>
 </ul>
@@ -828,6 +854,7 @@ text.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.atomic_data_sentence"><code class="docutils literal notranslate"><span class="pre">atomic_data_sentence()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.methods_text"><code class="docutils literal notranslate"><span class="pre">methods_text()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.methods_file_name"><code class="docutils literal notranslate"><span class="pre">methods_file_name()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.methods_text.write_methods"><code class="docutils literal notranslate"><span class="pre">write_methods()</span></code></a></li>
 </ul>
   </nav></div>
 
