@@ -325,6 +325,33 @@ def test_lya_auto_does_not_refit_the_red_side():
     assert after == before
 
 
+def test_forest_auto_refits_the_red_side():
+    # F102 for forest_auto (characterization before phase 7-bis, PR B8): the
+    # pipeline identifies on the whole spectrum and both its refits (the
+    # first one and that of the cleanup of the narrow lines) take every
+    # component of the session, so the CIV of the red side fitted before
+    # changes slightly
+    comps = [MockComponent("Ly_ab", z, logN, b) for z, logN, b in (
+        (2.80, 14.0, 25.0), (2.8015, 13.5, 6.0), (2.82, 13.8, 30.0), (2.85, 13.2, 4.0))]
+    comps.append(MockComponent("CIV", 2.30, 13.8, 10.0))
+    truth = MockTruth(components=comps, lam_min_nm=385.0, lam_max_nm=520.0,
+                      dv_kms=5.0, resol=45000.0, snr=30.0, z_em=3.0, seed=5)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        cont = Session("m", None, spec=generate(truth, truth_columns=False)
+                         ).continuum.estimate_auto()
+        civ = cont.absorbers.doublets_auto()
+        result = run(civ, "absorbers.forest_auto", min_b=10.0)
+    assert result.extra["discarded"]  # the cleanup and its refit did run
+    before = {c.uuid: (c.z, c.logN, c.b) for c in civ.systs.components}
+    assert before and all(c.series == "CIV" for c in civ.systs.components)
+    after = {c.uuid: (c.z, c.logN, c.b) for c in result.session.systs.components
+             if c.series == "CIV"}
+    assert after.keys() == before.keys()
+    assert after != before  # refitted
+    assert all(np.allclose(after[u], before[u], rtol=1e-3) for u in before)
+
+
 def test_the_candidates_dropped_are_in_the_result():
     # F119 (trial 3 of PR 7): a doublet scored below the threshold was
     # dropped without a word; its score and threshold are in the result now
