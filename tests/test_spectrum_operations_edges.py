@@ -76,16 +76,23 @@ def test_running_std_of_a_constant_is_zero():
     np.testing.assert_array_less(out[3:-3], 1e-6)
 
 
-def test_running_mean_and_std_pad_the_edges_with_zeros():
-    # Characterization of F30: np.convolve(mode='same') pads with zeros, so
-    # the first and last h values are biased towards 0 (V1 repeats the first
-    # and last full-window value instead)
+def test_running_mean_and_std_truncate_the_window_at_the_edges():
+    # F30: the first and last h values use the pixels that exist (they used
+    # to be biased towards 0 by the zero padding of np.convolve)
     y = np.ones(50)
     h = 3
-    mean = running_mean(y, h)
-    np.testing.assert_allclose(mean[:h + 1], [4 / 7, 5 / 7, 6 / 7, 1.0])
-    np.testing.assert_allclose(mean[h:-h], 1.0)
-    assert running_std(y, h)[0] > 0.4
+    np.testing.assert_allclose(running_mean(y, h), 1.0)
+    np.testing.assert_allclose(running_std(y, h), 0.0, atol=1e-7)
+
+
+@pytest.mark.parametrize("h", [1, 3, 7])
+def test_running_mean_and_std_match_brute_force_everywhere(h):
+    y = _noisy(40)
+    n = len(y)
+    windows = [y[max(0, i - h):i + h + 1] for i in range(n)]
+    np.testing.assert_allclose(running_mean(y, h), [w.mean() for w in windows])
+    np.testing.assert_allclose(running_std(y, h), [w.std() for w in windows],
+                               atol=1e-7)
 
 
 # --- compute_auto_fudge, interpolate_continuum_mask -----------------------
