@@ -12,7 +12,7 @@ import logging
 import numpy as np
 from typing import TYPE_CHECKING, Self, cast, Dict, List, Optional
 
-from astrocook.core.spectrum_operations import convert_axis_velocity, rebin_spectrum
+from astrocook.core.spectrum_operations import convert_axis_velocity, follow_mask, rebin_spectrum
 from astrocook.core.structures import DataColumn, SpectrumData
 from astrocook.core._spectrum_host import HostBase
 
@@ -220,7 +220,14 @@ class CombineMixin(HostBase):
                 continue
             # --- *** END FIX 1 *** ---
 
-            if col_data.values.dtype.kind in 'fiub': # Check for float, int, unsigned, or bool
+            if col_data.values.dtype.kind == 'b':
+                # A boolean mask follows the new pixels (F72): masked if any
+                # old pixel in it was
+                new_aux_cols[name] = DataColumn(
+                    follow_mask(xmin_calc.value, xmax_calc.value, col_data.values,
+                                xmin_new.value, xmax_new.value),
+                    col_data.unit, description=col_data.description)
+            elif col_data.values.dtype.kind in 'fiu':  # float, int, unsigned
                 try:
                     logger.debug(f"Rebin: Interpolating aux column '{name}'...")
                     interp_values = self.get_resampled_column(
@@ -501,6 +508,14 @@ class CombineMixin(HostBase):
 
         # --- Restore the co-added resolution array ---
         new_aux_cols = {}
+
+        # The other columns (masks included) are not carried: those of
+        # spectra of different S/N are to be made again on the result (F72,
+        # agreed with Guido); say so instead of dropping them silently
+        dropped = sorted({n for s in all_specs for n in s._data.aux_cols} - {'resol'})
+        if dropped:
+            logger.warning(f"The columns {dropped} of the spectra are not carried to "
+                           "the co-added spectrum: make them again on the result.")
         
         if reb_resol is not None:
             new_aux_cols['resol'] = DataColumn(reb_resol, au.dimensionless_unscaled, description="Co-added IVW resolution")
@@ -549,7 +564,15 @@ class CombineMixin(HostBase):
         for name, col_q in all_cols_old.items():
             if name in ('x', 'xmin', 'xmax'):
                 continue
-            if col_q.dtype.kind in 'fiu': 
+            if col_q.dtype.kind == 'b':
+                # A boolean mask follows the new pixels (F72): masked if any
+                # old pixel in it was
+                aux_cols_new[name] = DataColumn(
+                    follow_mask(self.xmin.to_value(au.nm), self.xmax.to_value(au.nm),
+                                col_q.value, target_grid_spec.xmin.to_value(au.nm),
+                                target_grid_spec.xmax.to_value(au.nm)),
+                    au.dimensionless_unscaled)
+            elif col_q.dtype.kind in 'fiu':
                 logger.debug(f"Resampling column '{name}'...")
                 y_interp = np.interp(x_new, x_old, col_q.value,
                                      left=fill_value, right=fill_value)

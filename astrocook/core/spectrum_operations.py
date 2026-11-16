@@ -451,6 +451,47 @@ def rebin_spectrum(
     
     return x_out, xmin_out, xmax_out, y_out, dy_out, resol_out
 
+def follow_mask(old_lo: np.ndarray, old_hi: np.ndarray, mask: np.ndarray,
+                new_lo: np.ndarray, new_hi: np.ndarray) -> np.ndarray:
+    """
+    A boolean mask on a new grid (F72, phase 7-bis, B7; rule chosen by
+    Guido, 16 November 2026): a new pixel is masked if *any* masked old
+    pixel overlaps it, over a width greater than zero.
+
+    The rule is the cautious one for a mask of the absorbed pixels (True =
+    absorbed, used to exclude pixels from the continuum): no absorbed pixel
+    is let through, and a region grows by at most one new pixel on each
+    side. A new pixel beyond the data, or with no masked old pixel on it, is
+    False. A mask whose True means "good" would need the opposite rule
+    (``all``): none exists in the package.
+
+    Parameters
+    ----------
+    old_lo, old_hi : np.ndarray
+        Edges of the old pixels, in the same unit as the new ones.
+    mask : np.ndarray
+        Boolean mask of the old pixels.
+    new_lo, new_hi : np.ndarray
+        Edges of the new pixels.
+    """
+    old_lo, old_hi = np.asarray(old_lo, float), np.asarray(old_hi, float)
+    new_lo, new_hi = np.asarray(new_lo, float), np.asarray(new_hi, float)
+    keep = np.asarray(mask, bool) & (old_hi > old_lo)
+    out = np.zeros(new_lo.shape, dtype=bool)
+    if not keep.any():
+        return out
+    lo, hi = old_lo[keep], old_hi[keep]
+    order = np.argsort(lo)
+    lo, hi = lo[order], hi[order]
+    # Of the masked old pixels that start before the end of a new pixel, the
+    # one that ends last: it overlaps the new pixel if it ends after its start
+    n_before = np.searchsorted(lo, new_hi, side='left')
+    reach = np.maximum.accumulate(hi)
+    has = n_before > 0
+    out[has] = reach[n_before[has] - 1] > new_lo[has]
+    return out
+
+
 def _window_counts(n: int, window_size: int) -> np.ndarray:
     """Number of pixels of the array inside a centred window, at each pixel
     (``window_size`` in the interior, fewer within h pixels of the edges)."""
