@@ -975,6 +975,8 @@ def summarize(records, key=None):
         for cat in PULL_CATEGORIES}
     out["fit"] = fit
     out["completeness_by_significance"] = completeness_by_significance(records)
+    out["completeness_by_significance_species"] = {
+        species: completeness_by_significance(records, species) for species in METALS}
     if all("phase7" in r for r in records):
         out["phase7"] = summarize_phase7(records)
     out["seconds"] = {k: float(np.sum([r["times"][k] for r in records]))
@@ -1044,10 +1046,12 @@ def summarize_phase7(records):
 SIGNIFICANCE_BINS = (0.0, 1.0, 2.0, 3.0, 5.0, 10.0, np.inf)
 
 
-def completeness_by_significance(records):
+def completeness_by_significance(records, species=None):
     """Fraction of the true systems found, in bins of the significance of
-    their weaker line: it should rise around DETECTION_SIGMA."""
-    systems = [s for r in records for s in r["identification"]["systems"]]
+    their weaker line: it should rise around DETECTION_SIGMA. All the
+    species, or one (F57, by species since PR 7c.1)."""
+    systems = [s for r in records for s in r["identification"]["systems"]
+               if species is None or s["species"] == species]
     out = {}
     for lo, hi in pairwise(SIGNIFICANCE_BINS):
         sel = [s["found"] for s in systems if lo <= s["significance"] < hi]
