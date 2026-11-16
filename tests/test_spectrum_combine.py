@@ -87,6 +87,31 @@ def test_coadd_without_resolution_everywhere(caplog):
     assert new.x.value.min() < 500.5 and new.x.value.max() > 514.5
 
 
+def test_rebin_interpolates_the_integer_columns():
+    # F72, characterization: an integer column (e.g. the ids of the
+    # absorbers) is interpolated as if it were a number, so the result is
+    # float, with values between the ids (not an id any more)
+    spec = _spec(500.0, 510.0, aux=lambda x: {
+        "ids": DataColumn(np.where(x > 505.0, 2, 1), au.dimensionless_unscaled)})
+    new = spec.rebin(None, None, 0.07 * au.nm, None, np.nan)
+    ids = new.get_column("ids").value
+    assert ids.dtype.kind == "f"
+    inner = ids[np.isfinite(ids)]
+    assert np.any((inner > 1.0) & (inner < 2.0))
+
+
+def test_coadd_drops_all_columns_but_the_resolution(caplog):
+    # F72, characterization: no auxiliary column of the inputs (a mask
+    # included) is carried to the co-added spectrum, and nothing is said
+    mask = lambda x: {"abs_mask": DataColumn(x > 505.0, au.dimensionless_unscaled),
+                      "cont": DataColumn(np.ones(x.size), FLUX)}
+    a, b = _spec(500.0, 510.0, aux=mask), _spec(505.0, 515.0, aux=mask)
+    with caplog.at_level(logging.WARNING):
+        new = a.coadd([b], None, None, 0.05 * au.nm, equalize_order=-1)
+    assert not new.has_aux_column("abs_mask") and not new.has_aux_column("cont")
+    assert "abs_mask" not in caplog.text
+
+
 # --- resample_on_grid, get_resampled_column ---------------------------------------------
 
 def test_resample_drops_the_masks(caplog):
