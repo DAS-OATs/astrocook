@@ -483,7 +483,9 @@
 <li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.generate.html">astrocook.mocks.generate module</a></li>
 <li class="toctree-l2 current active"><a aria-current="page" class="current reference internal" href="#">astrocook.mocks.physics module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.populations.html">astrocook.mocks.populations module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.telluric.html">astrocook.mocks.telluric module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.truth.html">astrocook.mocks.truth module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.truthmap.html">astrocook.mocks.truthmap module</a></li>
 </ul>
 </details></li>
 </ul>
@@ -616,6 +618,29 @@ resolution is handled exactly (no grouping of pixels). The flux is
 extended with its edge values to avoid edge effects.</p>
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.mocks.physics.outflow_velocity">
+<span class="sig-prename descclassname"><span class="pre">astrocook.mocks.physics.</span></span><span class="sig-name descname"><span class="pre">outflow_velocity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lam_ang</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lam0_ang</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_em</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="../modules/astrocook/mocks/physics.html#outflow_velocity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.mocks.physics.outflow_velocity" title="Link to this definition">#</a></dt>
+<dd><p>Outflow velocity (km/s, positive to the blue of z_em) at which a
+line of rest wavelength <code class="docutils literal notranslate"><span class="pre">lam0_ang</span></code> absorbs at <code class="docutils literal notranslate"><span class="pre">lam_ang</span></code>
+(relativistic Doppler formula).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.mocks.physics.trough_profile">
+<span class="sig-prename descclassname"><span class="pre">astrocook.mocks.physics.</span></span><span class="sig-name descname"><span class="pre">trough_profile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_min</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_max</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="../modules/astrocook/mocks/physics.html#trough_profile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.mocks.physics.trough_profile" title="Link to this definition">#</a></dt>
+<dd><p>1 between <code class="docutils literal notranslate"><span class="pre">v_min</span> <span class="pre">+</span> <span class="pre">edge</span></code> and <code class="docutils literal notranslate"><span class="pre">v_max</span> <span class="pre">-</span> <span class="pre">edge</span></code>, falling to 0 at
+<code class="docutils literal notranslate"><span class="pre">v_min</span></code> and <code class="docutils literal notranslate"><span class="pre">v_max</span></code> as a half cosine, 0 outside.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.mocks.physics.bal_optical_depth">
+<span class="sig-prename descclassname"><span class="pre">astrocook.mocks.physics.</span></span><span class="sig-name descname"><span class="pre">bal_optical_depth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lam_ang</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_em</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trough</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="../modules/astrocook/mocks/physics.html#bal_optical_depth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.mocks.physics.bal_optical_depth" title="Link to this definition">#</a></dt>
+<dd><p>Optical depth of a <code class="xref py py-class docutils literal notranslate"><span class="pre">BALTrough</span></code> at observed
+wavelengths (Angstrom): every line of its ions, in the ratio of their
+f lambda to that of CIV 1548 (times the ratio of the columns).</p>
+</dd></dl>
+
 </section>
 
 
@@ -673,6 +698,9 @@ extended with its edge values to avoid edge effects.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.physics.is_hydrogen"><code class="docutils literal notranslate"><span class="pre">is_hydrogen()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.physics.lyman_limit_optical_depth"><code class="docutils literal notranslate"><span class="pre">lyman_limit_optical_depth()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.physics.convolve_velocity"><code class="docutils literal notranslate"><span class="pre">convolve_velocity()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.physics.outflow_velocity"><code class="docutils literal notranslate"><span class="pre">outflow_velocity()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.physics.trough_profile"><code class="docutils literal notranslate"><span class="pre">trough_profile()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.physics.bal_optical_depth"><code class="docutils literal notranslate"><span class="pre">bal_optical_depth()</span></code></a></li>
 </ul>
   </nav></div>
 

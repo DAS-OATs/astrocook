@@ -483,7 +483,9 @@
 <li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.generate.html">astrocook.mocks.generate module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.physics.html">astrocook.mocks.physics module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.populations.html">astrocook.mocks.populations module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.telluric.html">astrocook.mocks.telluric module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.truth.html">astrocook.mocks.truth module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.truthmap.html">astrocook.mocks.truthmap module</a></li>
 </ul>
 </details></li>
 </ul>
@@ -554,6 +556,10 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="astrocook.mocks.generate.html">astrocook.mocks.generate module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.generate.html#astrocook.mocks.generate.make_grid"><code class="docutils literal notranslate"><span class="pre">make_grid()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.generate.html#astrocook.mocks.generate.subpixel_grid"><code class="docutils literal notranslate"><span class="pre">subpixel_grid()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.generate.html#astrocook.mocks.generate.components_optical_depth"><code class="docutils literal notranslate"><span class="pre">components_optical_depth()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.generate.html#astrocook.mocks.generate.bal_tau"><code class="docutils literal notranslate"><span class="pre">bal_tau()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.generate.html#astrocook.mocks.generate.pixel_transmission"><code class="docutils literal notranslate"><span class="pre">pixel_transmission()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.generate.html#astrocook.mocks.generate.normalized_flux"><code class="docutils literal notranslate"><span class="pre">normalized_flux()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.generate.html#astrocook.mocks.generate.continuum"><code class="docutils literal notranslate"><span class="pre">continuum()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.generate.html#astrocook.mocks.generate.noise_sigma"><code class="docutils literal notranslate"><span class="pre">noise_sigma()</span></code></a></li>
@@ -570,6 +576,9 @@
 <li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.physics.html#astrocook.mocks.physics.is_hydrogen"><code class="docutils literal notranslate"><span class="pre">is_hydrogen()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.physics.html#astrocook.mocks.physics.lyman_limit_optical_depth"><code class="docutils literal notranslate"><span class="pre">lyman_limit_optical_depth()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.physics.html#astrocook.mocks.physics.convolve_velocity"><code class="docutils literal notranslate"><span class="pre">convolve_velocity()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.physics.html#astrocook.mocks.physics.outflow_velocity"><code class="docutils literal notranslate"><span class="pre">outflow_velocity()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.physics.html#astrocook.mocks.physics.trough_profile"><code class="docutils literal notranslate"><span class="pre">trough_profile()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.physics.html#astrocook.mocks.physics.bal_optical_depth"><code class="docutils literal notranslate"><span class="pre">bal_optical_depth()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="astrocook.mocks.populations.html">astrocook.mocks.populations module</a><ul>
@@ -577,8 +586,18 @@
 <li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.populations.html#astrocook.mocks.populations.expected_forest_lines"><code class="docutils literal notranslate"><span class="pre">expected_forest_lines()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.populations.html#astrocook.mocks.populations.mean_transmission_fg08"><code class="docutils literal notranslate"><span class="pre">mean_transmission_fg08()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.populations.html#astrocook.mocks.populations.lya_forest"><code class="docutils literal notranslate"><span class="pre">lya_forest()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.populations.html#astrocook.mocks.populations.proximity_omega"><code class="docutils literal notranslate"><span class="pre">proximity_omega()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.populations.html#astrocook.mocks.populations.metal_systems"><code class="docutils literal notranslate"><span class="pre">metal_systems()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.populations.html#astrocook.mocks.populations.strong_hi_systems"><code class="docutils literal notranslate"><span class="pre">strong_hi_systems()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.populations.html#astrocook.mocks.populations.associated_absorbers"><code class="docutils literal notranslate"><span class="pre">associated_absorbers()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="astrocook.mocks.telluric.html">astrocook.mocks.telluric module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.telluric.html#astrocook.mocks.telluric.O2_BANDS_NM"><code class="docutils literal notranslate"><span class="pre">O2_BANDS_NM</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.telluric.html#astrocook.mocks.telluric.TEMPLATE_AIRMASS"><code class="docutils literal notranslate"><span class="pre">TEMPLATE_AIRMASS</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.telluric.html#astrocook.mocks.telluric.template"><code class="docutils literal notranslate"><span class="pre">template()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.telluric.html#astrocook.mocks.telluric.is_o2"><code class="docutils literal notranslate"><span class="pre">is_o2()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.telluric.html#astrocook.mocks.telluric.telluric_optical_depth"><code class="docutils literal notranslate"><span class="pre">telluric_optical_depth()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="astrocook.mocks.truth.html">astrocook.mocks.truth module</a><ul>
@@ -595,10 +614,30 @@
 <li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.EmissionLine.rest_nm"><code class="docutils literal notranslate"><span class="pre">EmissionLine.rest_nm</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.EmissionLine.amplitude"><code class="docutils literal notranslate"><span class="pre">EmissionLine.amplitude</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.EmissionLine.fwhm_kms"><code class="docutils literal notranslate"><span class="pre">EmissionLine.fwhm_kms</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.EmissionLine.shift_kms"><code class="docutils literal notranslate"><span class="pre">EmissionLine.shift_kms</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.EmissionLine.asymmetry"><code class="docutils literal notranslate"><span class="pre">EmissionLine.asymmetry</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.EmissionLine.__init__"><code class="docutils literal notranslate"><span class="pre">EmissionLine.__init__()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.QSO_EMISSION_LINES"><code class="docutils literal notranslate"><span class="pre">QSO_EMISSION_LINES</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.QSO_EMISSION_LINES_FULL"><code class="docutils literal notranslate"><span class="pre">QSO_EMISSION_LINES_FULL</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.BALTrough"><code class="docutils literal notranslate"><span class="pre">BALTrough</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.BALTrough.v_min_kms"><code class="docutils literal notranslate"><span class="pre">BALTrough.v_min_kms</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.BALTrough.v_max_kms"><code class="docutils literal notranslate"><span class="pre">BALTrough.v_max_kms</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.BALTrough.tau_max"><code class="docutils literal notranslate"><span class="pre">BALTrough.tau_max</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.BALTrough.edge_kms"><code class="docutils literal notranslate"><span class="pre">BALTrough.edge_kms</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.BALTrough.ions"><code class="docutils literal notranslate"><span class="pre">BALTrough.ions</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.BALTrough.column_ratios"><code class="docutils literal notranslate"><span class="pre">BALTrough.column_ratios</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.BALTrough.__init__"><code class="docutils literal notranslate"><span class="pre">BALTrough.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.TelluricModel"><code class="docutils literal notranslate"><span class="pre">TelluricModel</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.TelluricModel.airmass"><code class="docutils literal notranslate"><span class="pre">TelluricModel.airmass</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.TelluricModel.pwv_mm"><code class="docutils literal notranslate"><span class="pre">TelluricModel.pwv_mm</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.TelluricModel.shift_kms"><code class="docutils literal notranslate"><span class="pre">TelluricModel.shift_kms</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.TelluricModel.__init__"><code class="docutils literal notranslate"><span class="pre">TelluricModel.__init__()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth"><code class="docutils literal notranslate"><span class="pre">MockTruth</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth.components"><code class="docutils literal notranslate"><span class="pre">MockTruth.components</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth.lam_min_nm"><code class="docutils literal notranslate"><span class="pre">MockTruth.lam_min_nm</span></code></a></li>
@@ -617,6 +656,9 @@
 <li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth.spike_amplitude"><code class="docutils literal notranslate"><span class="pre">MockTruth.spike_amplitude</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth.lyman_limit"><code class="docutils literal notranslate"><span class="pre">MockTruth.lyman_limit</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth.noise_floor"><code class="docutils literal notranslate"><span class="pre">MockTruth.noise_floor</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth.bal_troughs"><code class="docutils literal notranslate"><span class="pre">MockTruth.bal_troughs</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth.telluric"><code class="docutils literal notranslate"><span class="pre">MockTruth.telluric</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth.proximity_kms"><code class="docutils literal notranslate"><span class="pre">MockTruth.proximity_kms</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth.to_dict"><code class="docutils literal notranslate"><span class="pre">MockTruth.to_dict()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth.from_dict"><code class="docutils literal notranslate"><span class="pre">MockTruth.from_dict()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth.to_json"><code class="docutils literal notranslate"><span class="pre">MockTruth.to_json()</span></code></a></li>
@@ -624,6 +666,23 @@
 <li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth.__init__"><code class="docutils literal notranslate"><span class="pre">MockTruth.__init__()</span></code></a></li>
 </ul>
 </li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="astrocook.mocks.truthmap.html">astrocook.mocks.truthmap module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.truthmap.html#astrocook.mocks.truthmap.CATEGORIES"><code class="docutils literal notranslate"><span class="pre">CATEGORIES</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.truthmap.html#astrocook.mocks.truthmap.BITS"><code class="docutils literal notranslate"><span class="pre">BITS</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.truthmap.html#astrocook.mocks.truthmap.component_category"><code class="docutils literal notranslate"><span class="pre">component_category()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.truthmap.html#astrocook.mocks.truthmap.TruthMap"><code class="docutils literal notranslate"><span class="pre">TruthMap</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truthmap.html#astrocook.mocks.truthmap.TruthMap.x_nm"><code class="docutils literal notranslate"><span class="pre">TruthMap.x_nm</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truthmap.html#astrocook.mocks.truthmap.TruthMap.depth"><code class="docutils literal notranslate"><span class="pre">TruthMap.depth</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truthmap.html#id0"><code class="docutils literal notranslate"><span class="pre">TruthMap.x_nm</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truthmap.html#id1"><code class="docutils literal notranslate"><span class="pre">TruthMap.depth</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truthmap.html#astrocook.mocks.truthmap.TruthMap.mask"><code class="docutils literal notranslate"><span class="pre">TruthMap.mask()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truthmap.html#astrocook.mocks.truthmap.TruthMap.absorbed"><code class="docutils literal notranslate"><span class="pre">TruthMap.absorbed()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.mocks.truthmap.html#astrocook.mocks.truthmap.TruthMap.__init__"><code class="docutils literal notranslate"><span class="pre">TruthMap.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.truthmap.html#astrocook.mocks.truthmap.truth_map"><code class="docutils literal notranslate"><span class="pre">truth_map()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -647,6 +706,13 @@ tested against it. It shares only the atomic data table
 <span class="n">truth</span><span class="o">.</span><span class="n">to_json</span><span class="p">(</span><span class="s2">"mock_truth.json"</span><span class="p">)</span>    <span class="c1"># ground truth, for later comparison</span>
 </pre></div>
 </div>
+<p>The cases of the robustness grid of phase 7 (PR 7a.1): BAL troughs
+(<code class="xref py py-class docutils literal notranslate"><span class="pre">BALTrough</span></code>), a richer set of emission lines with shifts and
+asymmetries (<code class="xref py py-data docutils literal notranslate"><span class="pre">QSO_EMISSION_LINES_FULL</span></code>), tellurics
+(<code class="xref py py-class docutils literal notranslate"><span class="pre">TelluricModel</span></code>, <a class="reference internal" href="astrocook.mocks.telluric.html#module-astrocook.mocks.telluric" title="astrocook.mocks.telluric"><code class="xref py py-mod docutils literal notranslate"><span class="pre">astrocook.mocks.telluric</span></code></a>), a proximity zone
+of the forest and associated absorbers (<code class="xref py py-func docutils literal notranslate"><span class="pre">lya_forest()</span></code>,
+<code class="xref py py-func docutils literal notranslate"><span class="pre">associated_absorbers()</span></code>), and the truth map, what absorbs each pixel
+(<code class="xref py py-func docutils literal notranslate"><span class="pre">truth_map()</span></code>).</p>
 </section>
 </section>
 

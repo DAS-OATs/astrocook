@@ -483,7 +483,9 @@
 <li class="toctree-l2 current active"><a aria-current="page" class="current reference internal" href="#">astrocook.mocks.generate module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.physics.html">astrocook.mocks.physics module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.populations.html">astrocook.mocks.populations module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.telluric.html">astrocook.mocks.telluric module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.truth.html">astrocook.mocks.truth module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.truthmap.html">astrocook.mocks.truthmap module</a></li>
 </ul>
 </details></li>
 </ul>
@@ -567,12 +569,40 @@
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="astrocook.mocks.generate.subpixel_grid">
+<span class="sig-prename descclassname"><span class="pre">astrocook.mocks.generate.</span></span><span class="sig-name descname"><span class="pre">subpixel_grid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">truth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth" title="astrocook.mocks.truth.MockTruth"><span class="pre">MockTruth</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../modules/astrocook/mocks/generate.html#subpixel_grid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.mocks.generate.subpixel_grid" title="Link to this definition">#</a></dt>
+<dd><p>Pixel centres and the <code class="docutils literal notranslate"><span class="pre">oversample</span></code> sub-pixels per pixel (nm) on
+which the model of <code class="docutils literal notranslate"><span class="pre">truth</span></code> is computed.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.mocks.generate.components_optical_depth">
+<span class="sig-prename descclassname"><span class="pre">astrocook.mocks.generate.</span></span><span class="sig-name descname"><span class="pre">components_optical_depth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">truth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth" title="astrocook.mocks.truth.MockTruth"><span class="pre">MockTruth</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">sub_nm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">components</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="../modules/astrocook/mocks/generate.html#components_optical_depth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.mocks.generate.components_optical_depth" title="Link to this definition">#</a></dt>
+<dd><p>Optical depth of <code class="docutils literal notranslate"><span class="pre">components</span></code> (with their Lyman limit, if
+<code class="docutils literal notranslate"><span class="pre">truth.lyman_limit</span></code>) at the wavelengths <code class="docutils literal notranslate"><span class="pre">sub_nm</span></code>.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.mocks.generate.bal_tau">
+<span class="sig-prename descclassname"><span class="pre">astrocook.mocks.generate.</span></span><span class="sig-name descname"><span class="pre">bal_tau</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">truth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth" title="astrocook.mocks.truth.MockTruth"><span class="pre">MockTruth</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">sub_nm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="../modules/astrocook/mocks/generate.html#bal_tau"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.mocks.generate.bal_tau" title="Link to this definition">#</a></dt>
+<dd><p>Optical depth of the BAL troughs of <code class="docutils literal notranslate"><span class="pre">truth</span></code>.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.mocks.generate.pixel_transmission">
+<span class="sig-prename descclassname"><span class="pre">astrocook.mocks.generate.</span></span><span class="sig-name descname"><span class="pre">pixel_transmission</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">truth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth" title="astrocook.mocks.truth.MockTruth"><span class="pre">MockTruth</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">transmission_sub</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_pixels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="../modules/astrocook/mocks/generate.html#pixel_transmission"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.mocks.generate.pixel_transmission" title="Link to this definition">#</a></dt>
+<dd><p>A transmission on the sub-pixels, convolved with the instrumental
+profile and averaged over each pixel.</p>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="astrocook.mocks.generate.normalized_flux">
 <span class="sig-prename descclassname"><span class="pre">astrocook.mocks.generate.</span></span><span class="sig-name descname"><span class="pre">normalized_flux</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">truth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth" title="astrocook.mocks.truth.MockTruth"><span class="pre">MockTruth</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../modules/astrocook/mocks/generate.html#normalized_flux"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.mocks.generate.normalized_flux" title="Link to this definition">#</a></dt>
 <dd><p>Noiseless normalised flux, convolved and averaged over each pixel.</p>
 <p>The model is computed on <code class="docutils literal notranslate"><span class="pre">oversample</span></code> sub-pixels per pixel, convolved
 with the instrumental profile on that grid, then averaged over the
-sub-pixels of each pixel.</p>
+sub-pixels of each pixel. The absorbers, the BAL troughs and the
+tellurics (in the observed frame) all come before the convolution.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>x_nm, flux</strong></p>
@@ -586,7 +616,8 @@ sub-pixels of each pixel.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="astrocook.mocks.generate.continuum">
 <span class="sig-prename descclassname"><span class="pre">astrocook.mocks.generate.</span></span><span class="sig-name descname"><span class="pre">continuum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">truth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth" title="astrocook.mocks.truth.MockTruth"><span class="pre">MockTruth</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_nm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="../modules/astrocook/mocks/generate.html#continuum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.mocks.generate.continuum" title="Link to this definition">#</a></dt>
-<dd><p>Power law plus the Gaussian emission lines of <code class="docutils literal notranslate"><span class="pre">truth</span></code>.</p>
+<dd><p>Power law plus the Gaussian emission lines of <code class="docutils literal notranslate"><span class="pre">truth</span></code> (each with
+its shift from the systemic z_em and its asymmetry).</p>
 </dd></dl>
 
 <dl class="py function">
@@ -664,6 +695,10 @@ observed spectrum: the recipes would otherwise use the true continuum
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.generate.make_grid"><code class="docutils literal notranslate"><span class="pre">make_grid()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.generate.subpixel_grid"><code class="docutils literal notranslate"><span class="pre">subpixel_grid()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.generate.components_optical_depth"><code class="docutils literal notranslate"><span class="pre">components_optical_depth()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.generate.bal_tau"><code class="docutils literal notranslate"><span class="pre">bal_tau()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.generate.pixel_transmission"><code class="docutils literal notranslate"><span class="pre">pixel_transmission()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.generate.normalized_flux"><code class="docutils literal notranslate"><span class="pre">normalized_flux()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.generate.continuum"><code class="docutils literal notranslate"><span class="pre">continuum()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.mocks.generate.noise_sigma"><code class="docutils literal notranslate"><span class="pre">noise_sigma()</span></code></a></li>

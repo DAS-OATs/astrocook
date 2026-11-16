@@ -10,7 +10,9 @@ Submodules
    astrocook.mocks.generate
    astrocook.mocks.physics
    astrocook.mocks.populations
+   astrocook.mocks.telluric
    astrocook.mocks.truth
+   astrocook.mocks.truthmap
 
 Module contents
 ---------------

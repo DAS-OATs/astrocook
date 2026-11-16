@@ -1,0 +1,7 @@
+astrocook.mocks.telluric module
+===============================
+
+.. automodule:: astrocook.mocks.telluric
+   :members:
+   :show-inheritance:
+   :undoc-members:

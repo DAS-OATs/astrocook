@@ -1,0 +1,7 @@
+astrocook.mocks.truthmap module
+===============================
+
+.. automodule:: astrocook.mocks.truthmap
+   :members:
+   :show-inheritance:
+   :undoc-members:
