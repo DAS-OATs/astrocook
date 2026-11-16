@@ -259,7 +259,7 @@ def register_inspect_tools(server: MCPServer, store: SessionStore) -> None:
         """Plot several transitions in velocity around a redshift, as a PNG
         image: one panel per transition (at most 12), v = 0 at z, with the
         flux, its error, the model (if any) and a tick at each line of each
-        component in the window (HI in red). To judge an absorption system
+        component in the window (HI in red; dashed if the fit flagged it). To judge an absorption system
         across its lines."""
         from astrocook.plotting import figure_png, plot_velocity, velocity_transitions
         with store.state_lock:

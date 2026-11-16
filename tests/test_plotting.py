@@ -1,6 +1,8 @@
 """The plots of a session without the GUI (``astrocook.plotting``): what
 ``plot_spectrum`` draws (characterized before F158, phase 7-bis PR B11, added
 the residuals), the residuals panel, and the plot of transitions in velocity."""
+from types import SimpleNamespace
+
 import numpy as np
 import pytest
 
@@ -181,3 +183,30 @@ def test_plot_velocity_ticks_the_components(session):
     wide = ticks(700)
     assert wide[1] == pytest.approx(line_velocity(
         ATOM_DATA["CIV_1550"]["wave"], 1.9, ATOM_DATA["CIV_1548"]["wave"], 1.9), abs=0.2)
+
+
+def test_flag_colours_agree_with_the_inspector(session):
+    pytest.importorskip("PySide6")
+    from types import SimpleNamespace
+
+    from astrocook.gui.inspector_table import flag_cue
+    from astrocook.plotting import BOUND_FLAGS, flag_colour
+    # flag_cue takes its colours from the palette in use (the standard one)
+    colours = PLOT_PALETTES["standard"]
+    for flags in [(), *[(f,) for f in (*BOUND_FLAGS, "nan_errors", "not_fitted")],
+                  ("nan_errors", "b_at_upper_bound")]:
+        comp = SimpleNamespace(flags=flags)
+        assert flag_colour(comp, colours) == flag_cue(comp)[0], flags
+
+
+def test_plot_velocity_flagged_ticks_are_dashed(session):
+    from dataclasses import replace
+    flagged = replace(session.systs.components[0], flags=("b_at_upper_bound",))
+    stub = SimpleNamespace(spec=session.spec, systs=SimpleNamespace(components=[flagged]))
+    ax = plot_velocity(stub, 1.9, ["CIV_1548"]).axes[0]
+    ticks = [ln for ln in ax.lines if len(ln.get_xdata()) == 2 and ln.get_ydata()[0] == 0.02]
+    assert [(t.get_linestyle(), t.get_color()) for t in ticks] == [
+        ("--", PLOT_PALETTES["standard"]["flag_bound"])]
+    clean = plot_velocity(session, 1.9, ["CIV_1548"]).axes[0]
+    assert [ln.get_linestyle() for ln in clean.lines
+            if len(ln.get_xdata()) == 2 and ln.get_ydata()[0] == 0.02] == ["-"]

@@ -192,6 +192,27 @@ def component_lines(series):
     return [n for n in names if n in ATOM_DATA]
 
 
+#: The flags of the last fit that put a component in the colour of a bound
+#: (``'flag_bound'``); the others that matter are ``nan_errors`` and
+#: ``not_fitted`` (``'flag_nan'``). The same as ``flag_cue`` of the System
+#: Inspector (``gui/inspector_table.py``, #517), which carries the messages
+#: too: a test compares the colours.
+BOUND_FLAGS = ("z_at_window", "logN_at_lower_bound", "logN_at_upper_bound",
+               "b_at_lower_bound", "b_at_upper_bound")
+
+
+def flag_colour(component, colours):
+    """The colour of the flags of a component in a plot (None if it has none):
+    that of a parameter at a bound, else that of the errors not computed or
+    of a fit that failed."""
+    flags = getattr(component, "flags", ()) or ()
+    if any(f in BOUND_FLAGS for f in flags):
+        return colours["flag_bound"]
+    if "nan_errors" in flags or "not_fitted" in flags:
+        return colours["flag_nan"]
+    return None
+
+
 def tick_velocities(components, transition, z, v_min, v_max):
     """The lines of the components that fall in the velocity window of a
     panel: ``(v, component)`` for each, ``v`` from ``transition`` at ``z``."""
@@ -284,7 +305,8 @@ def plot_velocity(session, z, transitions=None, half_width_kms=300.0,
     columns: the flux and its error, the model (if any), the continuum
     (if not normalized), the levels 0 and 1 (if normalized) and, at the bottom
     of each panel, a tick for each line of each component in the window (HI in
-    the colour of the HI ticks). The panels are those of
+    the colour of the HI ticks; dashed and in the colour of the flag for a
+    component the fit flagged, e.g. a parameter at a bound). The panels are those of
     :func:`velocity_transitions`.
 
     Parameters
@@ -367,8 +389,12 @@ def plot_velocity(session, z, transitions=None, half_width_kms=300.0,
         trans = ax.get_xaxis_transform()
         for dv, c in tick_velocities(comps, name, z, -half_width_kms, half_width_kms):
             hi = c.series.startswith("Ly") or c.series.startswith("H")
-            ax.plot([dv, dv], [0.02, 0.1], transform=trans,
-                    color=colours["hi_ticks"] if hi else "gray", lw=1.5 if hi else 1.0, alpha=0.85)
+            flag = flag_colour(c, colours)
+            # As in the Inspector: the ticks of the components flagged by the
+            # fit are dashed and in the colour of the flag
+            ax.plot([dv, dv], [0.02, 0.1], transform=trans, color=flag or (
+                colours["hi_ticks"] if hi else "gray"), ls="--" if flag else "-",
+                lw=1.5 if (hi or flag) else 1.0, alpha=0.9 if flag else 0.8)
         ax.text(0.98, 0.85, name, transform=ax.transAxes, ha="right", fontweight="bold",
                 fontsize=8, bbox=dict(facecolor="white", alpha=0.7, edgecolor="none"))
         ax.set_xlim(-half_width_kms, half_width_kms)
