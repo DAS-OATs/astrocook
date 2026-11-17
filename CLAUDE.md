@@ -65,7 +65,9 @@ screenshots (PRs 11, 12): estimate 2 h for those.
 Astrocook: a Python package for the analysis of quasar spectra (continuum,
 identification of absorption systems, Voigt fitting). PySide6 GUI +
 scriptable API. Author and maintainer: Guido Cupani (INAF–OATs).
-Current version: 2.7.0 (prepared in PR 14, 13 November 2026). Python ≥3.12.
+Current version: 2.7.1 (17 November 2026: 2.7.0 of PR 14, 13 November,
+with the fixes of #781 and #794, from the branch `release/2.7.x`; master
+still says 2.7.0). Python ≥3.12.
 
 ## Architecture (v2)
 - `astrocook/core/` – immutable dataclasses (`structures.py`), `Spectrum`,
@@ -226,9 +228,10 @@ Current version: 2.7.0 (prepared in PR 14, 13 November 2026). Python ≥3.12.
 ## Current status
 Phases 0, 1, 1-bis, 2, 2-bis, 3, 3-bis, 4, 5, 5-bis, 6, 6-bis, 6-ter and
 6-quater are done (October-November 2026; short summaries and the result of
-each in `ROADMAP.md`, the detail in `ROADMAP_HISTORY.md`). Release 2.7.0
-(13 November 2026; 2.6.0 was 10 November) is published by Guido on GitHub
-with the macOS app, not on PyPI. The
+each in `ROADMAP.md`, the detail in `ROADMAP_HISTORY.md`). Release 2.7.1
+(17 November 2026, a bug-fix release on 2.7.0 of 13 November; 2.6.0 was
+10 November) is published by Guido on GitHub with the macOS app, not on
+PyPI. The
 reference of the mock benchmark, on both grids (`full` and `robustness`),
 is `benchmarks/results/validate_mocks_robustness_baseline.json`,
 regenerated in phase 7, PR 7c.1 (the scoring of the doublets, F68): a PR
