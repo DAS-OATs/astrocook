@@ -112,20 +112,92 @@ def test_no_metal_doublet_in_the_forest(bypass_scoring):
     assert systems and all(s == "Ly_a" for s, _ in systems)
 
 
-def test_ly_ab_pairs_are_never_rated():
-    # A Ly-a/Ly-b pair in the forest: STANDARD_MULTIPLETS lists Ly_ab red
-    # line first ('Ly_a', 'Ly_b'), while rate_doublet_candidate expects the
-    # blue line first, as for the metal doublets: the score is always 0, and
-    # the Ly-b line becomes a spurious Ly-a (findings register F68). Only
-    # without the scoring is the pair recognised
+def _candidates(spec):
+    meta = {k: json.loads(spec.meta[f"{k}_map_json"]) for k in ("series", "z", "score")}
+    return sorted((meta["series"][k], meta["z"][k], meta["score"][k]) for k in meta["series"])
+
+
+def test_ly_ab_pairs_are_rated():
+    # A Ly-a/Ly-b pair in the forest. Until phase 7, PR 7c.1 the score was
+    # always 0 and the Ly-b line became a spurious Ly-a at z = 2.29
+    # (findings register F68): rate_doublet_candidate measured velocities
+    # in a linear frame (c dlambda / lambda) and the lags of the lines in a
+    # logarithmic one, ~4100 km/s apart for Ly-a/Ly-b. Now the pair is
+    # recognised as with bypass_scoring, and gives a Ly-a system
     spec = _mock([MockComponent("Ly_ab", 2.9, 14.0, 25.0)], lam_min_nm=390.0,
                  lam_max_nm=520.0)
     z_lyb_as_lya = 3.9 * ATOM_DATA["Ly_b"]["wave"] / ATOM_DATA["Ly_a"]["wave"] - 1.0
-    scored = [z for _, z in _systems(spec.identify_lines(["Ly_ab"]))]
-    bypassed = [z for _, z in _systems(spec.identify_lines(["Ly_ab"], bypass_scoring=True))]
-    assert any(abs(z - z_lyb_as_lya) < 1e-3 for z in scored)
-    assert not any(abs(z - z_lyb_as_lya) < 1e-3 for z in bypassed)
-    assert any(abs(z - 2.9) < 1e-4 for z in bypassed)
+    scored = spec.identify_lines(["Ly_ab"])
+    bypassed = spec.identify_lines(["Ly_ab"], bypass_scoring=True)
+    assert _systems(scored) == _systems(bypassed)
+    pair = [c for c in _candidates(scored) if abs(c[1] - 2.9) < 1e-4]
+    assert len(pair) == 1 and pair[0][0] == "Ly_a" and pair[0][2] > 0.9
+    assert not any(abs(z - z_lyb_as_lya) < 1e-3 for _, z in _systems(scored))
+    assert not any(s == "Ly_b" for s, _ in _systems(scored))
+
+
+@pytest.mark.parametrize(("series", "z", "logN", "b", "lam_min_nm"), [
+    ("CIV", 2.5, 14.0, 10.0, 490.0),   # 0.996 before PR 7c.1
+    ("MgII", 1.2, 13.0, 5.0, 490.0),   # 0.960
+    ("SiIV", 2.6, 13.0, 5.0, 490.0),   # 0.205: dropped
+    ("SiIV", 2.6, 13.0, 3.0, 490.0),   # 0: dropped
+    ("SiIV", 2.6, 12.9, 9.0, 490.0),   # 0.559 (the system of F119)
+])
+def test_clean_doublets_score_high(series, z, logN, b, lam_min_nm):
+    # The lines of a clean doublet aligned in the frame of their lags (F68):
+    # the linear frame put them 0.4 (CIV), 1 (MgII) and 6 km/s (SiIV)
+    # apart, enough to drop a narrow SiIV (the scores before in the
+    # comments, S/N 100, R 45000)
+    from astrocook.core import spectrum_lines
+
+    spec = _mock([MockComponent(series, z, logN, b)], lam_min_nm=lam_min_nm)
+    spec = spec.find_absorbed(5000.0 * au.km / au.s, 400.0 * au.km / au.s, 2.0, False)
+    scores = []
+    original = spectrum_lines.rate_doublet_candidate
+
+    def record(*args, **kwargs):
+        scores.append(original(*args, **kwargs))
+        return scores[-1]
+
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(spectrum_lines, "rate_doublet_candidate", record)
+        systems = _systems(spec.identify_lines([series]))
+    assert len(scores) == 1 and scores[0] > 0.95
+    assert len(systems) == 1 and systems[0][0] == series
+    assert abs(systems[0][1] - z) / (1 + z) * C_KMS < 5.0
+
+
+def test_doublet_score_frame_is_logarithmic():
+    # An exact doublet, F_1 = F_2 ** gamma with the lines at c ln(l_2/l_1)
+    # of each other, built on the pixels without the mocks: R^2 = 1 to the
+    # linear
+    # interpolation. In the linear frame of the scoring before PR 7c.1 the
+    # Ly-a/Ly-b pair scored 0 (F68)
+    from astrocook.core.atomic_data import STANDARD_MULTIPLETS
+    from astrocook.core.spectrum import Spectrum
+    from astrocook.core.spectrum_operations import rate_doublet_candidate
+    from astrocook.core.structures import DataColumn, SpectrumData
+
+    z = 2.9
+    line_1, line_2 = STANDARD_MULTIPLETS["Ly_ab"]
+    lam = {t: ATOM_DATA[t]["wave"] / 10.0 * (1 + z) for t in (line_1, line_2)}
+    x = np.exp(np.arange(np.log(390.0), np.log(480.0), 2.5 / C_KMS))
+    gamma = (ATOM_DATA[line_1]["f"] * ATOM_DATA[line_1]["wave"]
+             / (ATOM_DATA[line_2]["f"] * ATOM_DATA[line_2]["wave"]))
+    tau_2 = 0.8 * np.exp(-0.5 * (C_KMS * np.log(x / lam[line_2]) / 20.0) ** 2)
+    tau_1 = gamma * 0.8 * np.exp(-0.5 * (C_KMS * np.log(x / lam[line_1]) / 20.0) ** 2)
+    flux = np.exp(-tau_1 - tau_2)
+    one = np.ones_like(x)
+    spec = Spectrum(SpectrumData(
+        x=DataColumn(x, au.nm), xmin=DataColumn(x, au.nm), xmax=DataColumn(x, au.nm),
+        y=DataColumn(flux, au.dimensionless_unscaled),
+        dy=DataColumn(0.01 * one, au.dimensionless_unscaled),
+        aux_cols={"cont": DataColumn(one, au.dimensionless_unscaled)}, z_em=3.0))
+    # The regions as the kinematic search gives them: the first is that of
+    # the second line of the multiplet (Ly-b), the second that of the first
+    near = lambda t: np.abs(C_KMS * np.log(x / lam[t])) < 60.0  # noqa: E731
+    score = rate_doublet_candidate(spec, near(line_2), near(line_1), "Ly_ab", z)
+    assert score == pytest.approx(1.0, abs=1e-4)  # the linear interpolation
 
 
 def test_identify_lines_casts_an_integer_mask(civ):

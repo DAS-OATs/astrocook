@@ -1112,12 +1112,14 @@ def rate_doublet_candidate(
         # Exponent for the flux relationship: tau_1/tau_2 = (f1*lam1)/(f2*lam2)
         gamma_exp = (f_1 * lam_1) / (f_2 * lam_2)
 
-        # 2. Get Velocity Grid (relative to primary)
+        # 2. Get Velocity Grid (relative to primary), in the logarithmic
+        # frame of the lags, c ln(lambda / lambda_primary) (F68, phase 7,
+        # PR 7c.1): a linear frame, c dlambda / lambda, put the two lines
+        # 0.4 (CIV), 1 (MgII), 6 (SiIV) and ~4100 km/s (Ly-a/Ly-b) apart
         primary_wave_obs = xem_d[primary_line] * (1.0 + z_test)
-        
-        x_kms_test_frame = (spectrum.x - primary_wave_obs).to(
-            au.km/au.s, equivalencies=au.equivalencies.doppler_optical(primary_wave_obs)
-        ).value
+        c_kms = c_light.to_value(au.km / au.s)
+        x_kms_test_frame = c_kms * np.log(
+            (spectrum.x / primary_wave_obs).to_value(au.dimensionless_unscaled))
 
         # 3. Get Global Normalized Flux
         cont = spectrum.cont.value if spectrum.cont is not None else np.ones_like(spectrum.y.value)
