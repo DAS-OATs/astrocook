@@ -1,5 +1,8 @@
 ## [Unreleased]
 
+### Fixed
+- **Editing a value in the table of the System Inspector** ([#794](https://github.com/DAS-OATs/astrocook/issues/794)). Since 2.3.0 the `Return` that confirms a value typed in a cell (z, log N, b, ...) also ran *Refit Selected* on the component, and the value typed was lost: the component was refitted from its old values, so a value set by hand and then frozen (e.g. the column density of a saturated Ly-a, or one line of a blended doublet) came back to the old one. `Return` and `Backspace` now act as shortcuts only when the table itself has the focus, not in the editor of a cell: there `Return` confirms the value (with the model redrawn, without a fit) and `Backspace` edits the text. No number changes.
+
 ### Changed
 - **The methods text** (phase 7-bis, PR B10, F115, mechanical part). The gaps declared with `session_note` (kind `gap`) are no longer in the text, which is meant for a paper: `MethodsText.gaps` and the new field `gaps` of the result of `session_methods` list them. The first sentence does not name the spectrum by a generic name of the session (`spectrum`, `session`, ...): "The spectrum (N pixels, ...) was analysed". `session_methods` has the new parameters `path` and `overwrite`: the text is written to a file (`astrocook.methods_text.write_methods` for scripts) and the result gives its `path`. The paragraphs are unchanged. No number changes.
 
