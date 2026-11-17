@@ -1,5 +1,13 @@
 ## [Unreleased]
 
+## [2.7.1] - 2026-11-17
+
+A bug-fix release on 2.7.0, with two fixes reported by users and nothing else of the work done since (phase 7 is not in it). No number changes.
+
+### Fixed
+- **Saving a session after the automatic identification** ([#781](https://github.com/DAS-OATs/astrocook/issues/781)). After *Absorbers > Auto-detect Doublets* (and the other recipes of the automatic identification), saving the session could fail with "The header keyword 'region_map_json' with its value is too long": the map of the regions, stored as a long string in the metadata, did not fit a card of the FITS header. Long strings are now written in several cards and joined back when the archive is opened. Archives saved by earlier versions open as before.
+- **Editing a value in the table of the System Inspector** ([#794](https://github.com/DAS-OATs/astrocook/issues/794)). Since 2.3.0 the `Return` that confirms a value typed in a cell (z, log N, b, ...) also ran *Refit Selected* on the component, and the value typed was lost: the component was refitted from its old values, so a value set by hand and then frozen (e.g. the column density of a saturated Ly-a, or one line of a blended doublet) came back to the old one. `Return` and `Backspace` now act as shortcuts only when the table itself has the focus, not in the editor of a cell: there `Return` confirms the value (with the model redrawn, without a fit) and `Backspace` edits the text.
+
 ## [2.7.0] - 2026-11-13
 
 Phase 6-quater of the consolidation: the review of the parameters and interfaces of the recipes, recipe by recipe, for the recipes that phase 7 does not rewrite (file, flux, edit and the manual fits of the absorbers). A minor version: the interface of the scripts changes (names, refusals), the results of a valid call do not but in the cases below. What changes for a user or a script:
