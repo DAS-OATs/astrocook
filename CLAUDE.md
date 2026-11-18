@@ -2,7 +2,7 @@
 
 Context for Claude Code sessions on Astrocook. The plan is in `ROADMAP.md`
 (about 1000 lines, 13 November 2026): do not read it whole. Read the section
-of the phase in progress (phase 7, with 7-bis interleaved; a PR of the
+of the phase in progress (phase 7; a PR of the
 phase: its row of the plan), "Rules and decisions in force", and the open rows of the findings register (section 3.2) and of
 the issues (section 3.1).
 `ROADMAP_HISTORY.md` is the archive of the concluded phases: search it with
@@ -65,7 +65,9 @@ screenshots (PRs 11, 12): estimate 2 h for those.
 Astrocook: a Python package for the analysis of quasar spectra (continuum,
 identification of absorption systems, Voigt fitting). PySide6 GUI +
 scriptable API. Author and maintainer: Guido Cupani (INAF–OATs).
-Current version: 2.7.0 (prepared in PR 14, 13 November 2026). Python ≥3.12.
+Current version: 2.7.1 (17 November 2026: 2.7.0 of PR 14, 13 November,
+with the fixes of #781 and #794, from the branch `release/2.7.x`; master
+still says 2.7.0). Python ≥3.12.
 
 ## Architecture (v2)
 - `astrocook/core/` – immutable dataclasses (`structures.py`), `Spectrum`,
@@ -226,13 +228,18 @@ Current version: 2.7.0 (prepared in PR 14, 13 November 2026). Python ≥3.12.
 ## Current status
 Phases 0, 1, 1-bis, 2, 2-bis, 3, 3-bis, 4, 5, 5-bis, 6, 6-bis, 6-ter and
 6-quater are done (October-November 2026; short summaries and the result of
-each in `ROADMAP.md`, the detail in `ROADMAP_HISTORY.md`). Release 2.7.0
-(13 November 2026; 2.6.0 was 10 November) is published by Guido on GitHub
-with the macOS app, not on PyPI. The
-results on the mock benchmark are those of 2.2.0
-(`benchmarks/results/validate_mocks_baseline.json`) except `metals_auto`,
-which the benchmark does not run (phase 6-ter, PR 7-quater): phases that
-must not change them are checked with `validate_mocks.py --compare`.
+each in `ROADMAP.md`, the detail in `ROADMAP_HISTORY.md`). Release 2.7.1
+(17 November 2026, a bug-fix release on 2.7.0 of 13 November; 2.6.0 was
+10 November) is published by Guido on GitHub with the macOS app, not on
+PyPI. The
+reference of the mock benchmark, on both grids (`full` and `robustness`),
+is `benchmarks/results/validate_mocks_robustness_baseline.json`,
+regenerated in phase 7, PR 7c.1 (the scoring of the doublets, F68): a PR
+that must not change the results is checked with
+`validate_mocks.py --compare` against it; the results of 2.2.0
+(`validate_mocks_baseline.json`) are kept as history
+(`--compare-baseline`). `metals_auto` is not run by the benchmark (phase
+6-ter, PR 7-quater).
 
 Phase 6-quater (review of the recipe parameters, PRs #752-#768, closed in
 PR 13 on 13 November 2026) left: aliases for renamed parameters and
@@ -247,8 +254,8 @@ progress, its plan agreed on 13 November 2026: four blocks, 7a (measure:
 new mocks, metrics, the twin, the real spectra, the evaluation of a model
 on fixed pixels), 7b (emission model), 7c (identification), 7d
 (components and fit), each component with a design document in `design/`
-first. Phase 7-bis (small technical fixes, PRs B1-B11) is interleaved
-with it. The real spectra of the benchmark (the sample of D'Odorico et
+first. Phase 7-bis (small technical fixes, PRs B1-B11, interleaved with
+it) is done (16 November 2026; `ROADMAP.md`, "Phase 7-bis"). The real spectra of the benchmark (the sample of D'Odorico et
 al. 2010, public, kept private for the blindness) live in the
 private `astrocook-data` (`benchmark/`): nothing of them, data or
 per-object results, enters this public repository (`ROADMAP.md`, phase
@@ -259,9 +266,10 @@ Open constraints:
   each new PR goes on its own `claude/...` branch (say which).
 - Waiting for data from Guido: sessions for the log replay, sample files for
   the loaders, X-Shooter VIS/NIR data (F15).
-- One PR at a time: wait for the merge before opening the next; in
-  phase 7, at most one PR of 7 and one of 7-bis at a time (Guido,
-  13 November 2026).
+- One PR at a time: wait for the merge before opening the next. New
+  conversations for the PRs of a block are opened by the planning
+  conversation of that block, on Guido's confirmation of the merge of the
+  previous one (16 November 2026).
 - Questionable behaviour found along the way goes in the findings register
   (`ROADMAP.md`, section 3.2), reviewed with Guido; anything that loses user
   data or crashes is reported at once. Update this section and the progress

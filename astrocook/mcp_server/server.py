@@ -48,7 +48,8 @@ tool a 'reason' (why this recipe, why these values), and write with
 session_note what you did or decided outside the tools (e.g. a value
 measured with your own code, a range you chose by eye). Notes make no new
 state and the replay skips them. session_methods writes the log as the
-text of a methods section, with your reasons and notes in it.
+text of a methods section, with your reasons and notes in it (not your gaps), to
+a file if you give it a path: do not write it yourself.
 
 Whenever you work outside the tools because no recipe does what the analysis
 needs (e.g. z_em measured with your own code), declare a gap: session_note
@@ -79,9 +80,10 @@ was before it.
 
 To look into a session: session_describe (its columns), components_list
 (the components with their errors, flags, fit groups and constraints),
-spectrum_read (the columns in a range, as numbers) and spectrum_plot (a
-plot of a range, with the continuum, the model and the components). They
-change nothing.
+spectrum_read (the columns in a range, as numbers), spectrum_plot (a
+plot of a range, with the continuum, the model and the components, and
+optionally the residuals) and spectrum_plot_velocity (several transitions
+in velocity around a redshift). They change nothing.
 
 The columns have the names of the GUI everywhere (reads, expressions,
 parameters): λ (wavelength), F (flux), dF (its error), cont, model, ...;

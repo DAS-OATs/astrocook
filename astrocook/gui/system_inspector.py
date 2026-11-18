@@ -607,7 +607,11 @@ class SystemInspector(QWidget):
         """Return refits and Delete (or Backspace) deletes the selected
         components, in the table; Undo and Redo work in this window too
         (their shortcuts were only in the menu of the main window)."""
-        table = Qt.ShortcutContext.WidgetWithChildrenShortcut
+        # The table itself, not its children: in the editor of a cell
+        # Return commits the value and Backspace edits the text (#794:
+        # with WidgetWithChildrenShortcut, Return ran refit_all and the
+        # value typed was lost)
+        table = Qt.ShortcutContext.WidgetShortcut
         for keys, slot in ((self.REFIT_KEYS, self._refit_selected_by_key),
                            (self.DELETE_KEYS, self._delete_selected_by_key)):
             for key in keys:

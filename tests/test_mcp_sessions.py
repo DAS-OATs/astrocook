@@ -379,8 +379,25 @@ def test_methods_text(mock_archive, tmp_path):
     assert out["references"] == ["Cupani G. et al. 2020, Proc. SPIE 11452, 114521U"]
     assert " > " not in ok(plain)["text"]
     assert len(ok(history)["states"]) == 3  # nothing added by the tool
+    assert out["gaps"] == [] and out["path"] is None
     # An archive opened: its log, without what each recipe changed
     reopened_id = ok(reopened)["session_id"]
     (again,) = calls(build_server(), ("session_open", {"path": str(saved)}),
                      ("session_methods", {"session_id": reopened_id}))[1:]
     assert "For the first two steps, read from the log of the archive" in ok(again)["text"]
+
+
+def test_methods_text_to_a_file(mock_archive, tmp_path):
+    """session_methods with a path (F115): the text in a file, the gaps apart."""
+    target = tmp_path / "paper"
+    _, _, written, again, folder = calls(
+        build_server(), open_mock(mock_archive),
+        ("session_note", {"session_id": "mock", "text": "Needed z_em", "kind": "gap"}),
+        ("session_methods", {"session_id": "mock", "path": str(target)}),
+        ("session_methods", {"session_id": "mock", "path": str(target) + ".txt"}),
+        ("session_methods", {"session_id": "mock", "path": str(tmp_path)}))
+    out = ok(written)
+    assert out["path"] == str(target) + ".txt"
+    assert out["gaps"] == ["Needed z_em"] and "Needed z_em" not in out["text"]
+    assert (tmp_path / "paper.txt").read_text(encoding="utf-8") == out["text"] + "\n"
+    assert "exists" in str(again) and ok(folder)["path"].endswith("_methods.txt")

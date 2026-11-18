@@ -170,7 +170,8 @@ Three tools let the agent look into a session, without changing it:
 |---|---|
 | `components_list` | The absorption components, by redshift, with their errors, the reduced chi2 and flags of their last fit, their fit group (the components fitted together, as *Refit All* groups them), their velocity from the first of the group and their constraints (fixed or linked parameters); filters by series, redshift and flags, in pages. |
 | `spectrum_read` | The columns of the spectrum in a range, as numbers; a long range is averaged in blocks of pixels (for reading only). The columns have the names of the GUI (`λ`, `F`, `dF`, `cont`, `model`, ...), as in the expressions of the recipes; `λ` can be written `lam`, and the names in the data (`x`, `y`, `dy`) are accepted. |
-| `spectrum_plot` | A plot of a range (PNG): the flux and its error, the continuum, the model, and a tick at each line of each component. |
+| `spectrum_plot` | A plot of a range (PNG): the flux and its error, the continuum, the model, and a tick at each line of each component. With `residuals`, a panel below with the residuals `(F - model) / dF`, in sigma (it needs a model). |
+| `spectrum_plot_velocity` | Several transitions in velocity around a redshift `z` (PNG): one panel per transition (at most 12), `v = 0` at `z`, the flux, its error, the model and a tick at each line of each component in the window (HI in red; dashed and coloured for a component with a flag of the fit, as in the System Inspector). `transitions` are names (`Ly_a`, `CIV_1548`) or multiplets (`CIV`, expanded); by default, those of the components with a line within the window. `half_width_kms` (default 300) is half the window, `normalized` (default true) divides by the continuum, `residuals` adds the residuals in sigma under each panel. The text of the result says the transitions plotted and those left out because the spectrum does not reach them. |
 
 And one shows a session to you, in the GUI:
 
@@ -229,7 +230,12 @@ agent gave, what the recipe did (its parameters, the works it relies on),
 what it changed and the notes written there; then the fit, the sources of
 the atomic data of the transitions fitted, and the references. The recipes
 undone are left out; `menus=false` leaves out the menus of the GUI that
-follow each recipe. The text is made by Astrocook from the log, not by the
+follow each recipe. The gaps the agent declared are not in the text (they are
+for the development): the result lists them apart, in `gaps`. With `path`
+(a file, or an existing folder: `<session>_methods.txt`; `overwrite=true` to
+replace) the tool also writes the text to a file and returns its path, so the
+agent need not write it itself. A session with no name of its own (the
+default `spectrum`) is not named in the first sentence. The text is made by Astrocook from the log, not by the
 agent: the same log gives the same text. So the reasons and notes are the
 only words of the agent in it: the instructions of the server tell the
 agent so.

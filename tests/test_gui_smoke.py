@@ -535,11 +535,52 @@ def test_inspector_keys(loaded, monkeypatch):
     press("Del")
     press("Backspace")
     assert calls[2:] == [("refit", 1), ("delete", 1), ("delete", 1)]
-    # In the table only: not while typing in the boxes above the plot
+    # In the table only: not while typing in the boxes above the plot, nor
+    # in the editor of a cell, a child of the table (#794)
     from PySide6.QtCore import Qt
     for name in ("Return", "Del"):
-        assert shortcuts[name].context() == Qt.ShortcutContext.WidgetWithChildrenShortcut
+        assert shortcuts[name].context() == Qt.ShortcutContext.WidgetShortcut
         assert shortcuts[name].parent() is inspector.table_view
+
+
+def test_inspector_keys_while_editing_a_cell(loaded, monkeypatch):
+    # #794: Return in the editor of a cell commits the value, without the
+    # refit of Return in the table (which ran refit_all and lost the value
+    # typed, frozen or not); Backspace edits the text, deletes nothing
+    from PySide6.QtCore import Qt
+    from PySide6.QtTest import QTest
+    from PySide6.QtWidgets import QLineEdit
+    from astrocook.gui.inspector_table import COLUMNS
+    loaded._on_view_system_inspector()
+    inspector = loaded.system_inspector
+    calls = []
+    monkeypatch.setattr(inspector, "has_continuum", lambda: True)
+    monkeypatch.setattr(inspector, "_refit_list", lambda comps: calls.append(("refit", len(comps))))
+    monkeypatch.setattr(inspector, "_delete_list", lambda comps: calls.append(("delete", len(comps))))
+    monkeypatch.setattr(loaded, "_on_recipe_requested",
+                        lambda cat, name, params, _: calls.append((name, params)))
+    view = inspector.table_view
+    view.selectRow(0)
+    index = inspector.proxy_model.index(0, COLUMNS.index("logN"))
+    uuid = inspector.table_model.get_component_at(
+        inspector.proxy_model.mapToSource(index).row()).uuid
+    view.setCurrentIndex(index)
+    view.edit(index)
+    QApplication.processEvents()
+    editor = view.focusWidget()
+    assert isinstance(editor, QLineEdit)
+    editor.selectAll()
+    QTest.keyClicks(editor, "14.25")
+    QTest.keyClick(editor, Qt.Key.Key_Backspace)
+    QTest.keyClick(editor, Qt.Key.Key_Return)
+    QApplication.processEvents()
+    assert calls == [("update_component", {"logN": 14.2, "uuid": uuid})]
+    # In the table (no editor open), the keys keep their work
+    calls.clear()
+    view.setFocus()
+    QTest.keyClick(view, Qt.Key.Key_Return)
+    QTest.keyClick(view, Qt.Key.Key_Delete)
+    assert calls == [("refit", 1), ("delete", 1)]
 
 
 def _inspector_state(window, continuum=True, systems=True):

@@ -17,8 +17,9 @@ against the truth:
 Not a test (not collected by pytest): run it by hand, before and after a
 change, and compare the summaries. Usage::
 
-    python benchmarks/validate_mocks.py [--grid full|reduced|tiny]
-        [--workers N] [--json out.json] [--compare] [--save-reference]
+    python benchmarks/validate_mocks.py [--grid full|robustness|reduced|tiny]
+        [--workers N] [--json out.json] [--compare] [--compare-baseline]
+        [--save-reference]
 
 The full grid (135 mocks: S/N 10, 30, 100; R 8900, 45000, 140000; z_em
 2.5, 3.5, 4.5; 5 seeds) was agreed with Guido at the start of phase 4,
@@ -53,11 +54,15 @@ leaves to constrain the continuum in the forest; z_em of an estimator
 against the truth (when the chain has one, F153); the false candidates on
 tellurics; the absorbed pixels against the regions and identifications of
 identify_lines (the Lyman-alpha by default of F51 apart); a confusion
-table of the flags of the fitted components against their errors. Their
-reference, the current algorithms on both grids, is
-``results/validate_mocks_robustness_baseline.json`` (``--save-reference``,
-``--compare``); the baseline of phase 4 stays that of ``full``. The truth
-map costs 15-60 s per mock.
+table of the flags of the fitted components against their errors.
+
+The reference, the current algorithms on both grids, is
+``results/validate_mocks_robustness_baseline.json`` (``--save-reference``;
+``--compare`` prints the numbers of phase 4 and of phase 7 of a run next to
+it), regenerated in PR 7c.1 after the fix of the scoring of the doublets
+(F68). The baseline of phase 4, ``results/validate_mocks_baseline.json``
+(2.2.0), is kept as history (``--compare-baseline``). The truth map costs
+15-60 s per mock.
 """
 import argparse
 import dataclasses
@@ -975,6 +980,8 @@ def summarize(records, key=None):
         for cat in PULL_CATEGORIES}
     out["fit"] = fit
     out["completeness_by_significance"] = completeness_by_significance(records)
+    out["completeness_by_significance_species"] = {
+        species: completeness_by_significance(records, species) for species in METALS}
     if all("phase7" in r for r in records):
         out["phase7"] = summarize_phase7(records)
     out["seconds"] = {k: float(np.sum([r["times"][k] for r in records]))
@@ -1044,10 +1051,12 @@ def summarize_phase7(records):
 SIGNIFICANCE_BINS = (0.0, 1.0, 2.0, 3.0, 5.0, 10.0, np.inf)
 
 
-def completeness_by_significance(records):
+def completeness_by_significance(records, species=None):
     """Fraction of the true systems found, in bins of the significance of
-    their weaker line: it should rise around DETECTION_SIGMA."""
-    systems = [s for r in records for s in r["identification"]["systems"]]
+    their weaker line: it should rise around DETECTION_SIGMA. All the
+    species, or one (F57, by species since PR 7c.1)."""
+    systems = [s for r in records for s in r["identification"]["systems"]
+               if species is None or s["species"] == species]
     out = {}
     for lo, hi in pairwise(SIGNIFICANCE_BINS):
         sel = [s["found"] for s in systems if lo <= s["significance"] < hi]
@@ -1113,8 +1122,9 @@ def print_summary(result):
 
 
 #: The baseline (version 2.2.0, after phase 4): the pooled summary of the
-#: full grid. That of 2.1.0, before the fixes of phase 4, is kept in
-#: validate_mocks_baseline_2.1.0.json
+#: full grid, kept as history since PR 7c.1 (``--compare-baseline``; the
+#: reference below is that of ``--compare``). That of 2.1.0, before the
+#: fixes of phase 4, is kept in validate_mocks_baseline_2.1.0.json
 BASELINE = ROOT / "benchmarks" / "results" / "validate_mocks_baseline.json"
 
 
@@ -1151,9 +1161,10 @@ def compare(summary, baseline):
         print(f"{key:28s}{fmt(old):>12s}{fmt(value):>12s}{mark}")
 
 
-#: The reference of phase 7 (PR 7a.2): the summaries of the current
-#: algorithms on the grids robustness and full, each under its name (the
-#: baseline of full above stays that of phase 4)
+#: The reference of phase 7 (PR 7a.2, regenerated in PR 7c.1, after F68):
+#: the summaries of the current algorithms on the grids robustness and
+#: full, each under its name; the reference of ``--compare`` for both grids
+#: (the baseline of 2.2.0 above is history)
 REFERENCE = ROOT / "benchmarks" / "results" / "validate_mocks_robustness_baseline.json"
 
 
@@ -1231,9 +1242,11 @@ def main():
     parser.add_argument("--save-baseline", action="store_true",
                         help="write the summary of a full run as the baseline")
     parser.add_argument("--compare", action="store_true",
-                        help="compare the summary of a full run with the baseline, "
-                             "and the metrics of phase 7 of a full or robustness "
-                             "run with the reference")
+                        help="compare the summary of a full or robustness run, and "
+                             "its metrics of phase 7, with the reference")
+    parser.add_argument("--compare-baseline", action="store_true",
+                        help="compare the summary of a full run with the baseline "
+                             "of 2.2.0 (history, PR 7c.1)")
     parser.add_argument("--save-reference", action="store_true",
                         help="write the summary of a full or robustness run in the "
                              "reference of phase 7")
@@ -1247,11 +1260,12 @@ def main():
     if args.json:
         with open(args.json, "w") as f:
             json.dump(result, f, indent=1)
-    if args.compare and args.grid == "full":
+    if args.compare_baseline and args.grid == "full":
         with open(BASELINE) as f:
             compare(result["summary"]["all"], json.load(f)["summary"]["all"])
     reference = json.loads(REFERENCE.read_text()) if REFERENCE.exists() else {}
     if args.compare and args.grid in reference:
+        compare(result["summary"]["all"], reference[args.grid]["summary"]["all"])
         compare_phase7(result["summary"]["all"], reference[args.grid]["summary"]["all"])
     if args.save_reference and args.grid in ("full", "robustness"):
         from astrocook import __version__
