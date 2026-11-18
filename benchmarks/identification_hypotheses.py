@@ -38,11 +38,12 @@ odds of the Ly-a hypothesis against the CIV one (``PRIOR_ODDS``), added as
 
 Not a test: run it by hand (about 2 minutes on 4 cores with the defaults,
 40 trials per scenario and cell; 4.5 minutes with 100, the run of the
-document).
+document). With ``--window`` each trial is evaluated and fitted on an
+``EvaluationWindow`` of its pixels (PR 7c.4a), not on the whole mock.
 Usage::
 
     python benchmarks/identification_hypotheses.py [--trials 40]
-        [--workers 4] [--json out.json]
+        [--workers 4] [--json out.json] [--window]
 """
 import argparse
 import dataclasses
@@ -66,6 +67,7 @@ import validate_mocks as vm  # noqa: E402
 from astrocook.core.atomic_data import ATOM_DATA  # noqa: E402
 from astrocook.core.structures import SystemListData  # noqa: E402
 from astrocook.core.system_list import SystemList  # noqa: E402
+from astrocook.fitting.evaluation_window import EvaluationWindow  # noqa: E402
 from astrocook.fitting.model_evaluation import evaluate_model  # noqa: E402
 from astrocook.fitting.voigt_fitter import VoigtFitter  # noqa: E402
 from astrocook.mocks import MockComponent, MockTruth, generate  # noqa: E402
@@ -124,6 +126,9 @@ class Trial:
     snr: float
     resol: float
     seed: int
+    #: Evaluate and fit on an ``EvaluationWindow`` of the pixels (PR 7c.4a)
+    #: instead of the whole spectrum
+    window: bool = False
 
 
 # --- The truth ------------------------------------------------------------
@@ -255,6 +260,11 @@ def measure(spec, systs: SystemList, pixels: np.ndarray) -> Dict[str, Optional[f
     return {c: getattr(ev, c) for c in CRITERIA} | {"k": ev.k, "n": ev.n_pixels}
 
 
+def measure_window(win: EvaluationWindow, systs: SystemList) -> Dict[str, Optional[float]]:
+    ev = win.evaluate(systs, min_influence=0.0)
+    return {c: getattr(ev, c) for c in CRITERIA} | {"k": ev.k, "n": ev.n_pixels}
+
+
 def short_fit(spec, systs: SystemList) -> SystemList:
     if not systs.components:
         return systs
@@ -272,10 +282,16 @@ def run_trial(trial: Trial) -> Dict:
            "seed": trial.seed, "sigma": significance(comps, truth, weak),
            "truth": [dataclasses.asdict(c) for c in comps]}
     t0 = time.perf_counter()
+    win = EvaluationWindow.from_mask(spec, pixels) if trial.window else None
     for key in ("true", "false"):
         systs = hypothesis_systs(spec, hyps[key], trial.resol, trial.snr)
-        out[f"{key}_aod"] = measure(spec, systs, pixels)
-        out[f"{key}_fit"] = measure(spec, short_fit(spec, systs), pixels)
+        if win is None:
+            out[f"{key}_aod"] = measure(spec, systs, pixels)
+            out[f"{key}_fit"] = measure(spec, short_fit(spec, systs), pixels)
+        else:
+            out[f"{key}_aod"] = measure_window(win, systs)
+            out[f"{key}_fit"] = measure_window(win, win.fit(
+                systs, max_nfev=FIT_NFEV, b_max=FIT_B_MAX, logN_max=FIT_LOGN_MAX))
     out["seconds"] = time.perf_counter() - t0
     return out
 
@@ -365,10 +381,12 @@ def main(argv=None) -> None:
     parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--json", type=Path, default=None)
     parser.add_argument("--scenarios", nargs="*", default=list(SCENARIOS))
+    parser.add_argument("--window", action="store_true",
+                        help="evaluate and fit on a window of the pixels (PR 7c.4a)")
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.WARNING)
     logging.getLogger("astrocook").setLevel(logging.ERROR)
-    trials = [Trial(s, snr, R, seed) for s in args.scenarios for snr in GRID["snr"]
+    trials = [Trial(s, snr, R, seed, args.window) for s in args.scenarios for snr in GRID["snr"]
               for R in GRID["resol"] for seed in range(args.trials)]
     t0 = time.perf_counter()
     with Pool(args.workers) as pool:

@@ -51,21 +51,13 @@ def _transitions(series: str) -> List[str]:
     return [n.strip() for n in names if ATOM_DATA.get(n.strip())]
 
 
-def voigt_optical_depth(wave_grid_ang: np.ndarray,
-                        lambda_0: np.ndarray, f_val: np.ndarray,
-                        gamma: np.ndarray, z: np.ndarray,
-                        N_col: np.ndarray, b_kms: np.ndarray) -> np.ndarray:
-    """
-    Optical depth of M Voigt lines on N samples, summed: the physics of
-    the fitter, used also by the profiles of the System Inspector.
-
-    Input arrays (lambda_0, z, etc.) must be shape (M,).
-    wave_grid_ang must be shape (N,).
-    Returns summed tau array of shape (N,).
-    """
-    # Each line only where its optical depth exceeds TAU_CUT (#526: the
-    # grid is finer than the pixels): the samples of all lines are
-    # gathered in one flat array, and summed back onto the grid
+def _line_terms(lambda_0: np.ndarray, f_val: np.ndarray, gamma: np.ndarray,
+                z: np.ndarray, N_col: np.ndarray, b_kms: np.ndarray
+                ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """The observed centre (Angstrom), the Doppler width (Angstrom), the
+    damping parameter, the central optical depth of each line, and the
+    distance from the centre, in Doppler widths, beyond which its optical
+    depth is below ``TAU_CUT``."""
     c_kms = 2.99792458e5
     c_ang_s = 2.99792458e18
     prefactor = 1.4974e-15
@@ -82,6 +74,37 @@ def voigt_optical_depth(wave_grid_ang: np.ndarray,
         x_cut = np.maximum(np.sqrt(np.log(np.maximum(tau0 / TAU_CUT, np.e))),
                            np.sqrt(tau0 * a / (np.sqrt(np.pi) * TAU_CUT))) + 3.0
     x_cut = np.nan_to_num(x_cut, nan=0.0, posinf=0.0)
+    return lambda_c, dop_width_ang, a, tau0, x_cut
+
+
+def line_reach(lambda_0: np.ndarray, f_val: np.ndarray, gamma: np.ndarray,
+               z: np.ndarray, N_col: np.ndarray, b_kms: np.ndarray
+               ) -> Tuple[np.ndarray, np.ndarray]:
+    """The observed centre of each line and the half-width (both in
+    Angstrom) beyond which :func:`voigt_optical_depth` leaves it out (its
+    optical depth below ``TAU_CUT``): the reach of a line on the pixels,
+    before the convolution."""
+    lambda_c, dop_width_ang, _, _, x_cut = _line_terms(lambda_0, f_val, gamma, z, N_col, b_kms)
+    return lambda_c, x_cut * dop_width_ang
+
+
+def voigt_optical_depth(wave_grid_ang: np.ndarray,
+                        lambda_0: np.ndarray, f_val: np.ndarray,
+                        gamma: np.ndarray, z: np.ndarray,
+                        N_col: np.ndarray, b_kms: np.ndarray) -> np.ndarray:
+    """
+    Optical depth of M Voigt lines on N samples, summed: the physics of
+    the fitter, used also by the profiles of the System Inspector.
+
+    Input arrays (lambda_0, z, etc.) must be shape (M,).
+    wave_grid_ang must be shape (N,).
+    Returns summed tau array of shape (N,).
+    """
+    # Each line only where its optical depth exceeds TAU_CUT (#526: the
+    # grid is finer than the pixels): the samples of all lines are
+    # gathered in one flat array, and summed back onto the grid
+    lambda_c, dop_width_ang, a, tau0, x_cut = _line_terms(
+        lambda_0, f_val, gamma, z, N_col, b_kms)
     lo = np.searchsorted(wave_grid_ang, lambda_c - x_cut * dop_width_ang, side='left')
     hi = np.searchsorted(wave_grid_ang, lambda_c + x_cut * dop_width_ang, side='right')
     lens = np.maximum(hi - lo, 0)

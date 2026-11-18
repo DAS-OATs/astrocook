@@ -706,6 +706,16 @@ conditions for it:
 The groups are independent, so the evaluation can be parallel; the budget
 is a time per spectrum logged next to the result.
 
+**Done in PR 7c.4a** (18 November 2026): `EvaluationWindow`
+(`astrocook/fitting/evaluation_window.py`) cuts the pixels of a group out of
+the spectrum and keeps the fixed components that reach them, once per group;
+the fixed components are frozen in the model of the window rather than
+multiplied as a transmission (the product of the convolved fluxes moved the
+ΔIC of blended hypotheses by up to 1.3 at R 8900). The statistics equal
+those on the whole spectrum within 1e-5; a hypothesis takes 12-18 ms in a
+forest of 32 thousand pixels, the trials of `doublet_vs_lyab` 1.34 s → 0.063 s
+(the row of 7c.4a in `ROADMAP.md`).
+
 ## 11. The criterion of "better" for 7c.8
 
 Measured with `validate_mocks.py --compare` on both grids, the pairs with
