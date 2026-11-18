@@ -195,8 +195,8 @@ of the group (otherwise the chi2 punishes the one that leaves a region
 unmodelled, not the one that is wrong):
 - *metal X at z*: the components of the species (as many as the peaks of
   the de-blending), all the lines of X in the coverage (section 8);
-- *Ly-a*: one component per peak, with its Ly-b (and further Lyman lines)
-  where covered; in the forest only, or beyond it within the margin of F55;
+- *Ly-a*: one component per peak, with its Ly-b where covered (the higher
+  orders not in the model of the identification: section 12); in the forest only, or beyond it within the margin of F55;
 - *unidentified*: one free line per peak, modelled as a Voigt profile of a
   placeholder transition (the Ly-a profile at its wavelength, k = 3), with
   no consequence elsewhere; on the red side it is the alternative of a
@@ -250,6 +250,20 @@ the same form, by analogy, as Webb et al. 2021 do not define weights). The
 criterion: BIC or SpIC_H by the experiment (section 4); proposed SpIC_H as
 the default, BIC reported next to it, and the choice measured again in
 7c.4 on the full mocks (decided: SpIC_H, BIC reported; Guido, 18 November 2026).
+
+The weights assume a chi2 that is calibrated: errors that are right and
+independent pixels. The reductions are rebinned, so neighbouring pixels
+are correlated, and the error spectrum can be off by some per cent; a
+chi2 inflated by a factor s inflates every ΔIC by s, and the weights
+become overconfident (a ΔIC of 10, w = 0.99, is 5 with s = 2, w = 0.92).
+The mocks of the experiment of section 4 have independent pixels, so its
+weights are the optimistic case. Proposed: the weights tempered by the
+chi2 per degree of freedom of the accepted model on the pixels of the
+group (ΔIC / max(1, chi2_nu)), or by an effective number of pixels from
+the correlation of the noise when it is known; which one, measured by the
+calibration of F164 (section 11) on the twins and the development
+spectra, where the correlation is real (after the conversation of PR #798,
+18 November 2026).
 
 ### 3.4 A prior on the incidence of the ions
 
@@ -314,8 +328,8 @@ identified as consequences of the anchored systems, in a second pass:
   the red side).
 Cost: some tens of systems by some tens of species with a line in the
 coverage, each a cheap evaluation on a few windows: of the order of the
-first pass. The same sweep, with the Lyman series, tests the H I of a
-metal system (its Ly-a and Ly-b in the forest).
+first pass. The same sweep, with Ly-a and Ly-b, tests the H I of a
+metal system (its lines in the forest).
 
 ## 4. The experiment: controlled pairs of alternatives
 
@@ -488,7 +502,7 @@ AICc 0.91, BIC 1.00, SpIC_H 0.97, SpIC_A 0.91, SpIC_B 0.99.
   across a line, less shape to tell two lines from a doublet).
 
 Proposed from these numbers: SpIC_H as the criterion, BIC reported next to
-it; the Lyman series modelled whole wherever it is covered; the short fit
+it; the Ly-b modelled with the Ly-a wherever it is covered; the short fit
 of the finalists. To be measured again in 7c.4 on the full mocks, with the
 forest, blends and the estimated continuum, which this experiment leaves
 out.
@@ -566,7 +580,19 @@ labelled Ly-a with score 0, even when Ly-a is not asked. Proposed:
   Ly-a lines that would explain the same regions (section 3.2), with the
   Ly-b of the Ly-a hypothesis where covered (`doublet_vs_lyab` of the
   experiment); on the red side the alternative of a metal is the
-  unidentified line.
+  unidentified line;
+- the forest treated statistically (the first point of the conversation
+  of PR #798): if 7b adopts the mean transmission expected at each
+  redshift as the backbone of the continuum, the Ly-a hypothesis of a
+  group of the forest can become a statistical one, the likelihood of
+  the flux under the distribution of the forest at that z, instead of a
+  list of Voigt lines, with no free parameters per line. The metals, the
+  strong H I and the DLAs stay explicit models. It removes the penalty of
+  the free lines of the interlopers (section 4) and gives the prior of
+  section 3.4 a basis in the data; an option to evaluate after 7b.1, not
+  in the prototype. Likewise a learned proposer of hypotheses (the second
+  point of #798, after phase 7) would only add hypotheses to a group,
+  judged by the same likelihood and logged as the others.
 
 ## 7. Tellurics as a hypothesis
 
@@ -699,10 +725,18 @@ Must not worsen (beyond the noise of the seeds):
   and the system column of `doublets_auto`;
 - the time: within the budget of section 10, and stated.
 
-New, measured by 7c.4: the calibration of the credibility, the fraction
-of the accepted hypotheses that are true against their weight (a
-reliability diagram per scenario of section 4, on the full mocks); a
-weight of 0.9 should be right about 9 times in 10.
+New, measured by 7c.4 (F164, proposed in PR #798): the calibration of
+the credibility. Of the hypotheses given weight 0.8, about 80% should be
+right: a reliability diagram (bins of weight against the fraction of
+hypotheses that are true on the mocks), its expected calibration error
+and the Brier score, in `validate_mocks.py`, over all the hypotheses of
+the groups (the alternatives too, not only the accepted ones), per
+category (metal against interloper, coincidence, telluric) and by S/N
+and R; the same metric then for the flags of the components (7d). A
+criterion of "better" in its own right: a prototype more complete but
+overconfident is not better. On the mocks the noise is independent; on
+the twins and the development spectra the calibration measures also the
+tempering of section 3.3.
 
 ## 12. The interface of the prototype
 
@@ -719,7 +753,7 @@ weight of 0.9 should be right about 9 times in 10.
 - *The species by default* (after Guido's question, 18 November 2026: why
   ask the user at all?). Proposed: all, in the sense of section 8 and 3.5:
   every species with an anchor is searched (CIV, SiIV, MgII, NV, OVI,
-  AlIII, CII, FeII, SiII, ... and the Lyman series in the forest), every
+  AlIII, CII, FeII, SiII, ... and `Ly_ab` in the forest), every
   species of the table is swept at the z of the anchored systems; the
   parameter restricts the anchors, it does not need to be set. The cost of
   "all" is not the time but the purity: each anchor searched adds chances
@@ -763,14 +797,30 @@ weight of 0.9 should be right about 9 times in 10.
   ("CIV at z = 2.2295 (w = 0.97) against two Ly-a (0.03), SpIC").
 - The system of an accepted Ly-a/Ly-b pair (from 7c.1): an H I system
   with its Ly-b, one component fitted on both lines, and the Ly-b region
-  labelled as such (decided `Ly_ab`: Guido, 18 November 2026). To his
-  question "why not more lines?": proposed the whole `Lyman` series of
-  `STANDARD_MULTIPLETS` (Ly-a to Ly-8): the lines out of the spectrum add
-  nothing (checked: a `Lyman` and a `Ly_ab` system fitted on a mock that
-  covers Ly-a and Ly-b only give the same logN, b and chi2), and where the
-  higher orders are covered they are evidence, as the Ly-b is in section
-  4. The Lyman-limit continuum of the strong systems is not in the
-  profiles of the series: it belongs to the DLAs and LLSs of 7b.
+  labelled as such (decided `Ly_ab`: Guido, 18 November 2026); a `Ly_a`
+  system where the Ly-b is not covered. The higher orders of the series
+  (Ly-g and beyond) are not used by the identification, neither as
+  anchors nor in the model (Guido, 18 November 2026, after a first
+  proposal of the whole `Lyman` series):
+  - they fall in ever denser absorption (the Ly-b, Ly-g, ... forests
+    overlap) and converge, so in the identification they would mostly
+    find absorption to explain whatever the hypothesis: the pixels of the
+    comparison hold unmodelled blends, and a hypothesis that predicts a
+    line there is rewarded for a blend it did not cause. A line predicted
+    on a clean continuum can falsify an H I hypothesis, but a line found
+    in a blend supports nothing; the Ly-b already has this bias in the
+    Ly-b forest (the `doublet_vs_lyab` of section 4 is its best case);
+  - they are not always accessible: out of the spectrum, or below the
+    Lyman limit of a stronger system at higher z, where the flux is zero;
+  - they are hard to fit even when identified, and that belongs to the
+    fit: the column of a saturated H I (logN above about 15, where Ly-a
+    and Ly-b are flat-bottomed) needs them, as a choice of the lines to
+    fit (#455, 7d), not of the identification.
+  The software can carry the whole series (checked: a `Lyman` and a
+  `Ly_ab` system on a mock that covers Ly-a and Ly-b only give the same
+  logN, b and chi2, the lines out of the spectrum add nothing), so the
+  choice can be reopened for the fit of the strong systems. The
+  Lyman-limit continuum belongs to the DLAs and LLSs of 7b.
 
 ## Common decisions with 7b
 
@@ -803,9 +853,9 @@ On the questions of the first version of this document:
 5. The groups of the identification, distinct from those of the fits
    (section 3.1): at most 6 regions, n + 1 hypotheses.
 6. The window of the pixels of a group: ±(3 FWHM + 5 b) around each line.
-7. An accepted Ly-a/Ly-b pair gives an H I system with its Ly-b (`Ly_ab`);
-   proposed after the question, to confirm: the whole `Lyman` series
-   (section 12).
+7. An accepted Ly-a/Ly-b pair gives an H I system with its Ly-b (`Ly_ab`;
+   `Ly_a` where the Ly-b is not covered); the higher orders not used by
+   the identification (section 12).
 8. The two roles of the multiplets (search anchors and model lines), with
    the anchors of FeII and SiII.
 9. The three common decisions with 7b, above.
@@ -814,6 +864,9 @@ Added after the reading, proposals to confirm: the sweep of the anchored
 systems for the rarer and single lines (section 3.5); the species "all"
 by default (section 12); the short fit as starting values, not the model
 (section 12); the display of the graph and F163 (section 12); the
-telluric model made outside Astrocook, and the flux
-already corrected (section 7); the replay of the old logs after 7c.8
-(section 12).
+telluric model made outside Astrocook, and the flux already corrected
+(section 7); the replay of the old logs after 7c.8 (section 12); the
+calibration of the credibility, F164, as a criterion of "better"
+(section 11), with the weights tempered for a chi2 that is not calibrated
+(section 3.3); the forest as a statistical hypothesis, an option after
+7b.1 (section 6).
