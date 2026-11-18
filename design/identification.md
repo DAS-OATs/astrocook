@@ -1,9 +1,9 @@
 # Identification as a comparison between hypotheses
 
 Design document of phase 7, PR 7c.2 (`ROADMAP.md`, phase 7, block 7c).
-Written on 18 November 2026, for Guido's reading; nothing here is decided
-until he decides it. The questions for him are collected in the last
-section. No production code comes with this document: the experiment of
+Written on 18 November 2026 and read by Guido the same day: his
+decisions, and the proposals added after his questions (still to
+confirm), are in the last section. No production code comes with this document: the experiment of
 section 4 is `benchmarks/identification_hypotheses.py`.
 
 The goal of the block (phase 7): *every absorbed region accounted for,
@@ -168,16 +168,21 @@ the same redshift (within the tolerance of the kinematic search, which
 exists: `_find_kinematic_doublet_candidates`), the two lines of a doublet,
 two lines of a longer multiplet (section 8), Ly-a and Ly-b (in the forest),
 and the lines of different ions of one system at the same z (CIV and SiIV,
-MgII and FeII; optional, section 3.4). The connected components of the
+MgII and FeII; section 3.5). The connected components of the
 graph are the *groups* (the "blocks" of section 5 of the roadmap): the
 alternatives of a group do not change the evaluation of another, so the
-groups are evaluated one by one, in parallel if needed.
+groups are evaluated one by one, in parallel if needed. These groups are
+not the groups of the fits (`SystemList.get_connected_group`, the
+components whose profiles overlap): an identification group joins regions
+that one hypothesis can explain together, also far apart in wavelength;
+the components of the accepted hypotheses are then fitted in the groups of
+the fits, as today (Guido, 18 November 2026).
 
 In the dense forest the graph percolates: every region is linked to some
 other by the Ly-a/Ly-b lag or by a metal lag. Two limits keep the groups
 small: (a) the edges are kept only for candidates that pass a cheap
-pre-filter (the AOD of the two lines compatible with the ratio of their
-f lambda within 3 sigma, as the two thresholds of the surveys), (b) a group
+pre-filter, the R^2 score of today with a low threshold (decided: Guido,
+18 November 2026; the threshold to measure in 7c.4), (b) a group
 above a size (to agree, e.g. 6 regions) is split at its weakest edges,
 those of the lowest pre-filter significance. The regions of the forest
 that no edge reaches are groups of one region, with the hypotheses Ly-a
@@ -244,7 +249,7 @@ w_i = exp(-ΔIC_i / 2) / Σ_j exp(-ΔIC_j / 2), ΔIC_i = IC_i - min_j IC_j
 the same form, by analogy, as Webb et al. 2021 do not define weights). The
 criterion: BIC or SpIC_H by the experiment (section 4); proposed SpIC_H as
 the default, BIC reported next to it, and the choice measured again in
-7c.4 on the full mocks (question 1).
+7c.4 on the full mocks (decided: SpIC_H, BIC reported; Guido, 18 November 2026).
 
 ### 3.4 A prior on the incidence of the ions
 
@@ -281,6 +286,36 @@ only 16% (BIC 98% and 86%). Proposed:
 - the prior of the mocks must not come from the mocks: the forest of
   `lya_forest` has its own dN/dz (1700 (1 + z)^2.5 / 4^2.5), and a prior
   taken from it would measure the generator, not the method.
+
+### 3.5 The sweep of the anchored systems: rarer and single lines
+
+(Added after Guido's reading, 18 November 2026.) The anchors (doublets
+and the pairs of section 8) find the systems; most other lines of a
+system are too weak, too rare or single (CII 1334, SiIII 1206, OI 1302,
+AlII 1670, the weaker FeII and SiII lines) to be found by a pair. They are
+identified as consequences of the anchored systems, in a second pass:
+- for each accepted system at z, and for each species of the table with
+  lines in the coverage (all species, not only the requested anchors), a
+  hypothesis "Y at z": components at the redshifts of the anchor's
+  components (the kinematics of ions of different ionisation differ: z
+  free within the width of the anchor's profile, b free), N from the AOD
+  at the predicted positions;
+- evaluated on the pixels of its predicted lines against the labels those
+  pixels already have (unidentified, the assumed Ly-a, another
+  hypothesis): accepted when it lowers the criterion of the groups
+  involved, i.e. when it explains regions left unexplained at the cost of
+  its parameters; the z of a known system is the prior that makes a single
+  line credible, where alone it would be unidentified;
+- where nothing is there, the same evaluation gives the upper limit of
+  the column of Y (F156, 7d.7), from the same pixels;
+- an accepted species becomes an edge of the graph: the regions it
+  explains join the group of its system, so a later comparison sees them
+  together (a "Ly-a" of the forest that is the SiII 1260 of a system of
+  the red side).
+Cost: some tens of systems by some tens of species with a line in the
+coverage, each a cheap evaluation on a few windows: of the order of the
+first pass. The same sweep, with the Lyman series, tests the H I of a
+metal system (its Ly-a and Ly-b in the forest).
 
 ## 4. The experiment: controlled pairs of alternatives
 
@@ -513,9 +548,8 @@ comparison itself is not the limit: a CIV doublet whose weaker line is at
 **Scoring** (F119). The R^2 of F_1 = F_2^gamma is replaced by the
 comparison of the forward models: it fails after the convolution and at
 low S/N (F119: 0.48 for a SiIV at S/N 50, before the fix of the frame of
-7c.1), and it gives no credibility. It can survive as the pre-filter of
-section 3.1, with a low threshold (e.g. 0), or be replaced there by the
-two thresholds of the AOD (question 4).
+7c.1), and it gives no credibility. It survives as the pre-filter of
+section 3.1, with a low threshold (decided: Guido, 18 November 2026).
 
 ## 6. Ly-a only when asked; the assumed Ly-a and the interlopers
 
@@ -535,6 +569,22 @@ labelled Ly-a with score 0, even when Ly-a is not asked. Proposed:
   unidentified line.
 
 ## 7. Tellurics as a hypothesis
+
+The identification reads the column `telluric` (the transmission, 1 where
+there is none), whoever wrote it: 7b.6, or a model made outside Astrocook
+(Molecfit, TelFit, the pipeline) imported as a column (after Guido's
+reading, 18 November 2026). Three cases:
+- *a model in the column, the flux not corrected*: as below, every
+  hypothesis sees cont × telluric × absorption;
+- *the flux already corrected* (the tellurics divided out, outside or by
+  a recipe): the spectrum says so (a flag of its metadata, e.g.
+  `TELLURIC_CORRECTED`, set by the recipe or the user), and the
+  identification adds no telluric hypothesis; where the model is deep
+  (transmission below about 0.5, when the column is there) the correction
+  leaves residuals and inflated errors, and those regions are labelled
+  *telluric residual*, kept out of the anchors (a doublet on a residual of
+  the A band is the F54 case again);
+- *nothing known*: the mask of the bands from the template of 7a.1, below.
 
 F54 and F155: the O2 A band gives doublets with good scores (CIV at
 z = 3.927 on J0103-1305), and the robustness grid has 172 false candidates
@@ -616,8 +666,8 @@ components) that is 0.5-2 minutes, against the hour of section 5. Two
 conditions for it:
 - the evaluation in a window around the lines of the group, not on the
   whole spectrum: the window of the pixels of the group (±200 km/s around
-  each line in the experiment; proposed: the union of ±(3 FWHM + 5 b)
-  around each line, to agree, question 6), and the profiles of
+  each line in the experiment; the union of ±(3 FWHM + 5 b)
+  around each line, decided), and the profiles of
   `evaluate_model` computed on that slice;
 - the components outside the group fixed: their transmission computed
   once per group and multiplied (a cache, not a recomputation per
@@ -659,57 +709,111 @@ weight of 0.9 should be right about 9 times in 10.
 - `absorbers.identify_lines` gets `method`, `"doublets"` (the current
   algorithm, the default) or `"hypotheses"` (the prototype), as the
   `method` of the continuum of 7b.2; the parameters of the prototype:
-  `species` (the multiplets as today), `criterion` (`"spic"`, `"bic"`,
+  `species` (the anchors searched; default all the species with an anchor,
+  below), `criterion` (`"spic"`, `"bic"`,
   `"aic"`), `prior` (`"none"`, `"incidence"`), `assume_lya` (the Ly-a by
   default of the forest, off unless asked, F51), `max_group` and the screen
   threshold; the rest of the chain (`doublets_auto`, `components_auto`)
   reads the same `abs_ids` and system list, so it works unchanged with
   either method.
-- The output: the system list of the accepted hypotheses as today, the
+- *The species by default* (after Guido's question, 18 November 2026: why
+  ask the user at all?). Proposed: all, in the sense of section 8 and 3.5:
+  every species with an anchor is searched (CIV, SiIV, MgII, NV, OVI,
+  AlIII, CII, FeII, SiII, ... and the Lyman series in the forest), every
+  species of the table is swept at the z of the anchored systems; the
+  parameter restricts the anchors, it does not need to be set. The cost of
+  "all" is not the time but the purity: each anchor searched adds chances
+  of a coincidence (the hard case of section 4), the look-elsewhere effect
+  of section 5 grows with the number of species; the prior of the
+  incidence (section 3.4, an option) is the natural guard for the rare
+  species. 7c.4 measures the purity with all the anchors against CIV,
+  SiIV, MgII alone; if it drops, the default is the common anchors, the
+  rest swept.
+- *The fit of the identification* (after Guido's question). The short fit
+  of the finalists consolidates the comparison; it is not the model. The
+  accepted hypothesis is the output system list, with the parameters of
+  its short fit as the starting values (better than the AOD guesses of
+  today) and marked as such; the alternatives keep theirs in the
+  structure of 7c.3, so that the GUI can show them and the user swap one
+  in. The model is made by the fits that follow (`doublets_auto`,
+  `components_auto`: the components added from the residuals, the full
+  number of iterations, the flags of 7d).
+- *Showing the graph* (after Guido's question; the GUI is 7c.7). The
+  graph as such (nodes and edges) says little; on the spectrum it does:
+  the regions coloured by their accepted label, their transparency by its
+  weight, and the edges of the selected region drawn as arcs to the
+  regions its hypotheses link (one colour per species), so that a click on
+  a line shows which lines its identification rests on. For a group, its
+  hypotheses side by side as velocity stacks of their lines (the panel of
+  the System Inspector and of `spectrum_plot_velocity`), with their
+  weights. Those panels should come from one piece of code: F163 (the
+  Inspector draws its panel apart from `plotting.py`) is best closed
+  before or with 7c.7, so that the GUI and the MCP tools show the
+  alternatives in the same way.
+- *Replacing the old method* (after Guido's question). The prototype
+  becomes the default only in 7c.8, if the benchmark shows it better, and
+  the old method stays selectable (`method="doublets"`) at least for a
+  release; whether to remove it then is Guido's decision. One care for
+  7c.8: the logs record the parameters used, and a log written before the
+  change has no `method`; it must replay with `"doublets"`, not with the
+  new default (a default by version of the log, or `method` added on
+  load). the system list of the accepted hypotheses as today, the
   groups with their alternatives in the structure of 7c.3, a summary in
   `RecipeResult.extra` (7c.6), and one line of the log per group decided
   ("CIV at z = 2.2295 (w = 0.97) against two Ly-a (0.03), SpIC").
-- The system of an accepted Ly-a/Ly-b pair (from 7c.1): proposed a
-  `Ly_ab` system, one component fitted on both lines, since the forward
-  model has the Ly-b anyway, and the Ly-b region labelled as such
-  (question 7).
+- The system of an accepted Ly-a/Ly-b pair (from 7c.1): an H I system
+  with its Ly-b, one component fitted on both lines, and the Ly-b region
+  labelled as such (decided `Ly_ab`: Guido, 18 November 2026). To his
+  question "why not more lines?": proposed the whole `Lyman` series of
+  `STANDARD_MULTIPLETS` (Ly-a to Ly-8): the lines out of the spectrum add
+  nothing (checked: a `Lyman` and a `Ly_ab` system fitted on a mock that
+  covers Ly-a and Ly-b only give the same logN, b and chi2), and where the
+  higher orders are covered they are evidence, as the Ly-b is in section
+  4. The Lyman-limit continuum of the strong systems is not in the
+  profiles of the series: it belongs to the DLAs and LLSs of 7b.
 
-## Common decisions with 7b (open proposals)
+## Common decisions with 7b
 
 Taken to the conversation "7 · plan of the phase" (Guido, 16 November
-2026); not decided:
+2026); the three proposals below accepted by Guido on 18 November 2026:
 1. *One vocabulary of the regions*: BAL, DLA, telluric, forest (Ly-a,
    assumed or identified), metal, unidentified, as the categories of the
-   truth map of 7a.1 (forest, metal, strong_hi, bal, telluric). Proposed:
-   7b writes the regions it owns (the masks of the BAL troughs and of the
-   DLA cores and wings, the `telluric` column), the identification reads
-   them, takes them out of its groups, and writes the final label of
-   every region in its structure (7c.3) and in `abs_ids`.
-2. *The continuum of 7c.4*: proposed the current one (`estimate_auto`),
-   so that the two prototypes are measured apart, and 7c.4 measured again
-   on the continuum of 7b.2 when it exists.
-3. *The telluric model as a column*: proposed `telluric`, the model
-   transmission (1 where there is none), written by 7b.6, read by the
-   identification and the fit (section 7).
+   truth map of 7a.1 (forest, metal, strong_hi, bal, telluric). 7b writes
+   the regions it owns (the masks of the BAL troughs and of the DLA cores
+   and wings, the `telluric` column), the identification reads them, takes
+   them out of its groups, and writes the final label of every region in
+   its structure (7c.3) and in `abs_ids`.
+2. *The continuum of 7c.4*: the current one (`estimate_auto`), so that the
+   two prototypes are measured apart; 7c.4 measured again on the
+   continuum of 7b.2 when it exists.
+3. *The telluric model as a column*: `telluric`, the model transmission
+   (1 where there is none), written by 7b.6 or imported (section 7), read
+   by the identification and the fit.
 
-## Questions for Guido
+## Decisions (Guido, 18 November 2026)
 
-1. The criterion: SpIC_H as the default with BIC reported (section 4), or
-   BIC?
-2. The prior on the incidence (section 3.4): none in the prototype, the
-   metals of the forest off by default and opened by a link to another
-   ion; agreed?
-3. The detection by matched filters (section 5), threshold 3 sigma per
-   line and on the joint significance of a doublet: agreed as the
-   direction of 7c.4?
-4. The R^2 score: kept as a pre-filter, or replaced by the two AOD
-   thresholds?
-5. The groups: their maximum size (proposed 6 regions) and the
-   enumeration of n + 1 hypotheses (section 3.2).
-6. The window of the pixels of a group (proposed ±(3 FWHM + 5 b) around
-   each line).
-7. The system of an accepted Ly-a/Ly-b pair: `Ly_ab` (proposed) or
-   `Ly_a`?
-8. The two roles of the multiplets (search and model, section 8), and
+On the questions of the first version of this document:
+1. The criterion: SpIC_H by default, BIC reported next to it.
+2. The prior: none in the prototype (an option of the recipe, with its
+   sources), the metals of the forest off by default and opened by a link
+   to another ion.
+3. The detection by matched filters, threshold 3 sigma per line and on
+   the joint significance of a doublet, as the direction of 7c.4.
+4. The R^2 score kept as the pre-filter of the candidates.
+5. The groups of the identification, distinct from those of the fits
+   (section 3.1): at most 6 regions, n + 1 hypotheses.
+6. The window of the pixels of a group: ±(3 FWHM + 5 b) around each line.
+7. An accepted Ly-a/Ly-b pair gives an H I system with its Ly-b (`Ly_ab`);
+   proposed after the question, to confirm: the whole `Lyman` series
+   (section 12).
+8. The two roles of the multiplets (search anchors and model lines), with
    the anchors of FeII and SiII.
-9. The three common decisions with 7b above.
+9. The three common decisions with 7b, above.
+
+Added after the reading, proposals to confirm: the sweep of the anchored
+systems for the rarer and single lines (section 3.5); the species "all"
+by default (section 12); the short fit as starting values, not the model
+(section 12); the display of the graph and F163 (section 12); the
+telluric model made outside Astrocook, and the flux
+already corrected (section 7); the replay of the old logs after 7c.8
+(section 12).
