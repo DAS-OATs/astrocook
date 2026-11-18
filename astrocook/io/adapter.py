@@ -13,6 +13,7 @@ import warnings
 from typing import Dict, List, Optional, TYPE_CHECKING
 
 # --- V2 Imports ---
+from . import archive_data
 from .v1_archive import read_v1_spectrum, read_v1_system_list
 if TYPE_CHECKING:
     from astrocook.session.session import Session
@@ -283,23 +284,24 @@ def _fits_meta(meta: dict) -> dict:
       of their headers) are left out: astropy rebuilds them from the table,
       and it ignored those of the metadata with one warning each, at every
       save.
-    - A dictionary cannot be written in a header: astropy skipped it with
-      a warning of its own; it is left out with a WARNING that says what is
-      lost (the Bayesian samples, findings register F28).
+    - The structured data (the identification, the Bayesian samples) are
+      left out: they are files of their own in the archive
+      (``astrocook.io.archive_data``, phase 7, PR 7c.3; F28).
+    - Any other dictionary cannot be written in a header: astropy skipped
+      it with a warning of its own; it is left out with a WARNING that says
+      what is lost.
     """
     from astropy.io.fits.connect import REMOVE_KEYWORDS, is_column_keyword
+    structured = archive_data.meta_keys("spec") | archive_data.meta_keys("systs")
     kept = {}
     for key, value in meta.items():
         if is_column_keyword(key.upper()) or key.upper() in REMOVE_KEYWORDS:
             continue
+        if key in structured:
+            continue
         if isinstance(value, dict):
-            if key == 'bayesian_results':
-                logger.warning("The samples of the Bayesian fit are not saved in the "
-                               "archive (the FITS header cannot hold them): the fitted "
-                               "values and their errors are.")
-            else:
-                logger.warning(f"The metadata '{key}' (a dictionary) cannot be saved "
-                               "in the archive.")
+            logger.warning(f"The metadata '{key}' (a dictionary) cannot be saved "
+                           "in the archive.")
             continue
         if isinstance(value, str) and len(key) > 8:
             # A HIERARCH card cannot continue on other cards: a long string
@@ -396,10 +398,11 @@ def _convert_spec_data_to_table(spec_data: SpectrumData) -> Table:
     t['dy'] = Column(spec_data.dy.values, unit=spec_data.dy.unit)
     for name, data_col in spec_data.aux_cols.items():
         t[name] = Column(data_col.values, unit=data_col.unit)
-    t.meta.update(_fits_meta(spec_data.meta))
-
-    # Strip massive lists before FITS creation
-    t.meta.pop('region_identifications', None)
+    # The identifications of the regions are in _meta.json, not in the
+    # header: left out before _fits_meta, which warned that it could not
+    # save them when they were a dict (after a round trip, F165)
+    t.meta.update(_fits_meta({k: v for k, v in spec_data.meta.items()
+                              if k != 'region_identifications'}))
 
     t.meta['ORIGIN'] = 'Astrocook V2'
     t.meta['Z_EM'] = spec_data.z_em
@@ -537,6 +540,12 @@ def save_archive_v2(session_v2_final: 'Session', session_v2_initial: Optional['S
 
         final_path = file_path if file_path.lower().endswith(('.acs2', '.tar.gz')) else file_path + '.acs2'
 
+        # The structured data, one file each (PR 7c.3)
+        data_fnames = archive_data.write_data(session_v2_final, temp_dir, base_name)
+        if session_v2_initial:
+            data_fnames += archive_data.write_data(session_v2_initial, temp_dir,
+                                                   base_name, suffix="_orig")
+
         def add_members(tar):
             tar.add(spec_path_temp, arcname=spec_fname)
             if systs_fname: tar.add(systs_path_temp, arcname=systs_fname)
@@ -544,6 +553,8 @@ def save_archive_v2(session_v2_final: 'Session', session_v2_initial: Optional['S
             if spec_orig_fname: tar.add(spec_orig_path_temp, arcname=spec_orig_fname)
             if meta_orig_fname: tar.add(meta_orig_path_temp, arcname=meta_orig_fname)
             if systs_orig_fname: tar.add(systs_orig_path_temp, arcname=systs_orig_fname)
+            for fname in data_fnames:
+                tar.add(os.path.join(temp_dir, fname), arcname=fname)
 
         _write_replacing(final_path, add_members)
 

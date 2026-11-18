@@ -163,6 +163,10 @@ def load_session_from_file(archive_path: str, name: str, gui_context: Any, forma
         # legacy FWHM converted to R
         from astrocook.core.resolution import migrate_component_resolutions
         system_list_v2 = migrate_component_resolutions(system_list_v2, spectrum_v2)
+        if is_v2_archive:
+            # The structured data, files of their own (PR 7c.3; F28)
+            from astrocook.io.archive_data import read_data
+            read_data(archive_root, spectrum_v2, system_list_v2)
         session = Session(name=name, gui=gui_context, spec=spectrum_v2, systs=system_list_v2)
         if v2_metadata:
             # Not recorded before 2.1 (F45)

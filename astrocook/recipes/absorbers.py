@@ -1,10 +1,13 @@
 from astrocook._renamed import renamed
 import astropy.units as au
+import dataclasses
 import json
 import logging
 import numpy as np
 from typing import TYPE_CHECKING, Any, Optional
 
+from astrocook.core.identification import META_KEY as IDENTIFICATION_KEY
+from astrocook.core.identification import Identification
 from astrocook.core.atomic_data import ATOM_DATA, STANDARD_MULTIPLETS, is_multiplet, series_lines
 from astrocook.fitting.voigt_fitter import NoPixelsToFit, VoigtFitter
 
@@ -1092,6 +1095,17 @@ class RecipeAbsorbers:
             final_spec = session_step1.spec.update_column('abs_ids', final_ids)
             final_spec._data.meta['region_identifications'] = json.dumps(
                 {str(k): v for k, v in merged_ident.items()})
+            # The structures of the identification, with the same IDs
+            # (PR 7c.3)
+            old_structure = spec_of(session_current).meta.get(IDENTIFICATION_KEY)
+            new_structure = final_spec._data.meta.get(IDENTIFICATION_KEY)
+            if new_structure is not None:
+                if old_structure is None:  # (abs_ids of an older version)
+                    old_structure = Identification(method=new_structure.method, params={})
+                final_spec._data.meta[IDENTIFICATION_KEY] = old_structure.merged(
+                    new_structure, int(np.max(old_abs_ids)) if len(old_abs_ids) else 0,
+                    np.unique(old_abs_ids).astype(int),
+                    np.unique(session_step1.spec.get_column('abs_ids').value).astype(int))
             session_step1 = session_step1.with_new_spectrum(final_spec)
 
         spec_meta = session_step1.spec.meta
@@ -1631,12 +1645,17 @@ class RecipeAbsorbers:
         logger.info(f"Adding {len(series_map)} components from the identification.")
 
         # 2. Iterate and Build
+        uuid_of: dict[int, str] = {}  # candidate system -> its component (PR 7c.3)
         for sys_id in sorted(series_map.keys()):
             series = series_map[sys_id]
             z_val = z_map.get(sys_id, 0.0)
+            before = {c.uuid for c in running_systs.components}
             
             # A. Add Single Component (e.g. 'CIV')
             running_systs = running_systs.add_component(series, z_val, logN=13.5, b=15.0)
+            added = [c.uuid for c in running_systs.components if c.uuid not in before]
+            if len(added) == 1:
+                uuid_of[sys_id] = added[0]
 
         # 3. Cleanup and Model Generation (Refactored)
         if running_systs.constraint_model:
@@ -1657,6 +1676,15 @@ class RecipeAbsorbers:
                 'logN_map_json', 
                 'b_map_json'
             ])
+        # The components of the accepted hypotheses, in the structure of
+        # the identification (PR 7c.3)
+        structure = new_spec._data.meta.get(IDENTIFICATION_KEY)
+        if structure is not None and uuid_of:
+            new_meta = dict(new_spec._data.meta)
+            new_meta[IDENTIFICATION_KEY] = structure.with_uuids(uuid_of)
+            new_spec = new_spec.__class__(
+                data=dataclasses.replace(new_spec._data, meta=new_meta),
+                history=new_spec.history)
 
         return self._session.with_new_spectrum(new_spec).with_new_system_list(running_systs)
         
