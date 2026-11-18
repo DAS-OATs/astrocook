@@ -736,7 +736,7 @@ The boxes above the plot are in three groups, separated by thin lines: what the 
 </pre></div>
 </div>
 <p><strong>Visualizing Posteriors (Corner Plots)</strong>
-Once a Bayesian fit completes, Astrocook stores the posterior samples in the session metadata. You can visualize these directly:</p>
+Once a Bayesian fit completes, Astrocook stores the posterior samples in the session metadata, and saves them in the <code class="docutils literal notranslate"><span class="pre">.acs2</span></code> archive with the session (the archives saved by 2.7 and earlier versions kept only the fitted values and their errors). You can visualize these directly:</p>
 <ul class="simple">
 <li><p>Right-click a Bayesian-fitted component and select <strong>Show Corner Plot</strong>.</p></li>
 <li><p>This opens a dedicated, scrollable window displaying the 1D histograms and 2D contours for all free parameters (<span class="math notranslate nohighlight">\(z\)</span>, <span class="math notranslate nohighlight">\(\log N\)</span>, <span class="math notranslate nohighlight">\(b\)</span>).</p></li>

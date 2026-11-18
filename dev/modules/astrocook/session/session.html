@@ -638,6 +638,10 @@
         <span class="c1"># legacy FWHM converted to R</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.resolution</span><span class="w"> </span><span class="kn">import</span> <span class="n">migrate_component_resolutions</span>
         <span class="n">system_list_v2</span> <span class="o">=</span> <span class="n">migrate_component_resolutions</span><span class="p">(</span><span class="n">system_list_v2</span><span class="p">,</span> <span class="n">spectrum_v2</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">is_v2_archive</span><span class="p">:</span>
+            <span class="c1"># The structured data, files of their own (PR 7c.3; F28)</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.io.archive_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">read_data</span>
+            <span class="n">read_data</span><span class="p">(</span><span class="n">archive_root</span><span class="p">,</span> <span class="n">spectrum_v2</span><span class="p">,</span> <span class="n">system_list_v2</span><span class="p">)</span>
         <span class="n">session</span> <span class="o">=</span> <span class="n">Session</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">gui</span><span class="o">=</span><span class="n">gui_context</span><span class="p">,</span> <span class="n">spec</span><span class="o">=</span><span class="n">spectrum_v2</span><span class="p">,</span> <span class="n">systs</span><span class="o">=</span><span class="n">system_list_v2</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">v2_metadata</span><span class="p">:</span>
             <span class="c1"># Not recorded before 2.1 (F45)</span>

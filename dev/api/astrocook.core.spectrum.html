@@ -438,6 +438,7 @@
 <li class="toctree-l1 current active has-children"><a class="reference internal" href="astrocook.core.html">astrocook.core package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.column_names.html">astrocook.core.column_names module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.debug_hooks.html">astrocook.core.debug_hooks module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.identification.html">astrocook.core.identification module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.resolution.html">astrocook.core.resolution module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.session.html">astrocook.core.session module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.session_manager.html">astrocook.core.session_manager module</a></li>
@@ -1224,7 +1225,11 @@ associated absorbers and the uncertainty of <code class="docutils literal notran
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A new instance with the <code class="docutils literal notranslate"><span class="pre">abs_ids</span></code> column and identification metadata.</p>
+<dd class="field-even"><p>A new instance with the <code class="docutils literal notranslate"><span class="pre">abs_ids</span></code> column and identification
+metadata: the maps of the candidate systems (<code class="docutils literal notranslate"><span class="pre">series_map_json</span></code>,
+…), the labels of the regions (<code class="docutils literal notranslate"><span class="pre">region_identifications</span></code>) and
+the structure of the identification (<code class="docutils literal notranslate"><span class="pre">identification</span></code>, an
+<a class="reference internal" href="astrocook.core.identification.html#astrocook.core.identification.Identification" title="astrocook.core.identification.Identification"><code class="xref py py-class docutils literal notranslate"><span class="pre">Identification</span></code></a>, PR 7c.3).</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#astrocook.core.spectrum.Spectrum" title="astrocook.core.spectrum.Spectrum">Spectrum</a></p>

@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>astrocook.core.identification &#8212; Astrocook dev documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../static/styles/theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+<link href="../../../static/styles/pydata-sphinx-theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../static/sphinx-design.min.css?v=6a604523" />
+    <link rel="stylesheet" type="text/css" href="../../../static/css/custom.css?v=e8a3a7b7" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../static/scripts/fontawesome.js?digest=75c7c72ae941e8b558d8"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
+<link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
+
+    <script src="../../../static/documentation_options.js?v=3ce10a4d"></script>
+    <script src="../../../static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../../../static/design-tabs.js?v=fcb327ea"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'modules/astrocook/core/identification';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'dev';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="color-scheme" content="light dark"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="dev" />
+  
+    
+    <script src="../../../static/searchtools.js"></script>
+    <script src="../../../static/language_data.js"></script>
+    <script src="../../../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation" aria-expanded="false" aria-controls="pst-primary-sidebar-modal">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../static/icon_3d_HR.png" class="logo__image only-light" alt=""/>
+    <img src="../../../static/icon_3d_HR.png" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">Astrocook</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../science.html">
+    Science
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference.html">
+    API Reference
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../credits.html">
+    Credits
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../changelog.html">
+    Changelog
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal" tabindex="-1"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../science.html">
+    Science
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../credits.html">
+    Credits
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../changelog.html">
+    Changelog
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-house"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">astrocook.core.identification</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for astrocook.core.identification</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""The identification of the absorbed regions as a structure (phase 7, PR 7c.3).</span>
+
+<span class="sd">The requirements are in ``design/identification.md``, section 9: per group</span>
+<span class="sd">of regions, the regions and the edges that made it, the hypotheses that</span>
+<span class="sd">explain it (their components, stage, statistics, weight, status and</span>
+<span class="sd">reason), the candidates dropped by the score, and the parameters of the</span>
+<span class="sd">run. The structure is immutable (frozen dataclasses, tuples) and lives in</span>
+<span class="sd">the metadata of the spectrum under :data:`META_KEY`, next to the ``abs_ids``</span>
+<span class="sd">column that it describes, so that it follows the history of the session</span>
+<span class="sd">and the undo with no extra code. In the archive it is a file of its own,</span>
+<span class="sd">``&lt;name&gt;_identification.json`` (``astrocook.io.archive_data``): a FITS</span>
+<span class="sd">header cannot hold it.</span>
+
+<span class="sd">:class:`RegionKind` is the vocabulary of the regions shared with the</span>
+<span class="sd">emission model of 7b (``design/identification.md``, "Common decisions with</span>
+<span class="sd">7b", item 1): 7b writes the regions it owns (BAL troughs, DLA cores and</span>
+<span class="sd">wings, tellurics), the identification labels the others.</span>
+
+<span class="sd">The current method of :meth:`~astrocook.core.spectrum.Spectrum.identify_lines`</span>
+<span class="sd">(``method="doublets"``) fills the structure in a minimal form: every region</span>
+<span class="sd">it finds, the accepted pairs as edges, one hypothesis per accepted pair</span>
+<span class="sd">(stage :attr:`Stage.SCORE`, the R^2 of the pair as its only statistic) and</span>
+<span class="sd">one per region of the forest assumed to be Ly-a, the dropped candidates.</span>
+<span class="sd">"""</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">StrEnum</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
+
+<span class="c1">#: The key of the structure in the metadata of the spectrum</span>
+<span class="n">META_KEY</span> <span class="o">=</span> <span class="s2">"identification"</span>
+<span class="c1">#: The version of the schema of :meth:`Identification.to_dict`: raised when</span>
+<span class="c1">#: a field changes meaning or is removed (a new optional field does not</span>
+<span class="c1">#: need it, the reader fills its default)</span>
+<span class="n">SCHEMA_VERSION</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="c1">#: The name of the schema, written in the file</span>
+<span class="n">SCHEMA_NAME</span> <span class="o">=</span> <span class="s2">"astrocook.identification"</span>
+
+
+<div class="viewcode-block" id="RegionKind">
+<a class="viewcode-back" href="../../../api/astrocook.core.identification.html#astrocook.core.identification.RegionKind">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">RegionKind</span><span class="p">(</span><span class="n">StrEnum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""What absorbs in a region: the vocabulary shared with 7b."""</span>
+    <span class="n">BAL</span> <span class="o">=</span> <span class="s2">"bal"</span>
+<span class="w">    </span><span class="sd">"""A trough of a broad absorption line (written by 7b)."""</span>
+    <span class="n">DLA</span> <span class="o">=</span> <span class="s2">"dla"</span>
+<span class="w">    </span><span class="sd">"""The core or the wings of a damped Ly-a system (written by 7b)."""</span>
+    <span class="n">TELLURIC</span> <span class="o">=</span> <span class="s2">"telluric"</span>
+<span class="w">    </span><span class="sd">"""Telluric absorption (from the ``telluric`` column of 7b.6)."""</span>
+    <span class="n">FOREST</span> <span class="o">=</span> <span class="s2">"forest"</span>
+<span class="w">    </span><span class="sd">"""Ly-a of the forest, identified (by its Ly-b, or by a comparison)."""</span>
+    <span class="n">FOREST_ASSUMED</span> <span class="o">=</span> <span class="s2">"forest_assumed"</span>
+<span class="w">    </span><span class="sd">"""Ly-a of the forest by assumption: no identification supports it."""</span>
+    <span class="n">METAL</span> <span class="o">=</span> <span class="s2">"metal"</span>
+<span class="w">    </span><span class="sd">"""A metal line."""</span>
+    <span class="n">UNIDENTIFIED</span> <span class="o">=</span> <span class="s2">"unidentified"</span>
+<span class="w">    </span><span class="sd">"""No identification."""</span></div>
+
+
+
+<span class="c1">#: The category of the truth map of the mocks (``astrocook.mocks.truthmap``,</span>
+<span class="c1">#: PR 7a.1) of each kind of region, for the metrics; ``None`` where the truth</span>
+<span class="c1">#: map has no category (what is unidentified is compared with the truth)</span>
+<span class="n">TRUTH_CATEGORY</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">RegionKind</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">RegionKind</span><span class="o">.</span><span class="n">BAL</span><span class="p">:</span> <span class="s2">"bal"</span><span class="p">,</span>
+    <span class="n">RegionKind</span><span class="o">.</span><span class="n">DLA</span><span class="p">:</span> <span class="s2">"strong_hi"</span><span class="p">,</span>
+    <span class="n">RegionKind</span><span class="o">.</span><span class="n">TELLURIC</span><span class="p">:</span> <span class="s2">"telluric"</span><span class="p">,</span>
+    <span class="n">RegionKind</span><span class="o">.</span><span class="n">FOREST</span><span class="p">:</span> <span class="s2">"forest"</span><span class="p">,</span>
+    <span class="n">RegionKind</span><span class="o">.</span><span class="n">FOREST_ASSUMED</span><span class="p">:</span> <span class="s2">"forest"</span><span class="p">,</span>
+    <span class="n">RegionKind</span><span class="o">.</span><span class="n">METAL</span><span class="p">:</span> <span class="s2">"metal"</span><span class="p">,</span>
+    <span class="n">RegionKind</span><span class="o">.</span><span class="n">UNIDENTIFIED</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="Stage">
+<a class="viewcode-back" href="../../../api/astrocook.core.identification.html#astrocook.core.identification.Stage">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Stage</span><span class="p">(</span><span class="n">StrEnum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""How far a hypothesis was evaluated."""</span>
+    <span class="n">SCORE</span> <span class="o">=</span> <span class="s2">"score"</span>
+<span class="w">    </span><span class="sd">"""Only the score of the pre-filter (the R^2 of a pair): the current method."""</span>
+    <span class="n">AOD</span> <span class="o">=</span> <span class="s2">"aod"</span>
+<span class="w">    </span><span class="sd">"""The model evaluated with N and b from the apparent optical depth."""</span>
+    <span class="n">FIT</span> <span class="o">=</span> <span class="s2">"fit"</span>
+<span class="w">    </span><span class="sd">"""The model evaluated after a short fit."""</span></div>
+
+
+
+<div class="viewcode-block" id="Status">
+<a class="viewcode-back" href="../../../api/astrocook.core.identification.html#astrocook.core.identification.Status">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Status</span><span class="p">(</span><span class="n">StrEnum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""What became of a hypothesis."""</span>
+    <span class="n">ACCEPTED</span> <span class="o">=</span> <span class="s2">"accepted"</span>
+<span class="w">    </span><span class="sd">"""Its components are those of the system list."""</span>
+    <span class="n">ALTERNATIVE</span> <span class="o">=</span> <span class="s2">"alternative"</span>
+<span class="w">    </span><span class="sd">"""Evaluated and kept, with its weight, not accepted."""</span>
+    <span class="n">DROPPED</span> <span class="o">=</span> <span class="s2">"dropped"</span>
+<span class="w">    </span><span class="sd">"""Dropped by the screen before the end of the evaluation."""</span></div>
+
+
+
+<div class="viewcode-block" id="Region">
+<a class="viewcode-back" href="../../../api/astrocook.core.identification.html#astrocook.core.identification.Region">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Region</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""An absorbed region. ``id`` is its value in the ``abs_ids`` column</span>
+<span class="sd">    when the region is there (a region that no identification labels is</span>
+<span class="sd">    not: its ``id`` is unique in the structure only)."""</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">x_min</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">x_max</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">kind</span><span class="p">:</span> <span class="n">RegionKind</span>
+    <span class="n">transitions</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+<span class="w">    </span><span class="sd">"""The transitions that label it (several for a region shared by</span>
+<span class="sd">    candidates)."""</span>
+    <span class="n">significance</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">"""The significance of the detection (sigma); ``None`` for the current</span>
+<span class="sd">    method, which has none."""</span></div>
+
+
+
+<div class="viewcode-block" id="Edge">
+<a class="viewcode-back" href="../../../api/astrocook.core.identification.html#astrocook.core.identification.Edge">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Edge</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Two regions that a transition pair puts at the same redshift."""</span>
+    <span class="n">regions</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
+    <span class="n">transitions</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">"""The transition of each region, in the order of ``regions``."""</span>
+    <span class="n">series</span><span class="p">:</span> <span class="nb">str</span>
+<span class="w">    </span><span class="sd">"""The multiplet of the pair (``"CIV"``, ``"Ly_ab"``, ...)."""</span>
+    <span class="n">z</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">lag_kms</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">"""The separation of the two transitions in velocity."""</span>
+    <span class="n">prefilter</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">"""The value of the pre-filter (the R^2 of F1 = F2^gamma)."""</span></div>
+
+
+
+<div class="viewcode-block" id="Component">
+<a class="viewcode-back" href="../../../api/astrocook.core.identification.html#astrocook.core.identification.Component">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Component</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""A component of a hypothesis."""</span>
+    <span class="n">series</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">z</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">logN</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">b</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">dz</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">dlogN</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">db</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">candidate</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">"""The key of the candidate system in the maps of the spectrum</span>
+<span class="sd">    (``series_map_json``, ...) that the current method writes."""</span>
+    <span class="n">uuid</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">"""The component of the system list made from it (accepted hypotheses,</span>
+<span class="sd">    after :meth:`~astrocook.recipes.absorbers.RecipeAbsorbers.populate_from_identification`)."""</span></div>
+
+
+
+<div class="viewcode-block" id="Hypothesis">
+<a class="viewcode-back" href="../../../api/astrocook.core.identification.html#astrocook.core.identification.Hypothesis">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Hypothesis</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""One explanation of the regions of a group."""</span>
+    <span class="n">label</span><span class="p">:</span> <span class="nb">str</span>
+<span class="w">    </span><span class="sd">"""In words, e.g. ``"CIV at z = 2.22950"``."""</span>
+    <span class="n">regions</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+    <span class="n">components</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Component</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+    <span class="n">stage</span><span class="p">:</span> <span class="n">Stage</span>
+    <span class="n">status</span><span class="p">:</span> <span class="n">Status</span>
+    <span class="n">reason</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span>
+<span class="w">    </span><span class="sd">"""Why it has its status, in words (for the log)."""</span>
+    <span class="n">weight</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">"""Its credibility, exp(-dIC/2) normalised over the group."""</span>
+    <span class="n">chi2</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">k</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">"""The number of free parameters."""</span>
+    <span class="n">n</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">"""The number of pixels."""</span>
+    <span class="n">criteria</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">"""Every information criterion computed (``"aic"``, ``"aicc"``,</span>
+<span class="sd">    ``"bic"``, ``"spic_h"``, ...), and the ``"score"`` of the pre-filter."""</span></div>
+
+
+
+<div class="viewcode-block" id="Group">
+<a class="viewcode-back" href="../../../api/astrocook.core.identification.html#astrocook.core.identification.Group">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Group</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Regions linked by the transitions that can explain them together."""</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">regions</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+    <span class="n">edges</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Edge</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+    <span class="n">hypotheses</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Hypothesis</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="DroppedCandidate">
+<a class="viewcode-back" href="../../../api/astrocook.core.identification.html#astrocook.core.identification.DroppedCandidate">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DroppedCandidate</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""A candidate pair scored below its threshold (F119)."""</span>
+    <span class="n">series</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">z</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">score</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">x_min</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">x_max</span><span class="p">:</span> <span class="nb">float</span></div>
+
+
+
+<div class="viewcode-block" id="Identification">
+<a class="viewcode-back" href="../../../api/astrocook.core.identification.html#astrocook.core.identification.Identification">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Identification</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The identification of the absorbed regions of a spectrum.</span>
+
+<span class="sd">    The positions (``x_min``, ``x_max`` of the regions and of the dropped</span>
+<span class="sd">    candidates) are in ``x_unit``.</span>
+<span class="sd">    """</span>
+    <span class="n">method</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">params</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">"""The parameters of the run, to replay it."""</span>
+    <span class="n">regions</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Region</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+    <span class="n">groups</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Group</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+    <span class="n">dropped</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">DroppedCandidate</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+    <span class="n">x_unit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"nm"</span>
+
+<div class="viewcode-block" id="Identification.region">
+<a class="viewcode-back" href="../../../api/astrocook.core.identification.html#astrocook.core.identification.Identification.region">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">region</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">region_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Region</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""The region ``region_id``, or ``None``."""</span>
+        <span class="k">return</span> <span class="nb">next</span><span class="p">((</span><span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">regions</span> <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">region_id</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Identification.hypotheses">
+<a class="viewcode-back" href="../../../api/astrocook.core.identification.html#astrocook.core.identification.Identification.hypotheses">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">hypotheses</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">status</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Status</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">Hypothesis</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""The hypotheses of every group (with ``status``, if given)."""</span>
+        <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">groups</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">g</span><span class="o">.</span><span class="n">hypotheses</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">status</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">h</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="n">status</span><span class="p">:</span>
+                    <span class="k">yield</span> <span class="n">h</span></div>
+
+
+<div class="viewcode-block" id="Identification.with_uuids">
+<a class="viewcode-back" href="../../../api/astrocook.core.identification.html#astrocook.core.identification.Identification.with_uuids">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">with_uuids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuids</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s2">"Identification"</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The structure with the uuids of the components made from the</span>
+<span class="sd">        candidate systems (``{candidate: uuid}``)."""</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">comp</span><span class="p">(</span><span class="n">c</span><span class="p">:</span> <span class="n">Component</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Component</span><span class="p">:</span>
+            <span class="n">u</span> <span class="o">=</span> <span class="n">uuids</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">candidate</span><span class="p">)</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">candidate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">uuid</span><span class="o">=</span><span class="n">u</span><span class="p">)</span> <span class="k">if</span> <span class="n">u</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">c</span>
+        <span class="n">groups</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">hypotheses</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span>
+            <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">components</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">comp</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">h</span><span class="o">.</span><span class="n">components</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">g</span><span class="o">.</span><span class="n">hypotheses</span><span class="p">))</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">groups</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">groups</span><span class="o">=</span><span class="n">groups</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Identification.merged">
+<a class="viewcode-back" href="../../../api/astrocook.core.identification.html#astrocook.core.identification.Identification.merged">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">merged</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new</span><span class="p">:</span> <span class="s2">"Identification"</span><span class="p">,</span> <span class="n">offset</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+               <span class="n">old_column</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">new_column</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s2">"Identification"</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""This identification and ``new`` of a later step of a pipeline, as</span>
+<span class="sd">        :func:`~astrocook.recipes.absorbers.merge_region_ids` merges the</span>
+<span class="sd">        ``abs_ids`` columns: the regions of ``new`` shifted by ``offset``.</span>
+
+<span class="sd">        ``old_column`` and ``new_column`` are the region IDs of the two</span>
+<span class="sd">        columns before the merge. The regions in neither (those that no</span>
+<span class="sd">        identification labels, or that an earlier merge left out of the</span>
+<span class="sd">        column) have IDs of the structure only: they are numbered again past</span>
+<span class="sd">        the others, so that no two regions share one. The parameters are</span>
+<span class="sd">        those of ``new`` (each run is in the log).</span>
+<span class="sd">        """</span>
+        <span class="n">old_fixed</span> <span class="o">=</span> <span class="p">{</span><span class="nb">int</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">old_column</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">}</span>
+        <span class="n">new_fixed</span> <span class="o">=</span> <span class="p">{</span><span class="nb">int</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">+</span> <span class="n">offset</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">new_column</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">}</span>
+        <span class="n">new</span> <span class="o">=</span> <span class="n">new</span><span class="o">.</span><span class="n">_remapped</span><span class="p">({</span><span class="n">r</span><span class="o">.</span><span class="n">id</span><span class="p">:</span> <span class="n">r</span><span class="o">.</span><span class="n">id</span> <span class="o">+</span> <span class="n">offset</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">new</span><span class="o">.</span><span class="n">regions</span><span class="p">})</span>
+        <span class="n">old_fixed</span> <span class="o">&amp;=</span> <span class="p">{</span><span class="n">r</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">regions</span><span class="p">}</span>
+        <span class="n">new_fixed</span> <span class="o">&amp;=</span> <span class="p">{</span><span class="n">r</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">new</span><span class="o">.</span><span class="n">regions</span><span class="p">}</span>
+        <span class="n">next_id</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">old_fixed</span> <span class="o">|</span> <span class="n">new_fixed</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">maps</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">ident</span><span class="p">,</span> <span class="n">fixed</span> <span class="ow">in</span> <span class="p">((</span><span class="bp">self</span><span class="p">,</span> <span class="n">old_fixed</span><span class="p">),</span> <span class="p">(</span><span class="n">new</span><span class="p">,</span> <span class="n">new_fixed</span><span class="p">)):</span>
+            <span class="n">m</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">ident</span><span class="o">.</span><span class="n">regions</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">id</span> <span class="ow">in</span> <span class="n">fixed</span><span class="p">:</span>
+                    <span class="n">m</span><span class="p">[</span><span class="n">r</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">id</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">m</span><span class="p">[</span><span class="n">r</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="n">next_id</span>
+                    <span class="n">next_id</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">maps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+        <span class="n">old</span><span class="p">,</span> <span class="n">new</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_remapped</span><span class="p">(</span><span class="n">maps</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">new</span><span class="o">.</span><span class="n">_remapped</span><span class="p">(</span><span class="n">maps</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">n_groups</span> <span class="o">=</span> <span class="nb">max</span><span class="p">((</span><span class="n">g</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">old</span><span class="o">.</span><span class="n">groups</span><span class="p">),</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">groups</span> <span class="o">=</span> <span class="n">old</span><span class="o">.</span><span class="n">groups</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">g</span><span class="o">.</span><span class="n">id</span> <span class="o">+</span> <span class="n">n_groups</span><span class="p">)</span>
+                                    <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">new</span><span class="o">.</span><span class="n">groups</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+            <span class="n">new</span><span class="p">,</span> <span class="n">regions</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">old</span><span class="o">.</span><span class="n">regions</span> <span class="o">+</span> <span class="n">new</span><span class="o">.</span><span class="n">regions</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">r</span><span class="p">:</span> <span class="n">r</span><span class="o">.</span><span class="n">id</span><span class="p">)),</span>
+            <span class="n">groups</span><span class="o">=</span><span class="n">groups</span><span class="p">,</span> <span class="n">dropped</span><span class="o">=</span><span class="n">old</span><span class="o">.</span><span class="n">dropped</span> <span class="o">+</span> <span class="n">new</span><span class="o">.</span><span class="n">dropped</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_remapped</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ids</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s2">"Identification"</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The structure with the IDs of its regions changed by ``ids``."""</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">m</span><span class="p">(</span><span class="n">seq</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">ids</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">seq</span><span class="p">)</span>
+        <span class="n">regions</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">ids</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">r</span><span class="o">.</span><span class="n">id</span><span class="p">))</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">regions</span><span class="p">)</span>
+        <span class="n">groups</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+            <span class="n">g</span><span class="p">,</span> <span class="n">regions</span><span class="o">=</span><span class="n">m</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">regions</span><span class="p">),</span>
+            <span class="n">edges</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">regions</span><span class="o">=</span><span class="n">m</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">regions</span><span class="p">))</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">g</span><span class="o">.</span><span class="n">edges</span><span class="p">),</span>
+            <span class="n">hypotheses</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">regions</span><span class="o">=</span><span class="n">m</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">regions</span><span class="p">))</span>
+                             <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">g</span><span class="o">.</span><span class="n">hypotheses</span><span class="p">))</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">groups</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">regions</span><span class="o">=</span><span class="n">regions</span><span class="p">,</span> <span class="n">groups</span><span class="o">=</span><span class="n">groups</span><span class="p">)</span>
+
+    <span class="c1"># --- JSON ---</span>
+
+<div class="viewcode-block" id="Identification.to_dict">
+<a class="viewcode-back" href="../../../api/astrocook.core.identification.html#astrocook.core.identification.Identification.to_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""The structure as a dictionary that ``json`` can write, with the</span>
+<span class="sd">        name and the version of its schema."""</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">_plain</span><span class="p">(</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">asdict</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">"schema"</span><span class="p">:</span> <span class="n">SCHEMA_NAME</span><span class="p">,</span> <span class="s2">"schema_version"</span><span class="p">:</span> <span class="n">SCHEMA_VERSION</span><span class="p">,</span> <span class="o">**</span><span class="n">d</span><span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="Identification.from_dict">
+<a class="viewcode-back" href="../../../api/astrocook.core.identification.html#astrocook.core.identification.Identification.from_dict">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">d</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s2">"Identification"</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The structure from :meth:`to_dict`. A field unknown to this</span>
+<span class="sd">        version (written by a later one, same schema version) is ignored.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If the schema is not this one, or its version is later than</span>
+<span class="sd">            :data:`SCHEMA_VERSION`.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"schema"</span><span class="p">)</span> <span class="o">!=</span> <span class="n">SCHEMA_NAME</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Not an identification: schema </span><span class="si">{</span><span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'schema'</span><span class="p">)</span><span class="si">!r}</span><span class="s2">."</span><span class="p">)</span>
+        <span class="n">version</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"schema_version"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">version</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="n">version</span> <span class="o">&gt;</span> <span class="n">SCHEMA_VERSION</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"The version </span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2"> of the schema of the identification "</span>
+                             <span class="sa">f</span><span class="s2">"is not known to this Astrocook (it reads up to "</span>
+                             <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">SCHEMA_VERSION</span><span class="si">}</span><span class="s2">)."</span><span class="p">)</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="p">(</span><span class="n">kls</span><span class="p">,</span> <span class="n">raw</span><span class="p">,</span> <span class="o">**</span><span class="n">convert</span><span class="p">):</span>
+            <span class="n">names</span> <span class="o">=</span> <span class="p">{</span><span class="n">f</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">fields</span><span class="p">(</span><span class="n">kls</span><span class="p">)}</span>
+            <span class="n">kw</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">raw</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">names</span><span class="p">}</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">fn</span> <span class="ow">in</span> <span class="n">convert</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">kw</span><span class="p">:</span>
+                    <span class="n">kw</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">fn</span><span class="p">(</span><span class="n">kw</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+            <span class="k">return</span> <span class="n">kls</span><span class="p">(</span><span class="o">**</span><span class="n">kw</span><span class="p">)</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">edge</span><span class="p">(</span><span class="n">e</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">build</span><span class="p">(</span><span class="n">Edge</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">regions</span><span class="o">=</span><span class="nb">tuple</span><span class="p">,</span> <span class="n">transitions</span><span class="o">=</span><span class="nb">tuple</span><span class="p">)</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">comp</span><span class="p">(</span><span class="n">c</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">build</span><span class="p">(</span><span class="n">Component</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">hyp</span><span class="p">(</span><span class="n">h</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">build</span><span class="p">(</span><span class="n">Hypothesis</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">regions</span><span class="o">=</span><span class="nb">tuple</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="n">Stage</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="n">Status</span><span class="p">,</span>
+                         <span class="n">components</span><span class="o">=</span><span class="k">lambda</span> <span class="n">cs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">comp</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cs</span><span class="p">),</span>
+                         <span class="n">criteria</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">group</span><span class="p">(</span><span class="n">g</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">build</span><span class="p">(</span><span class="n">Group</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">regions</span><span class="o">=</span><span class="nb">tuple</span><span class="p">,</span>
+                         <span class="n">edges</span><span class="o">=</span><span class="k">lambda</span> <span class="n">es</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">edge</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">es</span><span class="p">),</span>
+                         <span class="n">hypotheses</span><span class="o">=</span><span class="k">lambda</span> <span class="n">hs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">hyp</span><span class="p">(</span><span class="n">h</span><span class="p">)</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">hs</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">build</span><span class="p">(</span>
+            <span class="bp">cls</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="nb">dict</span><span class="p">,</span>
+            <span class="n">regions</span><span class="o">=</span><span class="k">lambda</span> <span class="n">rs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">build</span><span class="p">(</span><span class="n">Region</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="n">RegionKind</span><span class="p">,</span>
+                                           <span class="n">transitions</span><span class="o">=</span><span class="nb">tuple</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">rs</span><span class="p">),</span>
+            <span class="n">groups</span><span class="o">=</span><span class="k">lambda</span> <span class="n">gs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">group</span><span class="p">(</span><span class="n">g</span><span class="p">)</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">gs</span><span class="p">),</span>
+            <span class="n">dropped</span><span class="o">=</span><span class="k">lambda</span> <span class="n">ds</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">build</span><span class="p">(</span><span class="n">DroppedCandidate</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">ds</span><span class="p">))</span></div>
+</div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_plain</span><span class="p">(</span><span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""``obj`` with tuples as lists, enums as their values and NumPy</span>
+<span class="sd">    scalars as Python numbers, for ``json``."""</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="nb">str</span><span class="p">(</span><span class="n">k</span><span class="p">):</span> <span class="n">_plain</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">_plain</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">obj</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">StrEnum</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">value</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">"item"</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">callable</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">item</span><span class="p">):</span>  <span class="c1"># NumPy scalar</span>
+        <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">obj</span>
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8"></script>
+<script defer src="../../../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Guido Cupani.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.2.0.
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.24.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

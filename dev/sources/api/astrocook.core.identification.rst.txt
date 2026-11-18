@@ -1,0 +1,7 @@
+astrocook.core.identification module
+====================================
+
+.. automodule:: astrocook.core.identification
+   :members:
+   :show-inheritance:
+   :undoc-members:
