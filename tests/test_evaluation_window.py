@@ -86,6 +86,19 @@ def test_the_window_is_3_fwhm_plus_5_b_around_every_line():
     assert mask.sum() == pytest.approx(expected.sum(), abs=2)
 
 
+def test_the_comparison_holds_the_pixels_each_hypothesis_takes_from_the_data(forest):
+    spec, fixed = forest
+    hyps = _hypotheses()
+    win = EvaluationWindow.around(spec, hyps, fixed)
+    fitter = VoigtFitter(spec, _empty())
+    for systs in hyps:
+        assert np.all(win.mask[fitter.feature_mask(list(systs.components))])
+    assert np.all(win.mask[window_mask(spec, hyps)])
+    # The pixels of a fit: the window, and its own pixels from the data
+    for systs in hyps:
+        assert np.all(win.fit_pixels(systs)[win.mask])
+
+
 def test_only_the_fixed_components_that_reach_the_window_are_kept(forest):
     spec, fixed = forest
     win = EvaluationWindow.around(spec, _hypotheses(), fixed)
@@ -233,7 +246,16 @@ def test_a_broad_saturated_line_started_narrow_is_fitted_on_its_whole_profile(re
     spec = generate(truth)
     start = _empty().add_component("Ly_a", 2.5, logN=logn - 0.7, b=10.0)
     win = EvaluationWindow.around(spec, [start])
-    assert win.fit_pixels(start).sum() > 3 * win.mask.sum()
+    # The pixels of the comparison hold the whole profile, where the window
+    # of the start held its core (Guido, 18 November 2026)
+    seed_window = window_mask(spec, [start])
+    model = VoigtFitter(spec, _empty().add_component("Ly_a", 2.5, logN=logn, b=b))
+    profile = 1.0 - model.compute_model_flux()[1] / spec.norm.value
+    # Down to the depth where the fitter stops (the flux back above 0.95 of
+    # the continuum, ``_find_feature_limits``): the outer wings are left out
+    assert np.all(win.mask[profile > 0.2])
+    if resol > 20000:
+        assert not np.all(seed_window[profile > 0.2])
     for here, whole in _fit_both(spec, _empty(), start):
         assert here.logN == pytest.approx(whole.logN, abs=1e-6)
         assert here.b == pytest.approx(whole.b, abs=1e-4)

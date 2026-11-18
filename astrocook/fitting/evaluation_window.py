@@ -3,7 +3,10 @@ PR 7c.4a; ``design/identification.md``, sections 3.3 and 10).
 
 The identification compares the hypotheses of a group of absorbed regions on
 the same pixels: the union of the windows of +-(3 FWHM + 5 b) around every
-line of every hypothesis of the group. :func:`evaluate_model` and the short
+line of every hypothesis of the group, and of the pixels that a fit of each
+hypothesis takes from the data (out to the continuum or to a saddle between
+blended lines), so that a broad line started with a small b is compared on
+its whole profile, not on its core (Guido, 18 November 2026). :func:`evaluate_model` and the short
 fit of :class:`VoigtFitter` compute the model and the profiles on the whole
 spectrum, so their cost follows the length of the spectrum, not the pixels of
 the comparison (about 1 s per hypothesis on a mock of 85 nm, PR 7c.2).
@@ -221,11 +224,26 @@ class EvaluationWindow:
     @classmethod
     def around(cls, spec: Spectrum, hypotheses: Sequence[SystemList],
                fixed: Optional[SystemList] = None,
-               fwhm_factor: float = WINDOW_FWHM, b_factor: float = WINDOW_B
-               ) -> 'EvaluationWindow':
-        """The window of the lines of ``hypotheses`` (:func:`window_mask`,
-        the same pixels for all of them), with ``fixed``."""
-        return cls.from_mask(spec, window_mask(spec, hypotheses, fwhm_factor, b_factor), fixed)
+               fwhm_factor: float = WINDOW_FWHM, b_factor: float = WINDOW_B,
+               z_window_kms: float = 20.0) -> 'EvaluationWindow':
+        """The window of the comparison of ``hypotheses``, the same pixels
+        for all of them: :func:`window_mask` (+-(3 FWHM + 5 b) around their
+        lines) and the pixels that a fit of each of them takes from the data
+        (:meth:`VoigtFitter.feature_mask`, out to the continuum or to a
+        saddle between blended lines, whatever the b of the start; with
+        ``z_window_kms`` as in the fit), with ``fixed``. Without the second,
+        a broad line started narrow was compared on its core alone (Guido,
+        18 November 2026)."""
+        fitter = VoigtFitter(spec, SystemList(SystemListData(components=[])))
+        mask = window_mask(spec, hypotheses, fwhm_factor, b_factor)
+        for systs in hypotheses:
+            if systs.components:
+                mask |= fitter.feature_mask(_static(systs), z_window_kms)
+        win = cls.from_mask(spec, mask, fixed)
+        # The fitter of the parent, for the pixels of the fits: made once
+        # (the storage of the cached property)
+        win.__dict__['_parent_fitter'] = fitter
+        return win
 
     @property
     def mask(self) -> np.ndarray:
