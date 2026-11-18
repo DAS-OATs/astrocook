@@ -17,6 +17,16 @@ those fixed ones (frozen, not counted), through the same functions as on the
 whole spectrum; within a fit the optical depth of the fixed components is
 computed once (the background of :meth:`VoigtFitter.prepare_fit_context`).
 
+The short fit is not limited to the window: it takes its pixels from the data
+as on the whole spectrum (:meth:`VoigtFitter.feature_mask`, out to the
+continuum or to a saddle between blended lines), cut out of the parent per
+fit. Limited to the window, which follows the b of the start, a broad or
+saturated line started narrow was fitted on its core alone (logN 16, b 60
+came out as 15.1, b 80 at R 45000) and a line in a crowded region, with the
+fixed list imperfect, moved by more than 0.01 dex or 1 km/s in 10-23% of the
+fits (Guido's concern, PR 7c.4a); with the pixels of the data the fit is that
+on the whole spectrum.
+
 The statistics agree with those on the whole spectrum to about 1e-5 of the
 chi2 (the fine grid of the model follows the narrowest line in the pixels,
 which on the whole spectrum can be another one). Folding the fixed
@@ -28,15 +38,17 @@ at R 8900 (exp(-tau_1 - tau_2) convolved is not the product of the two
 convolved).
 """
 import dataclasses
+import functools
 import logging
 from typing import Any, Dict, List, Optional, Sequence
 
 import astropy.units as au
 import numpy as np
+from scipy import ndimage
 
 from astrocook.core.atomic_data import ATOM_DATA
 from astrocook.core.spectrum import Spectrum
-from astrocook.core.structures import ComponentData, DataColumn
+from astrocook.core.structures import ComponentData, DataColumn, SystemListData
 from astrocook.core.system_list import SystemList
 from astrocook.fitting.lsf import C_KMS, FWHM_TO_SIGMA, KERNEL_SIGMAS
 from astrocook.fitting.model_evaluation import MIN_INFLUENCE, ModelEvaluation, evaluate_model
@@ -52,6 +64,13 @@ logger = logging.getLogger(__name__)
 #: hypothesis that puts absorption where there is none pays for it there)
 WINDOW_FWHM = 3.0
 WINDOW_B = 5.0
+
+#: Pixels added on both sides of the pixels a fit takes from the data, in the
+#: spectrum cut for the fit: the fitter computes its model on its pixels and
+#: 50 more on each side (``prepare_fit_context``) and smooths the flux over
+#: about 8 when it looks for the limits of a line; with 60 the fit on the cut
+#: is that on the whole spectrum
+FIT_PAD = 60
 
 
 def _lines(systs: SystemList) -> List[tuple]:
@@ -165,6 +184,16 @@ class EvaluationWindow:
     fixed: List[ComponentData]
     #: The number of pixels of the parent spectrum
     n_parent: int
+    #: The parent spectrum and all the fixed components (for the pixels of
+    #: the fits, which are taken from the data as on the whole spectrum)
+    parent: Spectrum = dataclasses.field(repr=False, compare=False)
+    all_fixed: List[ComponentData] = dataclasses.field(repr=False, compare=False)
+
+    @functools.cached_property
+    def _parent_fitter(self) -> VoigtFitter:
+        """A fitter of the parent spectrum, for :meth:`VoigtFitter.feature_mask`
+        (made at the first fit, once per window)."""
+        return VoigtFitter(self.parent, SystemList(SystemListData(components=[])))
 
     @classmethod
     def from_mask(cls, spec: Spectrum, mask: np.ndarray,
@@ -185,8 +214,9 @@ class EvaluationWindow:
         if not index.size:
             raise ValueError("no pixel in the window")
         sub = _take(spec, index, np.asarray(norm_q.value, dtype=float)[index], norm_q.unit)
-        reaching = _reaching(sub, _static(fixed)) if fixed is not None else []
-        return cls(spectrum=sub, index=index, fixed=reaching, n_parent=len(spec.x))
+        static = _static(fixed) if fixed is not None else []
+        return cls(spectrum=sub, index=index, fixed=_reaching(sub, static), n_parent=len(spec.x),
+                   parent=spec, all_fixed=static)
 
     @classmethod
     def around(cls, spec: Spectrum, hypotheses: Sequence[SystemList],
@@ -211,11 +241,14 @@ class EvaluationWindow:
         out[self.index] = values
         return out
 
-    def _with_fixed(self, systs: SystemList) -> SystemList:
-        """``systs`` with the fixed components before its own (those with
-        the uuid of one of its own left out), its constraints kept."""
+    def _with_fixed(self, systs: SystemList,
+                    fixed_comps: Optional[List[ComponentData]] = None) -> SystemList:
+        """``systs`` with the fixed components (those of the window, or
+        ``fixed_comps``) before its own (those with the uuid of one of its
+        own left out), its constraints kept."""
         own = {c.uuid for c in systs.components}
-        fixed = [c for c in self.fixed if c.uuid not in own]
+        fixed = [c for c in (self.fixed if fixed_comps is None else fixed_comps)
+                 if c.uuid not in own]
         return SystemList(dataclasses.replace(
             systs._data, components=fixed + list(systs.components)))
 
@@ -231,24 +264,44 @@ class EvaluationWindow:
                             uuids=counted, min_influence=min_influence)
         return dataclasses.replace(ev, residuals=self.to_parent(ev.residuals))
 
+    def fit_pixels(self, systs: SystemList, z_window_kms: float = 20.0) -> np.ndarray:
+        """The pixels of the parent on which :meth:`fit` fits ``systs``: the
+        window, and the pixels that a fit of its components takes from the
+        data on the whole spectrum (:meth:`VoigtFitter.feature_mask`, out to
+        the continuum or to a saddle between blended lines, whatever the b
+        of the start), each run widened by ``FIT_PAD`` pixels."""
+        feature = self._parent_fitter.feature_mask(_static(systs), z_window_kms)
+        if FIT_PAD > 0:
+            feature = ndimage.binary_dilation(feature, iterations=FIT_PAD)
+        return feature | self.mask
+
     def fit(self, systs: SystemList, **kwargs: Any) -> SystemList:
-        """The fit of the components of ``systs`` (a hypothesis) on the
-        window, the fixed ones frozen, by :meth:`VoigtFitter.fit` with
-        ``kwargs`` (e.g. the ``max_nfev``, ``b_max`` and ``logN_max`` of a
-        short fit). Returns ``systs`` with its components fitted (a list
-        without components as it is).
+        """The fit of the components of ``systs`` (a hypothesis) by
+        :meth:`VoigtFitter.fit` with ``kwargs`` (e.g. the ``max_nfev``,
+        ``b_max`` and ``logN_max`` of a short fit), the fixed components that
+        reach its pixels frozen. Its pixels are those of :meth:`fit_pixels`:
+        the fit is that on the whole spectrum, not limited to the window (a
+        broad or saturated line started with a small b, or a line in a
+        crowded region, takes its pixels from the data, PR 7c.4a). Returns
+        ``systs`` with its components fitted (a list without components as it
+        is).
 
         Raises
         ------
         NoPixelsToFit
-            If no valid pixel of the window is around the components.
+            If no valid pixel is around the components.
         """
         if not systs.components:
             return systs
+        index = np.flatnonzero(self.fit_pixels(systs, kwargs.get('z_window_kms', 20.0)))
+        norm_q = self.parent.norm
+        assert norm_q is not None  # checked when the window was made
+        sub = _take(self.parent, index, np.asarray(norm_q.value, dtype=float)[index],
+                    norm_q.unit)
         own = [c.uuid for c in systs.components]
-        model = self._with_fixed(systs)
+        model = self._with_fixed(systs, _reaching(sub, self.all_fixed))
         with model.fitting_context(own, group_depth=0):
-            fitted, _, _ = VoigtFitter(self.spectrum, model).fit(**kwargs)
+            fitted, _, _ = VoigtFitter(sub, model).fit(**kwargs)
         keep = set(own)
         return SystemList(dataclasses.replace(
             fitted._data, components=[c for c in fitted.components if c.uuid in keep]))

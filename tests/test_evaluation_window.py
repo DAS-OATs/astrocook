@@ -210,6 +210,64 @@ def test_a_hypothesis_without_components(forest):
     assert ev.chi2 == pytest.approx(whole.chi2, rel=RTOL)
 
 
+def _fit_both(spec, fixed, systs):
+    """The short fit of ``systs`` on the window and on the whole spectrum."""
+    uuids = [c.uuid for c in systs.components]
+    here = EvaluationWindow.around(spec, [systs], fixed).fit(systs, **SHORT_FIT)
+    full = _with(fixed, systs)
+    with full.fitting_context(uuids, group_depth=0):
+        whole, _, _ = VoigtFitter(spec, full).fit(**SHORT_FIT)
+    by_uuid = {c.uuid: c for c in whole.components}
+    return [(c, by_uuid[c.uuid]) for c in here.components]
+
+
+@pytest.mark.parametrize("resol", [45000.0, 8900.0])
+@pytest.mark.parametrize("logn,b", [(16.0, 60.0), (17.0, 40.0)])
+def test_a_broad_saturated_line_started_narrow_is_fitted_on_its_whole_profile(resol, logn, b):
+    # The window of the start (b = 10) holds only the saturated core: before
+    # the fit took its pixels from the data, logN 16, b 60 came out as 15.1,
+    # b 80 at R 45000, and logN 17 as 19 (PR 7c.4a, Guido's concern)
+    truth = MockTruth(components=[MockComponent("Ly_a", z=2.5, logN=logn, b=b)],
+                      lam_min_nm=410.0, lam_max_nm=440.0, dv_kms=2.5 if resol > 20000 else 10.0,
+                      resol=resol, snr=30.0, z_em=3.0, seed=1)
+    spec = generate(truth)
+    start = _empty().add_component("Ly_a", 2.5, logN=logn - 0.7, b=10.0)
+    win = EvaluationWindow.around(spec, [start])
+    assert win.fit_pixels(start).sum() > 3 * win.mask.sum()
+    for here, whole in _fit_both(spec, _empty(), start):
+        assert here.logN == pytest.approx(whole.logN, abs=1e-6)
+        assert here.b == pytest.approx(whole.b, abs=1e-4)
+
+
+@pytest.mark.parametrize("resol", [45000.0, 8900.0])
+def test_a_line_in_a_crowded_region_is_fitted_as_on_the_whole_spectrum(resol):
+    # 25 lines within +-1500 km/s, the fixed list imperfect (20% missing,
+    # logN and b off), as during the identification: limited to the window,
+    # 10-23% of the fits moved by more than 0.01 dex or 1 km/s, up to 2.3 dex
+    rng = np.random.default_rng(5)
+    for trial in range(6):
+        zc = 2.5 + rng.uniform(-0.01, 0.01)
+        comps = [MockComponent("Ly_a", z=zc, logN=rng.uniform(13, 14.5), b=rng.uniform(15, 40))]
+        for _ in range(25):
+            lam = LAM_LYA * (1 + zc) * np.exp(rng.uniform(-1500, 1500) / C_KMS)
+            comps.append(MockComponent("Ly_a", z=lam / LAM_LYA - 1, logN=rng.uniform(12.8, 14.5),
+                                       b=rng.uniform(15, 40)))
+        spec = generate(MockTruth(components=comps, lam_min_nm=410.0, lam_max_nm=440.0,
+                                  dv_kms=2.5 if resol > 20000 else 10.0, resol=resol,
+                                  snr=30.0, z_em=3.0, seed=trial))
+        fixed = _empty()
+        for c in comps[1:]:
+            if rng.uniform() < 0.2:
+                continue
+            fixed = fixed.add_component(c.series, c.z, logN=c.logN + rng.uniform(-0.3, 0.3),
+                                        b=c.b * rng.uniform(0.7, 1.3))
+        c = comps[0]
+        start = _empty().add_component("Ly_a", c.z, logN=c.logN - 0.3, b=max(5.0, c.b / 2))
+        for here, whole in _fit_both(spec, fixed, start):
+            assert here.logN == pytest.approx(whole.logN, abs=1e-6)
+            assert here.b == pytest.approx(whole.b, abs=1e-4)
+
+
 # --- The time -------------------------------------------------------------------
 
 def test_the_window_is_faster_than_the_whole_spectrum():

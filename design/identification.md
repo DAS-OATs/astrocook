@@ -711,9 +711,11 @@ is a time per spectrum logged next to the result.
 the spectrum and keeps the fixed components that reach them, once per group;
 the fixed components are frozen in the model of the window rather than
 multiplied as a transmission (the product of the convolved fluxes moved the
-ΔIC of blended hypotheses by up to 1.3 at R 8900). The statistics equal
-those on the whole spectrum within 1e-5; a hypothesis takes 12-18 ms in a
-forest of 32 thousand pixels, the trials of `doublet_vs_lyab` 1.34 s → 0.063 s
+ΔIC of blended hypotheses by up to 1.3 at R 8900); the short fit takes its
+pixels from the data as on the whole spectrum, not from the window of the
+start (limited to it, a broad saturated line started narrow was fitted on
+its core). The statistics equal those on the whole spectrum within 1e-5; a hypothesis takes 17-22 ms in a
+forest of 32 thousand pixels, the trials of `doublet_vs_lyab` 1.34 s → 0.068 s
 (the row of 7c.4a in `ROADMAP.md`).
 
 ## 11. The criterion of "better" for 7c.8

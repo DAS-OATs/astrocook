@@ -51,6 +51,16 @@ def _transitions(series: str) -> List[str]:
     return [n.strip() for n in names if ATOM_DATA.get(n.strip())]
 
 
+def _transitions_of(series: str) -> List[str]:
+    """The lines of a series as the fit takes them: those of a multiplet,
+    or the series itself if it is one line (a list with commas: none)."""
+    if is_multiplet(series):
+        return series_lines(series)
+    if series in ATOM_DATA:
+        return [series]
+    return []
+
+
 def _line_terms(lambda_0: np.ndarray, f_val: np.ndarray, gamma: np.ndarray,
                 z: np.ndarray, N_col: np.ndarray, b_kms: np.ndarray
                 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
@@ -689,6 +699,45 @@ class VoigtFitter:
         """See :func:`voigt_optical_depth`."""
         return voigt_optical_depth(wave_grid_ang, lambda_0, f_val, gamma, z, N_col, b_kms)
 
+    def feature_mask(self, components: List[ComponentData],
+                     z_window_kms: float = 20.0) -> np.ndarray:
+        """The pixels a fit of ``components`` uses (those of
+        :meth:`prepare_fit_context`): for each of their lines, the feature
+        around it in the data (:meth:`_find_feature_limits`, out to the
+        continuum or to a saddle between blended lines, the wings of a damped
+        line included), or a fixed window of at least 150 km/s when the
+        feature is narrower than 30 km/s; only the valid pixels. All the
+        valid pixels without components."""
+        c_kms = 299792.458
+        if not components:
+            return self._valid_mask
+        mask = np.zeros_like(self._valid_mask, dtype=bool)
+        for comp in components:
+            for trans in _transitions_of(comp.series):
+                lam_min, lam_max = self._find_feature_limits(
+                    comp.z, trans, z_window_kms=z_window_kms, logN=comp.logN)
+
+                # A window narrower than 30 km/s (a very narrow line, or
+                # limits not found) is replaced by a fixed one of at
+                # least 150 km/s, so that the fit of a very narrow
+                # component still has pixels (its purpose as Guido
+                # recalls it, November 2026, F111)
+                use_fallback = True
+                if lam_min is not None and lam_max is not None:
+                    width_v = c_kms * (lam_max - lam_min) / lam_max
+                    if width_v > 30.0:
+                        use_fallback = False
+                        mask |= (self._x_ang >= lam_min) & (self._x_ang <= lam_max)
+
+                if use_fallback:
+                    lam_0 = ATOM_DATA.get(trans, {}).get('wave')
+                    if lam_0:
+                        lam_obs = lam_0 * (1.0 + comp.z)
+                        safe_window = max(z_window_kms, 150.0)
+                        dw = (safe_window / c_kms) * lam_obs
+                        mask |= (self._x_ang > lam_obs - dw) & (self._x_ang < lam_obs + dw)
+        return mask & self._valid_mask
+
     def prepare_fit_context(self, z_window_kms: float = 20.0) -> Tuple[np.ndarray, np.ndarray]:
         """
         Prepares the internal state for fitting (masks, background, vectorized data).
@@ -698,7 +747,6 @@ class VoigtFitter:
         tuple
             (lower_bounds, upper_bounds) for the free parameters.
         """
-        self._fit_mask = np.zeros_like(self._valid_mask, dtype=bool)
         c_kms = 299792.458
         active_uuids = self._constraints._active_uuids
         
@@ -709,38 +757,7 @@ class VoigtFitter:
 
         active_components = [c for c in self._system_list.components if c.uuid in active_uuids] if active_uuids else self._system_list.components
 
-        if not active_components:
-            self._fit_mask = self._valid_mask
-        else:
-            for comp in active_components:
-                for trans in get_trans_list(comp.series):
-                    lam_min, lam_max = self._find_feature_limits(
-                        comp.z, trans, 
-                        z_window_kms=z_window_kms, 
-                        logN=comp.logN
-                    )
-                    
-                    # A window narrower than 30 km/s (a very narrow line, or
-                    # limits not found) is replaced by a fixed one of at
-                    # least 150 km/s, so that the fit of a very narrow
-                    # component still has pixels (its purpose as Guido
-                    # recalls it, November 2026, F111)
-                    use_fallback = True
-                    if lam_min is not None and lam_max is not None:
-                        width_v = c_kms * (lam_max - lam_min) / lam_max
-                        if width_v > 30.0:
-                            use_fallback = False
-                            mask_feat = (self._x_ang >= lam_min) & (self._x_ang <= lam_max)
-                            self._fit_mask |= mask_feat
-    
-                    if use_fallback:
-                        lam_0 = ATOM_DATA.get(trans, {}).get('wave')
-                        if lam_0:
-                            lam_obs = lam_0 * (1.0 + comp.z)
-                            safe_window = max(z_window_kms, 150.0)
-                            dw = (safe_window / c_kms) * lam_obs
-                            self._fit_mask |= (self._x_ang > lam_obs - dw) & (self._x_ang < lam_obs + dw)
-            self._fit_mask &= self._valid_mask
+        self._fit_mask = self.feature_mask(active_components, z_window_kms)
         
         if np.any(self._fit_mask):
             indices = np.where(self._fit_mask)[0]
