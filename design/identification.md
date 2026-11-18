@@ -2,8 +2,8 @@
 
 Design document of phase 7, PR 7c.2 (`ROADMAP.md`, phase 7, block 7c).
 Written on 18 November 2026 and read by Guido the same day: his
-decisions, and the proposals added after his questions (still to
-confirm), are in the last section. No production code comes with this document: the experiment of
+decisions, and the proposals added after his questions (accepted the
+same day), are in the last section. No production code comes with this document: the experiment of
 section 4 is `benchmarks/identification_hypotheses.py`.
 
 The goal of the block (phase 7): *every absorbed region accounted for,
@@ -860,7 +860,7 @@ On the questions of the first version of this document:
    the anchors of FeII and SiII.
 9. The three common decisions with 7b, above.
 
-Added after the reading, proposals to confirm: the sweep of the anchored
+Added after the reading, and accepted by Guido the same day: the sweep of the anchored
 systems for the rarer and single lines (section 3.5); the species "all"
 by default (section 12); the short fit as starting values, not the model
 (section 12); the display of the graph and F163 (section 12); the
