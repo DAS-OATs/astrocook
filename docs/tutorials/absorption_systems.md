@@ -238,7 +238,7 @@ session = session.absorbers.fit_bayesian([uuid], engine='nested', nlive=250, see
 ```
 
 **Visualizing Posteriors (Corner Plots)**
-Once a Bayesian fit completes, Astrocook stores the posterior samples in the session metadata. You can visualize these directly:
+Once a Bayesian fit completes, Astrocook stores the posterior samples in the session metadata, and saves them in the `.acs2` archive with the session (the archives saved by 2.7 and earlier versions kept only the fitted values and their errors). You can visualize these directly:
 * Right-click a Bayesian-fitted component and select **Show Corner Plot**.
 * This opens a dedicated, scrollable window displaying the 1D histograms and 2D contours for all free parameters ($z$, $\log N$, $b$).
 * The plot title explicitly shows the median values along with their **asymmetrical $1\sigma$ uncertainties** (e.g., $14.500^{+0.123}_{-0.154}$).

@@ -9,7 +9,7 @@ check that the format is stable.
 
 What is lost or changed is recorded (findings register, ``ROADMAP.md``,
 section 3.2): ``region_identifications`` reloaded as a dict instead of a JSON string
-(F27), the Bayesian samples (F28, strict xfail), and the metadata key
+(F27) and the metadata key
 ``resol`` reloaded as ``RESOL`` (FITS header, see F8). The V2 session log
 (F26) is now kept, without the entries undone at save time.
 """
@@ -222,20 +222,26 @@ def test_session_without_log_reloads_without_log(rich_session, tmp_path):
     assert reloaded.log_manager is None
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "The Bayesian samples (systs meta 'bayesian_results', used by the corner "
-    "plot) are not written to the archive: the FITS header of the system "
-    "table cannot hold them and they are dropped without a warning. Findings "
-    "register F28 (ROADMAP.md, section 3.2)."))
 def test_bayesian_results_are_saved(rich_session, tmp_path):
-    uuid = rich_session.systs.components[0].uuid
-    samples = np.zeros((10, 3))
-    meta = {"bayesian_results": {uuid: {"samples": samples, "labels": ["z", "logN", "b"],
-                                        "engine": "mcmc"}}}
+    # F28, closed in phase 7, PR 7c.3: the samples are a file of their own
+    # in the archive (_bayesian_samples.npz); the components sampled
+    # together share one entry, saved once and shared again after the load
+    civ, siiv, _ = rich_session.systs.components
+    rng = np.random.default_rng(1)
+    shared = {"samples": rng.normal(size=(10, 3)), "labels": ["z", "logN", "b"],
+              "engine": "mcmc"}
+    meta = {"bayesian_results": {civ.uuid: shared, siiv.uuid: shared}}
     systs = type(rich_session.systs)(
         dataclasses.replace(rich_session.systs._data, meta=meta))
-    reloaded, _ = _round_trip(rich_session.with_new_system_list(systs), tmp_path)
-    assert uuid in reloaded.systs._data.meta.get("bayesian_results", {})
+    reloaded, path = _round_trip(rich_session.with_new_system_list(systs), tmp_path)
+    stored = reloaded.systs._data.meta["bayesian_results"]
+    assert set(stored) == {civ.uuid, siiv.uuid}
+    assert stored[civ.uuid] is stored[siiv.uuid]
+    np.testing.assert_array_equal(stored[civ.uuid]["samples"], shared["samples"])
+    assert stored[civ.uuid]["labels"] == ["z", "logN", "b"]
+    assert stored[civ.uuid]["engine"] == "mcmc"
+    with tarfile.open(path) as tar:
+        assert "session_bayesian_samples.npz" in tar.getnames()
 
 
 @pytest.mark.parametrize("round_trip", [False, True])

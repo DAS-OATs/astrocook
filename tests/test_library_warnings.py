@@ -66,16 +66,22 @@ def test_long_keywords_are_written_without_warnings(tmp_path):
     assert reloaded.systs._data.meta["series_map_json"] == '{"1": "CIV"}'
 
 
-def test_bayesian_samples_not_saved_is_said_by_astrocook(tmp_path, caplog):
-    # F28: astropy skipped them with a warning of its own; now a WARNING of
-    # Astrocook says what is lost (they are still not saved: the strict xfail
-    # test_bayesian_results_are_saved)
+def test_bayesian_samples_are_saved_without_warnings(tmp_path, caplog):
+    # F28: astropy skipped them with a warning of its own, then (phase 6) a
+    # WARNING of Astrocook said that they were lost; since phase 7, PR 7c.3
+    # they are saved, in a file of their own, with no warning. An entry not
+    # in the form of fit_bayesian is left out with a WARNING that says so
     session = Session("s", None, spec=_spec(), systs=_systs(("CIV", 2.97, 13.6, 12.0)))
-    session.systs._data.meta["bayesian_results"] = {"samples": [[1.0, 2.0]]}
+    uuid = session.systs.components[0].uuid
+    session.systs._data.meta["bayesian_results"] = {
+        uuid: {"samples": np.ones((4, 2)), "labels": ["a", "b"], "engine": "mcmc"},
+        "other": [[1.0, 2.0]]}
     with caplog.at_level(logging.WARNING):
         _, caught = _recorded(lambda: session.save(str(tmp_path / "s.acs2")))
     assert caught == []
-    assert "The samples of the Bayesian fit are not saved in the archive" in caplog.text
+    assert "1 entries of the Bayesian samples are not in the form" in caplog.text
+    reloaded = load_session_from_file(str(tmp_path / "s.acs2"), "s", None, "auto")
+    assert list(reloaded.systs._data.meta["bayesian_results"]) == [uuid]
 
 
 def test_auto_fudge_of_a_nan_model_has_no_warning():

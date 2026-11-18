@@ -671,6 +671,10 @@ in a header: the mechanism shared with the Bayesian samples, F28), and be
 read by the GUI (7c.7) and the MCP outputs (7c.6). Size: a few hundred
 groups of a few hypotheses each, kB to a few hundred kB per spectrum.
 
+Implemented in PR 7c.3: `astrocook/core/identification.py` (the structure,
+in the metadata of the spectrum) and `astrocook/io/archive_data.py` (its
+file in the archive, with the Bayesian samples).
+
 ## 10. The cost
 
 **Measured.** `evaluate_model` (PR 7a.5): 0.7 s on a whole mock of 58

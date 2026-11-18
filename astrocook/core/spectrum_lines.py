@@ -15,11 +15,14 @@ import numpy as np
 from scipy.ndimage import gaussian_filter1d
 from typing import TYPE_CHECKING, Any, Dict, Self, List, cast
 
-from astrocook.core.atomic_data import ATOM_DATA, STANDARD_MULTIPLETS, xem_d
+from astrocook.core.atomic_data import (
+    ATOM_DATA, STANDARD_MULTIPLETS, get_multiplet_velocity_lags, xem_d,
+)
 from astrocook.core.spectrum_operations import (
     _find_kinematic_doublet_candidates, detect_regions, merge_regions_by_velocity,
     rate_doublet_candidate,
 )
+from astrocook.core import identification as ident
 from astrocook.core.structures import DataColumn
 from astrocook.core._spectrum_host import HostBase
 
@@ -165,7 +168,11 @@ class LinesMixin(HostBase):
         Returns
         -------
         Spectrum
-            A new instance with the ``abs_ids`` column and identification metadata.
+            A new instance with the ``abs_ids`` column and identification
+            metadata: the maps of the candidate systems (``series_map_json``,
+            ...), the labels of the regions (``region_identifications``) and
+            the structure of the identification (``identification``, an
+            :class:`~astrocook.core.identification.Identification`, PR 7c.3).
         """
         # This is the 'self' spectrum object
         spec = self
@@ -251,6 +258,10 @@ class LinesMixin(HostBase):
         # The candidates scored and dropped, for the result of the recipe
         # (F119): which, how well they scored and against what
         rejected = []
+        # The accepted pairs, for the structure of the identification
+        # (PR 7c.3): each candidate of reliable_ids carries the index of its
+        # pair (None for the assumed Ly_a)
+        pairs: List[Dict[str, Any]] = []
         for (rid_1, rid_2, z_test, series_name, threshold) in all_candidates:
             if series_name == 'Ly_ab':
                 threshold = score_threshold 
@@ -283,16 +294,23 @@ class LinesMixin(HostBase):
                 comp_1, comp_2 = lines[0], lines[1]
                 rid_1_int = int(rid_1) 
                 rid_2_int = int(rid_2) 
+                pair = len(pairs)
+                # rid_2 is the region of the first line, rid_1 that of the
+                # second (_find_kinematic_doublet_candidates)
+                pairs.append({'regions': (rid_2_int, rid_1_int), 'lines': (comp_1, comp_2),
+                              'series': series_name, 'z': float(z_test),
+                              'score': float(r2_score), 'threshold': float(threshold),
+                              'bypassed': not r2_score > threshold})
                 
                 # Both regions are labelled, but only the region of the
                 # first (stronger) line gives the candidate systems: the
                 # other one would give the same systems again, ~1 km/s
                 # apart from the pixel sampling (F49)
                 if rid_1_int not in reliable_ids: reliable_ids[rid_1_int] = []
-                reliable_ids[rid_1_int].append((comp_2, r2_score, z_test, False))
+                reliable_ids[rid_1_int].append((comp_2, r2_score, z_test, False, pair))
 
                 if rid_2_int not in reliable_ids: reliable_ids[rid_2_int] = []
-                reliable_ids[rid_2_int].append((comp_1, r2_score, z_test, True))
+                reliable_ids[rid_2_int].append((comp_1, r2_score, z_test, True, pair))
 
         # --- Forest Cleanup ---
         forest_rids = np.unique(forest_map)
@@ -309,7 +327,7 @@ class LinesMixin(HostBase):
                 if aod_peak_idx > 0:
                     x_peak_nm = x_nm[aod_peak_idx]
                     z_test = (x_peak_nm / xem_d['Ly_a'].to_value(au.nm)) - 1.0
-                    reliable_ids[rid_int] = [('Ly_a', 0.0, z_test, True)]
+                    reliable_ids[rid_int] = [('Ly_a', 0.0, z_test, True, None)]
 
         logger.info(f"{len(reliable_ids)} regions identified (before deblending).")
 
@@ -330,6 +348,10 @@ class LinesMixin(HostBase):
 
         sys_id_counter = 1
         processed_systems = set()
+        # The candidate system of each (series, z), and the systems of each
+        # accepted pair and of each assumed Ly_a region (PR 7c.3)
+        system_of_key: Dict[Any, int] = {}
+        systems_of: Dict[Any, List[int]] = {}
         c_kms = 299792.458
         
         # Pre-calculations
@@ -374,7 +396,7 @@ class LinesMixin(HostBase):
                 fwhm_kms = widths_pix[i] * local_dv
                 b_guess = max(5.0, min(100.0, fwhm_kms / 1.665))
 
-                for (component_name, score, z_test_orig, gives_systems) in candidates:
+                for (component_name, score, z_test_orig, gives_systems, pair) in candidates:
                     if not gives_systems:
                         continue
                     system_name = component_name
@@ -414,8 +436,13 @@ class LinesMixin(HostBase):
                         system_b_map[sys_id_counter] = b_guess
                         system_region_map[sys_id_counter] = rid_int
                         system_score_map[sys_id_counter] = float(score)
+                        system_of_key[uniq_key] = sys_id_counter
                         sys_id_counter += 1
                         processed_systems.add(uniq_key)
+                    owner = pair if pair is not None else ('assumed', rid_int)
+                    found = systems_of.setdefault(owner, [])
+                    if system_of_key[uniq_key] not in found:
+                        found.append(system_of_key[uniq_key])
 
         # --- 7. Create Final Data Core ---
         new_meta = self.meta.copy()
@@ -432,6 +459,16 @@ class LinesMixin(HostBase):
         
         # rich UI Metadata [THE FIX]
         new_meta['region_identifications'] = json.dumps(region_info)
+
+        # The structure of the identification (PR 7c.3)
+        new_meta[ident.META_KEY] = _doublets_identification(
+            region_id_map_merged, x_nm, reliable_ids, pairs, rejected, systems_of,
+            {sid: (system_series_map[sid], system_z_map[sid], system_logN_map[sid],
+                   system_b_map[sid]) for sid in system_series_map},
+            params={'multiplets': list(multiplet_list), 'mask_col': mask_col,
+                    'min_pix_region': min_pix_region, 'merge_dv': merge_dv,
+                    'score_threshold': score_threshold, 'bypass_scoring': bypass_scoring,
+                    'z_em_margin_kms': z_em_margin_kms})
 
         vis_col = DataColumn(
             values=final_vis_map,
@@ -540,3 +577,96 @@ class LinesMixin(HostBase):
         best_idx = np.argmax(score)
         
         return float(z_grid[best_idx])
+
+
+def _doublets_identification(region_map, x_nm, reliable_ids, pairs, rejected,
+                             systems_of, systems, params) -> 'ident.Identification':
+    """The structure of the identification of the current method
+    (``method="doublets"``) in its minimal form (PR 7c.3): every absorbed
+    region with its kind, the accepted pairs as edges, the regions linked by
+    them as groups with one hypothesis per pair, a group of one region for
+    each region of the forest assumed to be Ly_a, and the dropped
+    candidates. The hypotheses are at the stage of the score (the R^2 of the
+    pair is their only statistic) and all accepted: the current method keeps
+    no alternatives.
+
+    ``systems`` maps each candidate system to its (series, z, logN guess,
+    b guess); ``systems_of`` maps a pair (its index) or an assumed region
+    (``('assumed', id)``) to its candidate systems.
+    """
+    regions = []
+    for rid in (int(r) for r in np.unique(region_map) if r > 0):
+        inside = x_nm[region_map == rid]
+        cands = reliable_ids.get(rid, [])
+        names = tuple(dict.fromkeys(c[0] for c in cands))
+        if any(c[4] is not None and pairs[c[4]]['series'] != 'Ly_ab' for c in cands):
+            kind = ident.RegionKind.METAL
+        elif any(c[4] is not None for c in cands):
+            kind = ident.RegionKind.FOREST
+        elif cands:
+            kind = ident.RegionKind.FOREST_ASSUMED
+        else:
+            kind = ident.RegionKind.UNIDENTIFIED
+        regions.append(ident.Region(id=rid, x_min=float(inside.min()),
+                                    x_max=float(inside.max()), kind=kind,
+                                    transitions=names))
+
+    def components(owner):
+        return tuple(ident.Component(series=systems[sid][0], z=float(systems[sid][1]),
+                                     logN=float(systems[sid][2]), b=float(systems[sid][3]),
+                                     candidate=sid)
+                     for sid in systems_of.get(owner, []))
+
+    # The groups: the regions linked by the accepted pairs (union-find)
+    parent: Dict[int, int] = {}
+
+    def root(r):
+        while parent.setdefault(r, r) != r:
+            r = parent[r]
+        return r
+
+    for p in pairs:
+        a, b = (root(r) for r in p['regions'])
+        if a != b:
+            parent[max(a, b)] = min(a, b)
+    by_root: Dict[int, List[int]] = {}
+    for i, p in enumerate(pairs):
+        by_root.setdefault(root(p['regions'][0]), []).append(i)
+
+    groups = []
+    for members in sorted(by_root.values(), key=lambda m: min(pairs[m[0]]['regions'])):
+        edges, hyps = [], []
+        for i in members:
+            p = pairs[i]
+            lag = get_multiplet_velocity_lags(p['series']).get(p['lines'][1])
+            edges.append(ident.Edge(regions=p['regions'], transitions=p['lines'],
+                                    series=p['series'], z=p['z'],
+                                    lag_kms=None if lag is None else float(lag),
+                                    prefilter=p['score']))
+            reason = (f"R^2 = {p['score']:.3f}, accepted without the score (bypass_scoring)"
+                      if p['bypassed'] else
+                      f"R^2 = {p['score']:.3f} above the threshold {p['threshold']:g}")
+            hyps.append(ident.Hypothesis(
+                label=f"{p['series']} at z = {p['z']:.5f}", regions=p['regions'],
+                components=components(i), stage=ident.Stage.SCORE,
+                status=ident.Status.ACCEPTED, reason=reason,
+                criteria={'score': p['score']}))
+        group_regions = tuple(sorted({r for i in members for r in pairs[i]['regions']}))
+        groups.append((group_regions, tuple(edges), tuple(hyps)))
+    for r in regions:
+        if r.kind == ident.RegionKind.FOREST_ASSUMED:
+            hyp = ident.Hypothesis(
+                label="Ly_a (assumed)", regions=(r.id,),
+                components=components(('assumed', r.id)), stage=ident.Stage.SCORE,
+                status=ident.Status.ACCEPTED,
+                reason="assumed: a region of the forest that no doublet identifies")
+            groups.append(((r.id,), (), (hyp,)))
+    groups.sort(key=lambda g: g[0][0])
+    dropped = tuple(ident.DroppedCandidate(series=d['series'], z=d['z'], score=d['score'],
+                                           threshold=d['threshold'], x_min=d['x_nm'][0],
+                                           x_max=d['x_nm'][1]) for d in rejected)
+    return ident.Identification(
+        method="doublets", params=params, regions=tuple(regions),
+        groups=tuple(ident.Group(id=i + 1, regions=g[0], edges=g[1], hypotheses=g[2])
+                     for i, g in enumerate(groups)),
+        dropped=dropped, x_unit="nm")
