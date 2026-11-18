@@ -555,7 +555,14 @@ comparison itself is not the limit: a CIV doublet whose weaker line is at
   of f lambda: a doublet whose lines are at 3 and 1.5 sigma has a joint
   significance of about 3.4, and is tested; the look-elsewhere effect (the
   number of independent positions and lags) is what the threshold of 3
-  must face, and the purity of the benchmark measures it;
+  must face, and the purity of the benchmark measures it; as built in
+  PR 7c.4b (`core/line_detection.py`), a joint seed also needs every line
+  above 1 sigma, the lines consistent with their ratio (chi2 = Σ S_k^2 -
+  J^2 <= 9) and J at its peak, or a strong line makes a "doublet" with the
+  noise at every lag (and the wings of a strong line one at its side);
+  the threshold of J can differ from 3 (`multiplet_sigma`): at 3 the
+  doublets add about 3 times the false regions of the lines alone, at 4
+  about 1.2 times, with almost the same completeness (PR 7c.4b);
 - the regions of the detection replace `abs_mask` in the identification
   (`abs_mask` stays the continuum's mask for the continuum).
 
