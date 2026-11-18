@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>astrocook.fitting.evaluation_window &#8212; Astrocook dev documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../static/styles/theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+<link href="../../../static/styles/pydata-sphinx-theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../static/sphinx-design.min.css?v=6a604523" />
+    <link rel="stylesheet" type="text/css" href="../../../static/css/custom.css?v=e8a3a7b7" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../static/scripts/fontawesome.js?digest=75c7c72ae941e8b558d8"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
+<link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
+
+    <script src="../../../static/documentation_options.js?v=3ce10a4d"></script>
+    <script src="../../../static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../../../static/design-tabs.js?v=fcb327ea"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'modules/astrocook/fitting/evaluation_window';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'dev';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="color-scheme" content="light dark"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="dev" />
+  
+    
+    <script src="../../../static/searchtools.js"></script>
+    <script src="../../../static/language_data.js"></script>
+    <script src="../../../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation" aria-expanded="false" aria-controls="pst-primary-sidebar-modal">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../static/icon_3d_HR.png" class="logo__image only-light" alt=""/>
+    <img src="../../../static/icon_3d_HR.png" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">Astrocook</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../science.html">
+    Science
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference.html">
+    API Reference
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../credits.html">
+    Credits
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../changelog.html">
+    Changelog
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal" tabindex="-1"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../science.html">
+    Science
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../credits.html">
+    Credits
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../changelog.html">
+    Changelog
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-house"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">astrocook.fitting.evaluation_window</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for astrocook.fitting.evaluation_window</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""The evaluation of alternative models in a window of the spectrum (phase 7,</span>
+<span class="sd">PR 7c.4a; ``design/identification.md``, sections 3.3 and 10).</span>
+
+<span class="sd">The identification compares the hypotheses of a group of absorbed regions on</span>
+<span class="sd">the same pixels: the union of the windows of +-(3 FWHM + 5 b) around every</span>
+<span class="sd">line of every hypothesis of the group, and of the pixels that a fit of each</span>
+<span class="sd">hypothesis takes from the data (out to the continuum or to a saddle between</span>
+<span class="sd">blended lines), so that a broad line started with a small b is compared on</span>
+<span class="sd">its whole profile, not on its core (Guido, 18 November 2026). :func:`evaluate_model` and the short</span>
+<span class="sd">fit of :class:`VoigtFitter` compute the model and the profiles on the whole</span>
+<span class="sd">spectrum, so their cost follows the length of the spectrum, not the pixels of</span>
+<span class="sd">the comparison (about 1 s per hypothesis on a mock of 85 nm, PR 7c.2).</span>
+
+<span class="sd">An :class:`EvaluationWindow` cuts those pixels out of the spectrum once per</span>
+<span class="sd">group, as a spectrum of their own, and selects once the components that stay</span>
+<span class="sd">fixed (the rest of the spectrum, outside the group) whose lines reach them:</span>
+<span class="sd">both are shared by every hypothesis of the group. The evaluation and the</span>
+<span class="sd">short fit of a hypothesis then run on the window, with its components and</span>
+<span class="sd">those fixed ones (frozen, not counted), through the same functions as on the</span>
+<span class="sd">whole spectrum; within a fit the optical depth of the fixed components is</span>
+<span class="sd">computed once (the background of :meth:`VoigtFitter.prepare_fit_context`).</span>
+
+<span class="sd">The short fit is not limited to the window: it takes its pixels from the data</span>
+<span class="sd">as on the whole spectrum (:meth:`VoigtFitter.feature_mask`, out to the</span>
+<span class="sd">continuum or to a saddle between blended lines), cut out of the parent per</span>
+<span class="sd">fit. Limited to the window, which follows the b of the start, a broad or</span>
+<span class="sd">saturated line started narrow was fitted on its core alone (logN 16, b 60</span>
+<span class="sd">came out as 15.1, b 80 at R 45000) and a line in a crowded region, with the</span>
+<span class="sd">fixed list imperfect, moved by more than 0.01 dex or 1 km/s in 10-23% of the</span>
+<span class="sd">fits (Guido's concern, PR 7c.4a); with the pixels of the data the fit is that</span>
+<span class="sd">on the whole spectrum.</span>
+
+<span class="sd">The statistics agree with those on the whole spectrum to about 1e-5 of the</span>
+<span class="sd">chi2 (the fine grid of the model follows the narrowest line in the pixels,</span>
+<span class="sd">which on the whole spectrum can be another one). Folding the fixed</span>
+<span class="sd">components into the continuum instead, as their transmission convolved apart</span>
+<span class="sd">and multiplied, was measured and dropped (PR 7c.4a): it was not faster, and</span>
+<span class="sd">where a fixed line is blended with a line of the group it moved the</span>
+<span class="sd">difference of the criteria between two hypotheses by 0.2 at R 45000 and 1.3</span>
+<span class="sd">at R 8900 (exp(-tau_1 - tau_2) convolved is not the product of the two</span>
+<span class="sd">convolved).</span>
+<span class="sd">"""</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">functools</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">astropy.units</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">au</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">ndimage</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.atomic_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">ATOM_DATA</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Spectrum</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ComponentData</span><span class="p">,</span> <span class="n">DataColumn</span><span class="p">,</span> <span class="n">SystemListData</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.system_list</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemList</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.fitting.lsf</span><span class="w"> </span><span class="kn">import</span> <span class="n">C_KMS</span><span class="p">,</span> <span class="n">FWHM_TO_SIGMA</span><span class="p">,</span> <span class="n">KERNEL_SIGMAS</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.fitting.model_evaluation</span><span class="w"> </span><span class="kn">import</span> <span class="n">MIN_INFLUENCE</span><span class="p">,</span> <span class="n">ModelEvaluation</span><span class="p">,</span> <span class="n">evaluate_model</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.fitting.voigt_fitter</span><span class="w"> </span><span class="kn">import</span> <span class="n">VoigtFitter</span><span class="p">,</span> <span class="n">_transitions</span><span class="p">,</span> <span class="n">line_reach</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="c1">#: The half-width of the window around a line, in units of the instrumental</span>
+<span class="c1">#: FWHM and of the b of its component: +-(3 FWHM + 5 b) (decided with Guido,</span>
+<span class="c1">#: 18 November 2026, ``design/identification.md`` section 10): the wings of</span>
+<span class="c1">#: the line convolved with the resolution are below the noise beyond it, and</span>
+<span class="c1">#: the pixels of the continuum on both sides are part of the comparison (a</span>
+<span class="c1">#: hypothesis that puts absorption where there is none pays for it there)</span>
+<span class="n">WINDOW_FWHM</span> <span class="o">=</span> <span class="mf">3.0</span>
+<span class="n">WINDOW_B</span> <span class="o">=</span> <span class="mf">5.0</span>
+
+<span class="c1">#: Pixels added on both sides of the pixels a fit takes from the data, in the</span>
+<span class="c1">#: spectrum cut for the fit: the fitter computes its model on its pixels and</span>
+<span class="c1">#: 50 more on each side (``prepare_fit_context``) and smooths the flux over</span>
+<span class="c1">#: about 8 when it looks for the limits of a line; with 60 the fit on the cut</span>
+<span class="c1">#: is that on the whole spectrum</span>
+<span class="n">FIT_PAD</span> <span class="o">=</span> <span class="mi">60</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_lines</span><span class="p">(</span><span class="n">systs</span><span class="p">:</span> <span class="n">SystemList</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""(observed wavelength in Angstrom, b in km/s) of every line of every</span>
+<span class="sd">    component."""</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">systs</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">hypot</span><span class="p">(</span><span class="n">comp</span><span class="o">.</span><span class="n">b</span><span class="p">,</span> <span class="n">comp</span><span class="o">.</span><span class="n">btur</span> <span class="ow">or</span> <span class="mf">0.0</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">_transitions</span><span class="p">(</span><span class="n">comp</span><span class="o">.</span><span class="n">series</span><span class="p">):</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="s1">'wave'</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">comp</span><span class="o">.</span><span class="n">z</span><span class="p">),</span> <span class="n">b</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">out</span>
+
+
+<div class="viewcode-block" id="window_mask">
+<a class="viewcode-back" href="../../../api/astrocook.fitting.evaluation_window.html#astrocook.fitting.evaluation_window.window_mask">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">window_mask</span><span class="p">(</span><span class="n">spec</span><span class="p">:</span> <span class="n">Spectrum</span><span class="p">,</span> <span class="n">hypotheses</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">SystemList</span><span class="p">],</span>
+                <span class="n">fwhm_factor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">WINDOW_FWHM</span><span class="p">,</span> <span class="n">b_factor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">WINDOW_B</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The pixels within +-(``fwhm_factor`` FWHM + ``b_factor`` b) of a line</span>
+<span class="sd">    of a component of any of ``hypotheses``: the FWHM the instrumental one</span>
+<span class="sd">    at the line (c / R of the nearest pixel; 0 where the resolution is not</span>
+<span class="sd">    known), b that of its component (with btur)."""</span>
+    <span class="n">x_ang</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="n">au</span><span class="o">.</span><span class="n">Angstrom</span><span class="p">)</span>
+    <span class="n">resol</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">resolution</span><span class="p">()</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x_ang</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">systs</span> <span class="ow">in</span> <span class="n">hypotheses</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">lam</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">_lines</span><span class="p">(</span><span class="n">systs</span><span class="p">):</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">x_ang</span><span class="p">,</span> <span class="n">lam</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">x_ang</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="n">fwhm</span> <span class="o">=</span> <span class="n">C_KMS</span> <span class="o">/</span> <span class="n">resol</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">resol</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="ow">and</span> <span class="n">resol</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">0.0</span>
+            <span class="n">half</span> <span class="o">=</span> <span class="n">fwhm_factor</span> <span class="o">*</span> <span class="n">fwhm</span> <span class="o">+</span> <span class="n">b_factor</span> <span class="o">*</span> <span class="n">b</span>
+            <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span> <span class="o">=</span> <span class="n">lam</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">half</span> <span class="o">/</span> <span class="n">C_KMS</span><span class="p">),</span> <span class="n">lam</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">half</span> <span class="o">/</span> <span class="n">C_KMS</span><span class="p">)</span>
+            <span class="n">mask</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">x_ang</span><span class="p">,</span> <span class="n">lo</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s1">'left'</span><span class="p">):</span>
+                 <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">x_ang</span><span class="p">,</span> <span class="n">hi</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s1">'right'</span><span class="p">)]</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">return</span> <span class="n">mask</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_take</span><span class="p">(</span><span class="n">spec</span><span class="p">:</span> <span class="n">Spectrum</span><span class="p">,</span> <span class="n">idx</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">norm</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">norm_unit</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Spectrum</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The pixels ``idx`` of ``spec`` as a spectrum of their own, with the</span>
+<span class="sd">    flux, its error, the resolution and ``norm`` (the normalization of the</span>
+<span class="sd">    parent: continuum times telluric model) as its continuum; the other</span>
+<span class="sd">    columns left out (a fit and an evaluation read only these)."""</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">_data</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">col</span><span class="p">(</span><span class="n">c</span><span class="p">:</span> <span class="n">DataColumn</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DataColumn</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">values</span><span class="p">)[</span><span class="n">idx</span><span class="p">])</span>
+
+    <span class="n">aux</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'cont'</span><span class="p">:</span> <span class="n">DataColumn</span><span class="p">(</span><span class="n">norm</span><span class="p">,</span> <span class="n">norm_unit</span><span class="p">,</span> <span class="s2">"normalization of the parent spectrum"</span><span class="p">)}</span>
+    <span class="k">if</span> <span class="s1">'resol'</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">:</span>
+        <span class="n">aux</span><span class="p">[</span><span class="s1">'resol'</span><span class="p">]</span> <span class="o">=</span> <span class="n">col</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">aux_cols</span><span class="p">[</span><span class="s1">'resol'</span><span class="p">])</span>
+    <span class="n">sub</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">col</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">x</span><span class="p">),</span> <span class="n">xmin</span><span class="o">=</span><span class="n">col</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">xmin</span><span class="p">),</span> <span class="n">xmax</span><span class="o">=</span><span class="n">col</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">xmax</span><span class="p">),</span>
+                              <span class="n">y</span><span class="o">=</span><span class="n">col</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">y</span><span class="p">),</span> <span class="n">dy</span><span class="o">=</span><span class="n">col</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">dy</span><span class="p">),</span> <span class="n">aux_cols</span><span class="o">=</span><span class="n">aux</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Spectrum</span><span class="p">(</span><span class="n">sub</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">static</span><span class="p">(</span><span class="n">systs</span><span class="p">:</span> <span class="n">SystemList</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">ComponentData</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The components of ``systs`` at the values of their parameters as the</span>
+<span class="sd">    model computes them (the links resolved), with no constraints: fixed</span>
+<span class="sd">    components, not fitted."""</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">systs</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[]</span>
+    <span class="n">cm</span> <span class="o">=</span> <span class="n">systs</span><span class="o">.</span><span class="n">constraint_model</span>
+    <span class="k">assert</span> <span class="n">cm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>  <span class="c1"># a list with components has its constraint model</span>
+    <span class="n">p_full</span> <span class="o">=</span> <span class="n">cm</span><span class="o">.</span><span class="n">map_p_free_to_full</span><span class="p">(</span><span class="n">cm</span><span class="o">.</span><span class="n">p_free_vector</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">p_full</span><span class="p">[</span><span class="mi">4</span> <span class="o">*</span> <span class="n">i</span><span class="p">]),</span> <span class="n">logN</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">p_full</span><span class="p">[</span><span class="mi">4</span> <span class="o">*</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]),</span>
+                                <span class="n">b</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">p_full</span><span class="p">[</span><span class="mi">4</span> <span class="o">*</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]),</span> <span class="n">btur</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">p_full</span><span class="p">[</span><span class="mi">4</span> <span class="o">*</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]))</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">systs</span><span class="o">.</span><span class="n">components</span><span class="p">)]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_reaching</span><span class="p">(</span><span class="n">sub</span><span class="p">:</span> <span class="n">Spectrum</span><span class="p">,</span> <span class="n">comps</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">ComponentData</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">ComponentData</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The components with a line whose reach (its optical depth above the</span>
+<span class="sd">    cut of the model, :func:`line_reach`, plus 5 sigma of the kernel of the</span>
+<span class="sd">    lowest resolution) falls on a pixel of ``sub``: the others do not change</span>
+<span class="sd">    the model there."""</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="p">[(</span><span class="n">k</span><span class="p">,</span> <span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">t</span><span class="p">],</span> <span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">comps</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">_transitions</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">series</span><span class="p">)]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">rows</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[]</span>
+    <span class="n">xmin</span> <span class="o">=</span> <span class="n">sub</span><span class="o">.</span><span class="n">xmin</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="n">au</span><span class="o">.</span><span class="n">Angstrom</span><span class="p">)</span>
+    <span class="n">xmax</span> <span class="o">=</span> <span class="n">sub</span><span class="o">.</span><span class="n">xmax</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="n">au</span><span class="o">.</span><span class="n">Angstrom</span><span class="p">)</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">sub</span><span class="o">.</span><span class="n">resolution</span><span class="p">()</span>
+    <span class="n">resols</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">r</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">r</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)]]</span> <span class="o">+</span> <span class="p">[</span>
+        <span class="nb">float</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">resol</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">comps</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">resol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">c</span><span class="o">.</span><span class="n">resol</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">kernel</span> <span class="o">=</span> <span class="n">KERNEL_SIGMAS</span> <span class="o">*</span> <span class="n">C_KMS</span> <span class="o">/</span> <span class="nb">min</span><span class="p">(</span><span class="n">resols</span><span class="p">)</span> <span class="o">*</span> <span class="n">FWHM_TO_SIGMA</span> <span class="k">if</span> <span class="n">resols</span> <span class="k">else</span> <span class="mf">0.0</span>
+    <span class="n">owner</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">])</span>
+    <span class="n">lam_c</span><span class="p">,</span> <span class="n">half</span> <span class="o">=</span> <span class="n">line_reach</span><span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">a</span><span class="p">[</span><span class="s1">'wave'</span><span class="p">]</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">a</span><span class="p">[</span><span class="s1">'f'</span><span class="p">]</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">]),</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">a</span><span class="p">[</span><span class="s1">'gamma'</span><span class="p">]</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">c</span><span class="o">.</span><span class="n">z</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">]),</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">10.0</span> <span class="o">**</span> <span class="n">c</span><span class="o">.</span><span class="n">logN</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">]),</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">hypot</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">btur</span> <span class="ow">or</span> <span class="mf">0.0</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">]))</span>
+    <span class="n">pad</span> <span class="o">=</span> <span class="n">lam_c</span> <span class="o">*</span> <span class="n">kernel</span> <span class="o">/</span> <span class="n">C_KMS</span>
+    <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span> <span class="o">=</span> <span class="n">lam_c</span> <span class="o">-</span> <span class="n">half</span> <span class="o">-</span> <span class="n">pad</span><span class="p">,</span> <span class="n">lam_c</span> <span class="o">+</span> <span class="n">half</span> <span class="o">+</span> <span class="n">pad</span>
+    <span class="c1"># A line reaches the window when a pixel has xmax &gt;= lo and xmin &lt;= hi</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">xmax</span><span class="p">,</span> <span class="n">lo</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s1">'left'</span><span class="p">)</span>
+    <span class="n">hits</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">xmin</span><span class="p">))</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">xmin</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">xmin</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)]</span> <span class="o">&lt;=</span> <span class="n">hi</span><span class="p">)</span>
+    <span class="n">keep</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">owner</span><span class="p">[</span><span class="n">hits</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">comps</span><span class="p">)</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keep</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="EvaluationWindow">
+<a class="viewcode-back" href="../../../api/astrocook.fitting.evaluation_window.html#astrocook.fitting.evaluation_window.EvaluationWindow">[docs]</a>
+<span class="nd">@dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">EvaluationWindow</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The pixels of a group cut out of the spectrum, with the fixed</span>
+<span class="sd">    components that reach them (computed once, shared by the hypotheses of</span>
+<span class="sd">    the group).</span>
+
+<span class="sd">    Build it with :meth:`around` (the window of the lines of the hypotheses)</span>
+<span class="sd">    or :meth:`from_mask` (any pixels).</span>
+<span class="sd">    """</span>
+    <span class="c1">#: The spectrum of the window (its pixels, with the normalization of</span>
+    <span class="c1">#: the parent as its continuum)</span>
+    <span class="n">spectrum</span><span class="p">:</span> <span class="n">Spectrum</span>
+    <span class="c1">#: The index of the pixels of the window in the parent spectrum</span>
+    <span class="n">index</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+    <span class="c1">#: The fixed components that reach the window, at their values, without</span>
+    <span class="c1">#: constraints (the others are left out)</span>
+    <span class="n">fixed</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">ComponentData</span><span class="p">]</span>
+    <span class="c1">#: The number of pixels of the parent spectrum</span>
+    <span class="n">n_parent</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="c1">#: The parent spectrum and all the fixed components (for the pixels of</span>
+    <span class="c1">#: the fits, which are taken from the data as on the whole spectrum)</span>
+    <span class="n">parent</span><span class="p">:</span> <span class="n">Spectrum</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="nb">repr</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">compare</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">all_fixed</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">ComponentData</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="nb">repr</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">compare</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="nd">@functools</span><span class="o">.</span><span class="n">cached_property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_parent_fitter</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">VoigtFitter</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""A fitter of the parent spectrum, for :meth:`VoigtFitter.feature_mask`</span>
+<span class="sd">        (made at the first fit, once per window)."""</span>
+        <span class="k">return</span> <span class="n">VoigtFitter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="p">,</span> <span class="n">SystemList</span><span class="p">(</span><span class="n">SystemListData</span><span class="p">(</span><span class="n">components</span><span class="o">=</span><span class="p">[])))</span>
+
+<div class="viewcode-block" id="EvaluationWindow.from_mask">
+<a class="viewcode-back" href="../../../api/astrocook.fitting.evaluation_window.html#astrocook.fitting.evaluation_window.EvaluationWindow.from_mask">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_mask</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">spec</span><span class="p">:</span> <span class="n">Spectrum</span><span class="p">,</span> <span class="n">mask</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                  <span class="n">fixed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SystemList</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'EvaluationWindow'</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The window of the pixels ``mask`` of ``spec``, with the components</span>
+<span class="sd">        of ``fixed`` (at their current values) that reach it.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If the spectrum has no continuum, or no pixel is in ``mask``.</span>
+<span class="sd">        """</span>
+        <span class="n">norm_q</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">norm</span>
+        <span class="k">if</span> <span class="n">norm_q</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Normalization vector is missing (Flux is physical and "</span>
+                             <span class="s2">"no continuum found)."</span><span class="p">)</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">flatnonzero</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">index</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"no pixel in the window"</span><span class="p">)</span>
+        <span class="n">sub</span> <span class="o">=</span> <span class="n">_take</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">norm_q</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)[</span><span class="n">index</span><span class="p">],</span> <span class="n">norm_q</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
+        <span class="n">static</span> <span class="o">=</span> <span class="n">static</span><span class="p">(</span><span class="n">fixed</span><span class="p">)</span> <span class="k">if</span> <span class="n">fixed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[]</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">spectrum</span><span class="o">=</span><span class="n">sub</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">index</span><span class="p">,</span> <span class="n">fixed</span><span class="o">=</span><span class="n">_reaching</span><span class="p">(</span><span class="n">sub</span><span class="p">,</span> <span class="n">static</span><span class="p">),</span> <span class="n">n_parent</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="p">),</span>
+                   <span class="n">parent</span><span class="o">=</span><span class="n">spec</span><span class="p">,</span> <span class="n">all_fixed</span><span class="o">=</span><span class="n">static</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="EvaluationWindow.around">
+<a class="viewcode-back" href="../../../api/astrocook.fitting.evaluation_window.html#astrocook.fitting.evaluation_window.EvaluationWindow.around">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">around</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">spec</span><span class="p">:</span> <span class="n">Spectrum</span><span class="p">,</span> <span class="n">hypotheses</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">SystemList</span><span class="p">],</span>
+               <span class="n">fixed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SystemList</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+               <span class="n">fwhm_factor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">WINDOW_FWHM</span><span class="p">,</span> <span class="n">b_factor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">WINDOW_B</span><span class="p">,</span>
+               <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">20.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'EvaluationWindow'</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The window of the comparison of ``hypotheses``, the same pixels</span>
+<span class="sd">        for all of them: :func:`window_mask` (+-(3 FWHM + 5 b) around their</span>
+<span class="sd">        lines) and the pixels that a fit of each of them takes from the data</span>
+<span class="sd">        (:meth:`VoigtFitter.feature_mask`, out to the continuum or to a</span>
+<span class="sd">        saddle between blended lines, whatever the b of the start; with</span>
+<span class="sd">        ``z_window_kms`` as in the fit), with ``fixed``. Without the second,</span>
+<span class="sd">        a broad line started narrow was compared on its core alone (Guido,</span>
+<span class="sd">        18 November 2026)."""</span>
+        <span class="n">fitter</span> <span class="o">=</span> <span class="n">VoigtFitter</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">SystemList</span><span class="p">(</span><span class="n">SystemListData</span><span class="p">(</span><span class="n">components</span><span class="o">=</span><span class="p">[])))</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">window_mask</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">hypotheses</span><span class="p">,</span> <span class="n">fwhm_factor</span><span class="p">,</span> <span class="n">b_factor</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">systs</span> <span class="ow">in</span> <span class="n">hypotheses</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">systs</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
+                <span class="n">mask</span> <span class="o">|=</span> <span class="n">fitter</span><span class="o">.</span><span class="n">feature_mask</span><span class="p">(</span><span class="n">static</span><span class="p">(</span><span class="n">systs</span><span class="p">),</span> <span class="n">z_window_kms</span><span class="p">)</span>
+        <span class="n">win</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_mask</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">fixed</span><span class="p">)</span>
+        <span class="c1"># The fitter of the parent, for the pixels of the fits: made once</span>
+        <span class="c1"># (the storage of the cached property)</span>
+        <span class="n">win</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="s1">'_parent_fitter'</span><span class="p">]</span> <span class="o">=</span> <span class="n">fitter</span>
+        <span class="k">return</span> <span class="n">win</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">mask</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The pixels of the window in the parent spectrum."""</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_parent</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+        <span class="n">out</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="n">out</span>
+
+<div class="viewcode-block" id="EvaluationWindow.to_parent">
+<a class="viewcode-back" href="../../../api/astrocook.fitting.evaluation_window.html#astrocook.fitting.evaluation_window.EvaluationWindow.to_parent">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_parent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">values</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">fill</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""An array on the pixels of the window, on those of the parent</span>
+<span class="sd">        (``fill`` elsewhere)."""</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_parent</span><span class="p">,</span> <span class="n">fill</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">out</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">values</span>
+        <span class="k">return</span> <span class="n">out</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_with_fixed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">systs</span><span class="p">:</span> <span class="n">SystemList</span><span class="p">,</span>
+                    <span class="n">fixed_comps</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">ComponentData</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SystemList</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""``systs`` with the fixed components (those of the window, or</span>
+<span class="sd">        ``fixed_comps``) before its own (those with the uuid of one of its</span>
+<span class="sd">        own left out), its constraints kept."""</span>
+        <span class="n">own</span> <span class="o">=</span> <span class="p">{</span><span class="n">c</span><span class="o">.</span><span class="n">uuid</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">systs</span><span class="o">.</span><span class="n">components</span><span class="p">}</span>
+        <span class="n">fixed</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fixed</span> <span class="k">if</span> <span class="n">fixed_comps</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">fixed_comps</span><span class="p">)</span>
+                 <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">uuid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">own</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">SystemList</span><span class="p">(</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+            <span class="n">systs</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">components</span><span class="o">=</span><span class="n">fixed</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">systs</span><span class="o">.</span><span class="n">components</span><span class="p">)))</span>
+
+<div class="viewcode-block" id="EvaluationWindow.evaluate">
+<a class="viewcode-back" href="../../../api/astrocook.fitting.evaluation_window.html#astrocook.fitting.evaluation_window.EvaluationWindow.evaluate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">systs</span><span class="p">:</span> <span class="n">SystemList</span><span class="p">,</span> <span class="n">uuids</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">min_influence</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">MIN_INFLUENCE</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ModelEvaluation</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">""":func:`evaluate_model` on every pixel of the window, the model the</span>
+<span class="sd">        components of ``systs`` (a hypothesis) and the fixed ones; counted</span>
+<span class="sd">        the components of ``uuids`` (None: all those of ``systs``, never the</span>
+<span class="sd">        fixed ones). The residuals on the pixels of the parent spectrum."""</span>
+        <span class="n">counted</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">uuid</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">systs</span><span class="o">.</span><span class="n">components</span><span class="p">]</span> <span class="k">if</span> <span class="n">uuids</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">list</span><span class="p">(</span><span class="n">uuids</span><span class="p">)</span>
+        <span class="n">ev</span> <span class="o">=</span> <span class="n">evaluate_model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spectrum</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_with_fixed</span><span class="p">(</span><span class="n">systs</span><span class="p">),</span>
+                            <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">),</span>
+                            <span class="n">uuids</span><span class="o">=</span><span class="n">counted</span><span class="p">,</span> <span class="n">min_influence</span><span class="o">=</span><span class="n">min_influence</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">ev</span><span class="p">,</span> <span class="n">residuals</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">to_parent</span><span class="p">(</span><span class="n">ev</span><span class="o">.</span><span class="n">residuals</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="EvaluationWindow.fit_pixels">
+<a class="viewcode-back" href="../../../api/astrocook.fitting.evaluation_window.html#astrocook.fitting.evaluation_window.EvaluationWindow.fit_pixels">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit_pixels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">systs</span><span class="p">:</span> <span class="n">SystemList</span><span class="p">,</span> <span class="n">z_window_kms</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">20.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The pixels of the parent on which :meth:`fit` fits ``systs``: the</span>
+<span class="sd">        window, and the pixels that a fit of its components takes from the</span>
+<span class="sd">        data on the whole spectrum (:meth:`VoigtFitter.feature_mask`, out to</span>
+<span class="sd">        the continuum or to a saddle between blended lines, whatever the b</span>
+<span class="sd">        of the start), each run widened by ``FIT_PAD`` pixels."""</span>
+        <span class="n">feature</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parent_fitter</span><span class="o">.</span><span class="n">feature_mask</span><span class="p">(</span><span class="n">static</span><span class="p">(</span><span class="n">systs</span><span class="p">),</span> <span class="n">z_window_kms</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">FIT_PAD</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">feature</span> <span class="o">=</span> <span class="n">ndimage</span><span class="o">.</span><span class="n">binary_dilation</span><span class="p">(</span><span class="n">feature</span><span class="p">,</span> <span class="n">iterations</span><span class="o">=</span><span class="n">FIT_PAD</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">feature</span> <span class="o">|</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask</span></div>
+
+
+<div class="viewcode-block" id="EvaluationWindow.fit">
+<a class="viewcode-back" href="../../../api/astrocook.fitting.evaluation_window.html#astrocook.fitting.evaluation_window.EvaluationWindow.fit">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">systs</span><span class="p">:</span> <span class="n">SystemList</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SystemList</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The fit of the components of ``systs`` (a hypothesis) by</span>
+<span class="sd">        :meth:`VoigtFitter.fit` with ``kwargs`` (e.g. the ``max_nfev``,</span>
+<span class="sd">        ``b_max`` and ``logN_max`` of a short fit), the fixed components that</span>
+<span class="sd">        reach its pixels frozen. Its pixels are those of :meth:`fit_pixels`:</span>
+<span class="sd">        the fit is that on the whole spectrum, not limited to the window (a</span>
+<span class="sd">        broad or saturated line started with a small b, or a line in a</span>
+<span class="sd">        crowded region, takes its pixels from the data, PR 7c.4a). Returns</span>
+<span class="sd">        ``systs`` with its components fitted (a list without components as it</span>
+<span class="sd">        is).</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        NoPixelsToFit</span>
+<span class="sd">            If no valid pixel is around the components.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">systs</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">systs</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">flatnonzero</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fit_pixels</span><span class="p">(</span><span class="n">systs</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'z_window_kms'</span><span class="p">,</span> <span class="mf">20.0</span><span class="p">)))</span>
+        <span class="n">norm_q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">norm</span>
+        <span class="k">assert</span> <span class="n">norm_q</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>  <span class="c1"># checked when the window was made</span>
+        <span class="n">sub</span> <span class="o">=</span> <span class="n">_take</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parent</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">norm_q</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)[</span><span class="n">index</span><span class="p">],</span>
+                    <span class="n">norm_q</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
+        <span class="n">own</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">uuid</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">systs</span><span class="o">.</span><span class="n">components</span><span class="p">]</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_with_fixed</span><span class="p">(</span><span class="n">systs</span><span class="p">,</span> <span class="n">_reaching</span><span class="p">(</span><span class="n">sub</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_fixed</span><span class="p">))</span>
+        <span class="k">with</span> <span class="n">model</span><span class="o">.</span><span class="n">fitting_context</span><span class="p">(</span><span class="n">own</span><span class="p">,</span> <span class="n">group_depth</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+            <span class="n">fitted</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">VoigtFitter</span><span class="p">(</span><span class="n">sub</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">keep</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">own</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">SystemList</span><span class="p">(</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+            <span class="n">fitted</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">components</span><span class="o">=</span><span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">fitted</span><span class="o">.</span><span class="n">components</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">uuid</span> <span class="ow">in</span> <span class="n">keep</span><span class="p">]))</span></div>
+
+
+<div class="viewcode-block" id="EvaluationWindow.as_dict">
+<a class="viewcode-back" href="../../../api/astrocook.fitting.evaluation_window.html#astrocook.fitting.evaluation_window.EvaluationWindow.as_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">as_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""A summary, for the logs."""</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">"n_pixels"</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">size</span><span class="p">),</span> <span class="s2">"n_fixed"</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fixed</span><span class="p">)}</span></div>
+</div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8"></script>
+<script defer src="../../../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Guido Cupani.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.2.0.
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.24.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

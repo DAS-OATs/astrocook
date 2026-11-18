@@ -8,6 +8,7 @@ Submodules
    :maxdepth: 4
 
    astrocook.fitting.bayesian_fitter
+   astrocook.fitting.evaluation_window
    astrocook.fitting.lsf
    astrocook.fitting.model_evaluation
    astrocook.fitting.voigt_fitter
