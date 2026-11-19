@@ -1,0 +1,7 @@
+astrocook.core.line\_detection module
+=====================================
+
+.. automodule:: astrocook.core.line_detection
+   :members:
+   :show-inheritance:
+   :undoc-members:

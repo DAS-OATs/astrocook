@@ -439,6 +439,7 @@
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.column_names.html">astrocook.core.column_names module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.debug_hooks.html">astrocook.core.debug_hooks module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.identification.html">astrocook.core.identification module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.line_detection.html">astrocook.core.line_detection module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.resolution.html">astrocook.core.resolution module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.session.html">astrocook.core.session module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.session_manager.html">astrocook.core.session_manager module</a></li>
@@ -828,6 +829,41 @@
 <li class="toctree-l3"><a class="reference internal" href="astrocook.core.identification.html#astrocook.core.identification.Identification.from_dict"><code class="docutils literal notranslate"><span class="pre">Identification.from_dict()</span></code></a></li>
 </ul>
 </li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="astrocook.core.line_detection.html">astrocook.core.line_detection module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.line_detection.html#astrocook.core.line_detection.DEFAULT_B_KMS"><code class="docutils literal notranslate"><span class="pre">DEFAULT_B_KMS</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.line_detection.html#astrocook.core.line_detection.LINE_SIGMA"><code class="docutils literal notranslate"><span class="pre">LINE_SIGMA</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.line_detection.html#astrocook.core.line_detection.MULTIPLET_SIGMA"><code class="docutils literal notranslate"><span class="pre">MULTIPLET_SIGMA</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.line_detection.html#astrocook.core.line_detection.EXTENT_SIGMA"><code class="docutils literal notranslate"><span class="pre">EXTENT_SIGMA</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.line_detection.html#astrocook.core.line_detection.DEFAULT_MULTIPLETS"><code class="docutils literal notranslate"><span class="pre">DEFAULT_MULTIPLETS</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.line_detection.html#astrocook.core.line_detection.CONSISTENCY_CHI2"><code class="docutils literal notranslate"><span class="pre">CONSISTENCY_CHI2</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.line_detection.html#astrocook.core.line_detection.KERNEL_SIGMAS"><code class="docutils literal notranslate"><span class="pre">KERNEL_SIGMAS</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.line_detection.html#astrocook.core.line_detection.LineDetection"><code class="docutils literal notranslate"><span class="pre">LineDetection</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.line_detection.html#astrocook.core.line_detection.LineDetection.b_kms"><code class="docutils literal notranslate"><span class="pre">LineDetection.b_kms</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.line_detection.html#astrocook.core.line_detection.LineDetection.significance"><code class="docutils literal notranslate"><span class="pre">LineDetection.significance</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.line_detection.html#astrocook.core.line_detection.LineDetection.joint"><code class="docutils literal notranslate"><span class="pre">LineDetection.joint</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.line_detection.html#astrocook.core.line_detection.LineDetection.lines"><code class="docutils literal notranslate"><span class="pre">LineDetection.lines</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.line_detection.html#astrocook.core.line_detection.LineDetection.mask"><code class="docutils literal notranslate"><span class="pre">LineDetection.mask</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.line_detection.html#astrocook.core.line_detection.LineDetection.regions"><code class="docutils literal notranslate"><span class="pre">LineDetection.regions</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.line_detection.html#id0"><code class="docutils literal notranslate"><span class="pre">LineDetection.b_kms</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.line_detection.html#id1"><code class="docutils literal notranslate"><span class="pre">LineDetection.significance</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.line_detection.html#id2"><code class="docutils literal notranslate"><span class="pre">LineDetection.joint</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.line_detection.html#id3"><code class="docutils literal notranslate"><span class="pre">LineDetection.lines</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.line_detection.html#id4"><code class="docutils literal notranslate"><span class="pre">LineDetection.mask</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.line_detection.html#id5"><code class="docutils literal notranslate"><span class="pre">LineDetection.regions</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.line_detection.html#astrocook.core.line_detection.LineDetection.n_regions"><code class="docutils literal notranslate"><span class="pre">LineDetection.n_regions</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.line_detection.html#astrocook.core.line_detection.LineDetection.max_significance"><code class="docutils literal notranslate"><span class="pre">LineDetection.max_significance</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="astrocook.core.line_detection.html#astrocook.core.line_detection.LineDetection.__init__"><code class="docutils literal notranslate"><span class="pre">LineDetection.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.line_detection.html#astrocook.core.line_detection.filter_sigma_kms"><code class="docutils literal notranslate"><span class="pre">filter_sigma_kms()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.line_detection.html#astrocook.core.line_detection.filter_sums"><code class="docutils literal notranslate"><span class="pre">filter_sums()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.line_detection.html#astrocook.core.line_detection.multiplet_lines"><code class="docutils literal notranslate"><span class="pre">multiplet_lines()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.line_detection.html#astrocook.core.line_detection.joint_significance"><code class="docutils literal notranslate"><span class="pre">joint_significance()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.line_detection.html#astrocook.core.line_detection.multiplet_seeds"><code class="docutils literal notranslate"><span class="pre">multiplet_seeds()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.line_detection.html#astrocook.core.line_detection.matched_filter_detection"><code class="docutils literal notranslate"><span class="pre">matched_filter_detection()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.line_detection.html#astrocook.core.line_detection.detect_lines"><code class="docutils literal notranslate"><span class="pre">detect_lines()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="astrocook.core.resolution.html">astrocook.core.resolution module</a><ul>

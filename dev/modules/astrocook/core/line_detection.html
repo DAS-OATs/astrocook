@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>astrocook.core.line_detection &#8212; Astrocook dev documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../static/styles/theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+<link href="../../../static/styles/pydata-sphinx-theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../static/sphinx-design.min.css?v=6a604523" />
+    <link rel="stylesheet" type="text/css" href="../../../static/css/custom.css?v=e8a3a7b7" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../static/scripts/fontawesome.js?digest=75c7c72ae941e8b558d8"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
+<link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
+
+    <script src="../../../static/documentation_options.js?v=3ce10a4d"></script>
+    <script src="../../../static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../../../static/design-tabs.js?v=fcb327ea"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'modules/astrocook/core/line_detection';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'dev';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="color-scheme" content="light dark"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="dev" />
+  
+    
+    <script src="../../../static/searchtools.js"></script>
+    <script src="../../../static/language_data.js"></script>
+    <script src="../../../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation" aria-expanded="false" aria-controls="pst-primary-sidebar-modal">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../static/icon_3d_HR.png" class="logo__image only-light" alt=""/>
+    <img src="../../../static/icon_3d_HR.png" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">Astrocook</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../science.html">
+    Science
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference.html">
+    API Reference
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../credits.html">
+    Credits
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../changelog.html">
+    Changelog
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal" tabindex="-1"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../science.html">
+    Science
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../credits.html">
+    Credits
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../changelog.html">
+    Changelog
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-house"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">astrocook.core.line_detection</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for astrocook.core.line_detection</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""Detection of the absorption lines by matched filters (phase 7, PR 7c.4b).</span>
+
+<span class="sd">The direction of F57 and of section 5 of ``design/identification.md``:</span>
+<span class="sd">the lines are searched on the flux normalised by the continuum with a bank</span>
+<span class="sd">of filters matched to the expected line widths, instead of the pixels that</span>
+<span class="sd">the clipping of the continuum rejects (``abs_mask``, which stays the mask</span>
+<span class="sd">of the continuum).</span>
+
+<span class="sd">For each pixel and each width the significance of a Gaussian absorption</span>
+<span class="sd">centred there is</span>
+
+<span class="sd">    S = sum_i w_i (1 - F_i) / sigma_i^2 / sqrt(sum_i w_i^2 / sigma_i^2),</span>
+
+<span class="sd">with ``w`` the filter, F the normalised flux and sigma its error: the</span>
+<span class="sd">amplitude of the filter fitted to the data by least squares, over its</span>
+<span class="sd">error. On pure noise S is a standard normal variable at each pixel</span>
+<span class="sd">(correlated between neighbours). The filter is a Gaussian in velocity</span>
+<span class="sd">whose variance is that of the instrumental profile plus that of a line of</span>
+<span class="sd">Doppler parameter b, b^2 / 2 (an optically thin line); three widths by</span>
+<span class="sd">default, b = 5, 15, 40 km/s.</span>
+
+<span class="sd">A *line* is a pixel where S &gt; :data:`LINE_SIGMA` for any width; its</span>
+<span class="sd">*region* the run of pixels around it where S &gt; :data:`EXTENT_SIGMA` for</span>
+<span class="sd">any width (a hysteresis threshold). The multiplets are also searched on</span>
+<span class="sd">their joint significance at their lags: for the strongest line (highest f</span>
+<span class="sd">lambda) at a pixel, the filters of the other lines are scaled by their f</span>
+<span class="sd">lambda over that of the strongest (the ratio of their optical depths for</span>
+<span class="sd">a thin line) and placed at their lags,</span>
+
+<span class="sd">    J = sum_k r_k N_k / sqrt(sum_k r_k^2 D_k),</span>
+
+<span class="sd">with N and D the numerator and the squared denominator of S of each</span>
+<span class="sd">line. A multiplet where J &gt; :data:`MULTIPLET_SIGMA`, each of its lines above</span>
+<span class="sd">:data:`EXTENT_SIGMA` alone and the lines consistent with the ratio</span>
+<span class="sd">(:func:`multiplet_seeds`) gives a line at each of its lines, also where no</span>
+<span class="sd">line reaches the threshold alone (a doublet at 3 and 1.5 sigma has J of</span>
+<span class="sd">about 3.35); their regions are found as those of the other lines. At the</span>
+<span class="sd">default threshold of 4 sigma a doublet of thin lines (r of about 0.5)</span>
+<span class="sd">needs its stronger line above about 3.6 sigma, already a line alone: the</span>
+<span class="sd">joint search then gives its region to the weaker line, below the</span>
+<span class="sd">threshold alone, rather than finding doublets whose lines are both below</span>
+<span class="sd">it (that takes a threshold of J near 3, at about three times the false</span>
+<span class="sd">regions of the lines alone on pure noise: PR 7c.4b).</span>
+
+<span class="sd">Not used by the pipelines yet (PR 7c.4c will): no recipe changes its</span>
+<span class="sd">numbers.</span>
+<span class="sd">"""</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">astropy.units</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">au</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.ndimage</span><span class="w"> </span><span class="kn">import</span> <span class="n">label</span><span class="p">,</span> <span class="n">maximum_filter1d</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.atomic_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">ATOM_DATA</span><span class="p">,</span> <span class="n">STANDARD_MULTIPLETS</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="n">C_KMS</span> <span class="o">=</span> <span class="mf">299792.458</span>
+
+<span class="c1">#: The Doppler parameters of the filters (km/s): a narrow metal line, a</span>
+<span class="c1">#: typical one or a forest line, a broad one or a blend (section 5 of</span>
+<span class="c1">#: design/identification.md, Guido, 18 November 2026)</span>
+<span class="n">DEFAULT_B_KMS</span> <span class="o">=</span> <span class="p">(</span><span class="mf">5.0</span><span class="p">,</span> <span class="mf">15.0</span><span class="p">,</span> <span class="mf">40.0</span><span class="p">)</span>
+<span class="c1">#: Significance of a line, for any width (Guido, 18 November 2026)</span>
+<span class="n">LINE_SIGMA</span> <span class="o">=</span> <span class="mf">3.0</span>
+<span class="c1">#: Significance of a multiplet at its lags, its joint significance J: 4</span>
+<span class="c1">#: sigma, not the 3 of the design (Guido, 19 November 2026, after the</span>
+<span class="c1">#: benchmark of PR 7c.4b: at 3 sigma the three default doublets made</span>
+<span class="c1">#: about three times the false regions of the lines alone, 13.5 per 1e4</span>
+<span class="c1">#: km/s on the red side of the full grid against 4.1; at 4 sigma 4.9,</span>
+<span class="c1">#: with the weaker line of the metal systems at 2-3 sigma in a region in</span>
+<span class="c1">#: all of them as at 3, at 1-2 sigma in 0.61 instead of 0.72)</span>
+<span class="n">MULTIPLET_SIGMA</span> <span class="o">=</span> <span class="mf">4.0</span>
+<span class="c1">#: Significance that bounds the region of a line: the pixels around it</span>
+<span class="c1">#: where the absorption is still above the noise</span>
+<span class="n">EXTENT_SIGMA</span> <span class="o">=</span> <span class="mf">1.0</span>
+<span class="c1">#: The multiplets searched on their joint significance by default: the</span>
+<span class="c1">#: anchors of the mock benchmark (the identification of PR 7c.4c chooses</span>
+<span class="c1">#: its own)</span>
+<span class="n">DEFAULT_MULTIPLETS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"CIV"</span><span class="p">,</span> <span class="s2">"SiIV"</span><span class="p">,</span> <span class="s2">"MgII"</span><span class="p">)</span>
+<span class="c1">#: Largest chi2 of the lines of a multiplet about the ratio of their f</span>
+<span class="c1">#: lambda (:func:`multiplet_seeds`): 3 sigma for the one degree of freedom</span>
+<span class="c1">#: of a doublet, whatever the threshold of J</span>
+<span class="n">CONSISTENCY_CHI2</span> <span class="o">=</span> <span class="mf">9.0</span>
+<span class="c1">#: Half width of a filter, in its standard deviations (the Gaussian is</span>
+<span class="c1">#: below 1.1% of its peak beyond it)</span>
+<span class="n">KERNEL_SIGMAS</span> <span class="o">=</span> <span class="mf">3.0</span>
+<span class="c1">#: Largest number of filter values held at once (pixels times filter</span>
+<span class="c1">#: length), to bound the memory on long spectra</span>
+<span class="n">_CHUNK_VALUES</span> <span class="o">=</span> <span class="mi">4_000_000</span>
+
+<span class="n">_FWHM_TO_SIGMA</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)))</span>
+
+
+<div class="viewcode-block" id="LineDetection">
+<a class="viewcode-back" href="../../../api/astrocook.core.line_detection.html#astrocook.core.line_detection.LineDetection">[docs]</a>
+<span class="nd">@dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">LineDetection</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The result of :func:`matched_filter_detection`.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    b_kms : tuple of float</span>
+<span class="sd">        The Doppler parameters of the filters.</span>
+<span class="sd">    significance : np.ndarray</span>
+<span class="sd">        S of each filter at each pixel, shape (len(b_kms), n); NaN where</span>
+<span class="sd">        the filter holds no valid pixel.</span>
+<span class="sd">    joint : dict</span>
+<span class="sd">        Multiplet -&gt; its joint significance J, shape (len(b_kms), n), with</span>
+<span class="sd">        its strongest line at each pixel (NaN where a line falls outside</span>
+<span class="sd">        the spectrum, or beyond ``z_max``).</span>
+<span class="sd">    lines : np.ndarray</span>
+<span class="sd">        True at the pixels of a line: S &gt; ``line_sigma`` for any width, or</span>
+<span class="sd">        a line of a multiplet with J &gt; ``line_sigma``.</span>
+<span class="sd">    mask : np.ndarray</span>
+<span class="sd">        True in the regions of the lines.</span>
+<span class="sd">    regions : np.ndarray</span>
+<span class="sd">        The regions, numbered from 1 (0 outside).</span>
+<span class="sd">    """</span>
+    <span class="n">b_kms</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+    <span class="n">significance</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+    <span class="n">joint</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span>
+    <span class="n">lines</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+    <span class="n">mask</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+    <span class="n">regions</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">n_regions</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The number of regions."""</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">regions</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">initial</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">max_significance</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""S of the most significant width at each pixel (NaN where no</span>
+<span class="sd">        filter holds a valid pixel)."""</span>
+        <span class="k">return</span> <span class="n">_nanmax</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">significance</span><span class="p">)</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_nanmax</span><span class="p">(</span><span class="n">values</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Maximum over the first axis, NaN where all the values are NaN</span>
+<span class="sd">    (without the warning of numpy)."""</span>
+    <span class="n">finite</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">finite</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">finite</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">out</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="filter_sigma_kms">
+<a class="viewcode-back" href="../../../api/astrocook.core.line_detection.html#astrocook.core.line_detection.filter_sigma_kms">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">filter_sigma_kms</span><span class="p">(</span><span class="n">resolving_power</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">b_kms</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Standard deviation (km/s) of the filter of a line of Doppler</span>
+<span class="sd">    parameter ``b_kms`` at each pixel: the instrumental one (FWHM c / R)</span>
+<span class="sd">    and b / sqrt(2) in quadrature."""</span>
+    <span class="n">instr</span> <span class="o">=</span> <span class="n">C_KMS</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">resolving_power</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span> <span class="o">*</span> <span class="n">_FWHM_TO_SIGMA</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">instr</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">b_kms</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="filter_sums">
+<a class="viewcode-back" href="../../../api/astrocook.core.line_detection.html#astrocook.core.line_detection.filter_sums">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">filter_sums</span><span class="p">(</span><span class="n">v_kms</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">depth</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">ivar</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                <span class="n">sigma_kms</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The sums of the matched filter centred at each pixel.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    v_kms : np.ndarray</span>
+<span class="sd">        The pixels in velocity (c ln lambda, increasing).</span>
+<span class="sd">    depth : np.ndarray</span>
+<span class="sd">        1 - F (0 where the pixel is not valid).</span>
+<span class="sd">    ivar : np.ndarray</span>
+<span class="sd">        1 / sigma^2 of 1 - F (0 where the pixel is not valid).</span>
+<span class="sd">    sigma_kms : np.ndarray</span>
+<span class="sd">        Standard deviation of the filter centred at each pixel.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    (np.ndarray, np.ndarray)</span>
+<span class="sd">        N = sum w depth ivar and D = sum w^2 ivar; S = N / sqrt(D).</span>
+<span class="sd">    """</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">v_kms</span><span class="p">)</span>
+    <span class="n">dv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">gradient</span><span class="p">(</span><span class="n">v_kms</span><span class="p">))</span> <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">dv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">dv</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">dv</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s2">"ignore"</span><span class="p">):</span>
+        <span class="n">reach</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">KERNEL_SIGMAS</span> <span class="o">*</span> <span class="n">sigma_kms</span> <span class="o">/</span> <span class="n">dv</span><span class="p">)</span> <span class="k">if</span> <span class="n">n</span> <span class="k">else</span> <span class="mf">0.0</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">reach</span><span class="p">)))</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">reach</span><span class="p">)</span> <span class="k">else</span> <span class="mi">1</span>
+    <span class="n">pad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+    <span class="n">v_pad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v_kms</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">v_kms</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v_kms</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])))</span>
+    <span class="n">a_pad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">pad</span><span class="p">,</span> <span class="n">depth</span> <span class="o">*</span> <span class="n">ivar</span><span class="p">,</span> <span class="n">pad</span><span class="p">))</span>
+    <span class="n">i_pad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">pad</span><span class="p">,</span> <span class="n">ivar</span><span class="p">,</span> <span class="n">pad</span><span class="p">))</span>
+    <span class="n">view_v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">lib</span><span class="o">.</span><span class="n">stride_tricks</span><span class="o">.</span><span class="n">sliding_window_view</span><span class="p">(</span><span class="n">v_pad</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">view_a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">lib</span><span class="o">.</span><span class="n">stride_tricks</span><span class="o">.</span><span class="n">sliding_window_view</span><span class="p">(</span><span class="n">a_pad</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">view_i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">lib</span><span class="o">.</span><span class="n">stride_tricks</span><span class="o">.</span><span class="n">sliding_window_view</span><span class="p">(</span><span class="n">i_pad</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">num</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="n">den</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="n">step</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">_CHUNK_VALUES</span> <span class="o">//</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">lo</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">step</span><span class="p">):</span>
+        <span class="n">hi</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">lo</span> <span class="o">+</span> <span class="n">step</span><span class="p">)</span>
+        <span class="n">u</span> <span class="o">=</span> <span class="p">(</span><span class="n">view_v</span><span class="p">[</span><span class="n">lo</span><span class="p">:</span><span class="n">hi</span><span class="p">]</span> <span class="o">-</span> <span class="n">v_kms</span><span class="p">[</span><span class="n">lo</span><span class="p">:</span><span class="n">hi</span><span class="p">,</span> <span class="kc">None</span><span class="p">])</span> <span class="o">/</span> <span class="n">sigma_kms</span><span class="p">[</span><span class="n">lo</span><span class="p">:</span><span class="n">hi</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">u</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">w</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">u</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">KERNEL_SIGMAS</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">num</span><span class="p">[</span><span class="n">lo</span><span class="p">:</span><span class="n">hi</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">w</span> <span class="o">*</span> <span class="n">view_a</span><span class="p">[</span><span class="n">lo</span><span class="p">:</span><span class="n">hi</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">den</span><span class="p">[</span><span class="n">lo</span><span class="p">:</span><span class="n">hi</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">w</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">view_i</span><span class="p">[</span><span class="n">lo</span><span class="p">:</span><span class="n">hi</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">num</span><span class="p">,</span> <span class="n">den</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_significance</span><span class="p">(</span><span class="n">num</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">den</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s2">"ignore"</span><span class="p">,</span> <span class="n">divide</span><span class="o">=</span><span class="s2">"ignore"</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">den</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">num</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">den</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="multiplet_lines">
+<a class="viewcode-back" href="../../../api/astrocook.core.line_detection.html#astrocook.core.line_detection.multiplet_lines">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">multiplet_lines</span><span class="p">(</span><span class="n">multiplet</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Lags (km/s, from the strongest line) and f lambda over that of the</span>
+<span class="sd">    strongest line, of the lines of a standard multiplet."""</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">[</span><span class="n">multiplet</span><span class="p">]</span>
+    <span class="n">flam</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="s2">"f"</span><span class="p">]</span> <span class="o">*</span> <span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="s2">"wave"</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">])</span>
+    <span class="n">wave</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="s2">"wave"</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="n">ref</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">flam</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">C_KMS</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">wave</span> <span class="o">/</span> <span class="n">wave</span><span class="p">[</span><span class="n">ref</span><span class="p">]),</span> <span class="n">flam</span> <span class="o">/</span> <span class="n">flam</span><span class="p">[</span><span class="n">ref</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="joint_significance">
+<a class="viewcode-back" href="../../../api/astrocook.core.line_detection.html#astrocook.core.line_detection.joint_significance">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">joint_significance</span><span class="p">(</span><span class="n">v_kms</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">num</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">den</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                       <span class="n">lags_kms</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">ratios</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+                       <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""J of a multiplet with its strongest line at each pixel, and S of</span>
+<span class="sd">    each of its lines, from the sums of one filter (:func:`filter_sums`)</span>
+<span class="sd">    taken at the lags of the lines (linear interpolation in velocity); NaN</span>
+<span class="sd">    where a line falls outside the spectrum.</span>
+
+<span class="sd">    The lines are taken as independent: their filters must not overlap</span>
+<span class="sd">    (true for the standard doublets, lags of 260 km/s and more, with</span>
+<span class="sd">    filters of at most about 100 km/s).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    (np.ndarray, np.ndarray)</span>
+<span class="sd">        J, shape (n,), and S of the lines, shape (len(lags_kms), n).</span>
+<span class="sd">    """</span>
+    <span class="n">tot_num</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">v_kms</span><span class="p">))</span>
+    <span class="n">tot_den</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">v_kms</span><span class="p">))</span>
+    <span class="n">s_lines</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">lag</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">lags_kms</span><span class="p">,</span> <span class="n">ratios</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="n">at</span> <span class="o">=</span> <span class="n">v_kms</span> <span class="o">+</span> <span class="n">lag</span>
+        <span class="n">nu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">at</span><span class="p">,</span> <span class="n">v_kms</span><span class="p">,</span> <span class="n">num</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+        <span class="n">de</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">at</span><span class="p">,</span> <span class="n">v_kms</span><span class="p">,</span> <span class="n">den</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+        <span class="n">tot_num</span> <span class="o">+=</span> <span class="n">r</span> <span class="o">*</span> <span class="n">nu</span>
+        <span class="n">tot_den</span> <span class="o">+=</span> <span class="n">r</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">de</span>
+        <span class="n">s_lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_significance</span><span class="p">(</span><span class="n">nu</span><span class="p">,</span> <span class="n">de</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">_significance</span><span class="p">(</span><span class="n">tot_num</span><span class="p">,</span> <span class="n">tot_den</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">s_lines</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="multiplet_seeds">
+<a class="viewcode-back" href="../../../api/astrocook.core.line_detection.html#astrocook.core.line_detection.multiplet_seeds">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">multiplet_seeds</span><span class="p">(</span><span class="n">joint</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">s_lines</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">line_sigma</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                    <span class="n">extent_sigma</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The pixels of the strongest line of a multiplet found by its joint</span>
+<span class="sd">    significance (one filter): J &gt; ``line_sigma``, every line above</span>
+<span class="sd">    ``extent_sigma`` alone, and the lines consistent with the ratio of</span>
+<span class="sd">    their f lambda, chi2 = sum S_k^2 - J^2 &lt;= :data:`CONSISTENCY_CHI2` (the</span>
+<span class="sd">    residuals of the amplitude fitted to all the lines; one degree of</span>
+<span class="sd">    freedom less than the lines).</span>
+
+<span class="sd">    The last two conditions keep a strong line from making a multiplet</span>
+<span class="sd">    with the noise at its lags (a ghost at each lag of each multiplet</span>
+<span class="sd">    around each strong line: on the mocks of the benchmark the whole</span>
+<span class="sd">    forest and a quarter of the red side were in a region without them).</span>
+<span class="sd">    A saturated multiplet, whose ratio is not that of f lambda, fails the</span>
+<span class="sd">    consistency, but its lines are found alone."""</span>
+    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s2">"ignore"</span><span class="p">):</span>
+        <span class="n">chi2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">s_lines</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">-</span> <span class="n">joint</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="k">return</span> <span class="p">((</span><span class="n">joint</span> <span class="o">&gt;</span> <span class="n">line_sigma</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">s_lines</span> <span class="o">&gt;</span> <span class="n">extent_sigma</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                <span class="o">&amp;</span> <span class="p">(</span><span class="n">chi2</span> <span class="o">&lt;=</span> <span class="n">CONSISTENCY_CHI2</span><span class="p">))</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_runs_with_seeds</span><span class="p">(</span><span class="n">extent</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">seeds</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The runs of ``extent`` that hold a pixel of ``seeds`` (the seeds are</span>
+<span class="sd">    also in their own run)."""</span>
+    <span class="n">runs</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">label</span><span class="p">(</span><span class="n">extent</span> <span class="o">|</span> <span class="n">seeds</span><span class="p">)</span>
+    <span class="n">keep</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">runs</span><span class="p">[</span><span class="n">seeds</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">runs</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)])</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">runs</span><span class="p">,</span> <span class="n">keep</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">runs</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_project</span><span class="p">(</span><span class="n">v_kms</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">seeds</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">lag</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The pixels nearest to the seeds moved by ``lag`` (those that fall</span>
+<span class="sd">    inside the spectrum)."""</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">v_kms</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+    <span class="n">at</span> <span class="o">=</span> <span class="n">v_kms</span><span class="p">[</span><span class="n">seeds</span><span class="p">]</span> <span class="o">+</span> <span class="n">lag</span>
+    <span class="n">at</span> <span class="o">=</span> <span class="n">at</span><span class="p">[(</span><span class="n">at</span> <span class="o">&gt;=</span> <span class="n">v_kms</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">at</span> <span class="o">&lt;=</span> <span class="n">v_kms</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">at</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">out</span>
+    <span class="n">hi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">v_kms</span><span class="p">,</span> <span class="n">at</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">v_kms</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">nearer_lo</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">at</span> <span class="o">-</span> <span class="n">v_kms</span><span class="p">[</span><span class="n">hi</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span> <span class="o">&lt;=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">v_kms</span><span class="p">[</span><span class="n">hi</span><span class="p">]</span> <span class="o">-</span> <span class="n">at</span><span class="p">)</span>
+    <span class="n">out</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">nearer_lo</span><span class="p">,</span> <span class="n">hi</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">hi</span><span class="p">)]</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">return</span> <span class="n">out</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_multiplet_lines</span><span class="p">(</span><span class="n">v_kms</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">sums</span><span class="p">,</span> <span class="n">peak_half</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+                     <span class="n">line_sigma</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">extent_sigma</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+                     <span class="n">beyond</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""J of a multiplet for each filter (NaN at the pixels ``beyond``),</span>
+<span class="sd">    and the pixels of its lines where :func:`multiplet_seeds` finds it at</span>
+<span class="sd">    a peak of J (its maximum within ``peak_half`` pixels, about one</span>
+<span class="sd">    standard deviation of the filter: in the wing of a strong line J</span>
+<span class="sd">    rises towards the line, and the wing with the noise at a lag is not a</span>
+<span class="sd">    multiplet)."""</span>
+    <span class="n">lags</span><span class="p">,</span> <span class="n">ratios</span> <span class="o">=</span> <span class="n">multiplet_lines</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+    <span class="n">joints</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">seeds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">v_kms</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">nu</span><span class="p">,</span> <span class="n">de</span><span class="p">),</span> <span class="n">half</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">sums</span><span class="p">,</span> <span class="n">peak_half</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="n">j</span><span class="p">,</span> <span class="n">s_lines</span> <span class="o">=</span> <span class="n">joint_significance</span><span class="p">(</span><span class="n">v_kms</span><span class="p">,</span> <span class="n">nu</span><span class="p">,</span> <span class="n">de</span><span class="p">,</span> <span class="n">lags</span><span class="p">,</span> <span class="n">ratios</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">beyond</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">j</span><span class="p">[</span><span class="n">beyond</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+        <span class="n">joints</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">j</span><span class="p">)</span>
+        <span class="n">j_fill</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">j</span><span class="p">),</span> <span class="n">j</span><span class="p">,</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+        <span class="n">peak</span> <span class="o">=</span> <span class="n">j_fill</span> <span class="o">&gt;=</span> <span class="n">maximum_filter1d</span><span class="p">(</span><span class="n">j_fill</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">half</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">"nearest"</span><span class="p">)</span>
+        <span class="n">seeds</span> <span class="o">|=</span> <span class="n">multiplet_seeds</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="n">s_lines</span><span class="p">,</span> <span class="n">line_sigma</span><span class="p">,</span> <span class="n">extent_sigma</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">peak</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">v_kms</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">lag</span> <span class="ow">in</span> <span class="n">lags</span><span class="p">:</span>
+        <span class="n">lines</span> <span class="o">|=</span> <span class="n">_project</span><span class="p">(</span><span class="n">v_kms</span><span class="p">,</span> <span class="n">seeds</span><span class="p">,</span> <span class="n">lag</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">joints</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sums</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">v_kms</span><span class="p">)),</span> <span class="n">lines</span>
+
+
+<div class="viewcode-block" id="matched_filter_detection">
+<a class="viewcode-back" href="../../../api/astrocook.core.line_detection.html#astrocook.core.line_detection.matched_filter_detection">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">matched_filter_detection</span><span class="p">(</span>
+        <span class="n">x_nm</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">flux</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">err</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">resolving_power</span><span class="p">,</span> <span class="n">b_kms</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">DEFAULT_B_KMS</span><span class="p">,</span>
+        <span class="n">line_sigma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">LINE_SIGMA</span><span class="p">,</span> <span class="n">extent_sigma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">EXTENT_SIGMA</span><span class="p">,</span>
+        <span class="n">multiplets</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">DEFAULT_MULTIPLETS</span><span class="p">,</span>
+        <span class="n">z_max</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">multiplet_sigma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">MULTIPLET_SIGMA</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LineDetection</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The lines and their regions by matched filters (see the module).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x_nm : np.ndarray</span>
+<span class="sd">        The wavelengths of the pixels (nm, increasing).</span>
+<span class="sd">    flux, err : np.ndarray</span>
+<span class="sd">        The flux normalised by the continuum and its error; the pixels with</span>
+<span class="sd">        a value or an error not finite, or an error not positive, are left</span>
+<span class="sd">        out of the sums.</span>
+<span class="sd">    resolving_power : float or np.ndarray</span>
+<span class="sd">        R of each pixel (or one for all).</span>
+<span class="sd">    b_kms : iterable of float</span>
+<span class="sd">        The Doppler parameters of the filters.</span>
+<span class="sd">    line_sigma, extent_sigma : float</span>
+<span class="sd">        The thresholds of a line and of its region.</span>
+<span class="sd">    multiplets : iterable of str</span>
+<span class="sd">        Standard multiplets (``STANDARD_MULTIPLETS``) searched on their</span>
+<span class="sd">        joint significance (:func:`multiplet_seeds`); empty for none.</span>
+<span class="sd">    z_max : float, optional</span>
+<span class="sd">        No multiplet with its strongest line beyond this redshift (e.g.</span>
+<span class="sd">        z_em and the margin of the associated absorbers, F55).</span>
+<span class="sd">    multiplet_sigma : float</span>
+<span class="sd">        The threshold of J (each multiplet searched is a new set of</span>
+<span class="sd">        trials: on pure noise the three doublets of</span>
+<span class="sd">        :data:`DEFAULT_MULTIPLETS` at 3 sigma add several times the</span>
+<span class="sd">        regions of the lines alone, at 4 sigma a few per cent).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    LineDetection</span>
+<span class="sd">    """</span>
+    <span class="n">x_nm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x_nm</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="n">flux</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">flux</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="n">err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">err</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x_nm</span><span class="p">)</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">resolving_power</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">),</span> <span class="p">(</span><span class="n">n</span><span class="p">,))</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">r</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"The matched filters need the resolution of every pixel "</span>
+                         <span class="s2">"(the 'resol' column)."</span><span class="p">)</span>
+    <span class="n">valid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">flux</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">err</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">err</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">ivar</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">valid</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">valid</span><span class="p">,</span> <span class="n">err</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+    <span class="n">depth</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">valid</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">valid</span><span class="p">,</span> <span class="n">flux</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span> <span class="mf">0.0</span><span class="p">)</span>
+    <span class="n">v</span> <span class="o">=</span> <span class="n">C_KMS</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">x_nm</span><span class="p">)</span>
+    <span class="n">b_kms</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">b_kms</span><span class="p">)</span>
+    <span class="n">sigmas</span> <span class="o">=</span> <span class="p">[</span><span class="n">filter_sigma_kms</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">b_kms</span><span class="p">]</span>
+    <span class="n">sums</span> <span class="o">=</span> <span class="p">[</span><span class="n">filter_sums</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">depth</span><span class="p">,</span> <span class="n">ivar</span><span class="p">,</span> <span class="n">sig</span><span class="p">)</span> <span class="k">for</span> <span class="n">sig</span> <span class="ow">in</span> <span class="n">sigmas</span><span class="p">]</span>
+    <span class="n">dv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">gradient</span><span class="p">(</span><span class="n">v</span><span class="p">))</span> <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="n">peak_half</span> <span class="o">=</span> <span class="p">[</span><span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">sig</span> <span class="o">/</span> <span class="n">dv</span><span class="p">)))))</span> <span class="k">if</span> <span class="n">n</span> <span class="k">else</span> <span class="mi">1</span>
+                 <span class="k">for</span> <span class="n">sig</span> <span class="ow">in</span> <span class="n">sigmas</span><span class="p">]</span>
+    <span class="n">significance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">_significance</span><span class="p">(</span><span class="n">nu</span><span class="p">,</span> <span class="n">de</span><span class="p">)</span> <span class="k">for</span> <span class="n">nu</span><span class="p">,</span> <span class="n">de</span> <span class="ow">in</span> <span class="n">sums</span><span class="p">])</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">b_kms</span><span class="p">),</span> <span class="n">n</span><span class="p">)</span>
+    <span class="n">best</span> <span class="o">=</span> <span class="n">_nanmax</span><span class="p">(</span><span class="n">significance</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s2">"ignore"</span><span class="p">):</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="n">best</span> <span class="o">&gt;</span> <span class="n">line_sigma</span>
+    <span class="n">joint</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">multiplets</span><span class="p">:</span>
+        <span class="n">beyond</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">z_max</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">ratios</span> <span class="o">=</span> <span class="n">multiplet_lines</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">ref</span> <span class="o">=</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">ratios</span><span class="p">))]</span>
+            <span class="n">beyond</span> <span class="o">=</span> <span class="n">x_nm</span> <span class="o">/</span> <span class="p">(</span><span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">ref</span><span class="p">][</span><span class="s2">"wave"</span><span class="p">]</span> <span class="o">/</span> <span class="mf">10.0</span><span class="p">)</span> <span class="o">-</span> <span class="mf">1.0</span> <span class="o">&gt;</span> <span class="n">z_max</span>
+        <span class="n">joint</span><span class="p">[</span><span class="n">name</span><span class="p">],</span> <span class="n">m_lines</span> <span class="o">=</span> <span class="n">_multiplet_lines</span><span class="p">(</span>
+            <span class="n">v</span><span class="p">,</span> <span class="n">sums</span><span class="p">,</span> <span class="n">peak_half</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span>
+            <span class="n">multiplet_sigma</span><span class="p">,</span>
+            <span class="n">extent_sigma</span><span class="p">,</span> <span class="n">beyond</span><span class="p">)</span>
+        <span class="n">lines</span> <span class="o">|=</span> <span class="n">m_lines</span>
+    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s2">"ignore"</span><span class="p">):</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">_runs_with_seeds</span><span class="p">(</span><span class="n">best</span> <span class="o">&gt;</span> <span class="n">extent_sigma</span><span class="p">,</span> <span class="n">lines</span><span class="p">)</span>
+    <span class="n">regions</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">label</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">LineDetection</span><span class="p">(</span><span class="n">b_kms</span><span class="o">=</span><span class="n">b_kms</span><span class="p">,</span> <span class="n">significance</span><span class="o">=</span><span class="n">significance</span><span class="p">,</span> <span class="n">joint</span><span class="o">=</span><span class="n">joint</span><span class="p">,</span>
+                         <span class="n">lines</span><span class="o">=</span><span class="n">lines</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">mask</span><span class="p">,</span> <span class="n">regions</span><span class="o">=</span><span class="n">regions</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="detect_lines">
+<a class="viewcode-back" href="../../../api/astrocook.core.line_detection.html#astrocook.core.line_detection.detect_lines">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">detect_lines</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LineDetection</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">""":func:`matched_filter_detection` on a spectrum: its flux and error</span>
+<span class="sd">    over its normalization (``norm``: the continuum, times the telluric</span>
+<span class="sd">    model if any), its resolution (``resol``). ``kwargs`` go to</span>
+<span class="sd">    :func:`matched_filter_detection`. ``ValueError`` if the spectrum has</span>
+<span class="sd">    no continuum or no resolution."""</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum_lines</span><span class="w"> </span><span class="kn">import</span> <span class="n">_normalized_flux</span><span class="p">,</span> <span class="n">_wavelength_nm</span>
+    <span class="n">x_nm</span> <span class="o">=</span> <span class="n">_wavelength_nm</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span>
+    <span class="n">flux</span> <span class="o">=</span> <span class="n">_normalized_flux</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="s2">"the spectrum"</span><span class="p">)</span>
+    <span class="n">norm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">au</span><span class="o">.</span><span class="n">Quantity</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">norm</span><span class="p">)</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="s2">"ignore"</span><span class="p">,</span> <span class="n">divide</span><span class="o">=</span><span class="s2">"ignore"</span><span class="p">):</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">dy</span><span class="o">.</span><span class="n">to_value</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">y</span><span class="o">.</span><span class="n">unit</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span> <span class="o">/</span> <span class="n">norm</span>
+    <span class="k">return</span> <span class="n">matched_filter_detection</span><span class="p">(</span><span class="n">x_nm</span><span class="p">,</span> <span class="n">flux</span><span class="p">,</span> <span class="n">err</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">resolution</span><span class="p">(),</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8"></script>
+<script defer src="../../../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Guido Cupani.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.2.0.
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.24.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

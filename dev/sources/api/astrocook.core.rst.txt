@@ -10,6 +10,7 @@ Submodules
    astrocook.core.column_names
    astrocook.core.debug_hooks
    astrocook.core.identification
+   astrocook.core.line_detection
    astrocook.core.resolution
    astrocook.core.session
    astrocook.core.session_manager
