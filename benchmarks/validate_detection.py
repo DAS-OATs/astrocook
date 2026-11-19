@@ -13,8 +13,10 @@ are measured against the truth map of the mock
 - ``mf_single``: the matched filters of
   :func:`astrocook.core.line_detection.detect_lines`, the lines alone;
 - ``mf``: the same with the joint significance of the doublets CIV, SiIV,
-  MgII (no doublet beyond z_em by more than 3000 km/s, the margin of F55);
-- ``mf_j4``: the same with the doublets at 4 sigma instead of 3.
+  MgII at 3 sigma, the threshold of the design (no doublet beyond z_em by
+  more than 3000 km/s, the margin of F55);
+- ``mf_j4``: the same with the doublets at 4 sigma, the default
+  (``MULTIPLET_SIGMA``, decided after this benchmark).
 
 The measures:
 
@@ -70,8 +72,9 @@ from validate_mocks import (  # noqa: E402
 
 #: The methods compared
 METHODS = ("abs_mask", "mf_single", "mf", "mf_j4")
-#: The threshold of the joint significance of ``mf_j4``, an alternative
-#: measured next to the 3 sigma of the design
+#: The thresholds of the joint significance of ``mf`` (the 3 sigma of the
+#: design) and of ``mf_j4`` (the default, ``MULTIPLET_SIGMA``)
+J3_SIGMA = 3.0
 J4_SIGMA = 4.0
 #: Classes of the true significance of a pixel
 SIGMA_BINS = (0.0, 1.0, 3.0, 5.0, 10.0, np.inf)
@@ -193,7 +196,8 @@ def run_point(point):
     t0 = time.time()
     single = detect_lines(cont, multiplets=())
     t1 = time.time()
-    full = detect_lines(cont, multiplets=DEFAULT_MULTIPLETS, z_max=z_max)
+    full = detect_lines(cont, multiplets=DEFAULT_MULTIPLETS, z_max=z_max,
+                        multiplet_sigma=J3_SIGMA)
     t2 = time.time()
     j4 = detect_lines(cont, multiplets=DEFAULT_MULTIPLETS, z_max=z_max,
                       multiplet_sigma=J4_SIGMA)

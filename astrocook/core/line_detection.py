@@ -30,11 +30,17 @@ a thin line) and placed at their lags,
     J = sum_k r_k N_k / sqrt(sum_k r_k^2 D_k),
 
 with N and D the numerator and the squared denominator of S of each
-line. A multiplet where J > :data:`LINE_SIGMA`, each of its lines above
+line. A multiplet where J > :data:`MULTIPLET_SIGMA`, each of its lines above
 :data:`EXTENT_SIGMA` alone and the lines consistent with the ratio
 (:func:`multiplet_seeds`) gives a line at each of its lines, also where no
 line reaches the threshold alone (a doublet at 3 and 1.5 sigma has J of
-about 3.35); their regions are found as those of the other lines.
+about 3.35); their regions are found as those of the other lines. At the
+default threshold of 4 sigma a doublet of thin lines (r of about 0.5)
+needs its stronger line above about 3.6 sigma, already a line alone: the
+joint search then gives its region to the weaker line, below the
+threshold alone, rather than finding doublets whose lines are both below
+it (that takes a threshold of J near 3, at about three times the false
+regions of the lines alone on pure noise: PR 7c.4b).
 
 Not used by the pipelines yet (PR 7c.4c will): no recipe changes its
 numbers.
@@ -57,10 +63,16 @@ C_KMS = 299792.458
 #: typical one or a forest line, a broad one or a blend (section 5 of
 #: design/identification.md, Guido, 18 November 2026)
 DEFAULT_B_KMS = (5.0, 15.0, 40.0)
-#: Significance of a line, for any width, and of a multiplet at its lags
-#: (Guido, 18 November 2026: 3 sigma per line and on the joint
-#: significance of a doublet)
+#: Significance of a line, for any width (Guido, 18 November 2026)
 LINE_SIGMA = 3.0
+#: Significance of a multiplet at its lags, its joint significance J: 4
+#: sigma, not the 3 of the design (Guido, 19 November 2026, after the
+#: benchmark of PR 7c.4b: at 3 sigma the three default doublets made
+#: about three times the false regions of the lines alone, 13.5 per 1e4
+#: km/s on the red side of the full grid against 4.1; at 4 sigma 4.9,
+#: with the weaker line of the metal systems at 2-3 sigma in a region in
+#: all of them as at 3, at 1-2 sigma in 0.61 instead of 0.72)
+MULTIPLET_SIGMA = 4.0
 #: Significance that bounds the region of a line: the pixels around it
 #: where the absorption is still above the noise
 EXTENT_SIGMA = 1.0
@@ -306,7 +318,7 @@ def matched_filter_detection(
         line_sigma: float = LINE_SIGMA, extent_sigma: float = EXTENT_SIGMA,
         multiplets: Iterable[str] = DEFAULT_MULTIPLETS,
         z_max: Optional[float] = None,
-        multiplet_sigma: Optional[float] = None) -> LineDetection:
+        multiplet_sigma: float = MULTIPLET_SIGMA) -> LineDetection:
     """The lines and their regions by matched filters (see the module).
 
     Parameters
@@ -329,11 +341,11 @@ def matched_filter_detection(
     z_max : float, optional
         No multiplet with its strongest line beyond this redshift (e.g.
         z_em and the margin of the associated absorbers, F55).
-    multiplet_sigma : float, optional
-        The threshold of J, if not ``line_sigma`` (each multiplet searched
-        is a new set of trials: on pure noise the three doublets of
+    multiplet_sigma : float
+        The threshold of J (each multiplet searched is a new set of
+        trials: on pure noise the three doublets of
         :data:`DEFAULT_MULTIPLETS` at 3 sigma add several times the
-        regions of the lines alone).
+        regions of the lines alone, at 4 sigma a few per cent).
 
     Returns
     -------
@@ -370,7 +382,7 @@ def matched_filter_detection(
             beyond = x_nm / (ATOM_DATA[ref]["wave"] / 10.0) - 1.0 > z_max
         joint[name], m_lines = _multiplet_lines(
             v, sums, peak_half, name,
-            line_sigma if multiplet_sigma is None else multiplet_sigma,
+            multiplet_sigma,
             extent_sigma, beyond)
         lines |= m_lines
     with np.errstate(invalid="ignore"):

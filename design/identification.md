@@ -560,9 +560,12 @@ comparison itself is not the limit: a CIV doublet whose weaker line is at
   above 1 sigma, the lines consistent with their ratio (chi2 = Σ S_k^2 -
   J^2 <= 9) and J at its peak, or a strong line makes a "doublet" with the
   noise at every lag (and the wings of a strong line one at its side);
-  the threshold of J can differ from 3 (`multiplet_sigma`): at 3 the
-  doublets add about 3 times the false regions of the lines alone, at 4
-  about 1.2 times, with almost the same completeness (PR 7c.4b);
+  the threshold of J is 4, not 3 (decided: Guido, 19 November 2026): at
+  3 the doublets add about 3 times the false regions of the lines alone,
+  at 4 about 1.2 times, with almost the same completeness (PR 7c.4b); at
+  4 a thin doublet needs its stronger line above about 3.6 sigma, so the
+  joint search gives its region to the weaker line instead of finding
+  doublets whose lines are both below 3 sigma;
 - the regions of the detection replace `abs_mask` in the identification
   (`abs_mask` stays the continuum's mask for the continuum).
 

@@ -4,7 +4,8 @@ import pytest
 
 from astrocook.core.atomic_data import ATOM_DATA
 from astrocook.core.line_detection import (
-    C_KMS, DEFAULT_B_KMS, detect_lines, filter_sigma_kms, filter_sums,
+    C_KMS, DEFAULT_B_KMS, LINE_SIGMA, MULTIPLET_SIGMA, detect_lines,
+    filter_sigma_kms, filter_sums,
     joint_significance, matched_filter_detection, multiplet_lines,
     multiplet_seeds,
 )
@@ -122,12 +123,28 @@ def test_a_doublet_below_the_threshold_in_each_line_is_found_by_its_joint_signif
     v, x, flux, err, i0, lags, ratios = _doublet(2.8)
     alone = matched_filter_detection(x, flux, err, R, multiplets=())
     assert alone.n_regions == 0
-    det = matched_filter_detection(x, flux, err, R, multiplets=("CIV",))
+    # Found jointly at the threshold of the design (3 sigma), not at the
+    # default (4 sigma: J = 3.13)
+    det = matched_filter_detection(x, flux, err, R, multiplets=("CIV",),
+                                   multiplet_sigma=LINE_SIGMA)
     assert det.n_regions == 2
+    assert matched_filter_detection(x, flux, err, R, multiplets=("CIV",)).n_regions == 0
     for lag in lags:
         i = int(np.argmin(np.abs(v - (v[i0] + lag))))
         assert det.mask[i] and det.lines[i]
     assert np.nanargmax(det.joint["CIV"][1]) == i0
+
+
+def test_at_the_default_threshold_the_doublet_gives_its_region_to_the_weaker_line():
+    # The stronger line at 5 sigma, the weaker at 2.5: J = 5.6 > 4
+    assert MULTIPLET_SIGMA == 4.0
+    v, x, flux, err, i0, lags, ratios = _doublet(5.0)
+    alone = matched_filter_detection(x, flux, err, R, multiplets=())
+    assert alone.n_regions == 1
+    det = matched_filter_detection(x, flux, err, R, multiplets=("CIV",))
+    assert det.n_regions == 2
+    i_weak = int(np.argmin(np.abs(v - (v[i0] + lags[1]))))
+    assert det.mask[i_weak] and not alone.mask[i_weak]
 
 
 def test_z_max_bounds_the_multiplets():
@@ -216,12 +233,14 @@ def test_a_doublet_inconsistent_with_its_ratio_is_not_found_jointly():
     depth = 1 - flux
     depth_weak = np.where(v > v[i0] + lags[1] / 2, depth / ratios[1], depth)
     flux2 = 1 - depth_weak
-    det = matched_filter_detection(x, flux2, err, R, multiplets=("CIV",))
+    det = matched_filter_detection(x, flux2, err, R, multiplets=("CIV",),
+                                   multiplet_sigma=LINE_SIGMA)
     assert det.n_regions == 2
     # A weaker line much stronger than its ratio (a blend, a saturated
     # doublet) is not a joint detection, but alone above 3 sigma it is found
     depth_blend = np.where(v > v[i0] + lags[1] / 2, depth / ratios[1] * 5, depth)
-    det = matched_filter_detection(x, 1 - depth_blend, err, R, multiplets=("CIV",))
+    det = matched_filter_detection(x, 1 - depth_blend, err, R, multiplets=("CIV",),
+                                   multiplet_sigma=LINE_SIGMA)
     i_strong = i0
     assert not det.mask[i_strong]
     assert det.n_regions == 1
@@ -233,7 +252,9 @@ def test_on_pure_noise_the_doublets_add_regions_by_their_own_threshold():
     err = np.full(len(x), 0.05)
     flux = 1 + rng.normal(0, 0.05, len(x))
     alone = matched_filter_detection(x, flux, err, R, multiplets=())
-    det = matched_filter_detection(x, flux, err, R)
+    det = matched_filter_detection(x, flux, err, R, multiplet_sigma=LINE_SIGMA)
     assert alone.n_regions < det.n_regions
+    default = matched_filter_detection(x, flux, err, R)
+    assert alone.n_regions <= default.n_regions < det.n_regions
     high = matched_filter_detection(x, flux, err, R, multiplet_sigma=np.inf)
     np.testing.assert_array_equal(high.mask, alone.mask)
