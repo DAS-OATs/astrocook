@@ -96,22 +96,26 @@ LYAB = "Ly_ab"
 LYAB_PAIR = ("Ly_a", "Ly_b")
 
 #: The pre-filter of the edges: the R^2 of F_1 = F_2^gamma of the pair (the
-#: score of the current method) above which a candidate becomes an edge of
-#: the graph. Its purpose: in the forest, and on the red side with the
-#: false regions of the bias of the continuum (F168), every region is at
-#: the lag of some other; without a pre-filter the groups percolate and
-#: every coincidence costs a fit. Low, so that the comparison of the
-#: models decides (the R^2 fails after the convolution and at low S/N,
-#: F119): 0, 0.2 and 0.3 measured in PR 7c.4c, the value decided by Guido
-PREFILTER_R2 = 0.2
+#: score of the current method) at or above which a candidate becomes an
+#: edge of the graph. Its purpose: in the forest, and on the red side with
+#: the false regions of the bias of the continuum (F168), every region is at
+#: the lag of some other; without a pre-filter the groups percolate, every
+#: coincidence costs a fit and many win by chance. Measured in PR 7c.4c (18
+#: mocks of the grid full, no screen): at 0 the purity of CIV and MgII fell
+#: to 0.56 and 0.52 (ECE 0.20, 36 s per spectrum, 10 minutes at R 140000);
+#: at 0.2 and 0.3 0.96 and 0.91-0.94, with the same completeness (ECE 0.02-
+#: 0.03, 4 s). 0.3 (chosen with Guido's leave, 19 November 2026)
+PREFILTER_R2 = 0.3
 #: The screen: the hypotheses behind the best by more than this (in the
 #: criterion, evaluated with the AOD parameters) are dropped before the
 #: short fit; None: no screen, every hypothesis fitted. Its purpose: the
 #: time (a fit per hypothesis). Measured in PR 7c.4c at 10, 20 and 40: the
 #: AOD model of a strong line, close in logN and b to the fit (MgII logN
 #: 13.42, b 6.4 against 13.50, 8.0), has a chi2 of thousands at S/N 100
-#: (7645 against 88), as has that of a blend, so any threshold of a few
-#: tens drops true systems; the value decided by Guido
+#: (7645 against 88), so every threshold of a few tens dropped about half
+#: of the true CIV and SiIV systems (completeness 0.44 against 0.77, ECE
+#: 0.31 against 0.03) for 2.5 s per spectrum saved. None (chosen with
+#: Guido's leave, 19 November 2026)
 SCREEN_DELTA: Optional[float] = None
 #: The largest group, in regions (decision 5 of the design): above it the
 #: group is split at its weakest edges, so that the n + 1 hypotheses stay
