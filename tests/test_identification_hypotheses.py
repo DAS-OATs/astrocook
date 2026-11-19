@@ -184,6 +184,22 @@ def test_a_group_too_large_is_split_at_its_weakest_edges():
     assert [len(g[1]) for g in groups] == [2, 3, 0]
 
 
+def test_a_group_too_large_for_the_fit_keeps_its_default_labels(monkeypatch):
+    # MAX_FIT_K: the time of the short fit; a group with a hypothesis above
+    # it is not compared, its default labels accepted with the AOD
+    monkeypatch.setattr(H, "MAX_FIT_K", 2)
+    res = H.identify_hypotheses(_mock(COMPONENTS[:1]), ["CIV"], screen=None)
+    st = res.spectrum.meta[ident.META_KEY]
+    groups = [g for g in st.groups if len(g.hypotheses) > 1]
+    assert groups
+    for g in groups:
+        accepted = [h for h in g.hypotheses if h.status == ident.Status.ACCEPTED]
+        assert len(accepted) == 1 and not accepted[0].anchors
+        assert "not compared" in accepted[0].reason
+        assert all(h.status == ident.Status.DROPPED for h in g.hypotheses if h is not accepted[0])
+    assert not [s for s, _ in _systems(res.spectrum) if s == "CIV"]
+
+
 def test_the_species():
     assert H.parse_species(["all"])[0] == list(H.ALL_METALS)
     assert H.parse_species(["CIV", "Ly_a"]) == (["CIV"], True)

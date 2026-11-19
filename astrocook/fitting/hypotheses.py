@@ -129,6 +129,16 @@ CRITERIA = ("spic", "bic", "aic")
 FIT_NFEV = 300
 FIT_B_MAX = 100.0
 FIT_LOGN_MAX = 19.0
+#: The largest hypothesis that gets the short fit, in free parameters (20
+#: components of three). Its purpose: the time. The Jacobian of the fit is
+#: computed by finite differences, one model per parameter, so a fit costs
+#: about k times FIT_NFEV models; a group with a wide region (the trough of
+#: a DLA, mock "combined" of the grid robustness at S/N 10) had hypotheses
+#: of 94 components, k = 281, and one mock did not end in 100 minutes. A
+#: group with a hypothesis above it is not compared: its default labels are
+#: accepted with their AOD parameters, as a group without edges (60:
+#: Guido, 19 November 2026)
+MAX_FIT_K = 60
 #: The refinement of the finalists by their residuals: after its short fit
 #: a hypothesis gets a component where the residuals of its model are most
 #: negative (a 3-pixel sum below -REFINE_SIGMA): one of its species when the
@@ -685,6 +695,18 @@ def _evaluate_group(ctx: _Context, regions: List[_Region], edges: List[_Candidat
             h.reason = f"not evaluated: {e}"
         return GroupResult(ids, edges, hyps, len(hyps) - 1)
 
+    k_max = max(h.aod.get("k", 0.0) for h in hyps if h.aod is not None)
+    if k_max > MAX_FIT_K:
+        default = hyps[-1]
+        default.status = ident.Status.ACCEPTED
+        default.reason = (f"not compared: a hypothesis of k = {k_max:.0f} free parameters, "
+                          f"above {MAX_FIT_K} for the short fit; the default labels")
+        for h in hyps[:-1]:
+            h.status = ident.Status.DROPPED
+            h.reason = f"not compared: the group is too large for the short fit (k = {k_max:.0f})"
+            h.weight = 0.0
+        return GroupResult(ids, edges, hyps, len(hyps) - 1)
+
     best_aod = min(h.aod[crit] for h in hyps if h.aod is not None)
     for h in hyps:
         assert h.aod is not None
@@ -717,6 +739,8 @@ def _evaluate_group(ctx: _Context, regions: List[_Region], edges: List[_Candidat
             _build(trial, cands, v, flux, err)
             assert trial.systs is not None
             trial.aod = _measure(win, trial.systs)
+            if trial.aod.get("k", 0.0) > MAX_FIT_K:
+                continue
             _fit(win, trial)
             _refine(ctx, win, trial, cands, v)
             hyps.insert(len(hyps) - 1, trial)
@@ -787,7 +811,7 @@ def _refine(ctx: _Context, win: EvaluationWindow, h: _Hyp,
         res = np.where(np.isfinite(res), res, 0.0)
         s3 = (res + np.r_[res[1:], 0.0] + np.r_[0.0, res[:-1]]) / np.sqrt(3.0)
         k = int(np.argmin(s3))
-        if s3[k] > -REFINE_SIGMA:
+        if s3[k] > -REFINE_SIGMA or h.fit.get("k", 0.0) + 3 > MAX_FIT_K:
             return
         best = None
         for comp in _added(ctx, h, cands, int(win.index[k]), v):
