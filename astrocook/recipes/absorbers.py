@@ -4,12 +4,13 @@ import dataclasses
 import json
 import logging
 import numpy as np
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 from astrocook.core.identification import META_KEY as IDENTIFICATION_KEY
 from astrocook.core.identification import Identification
 from astrocook.core.atomic_data import ATOM_DATA, STANDARD_MULTIPLETS, is_multiplet, series_lines
 from astrocook.fitting.voigt_fitter import NoPixelsToFit, VoigtFitter
+from astrocook.fitting.hypotheses import MAX_GROUP, PREFILTER_R2, SCREEN_DELTA
 
 from astrocook.fitting.voigt_model import LINK_ERRORS, LINK_FUNCTIONS
 from astrocook.recipes.errors import InvalidParameter, MissingPrerequisite, RecipeFailed
@@ -43,6 +44,10 @@ def _beyond(p):
 
 
 def _methods_components_auto(p):
+    if p.raw('method') == 'hypotheses':
+        return (_methods_hypotheses(p, region_words(p.raw('region_limit'))) +
+                f". The accepted candidates were fitted with Voigt profiles, with "
+                f"{fit_bounds(p)}")
     return (f"The candidate systems of {series_list(p.raw('multiplets'))} were "
             f"searched for{region_words(p.raw('region_limit'))}{p.menu}. The absorbed "
             f"regions (merged within {p['merge_dv']} km/s, at least "
@@ -53,6 +58,10 @@ def _methods_components_auto(p):
 
 
 def _methods_doublets_auto(p):
+    if p.raw('method') == 'hypotheses':
+        return (_methods_hypotheses(p, " redward of the Lyman-alpha emission") +
+                f". The accepted candidates were fitted with Voigt profiles, with "
+                f"{fit_bounds(p)}")
     return (f"The doublets of {series_list(p.raw('multiplets'))} were searched "
             f"for redward of the Lyman-alpha emission{p.menu}. The absorbed regions "
             f"were found on {mask_words(p)}, and each candidate was scored by the "
@@ -88,9 +97,37 @@ def _methods_metals_auto(p):
             f"al. 2026){p.menu}; the systems were then refitted, with {fit_bounds(p)}")
 
 
+#: The criteria of the identification by hypotheses, in words
+_CRITERION_WORDS = {'spic': "the SpIC_H of Webb et al. (2021)",
+                    'bic': "the Bayesian information criterion",
+                    'aic': "the Akaike information criterion"}
+
+
+def _methods_hypotheses(p, where: str = "") -> str:
+    """The identification by hypotheses (PR 7c.4c), for the texts of the
+    recipes that have its ``method``."""
+    crit = p.raw('criterion') if 'criterion' in p else 'spic'
+    text = (f"The candidate systems of {series_list(p.raw('multiplets'))} were "
+            f"identified{where} as a comparison between hypotheses{p.menu}: the "
+            f"absorbed regions were found by filters matched to the line widths, "
+            f"the pairs of regions at the lag of two lines of a species "
+            f"{'with R^2 > ' + p['prefilter'] + ' ' if 'prefilter' in p else ''}"
+            f"({_beyond(p)}) grouped, and the alternative identifications of each "
+            f"group (each pair, and the regions unidentified) fitted and weighted by "
+            f"{_CRITERION_WORDS.get(crit, crit)}")
+    if 'screen' in p:
+        text += (f", after a screen at {p['screen']} by the apparent optical depth, "
+                 f"in groups of at most {p['max_group']} regions")
+    if 'temper' in p and p.raw('temper'):
+        text += ", the weights tempered by the reduced chi2 of the accepted model"
+    return text
+
+
 def _methods_identify_lines(p):
     for name in ('bypass_scoring', 'debug_rating'):
         p.raw(name)
+    if p.raw('method') == 'hypotheses':
+        return _methods_hypotheses(p) + ", and written in a new session"
     return (f"The candidate systems of {series_list(p.raw('multiplets'))} were "
             f"identified in the absorbed regions of the mask {p['mask_col']} (merged "
             f"within {p['merge_dv']} km/s, at least {p['min_pix_region']} pixels wide), "
@@ -269,6 +306,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "region_limit", "type": str, "default": "None", "doc": "Search and fit only in a region: 'red_side', 'lya_forest', 'all_ly_forest', or 'None' for the whole spectrum.", "choices": ["None", "lya_forest", "all_ly_forest", "red_side"]},
             {"name": "mask", "type": str, "default": "new", "doc": "Mask of the absorbed pixels used to find the regions: 'new' (made again with the defaults of Find absorbed regions) or 'session' (the 'abs_mask' already in the session, e.g. from Auto-estimate continuum with other parameters).", "choices": ["new", "session"]},
             {"name": "z_em_margin_kms", "type": float, "default": 3000.0, "min": 0, "doc": "How far beyond z_em a candidate system can lie (km/s): the associated absorbers and the uncertainty of z_em."},
+            {"name": "method", "type": str, "default": "doublets", "choices": ["doublets", "hypotheses"], "doc": "'doublets' (regions of the mask, a doublet accepted by its R^2) or 'hypotheses' (prototype: regions of matched filters, the alternative identifications of each group compared by an information criterion, with weights; Ly-a only when asked)."},
         ],
     },
     # --- 2. WRAPPERS ---
@@ -288,6 +326,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "max_logN", "type": float, "default": 19.0, "gt": 10, "max": 23, "doc": "Upper bound on logN in the fits; damped systems (logN > 19) are to be fitted by hand."},
             {"name": "mask", "type": str, "default": "new", "doc": "Mask of the absorbed pixels used to find the regions: 'new' (made again with the defaults of Find absorbed regions) or 'session' (the 'abs_mask' already in the session, e.g. from Auto-estimate continuum with other parameters).", "choices": ["new", "session"]},
             {"name": "z_em_margin_kms", "type": float, "default": 3000.0, "min": 0, "doc": "How far beyond z_em a candidate system can lie (km/s): the associated absorbers and the uncertainty of z_em."},
+            {"name": "method", "type": str, "default": "doublets", "choices": ["doublets", "hypotheses"], "doc": "'doublets' (regions of the mask, a doublet accepted by its R^2) or 'hypotheses' (prototype: regions of matched filters, the alternative identifications of each group compared by an information criterion, with weights; Ly-a only when asked)."},
         ],
     },
     "lya_auto": {
@@ -357,6 +396,12 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "bypass_scoring", "type": bool, "default": False, "doc": "Accept every candidate found by the positions of its lines, without the score (for debugging).", "agents": False},
             {"name": "debug_rating", "type": bool, "default": False, "doc": "Show the plots of the scores (for debugging).", "agents": False},
             {"name": "z_em_margin_kms", "type": float, "default": 3000.0, "min": 0, "doc": "How far beyond z_em a candidate system can lie (km/s): the associated absorbers and the uncertainty of z_em."},
+            {"name": "method", "type": str, "default": "doublets", "choices": ["doublets", "hypotheses"], "doc": "'doublets' (regions of the mask, a doublet accepted by its R^2) or 'hypotheses' (prototype: regions of matched filters, the alternative identifications of each group compared by an information criterion, with weights; Ly-a only when asked)."},
+            {"name": "criterion", "type": str, "default": "spic", "choices": ["spic", "bic", "aic"], "doc": "Method 'hypotheses': the information criterion of the weights, 'spic' (SpIC_H of Webb et al. 2021), 'bic' or 'aic'."},
+            {"name": "prefilter", "type": float, "default": PREFILTER_R2, "min": 0, "max": 1, "doc": "Method 'hypotheses': the R^2 of the lines of a pair of regions above which it is a candidate to compare."},
+            {"name": "screen", "type": float, "default": SCREEN_DELTA, "optional": True, "gt": 0, "doc": "Method 'hypotheses': the hypotheses behind the best by more than this in the criterion, by the apparent optical depth before their fit, are dropped; None for no screen (every hypothesis fitted)."},
+            {"name": "max_group", "type": int, "default": MAX_GROUP, "min": 2, "doc": "Method 'hypotheses': the largest group of regions compared together; a larger one is split at its weakest pairs."},
+            {"name": "temper", "type": bool, "default": False, "doc": "Method 'hypotheses': the differences of the criterion divided by the reduced chi2 of the accepted model, when above 1 (an error spectrum not calibrated)."},
         ],
     },
     "populate_from_identification": {
@@ -906,6 +951,21 @@ def _changes(**values) -> dict:
     return changes
 
 
+def _identify_hypotheses(session, multiplet_list, x_range=None, **kwargs):
+    """The spectrum of ``session`` identified by the prototype of PR 7c.4c
+    (:func:`astrocook.fitting.hypotheses.identify_hypotheses`), the
+    components of the session fixed; ``x_range`` (nm) limits the regions
+    (``region_limit`` of :meth:`RecipeAbsorbers.components_auto`)."""
+    from astrocook.fitting.hypotheses import identify_hypotheses
+    try:
+        result = identify_hypotheses(
+            spec_of(session), multiplet_list, fixed=session.systs, x_range=x_range,
+            params={'method': 'hypotheses'}, **kwargs)
+    except ValueError as e:
+        raise InvalidParameter(str(e)) from e
+    return result.spectrum
+
+
 class RecipeAbsorbers:
     """
     Recipes for identification, fitting, and management of absorption lines.
@@ -928,7 +988,8 @@ class RecipeAbsorbers:
                         region_limit: str = "None",
                         max_b: float = 50.0, max_logN: float = 19.0,
                         mask: str = "new",
-                        z_em_margin_kms: float = 3000.0) -> 'Session':
+                        z_em_margin_kms: float = 3000.0,
+                        method: str = "doublets") -> 'Session':
         """
         Auto-detect and fit components.
 
@@ -978,6 +1039,12 @@ class RecipeAbsorbers:
         z_em_margin_kms : float, optional
             How far beyond ``z_em`` a candidate system can lie (km/s).
             Defaults to ``3000.0`` (F55, phase 6-bis, PR 6b).
+        method : str, optional
+            The method of :meth:`identify_lines`: ``"doublets"`` or
+            ``"hypotheses"`` (the prototype of phase 7, PR 7c.4c, with its
+            defaults; its regions are those of the matched filters, limited
+            to ``region_limit``, and the components start from the
+            parameters of its short fit). Defaults to ``"doublets"``.
 
         Returns
         -------
@@ -1068,16 +1135,28 @@ class RecipeAbsorbers:
         # Create a temp recipe wrapper for the masked session
         rec_temp = RecipeAbsorbers(session_current)
         
-        session_step1 = rec_temp.identify_lines(
-            multiplets=multiplets, 
-            mask_col=target_mask_col, # Use the restricted mask
-            min_pix_region=min_pix_region,
-            merge_dv=merge_dv, 
-            score_threshold=score_threshold,
-            bypass_scoring="False", 
-            debug_rating="False",
-            z_em_margin_kms=z_em_margin_kms
-        )
+        if method == "hypotheses":
+            # The regions of the matched filters, not of the mask: the
+            # region of the pipeline limits them (PR 7c.4c)
+            x_range = None
+            if region_limit != "None":
+                lo_q, hi_q = spec_of(session_current).get_region_bounds(region_limit)
+                x_range = (float(lo_q.to_value(au.nm)), float(hi_q.to_value(au.nm)))
+            new_spec = _identify_hypotheses(
+                session_current, [m.strip() for m in multiplets.split(',') if m.strip()],
+                x_range=x_range, z_em_margin_kms=z_em_margin_kms)
+            session_step1 = cast(Any, session_current.with_new_spectrum(new_spec))
+        else:
+            session_step1 = rec_temp.identify_lines(
+                multiplets=multiplets,
+                mask_col=target_mask_col, # Use the restricted mask
+                min_pix_region=min_pix_region,
+                merge_dv=merge_dv,
+                score_threshold=score_threshold,
+                bypass_scoring="False",
+                debug_rating="False",
+                z_em_margin_kms=z_em_margin_kms
+            )
         
         progress(logger, 30)
 
@@ -1159,7 +1238,8 @@ class RecipeAbsorbers:
                       z_window_kms: float = 20.0,
                       max_b: float = 50.0, max_logN: float = 19.0,
                       mask: str = "new",
-                      z_em_margin_kms: float = 3000.0) -> 'Session':
+                      z_em_margin_kms: float = 3000.0,
+                      method: str = "doublets") -> 'Session':
         """
         Auto-fit metal doublets (Red Side).
 
@@ -1190,6 +1270,11 @@ class RecipeAbsorbers:
         z_em_margin_kms : float, optional
             How far beyond ``z_em`` a candidate system can lie (km/s).
             Defaults to ``3000.0`` (F55, phase 6-bis, PR 6b).
+        method : str, optional
+            The method of the identification, see :meth:`components_auto`;
+            with ``"hypotheses"`` the systems of every species of
+            ``multiplets`` (also ``"all"``) are taken. Defaults to
+            ``"doublets"``.
 
         Returns
         -------
@@ -1204,7 +1289,8 @@ class RecipeAbsorbers:
             max_b=max_b,
             max_logN=max_logN,
             mask=mask,
-            z_em_margin_kms=z_em_margin_kms
+            z_em_margin_kms=z_em_margin_kms,
+            method=method
         )
 
     @typed_recipe
@@ -1543,7 +1629,13 @@ class RecipeAbsorbers:
                        score_threshold: float = 0.5,
                        bypass_scoring: bool = False,
                        debug_rating: bool = False,
-                       z_em_margin_kms: float = 3000.0) -> 'Session':
+                       z_em_margin_kms: float = 3000.0,
+                       method: str = "doublets",
+                       criterion: str = "spic",
+                       prefilter: float = PREFILTER_R2,
+                       screen: Optional[float] = SCREEN_DELTA,
+                       max_group: int = MAX_GROUP,
+                       temper: bool = False) -> 'Session':
         """
         Identify likely absorption systems.
 
@@ -1571,6 +1663,37 @@ class RecipeAbsorbers:
         z_em_margin_kms : float, optional
             How far beyond ``z_em`` a candidate system can lie (km/s).
             Defaults to ``3000.0`` (F55, phase 6-bis, PR 6b).
+        method : str, optional
+            ``"doublets"`` (the regions of the mask, the doublets scored by
+            their R^2) or ``"hypotheses"`` (the prototype of phase 7, PR
+            7c.4c, :mod:`astrocook.fitting.hypotheses`: the regions of the
+            matched filters, the alternative identifications of each group
+            of regions compared by an information criterion, each with its
+            weight). ``mask_col``, ``min_pix_region``, ``merge_dv``,
+            ``score_threshold``, ``bypass_scoring`` and ``debug_rating``
+            are of the first, ``criterion``, ``prefilter``, ``screen``,
+            ``max_group`` and ``temper`` of the second; with
+            ``"hypotheses"``, ``multiplets`` also takes ``"all"`` (every
+            metal anchor), and the Ly-a only when ``Ly_a`` or ``Ly_ab`` is
+            asked (F51). Defaults to ``"doublets"``.
+        criterion : str, optional
+            The criterion of the weights of the hypotheses: ``"spic"``
+            (SpIC_H), ``"bic"`` or ``"aic"``. Defaults to ``"spic"``.
+        prefilter : float, optional
+            The R^2 of a pair of regions above which it is a candidate to
+            compare (method ``"hypotheses"``). Defaults to ``PREFILTER_R2``.
+        screen : float or None, optional
+            The hypotheses behind the best by more than this in the
+            criterion, with the parameters of the apparent optical depth,
+            are dropped before the short fit; ``None`` for no screen (every
+            hypothesis fitted). Defaults to ``SCREEN_DELTA``.
+        max_group : int, optional
+            The largest group of regions compared together; a larger one
+            is split at its weakest pairs. Defaults to ``MAX_GROUP``.
+        temper : bool, optional
+            The differences of the criterion divided by the reduced chi2 of
+            the accepted model of the group, when above 1 (for an error
+            spectrum that is not calibrated). Defaults to ``False``.
 
         Returns
         -------
@@ -1579,6 +1702,14 @@ class RecipeAbsorbers:
             in metadata.
         """
         multiplet_list = [m.strip() for m in multiplets.split(',') if m.strip()]
+        if method == "hypotheses":
+            new_spec_v2 = _identify_hypotheses(
+                self._session, multiplet_list, criterion=criterion, prefilter=prefilter,
+                screen=screen, max_group=max_group, temper=temper,
+                z_em_margin_kms=z_em_margin_kms)
+            for key, value in _identification_extra(new_spec_v2).items():
+                report(key, value)
+            return self._session.with_new_spectrum(new_spec_v2)
         
         logger.debug("identify_lines: Calling spec.identify_lines...")
         new_spec_v2 = spec_of(self._session).identify_lines(
@@ -1644,15 +1775,26 @@ class RecipeAbsorbers:
         
         logger.info(f"Adding {len(series_map)} components from the identification.")
 
+        # The identification by hypotheses (PR 7c.4c) gives the parameters of
+        # its short fit as the start (design/identification.md, section
+        # 12); the current method its guesses are not used (13.5 and 15)
+        structure = spec._data.meta.get(IDENTIFICATION_KEY)
+        starts: dict[int, tuple] = {}
+        if structure is not None and structure.method == "hypotheses":
+            logn_map = _region_ident_dict(spec._data.meta.get('logN_map_json'))
+            b_map = _region_ident_dict(spec._data.meta.get('b_map_json'))
+            starts = {k: (logn_map[k], b_map[k]) for k in logn_map if k in b_map}
+
         # 2. Iterate and Build
         uuid_of: dict[int, str] = {}  # candidate system -> its component (PR 7c.3)
         for sys_id in sorted(series_map.keys()):
             series = series_map[sys_id]
             z_val = z_map.get(sys_id, 0.0)
             before = {c.uuid for c in running_systs.components}
+            logN_0, b_0 = starts.get(sys_id, (13.5, 15.0))
             
             # A. Add Single Component (e.g. 'CIV')
-            running_systs = running_systs.add_component(series, z_val, logN=13.5, b=15.0)
+            running_systs = running_systs.add_component(series, z_val, logN=logN_0, b=b_0)
             added = [c.uuid for c in running_systs.components if c.uuid not in before]
             if len(added) == 1:
                 uuid_of[sys_id] = added[0]

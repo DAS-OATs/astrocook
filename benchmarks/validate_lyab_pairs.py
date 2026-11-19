@@ -6,7 +6,9 @@ so the grids ``full`` and ``robustness`` cannot measure the pairs. This
 script makes the same mocks (forest with its Ly-b, metals, a DLA in seed 0
 and a sub-DLA in seed 1) on a window that starts at ``LYAB_REST_NM[0]``,
 inside the Ly-b forest, runs the continuum and identify_lines with the
-defaults of the GUI (``Ly_ab`` among the multiplets) and measures:
+defaults of the GUI (``Ly_ab`` among the multiplets; ``--method hypotheses``
+for the identification by hypotheses of PR 7c.4c, whose pairs are ``Ly_ab``
+systems) and measures:
 
 - the pairs (the ``Ly_a`` candidates with a score: the Lyman-alpha by
   default of F51 has score 0) against the H I of the truth whose Ly-a and
@@ -124,7 +126,10 @@ def _near(z, comps, kms=vm.MATCH_KMS):
 def pair_metrics(truth, candidates):
     true_pairs = _pair_range(truth)
     detectable = [lyb_detectable(c, truth) for c in true_pairs]
-    pairs = [c for c in candidates if c["series"] == "Ly_a" and c["score"] > 0]
+    # A pair: a Ly_a system with the score of its pair (the current method),
+    # or a Ly_ab system (the method by hypotheses, PR 7c.4c)
+    pairs = [c for c in candidates
+             if (c["series"] == "Ly_a" and c["score"] > 0) or c["series"] == "Ly_ab"]
     # Right: within MATCH_KMS of a true component with a detectable Ly-b
     # (any H I would do too often by chance in the dense forest: 3/4 of the
     # candidates moved by CHANCE_SHIFT_KMS on a mock at z_em 3.5)
@@ -135,7 +140,7 @@ def pair_metrics(truth, candidates):
               for p in pairs for s in (-1, 1)]
     # The Ly-b lines with a Ly-a system on them (the spurious systems of
     # F68, where nothing else is there)
-    lya = [c for c in candidates if c["series"] == "Ly_a"]
+    lya = [c for c in candidates if c["series"] in ("Ly_a", "Ly_ab")]
     lyb_as_lya = 0
     for c in hi:
         z_b = (1 + c.z) * LAM_B / LAM_A - 1
@@ -193,7 +198,7 @@ def run_point(point):
     session = Session("mock", None, spec=spec)
     cont = session.continuum.estimate_auto(**vm.schema_params("continuum", "estimate_auto"))
     t0 = time.time()
-    ident = cont.absorbers.identify_lines(**vm.schema_params("absorbers", "identify_lines"))
+    ident = cont.absorbers.identify_lines(**vm.chain_params("identify_lines"))
     t_ident = time.time() - t0
     candidates = vm.candidate_list(ident.spec)
     return dict(snr=snr, resol=resol, z_em=z_em, seed=seed, strong=strong,
@@ -237,7 +242,7 @@ def run(workers=1, seeds=GRID["seeds"]):
     points = [(snr, resol, z_em, seed) for snr in GRID["snr"] for resol in GRID["resol"]
               for z_em in GRID["z_em"] for seed in seeds]
     if workers > 1:
-        with Pool(workers) as pool:
+        with Pool(workers, initializer=vm.set_chain, initargs=(dict(vm.CHAIN),)) as pool:
             records = pool.map(run_point, points, chunksize=1)
     else:
         records = [run_point(p) for p in points]
@@ -267,7 +272,12 @@ def main():
     parser.add_argument("--workers", type=int, default=1)
     parser.add_argument("--json", help="write the records and the summary here")
     parser.add_argument("--seeds", type=int, nargs="+", default=list(GRID["seeds"]))
+    parser.add_argument("--method", choices=("doublets", "hypotheses"), default=None,
+                        help="the method of identify_lines (PR 7c.4c)")
+    parser.add_argument("--prefilter", type=float, default=None)
+    parser.add_argument("--screen", type=float, default=None)
     args = parser.parse_args()
+    vm.set_chain(dict(method=args.method, prefilter=args.prefilter, screen=args.screen))
     t0 = time.time()
     result = run(args.workers, tuple(args.seeds))
     result["seconds"] = time.time() - t0

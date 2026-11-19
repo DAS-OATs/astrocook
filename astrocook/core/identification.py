@@ -161,7 +161,10 @@ class Hypothesis:
     """The number of pixels."""
     criteria: Mapping[str, float] = field(default_factory=dict)
     """Every information criterion computed (``"aic"``, ``"aicc"``,
-    ``"bic"``, ``"spic_h"``, ...), and the ``"score"`` of the pre-filter."""
+    ``"bic"``, ``"spic"`` (SpIC_H), ...), and the ``"score"`` of the pre-filter."""
+    anchors: Tuple[int, ...] = ()
+    """The edges of the group (their index in :attr:`Group.edges`) that
+    anchor it: none for the hypothesis of the default labels (PR 7c.4c)."""
 
 
 @dataclass(frozen=True)
@@ -182,6 +185,9 @@ class DroppedCandidate:
     threshold: float
     x_min: float
     x_max: float
+    reason: str = ""
+    """Why it was dropped, when not by its score alone (PR 7c.4c: below
+    the pre-filter, or cut to split a group too large)."""
 
 
 @dataclass(frozen=True)
@@ -312,7 +318,7 @@ class Identification:
             return build(Component, c)
 
         def hyp(h):
-            return build(Hypothesis, h, regions=tuple, stage=Stage, status=Status,
+            return build(Hypothesis, h, regions=tuple, stage=Stage, status=Status, anchors=tuple,
                          components=lambda cs: tuple(comp(c) for c in cs),
                          criteria=dict)
 
