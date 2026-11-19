@@ -50,6 +50,9 @@ OPTIONS: dict = {}
 def _init(options):
     OPTIONS.clear()
     OPTIONS.update(options)
+    if options.get("max_added") is not None:
+        from astrocook.fitting import hypotheses
+        hypotheses.MAX_ADDED = int(options["max_added"])
 
 
 def _runs():
@@ -161,9 +164,11 @@ def main(argv=None):
     parser.add_argument("--z-em", type=float, nargs="*", default=[3.5])
     parser.add_argument("--seeds", type=int, nargs="*", default=[0, 2])
     parser.add_argument("--json", type=Path, default=None)
+    parser.add_argument("--max-added", type=int, default=None,
+                        help="components added by the refinement (0: none)")
     args = parser.parse_args(argv)
     options = dict(prefilters=args.prefilters, screens=args.screens,
-                   multiplets=args.multiplets)
+                   multiplets=args.multiplets, max_added=args.max_added)
     _init(options)
     points = [(s, r, z, seed) for s in args.snr for r in args.resol for z in args.z_em
               for seed in args.seeds]

@@ -377,6 +377,11 @@ def set_chain(options):
     ``doublets_multiplets``)."""
     CHAIN.clear()
     CHAIN.update({k: v for k, v in options.items() if v is not None})
+    if "max_added" in CHAIN:
+        # The refinement of the hypotheses by their residuals (PR 7c.4c):
+        # not a parameter of the recipes, measured on and off
+        from astrocook.fitting import hypotheses
+        hypotheses.MAX_ADDED = int(CHAIN["max_added"])
 
 
 def chain_params(recipe):
@@ -1427,8 +1432,11 @@ def main():
                         help="the criterion of identify_lines (method hypotheses)")
     parser.add_argument("--temper", action="store_true", default=None,
                         help="the weights tempered (method hypotheses)")
+    parser.add_argument("--max-added", type=int, default=None,
+                        help="components added by the refinement of each hypothesis "
+                             "(method hypotheses; 0: no refinement)")
     args = parser.parse_args()
-    set_chain(dict(method=args.method, multiplets=args.multiplets,
+    set_chain(dict(method=args.method, multiplets=args.multiplets, max_added=args.max_added,
                    doublets_multiplets=args.doublets_multiplets, prefilter=args.prefilter,
                    screen=args.screen, criterion=args.criterion, temper=args.temper))
     t0 = time.time()
