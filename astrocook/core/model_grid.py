@@ -35,12 +35,14 @@ import numpy as np
 #: fraction of the width of the pixel of the spectrum (T2: the axis of a
 #: model written in a text file with fewer decimals than the spectrum, e.g.
 #: four decimals in nm at 500 nm on a grid of 1 km/s, ~0.0017 nm, is off by
-#: up to 3% of a pixel; a model shifted by less than this is copied)
+#: up to 3% of a pixel; a model shifted by less than this is copied).
+#: Confirmed by Guido (20 November 2026)
 SAME_GRID_TOLERANCE = 0.1
 #: A pixel of the spectrum is covered by the model when the model covers
 #: this fraction of its width (the edges of a model written in a text file
 #: with six decimals in nm are off by up to 3e-4 of a pixel of 1 km/s at
-#: 500 nm; those converted between units differ in the last digits)
+#: 500 nm; those converted between units differ in the last digits).
+#: Confirmed by Guido (20 November 2026)
 COVERED_FRACTION = 1.0 - 1e-3
 
 

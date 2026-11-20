@@ -171,7 +171,8 @@ def test_every_recipe_and_parameter_is_described():
               if not p.agents}
     assert hidden == {("identify_lines", "debug_rating"), ("identify_lines", "bypass_scoring"),
                       ("estimate_auto", "renorm_model"), ("fit_continuum", "renorm_model"),
-                      ("update_from_knots", "renorm_model"), ("smooth_column", "renorm_model")}
+                      ("update_from_knots", "renorm_model"), ("smooth_column", "renorm_model"),
+                      ("import_model", "renorm_model")}
     # F48: the mask is True for the absorbed pixels, as find_absorbed makes it
     for name in ("identify_lines", "fit_continuum"):
         assert "True for the absorbed pixels" in get_recipe(
