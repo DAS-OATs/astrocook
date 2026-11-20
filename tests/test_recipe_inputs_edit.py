@@ -124,7 +124,8 @@ CASES = [
     ('set_properties', 'resol', ' 2 ', {}, ' 2 '),
     ('set_properties', 'resol', '1e1', {}, '1e1'),
     ('set_properties', 'resol', 'abc', {}, REFUSED),
-    ('set_properties', 'resol', '', {}, REFUSED),
+    ('set_properties', 'resol', '', {}, ''),  # FT8: keeps the current value, as the refusal says
+    ('set_properties', 'resol', '  ', {}, '  '),
     ('set_properties', 'resol', 'None', {}, REFUSED),
     ('set_properties', 'resol', None, {}, REFUSED),
     ('set_properties', 'resol', 'nan', {}, REFUSED),  # 2.4.0: accepted as no change

@@ -573,7 +573,8 @@ class RecipeEdit:
             ``'_current_'`` (no change).
         resol : str, optional
             Resolving Power R (e.g., ``50000``) OR Pixel FWHM (e.g., ``'3px'``),
-            positive and finite. Defaults to ``'_current_'`` (no change).
+            positive and finite. Defaults to ``'_current_'`` (no change); an
+            empty string keeps the current resolution too (FT8).
         overwrite_resol_col : bool, optional
             If ``True``, a ``resol`` column that varies with wavelength is
             replaced by a flat one at the new resolution; if ``False`` it is
@@ -620,8 +621,10 @@ class RecipeEdit:
             else:
                 z_em_f = float(z_em)
                 
-            if str(resol) == '_current_':
-                resol_f = 0.0  # leave the resolution as it is (#526)
+            if str(resol).strip() in ('_current_', ''):
+                # Leave the resolution as it is (#526); an empty string too,
+                # as the message of the refusal says (FT8)
+                resol_f = 0.0
             else:
                 resol_f = self._parse_resolution_string(str(resol))
         except ValueError as e:
