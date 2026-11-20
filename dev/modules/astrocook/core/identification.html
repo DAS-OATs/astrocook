@@ -654,7 +654,10 @@
 <span class="w">    </span><span class="sd">"""The number of pixels."""</span>
     <span class="n">criteria</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">"""Every information criterion computed (``"aic"``, ``"aicc"``,</span>
-<span class="sd">    ``"bic"``, ``"spic_h"``, ...), and the ``"score"`` of the pre-filter."""</span></div>
+<span class="sd">    ``"bic"``, ``"spic"`` (SpIC_H), ...), and the ``"score"`` of the pre-filter."""</span>
+    <span class="n">anchors</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+<span class="w">    </span><span class="sd">"""The edges of the group (their index in :attr:`Group.edges`) that</span>
+<span class="sd">    anchor it: none for the hypothesis of the default labels (PR 7c.4c)."""</span></div>
 
 
 
@@ -680,7 +683,10 @@
     <span class="n">score</span><span class="p">:</span> <span class="nb">float</span>
     <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span>
     <span class="n">x_min</span><span class="p">:</span> <span class="nb">float</span>
-    <span class="n">x_max</span><span class="p">:</span> <span class="nb">float</span></div>
+    <span class="n">x_max</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">reason</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span>
+<span class="w">    </span><span class="sd">"""Why it was dropped, when not by its score alone (PR 7c.4c: below</span>
+<span class="sd">    the pre-filter, or cut to split a group too large)."""</span></div>
 
 
 
@@ -831,7 +837,7 @@
             <span class="k">return</span> <span class="n">build</span><span class="p">(</span><span class="n">Component</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
 
         <span class="k">def</span><span class="w"> </span><span class="nf">hyp</span><span class="p">(</span><span class="n">h</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">build</span><span class="p">(</span><span class="n">Hypothesis</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">regions</span><span class="o">=</span><span class="nb">tuple</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="n">Stage</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="n">Status</span><span class="p">,</span>
+            <span class="k">return</span> <span class="n">build</span><span class="p">(</span><span class="n">Hypothesis</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">regions</span><span class="o">=</span><span class="nb">tuple</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="n">Stage</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="n">Status</span><span class="p">,</span> <span class="n">anchors</span><span class="o">=</span><span class="nb">tuple</span><span class="p">,</span>
                          <span class="n">components</span><span class="o">=</span><span class="k">lambda</span> <span class="n">cs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">comp</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">cs</span><span class="p">),</span>
                          <span class="n">criteria</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
 

@@ -1,0 +1,7 @@
+astrocook.fitting.hypotheses module
+===================================
+
+.. automodule:: astrocook.fitting.hypotheses
+   :members:
+   :show-inheritance:
+   :undoc-members:
