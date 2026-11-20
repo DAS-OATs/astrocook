@@ -76,7 +76,7 @@ To open it: **View > View System Inspector**, or right-click over a component in
 This table lists every component in the model.
 * **Edit:** Double-click any cell (`z`, `logN`, `b`) to modify its value directly.
 * **Sort:** Click any column header to sort the list (e.g., by Redshift or Series).
-* **Keys:** The arrows move the selection, and the plot follows it. `Return` refits the selected components (**Refit Selected**), `Delete` (or `Backspace`) deletes them; `Ctrl+Z` (`Cmd+Z` on Mac) and `Ctrl+Shift+Z` undo and redo, also in this window. The keys are shown next to the entries of the right-click menu.
+* **Keys:** The arrows move the selection, and the plot follows it. `Return` refits the selected components (**Refit Selected**), `Delete` (or `Backspace`) deletes them; while a value is being edited in a cell, `Return` only confirms it and `Backspace` only edits the text; `Ctrl+Z` (`Cmd+Z` on Mac) and `Ctrl+Shift+Z` undo and redo, also in this window. The keys are shown next to the entries of the right-click menu.
 * **Status line:** At the bottom of the inspector, how the last recipe went (e.g. a refit) and, on the right, the position of the mouse in the velocity plot.
 * **Tooltips:** Hover over a row to see detailed fit statistics ($\chi^2$) and constraints status.
 * **Resolution:** Right-click a component to set a specific **Resolution ($R$)** for that line, overriding the global session default.
