@@ -9,9 +9,11 @@ from typing import Callable, Dict, Optional, Tuple
 
 # Import V2 structures from the core
 from astrocook.core.structures import SpectrumData, DataColumn
-from astrocook.core.telluric import TELLURIC_COLUMN, TELLURIC_CORRECTED
+from astrocook.core.model_grid import auto_edges
+from astrocook.core.telluric import TELLURIC_COLUMN, TELLURIC_CORRECTED, TELLURIC_NAMES
 from astrocook.core.units import (ARBITRARY_FLUX, FLUX_AUX_COLUMNS, known_unit,
                                   parse_flux_unit)
+from astrocook.io import tables
 
 logger = logging.getLogger(__name__)
 
@@ -32,21 +34,11 @@ def get_loader(format_name: str) -> Optional[Callable]:
 
 def _auto_limits(x_arr: np.ndarray, x_unit: au.Unit) -> Tuple[DataColumn, DataColumn]:
     """
-    Calculates xmin/xmax (pixel edges) from centers, assuming contiguous pixels.
+    Calculates xmin/xmax (pixel edges) from centers, assuming contiguous pixels
+    (the rule of :func:`astrocook.core.model_grid.auto_edges`, shared with
+    ``import_model``, phase 7-ter, T2).
     """
-    # Calculate difference between pixels (gradient)
-    # Prepend the first diff to handle the start edge
-    if len(x_arr) > 1:
-        diff = np.diff(x_arr, prepend=x_arr[0] - (x_arr[1] - x_arr[0]))
-    else:
-        diff = np.array([1.0]) # Fallback for single-pixel artifacts
-
-    # Assume center is midpoint
-    half_width = diff / 2.0
-    
-    xmin = x_arr - half_width
-    xmax = x_arr + half_width
-    
+    xmin, xmax = auto_edges(x_arr)
     return DataColumn(xmin, x_unit), DataColumn(xmax, x_unit)
 
 def _x_unit_heuristics(x_arr: np.ndarray) -> au.Unit:
@@ -138,13 +130,29 @@ def detect_file_format(file_path: str) -> str:
             # generic loader, which reads FITS only)
             head = list(itertools.islice(f, 10))
         head_str = "".join(head).upper()
-        if "TRANS_MOLECFIT" in head_str: return "ascii_telluric_model"
+        # A table whose header names a telluric model (FT1: TRANS_MOLECFIT
+        # sent it to a loader that read wave, flux, error only): read by
+        # name, or refused as a model (phase 7-ter, T2)
+        if _names_a_telluric_model(file_path): return "ascii_table"
         if "RESVEL" in head_str: return "ascii_resvel_header"
         if path_lower.endswith('.csv'): return "simple_csv"
+        # Any other text table, read by the names of its columns (FT2: it
+        # went to the generic loader, which reads FITS only)
+        if tables.is_text_table(file_path): return "ascii_table"
     except OSError:
         pass
 
     return "generic_spectrum"
+
+def _names_a_telluric_model(file_path: str) -> bool:
+    """Whether the header of a text table names a telluric model column."""
+    try:
+        names = tables.text_column_names(file_path)
+    except (ValueError, UnicodeDecodeError):
+        return False
+    lower = {n.lower() for n in names or ()}
+    return any(n.lower() in lower for n in TELLURIC_NAMES[1:])
+
 
 # --- Loader Implementations ---
 
@@ -545,13 +553,6 @@ def _is_ecsv(file_path: str) -> bool:
         return f.readline().startswith('# %ECSV')
 
 
-# The names of the columns of every spectrum in a CSV file with a header: the
-# ASCII spelling of the GUI (export_ascii since PR 8-bis) or the names of the
-# data (export_ascii before)
-_CSV_CORE_NAMES = {'lam': 'x', 'lammin': 'xmin', 'lammax': 'xmax', 'F': 'y', 'dF': 'dy',
-                   'x': 'x', 'xmin': 'xmin', 'xmax': 'xmax', 'y': 'y', 'dy': 'dy'}
-
-
 @register_loader("simple_csv")
 def load_simple_csv(file_path: str, **kwargs) -> SpectrumData:
     """
@@ -615,42 +616,88 @@ def load_simple_csv(file_path: str, **kwargs) -> SpectrumData:
 def _load_named_csv(table: Table, file_path: str) -> SpectrumData:
     """A CSV file whose columns are known by name (see :func:`load_simple_csv`):
     without a unit, the axis is in nm and the flux in arbitrary units."""
-    core = {}
-    aux_cols = {}
-    for name in table.colnames:
-        unit = known_unit(table[name].unit)
-        values = np.asarray(table[name])
-        if name in _CSV_CORE_NAMES and _CSV_CORE_NAMES[name] not in core:
-            core[_CSV_CORE_NAMES[name]] = (values, unit)
-        else:
-            aux_cols[name] = (values, unit)
-    missing = [n for n in ('x', 'y', 'dy') if n not in core]
+    return spectrum_from_table(table, file_path, 'simple_csv_loader')
+
+
+def _model_not_spectrum(file_path: str, column: str) -> ValueError:
+    return ValueError(
+        f"{file_path} has a telluric model ({column}) and no flux: it is a model, "
+        "not a spectrum. Open the spectrum, then import the model into it with "
+        "File > Import Model... (the recipe import_model).")
+
+
+def spectrum_from_table(table: Table, file_path: str, origin: str) -> SpectrumData:
+    """A spectrum from a table whose columns are known by name (the names of
+    :mod:`astrocook.io.tables`: ``x``/``lam``/``wave``, ``y``/``F``/``flux``,
+    ``dy``/``dF``/``err``, the edges ``xmin``/``lammin`` and
+    ``xmax``/``lammax``); the other columns are auxiliary. Without a unit,
+    the axis is in nm and the flux in arbitrary units; a flux column
+    (``cont``, ``model``) without a unit is in the unit of the flux, any
+    other dimensionless. A telluric transmission (``trans_molecfit``,
+    ``mtrans``, ``TELLURIC``) goes to ``telluric`` (phase 7-ter, T2;
+    ``telluric_model`` is renamed when the spectrum is built). A table with
+    a telluric model and no flux is refused: it is imported with
+    ``import_model`` (FT1). The emission redshift and the zero of an axis
+    in velocity are read from the metadata (ECSV of ``export_ascii``)."""
+    used: list = []
+
+    def take(names):
+        name = tables.find_column(table, names, exclude=used)
+        if name is not None:
+            used.append(name)
+        return name
+
+    x_name = take(tables.AXIS_NAMES)
+    y_name = take(tables.FLUX_NAMES)
+    if y_name is None:
+        model = tables.find_column(table, TELLURIC_NAMES, exclude=used)
+        if model is not None:
+            raise _model_not_spectrum(file_path, model)
+    dy_name = take(tables.ERROR_NAMES)
+    missing = [n for n, got in (('x', x_name), ('y', y_name), ('dy', dy_name)) if got is None]
     if missing:
         raise ValueError(f"The file has no column {', '.join(missing)} (or lam, F, dF).")
+    lo_name = take(tables.XMIN_NAMES)
+    hi_name = take(tables.XMAX_NAMES)
 
-    x, x_unit = core['x']
-    x_unit = x_unit or au.nm
-    y, y_unit = core['y']
+    def values_unit(name):
+        return np.asarray(table[name], dtype=float), known_unit(table[name].unit)
+
+    x, x_unit = values_unit(x_name)
+    x_unit = x_unit if x_unit is not None and x_unit != au.dimensionless_unscaled else au.nm
+    y, y_unit = values_unit(y_name)
     y_unit = y_unit if y_unit is not None and y_unit != au.dimensionless_unscaled \
         else ARBITRARY_FLUX
-    dy, dy_unit = core['dy']
-    x_col = DataColumn(np.asarray(x, dtype=float), x_unit, "Wavelength")
-    if 'xmin' in core and 'xmax' in core:
-        xmin_col = DataColumn(np.asarray(core['xmin'][0], dtype=float), core['xmin'][1] or x_unit)
-        xmax_col = DataColumn(np.asarray(core['xmax'][0], dtype=float), core['xmax'][1] or x_unit)
+    dy, dy_unit = values_unit(dy_name)
+    x_col = DataColumn(x, x_unit, "Wavelength")
+    if lo_name is not None and hi_name is not None:
+        xmin_col = DataColumn(values_unit(lo_name)[0], values_unit(lo_name)[1] or x_unit)
+        xmax_col = DataColumn(values_unit(hi_name)[0], values_unit(hi_name)[1] or x_unit)
     else:
-        xmin_col, xmax_col = _auto_limits(np.asarray(x, dtype=float), x_unit)
+        if lo_name is not None:
+            used.remove(lo_name)
+        if hi_name is not None:
+            used.remove(hi_name)
+        xmin_col, xmax_col = _auto_limits(x, x_unit)
+    telluric = tables.find_column(table, TELLURIC_NAMES[2:], exclude=used)
     aux = {}
-    for name, (values, unit) in aux_cols.items():
+    for name in table.colnames:
+        if name in used:
+            continue
+        values = np.asarray(table[name])
+        unit = known_unit(table[name].unit)
+        out_name = name
+        if name == telluric and TELLURIC_COLUMN not in table.colnames:
+            out_name = TELLURIC_COLUMN
         if unit is None:
             # A flux column without a unit is in the unit of the flux
-            unit = y_unit if name in FLUX_AUX_COLUMNS else au.dimensionless_unscaled
-        aux[name] = DataColumn(values, unit)
+            unit = y_unit if out_name in FLUX_AUX_COLUMNS else au.dimensionless_unscaled
+        aux[out_name] = DataColumn(values, unit)
     return SpectrumData(
         x=x_col, xmin=xmin_col, xmax=xmax_col,
-        y=DataColumn(np.asarray(y, dtype=float), y_unit, "Flux"),
-        dy=DataColumn(np.asarray(dy, dtype=float), dy_unit or y_unit, "Error"),
-        aux_cols=aux, meta={'ORIGIN': 'simple_csv_loader', 'FILE': file_path},
+        y=DataColumn(y, y_unit, "Flux"),
+        dy=DataColumn(dy, dy_unit or y_unit, "Error"),
+        aux_cols=aux, meta={'ORIGIN': origin, 'FILE': file_path},
         z_em=float(table.meta.get('z_em', 0.0)),
         # The zero of an axis in velocity, written by Astrocook (F84)
         z_ref=(float(table.meta['z_ref'])
@@ -658,56 +705,30 @@ def _load_named_csv(table: Table, file_path: str) -> SpectrumData:
                else None))
 
 
+# The loader of the ASCII telluric models before 2.8.0 (FT1), absorbed: its
+# format name is kept for the scripts that pass it
 @register_loader("ascii_telluric_model")
-def load_ascii_telluric_model(file_path: str, **kwargs) -> SpectrumData:
+@register_loader("ascii_table")
+def load_ascii_table(file_path: str, **kwargs) -> SpectrumData:
     """
-    Loader for custom ASCII format with columns: wave, flux, error, trans_molecfit.
+    Loader of text tables (phase 7-ter, T2, FT2): columns separated by
+    spaces, tabs or commas, named by a header line, also commented
+    (``# x xmin xmax y dy``), read by :func:`astrocook.io.tables.read_table`
+    and taken by name (:func:`spectrum_from_table`). Without a header, the
+    first three columns are x (nm), y and dy, by position, as for the CSV
+    files. A file with a telluric model and no flux (e.g. the Molecfit
+    models ``# x xmin xmax trans_molecfit dy``) is refused, with a message
+    that points to *File > Import Model...* (FT1: the loader of
+    ``TRANS_MOLECFIT`` files read the columns wave, flux, error separated by
+    tabs only, and wrote the transmission in ``model`` too).
     """
-    # Use 'ascii.commented_header' to correctly interpret the line starting with '#' as headers
-    t = Table.read(file_path, format='ascii.commented_header', delimiter='\t')
-
-    # 1. Define Units
-    # Based on data range ~380.0, this is likely Nanometers
-    x_unit = au.nm 
-    y_unit = ARBITRARY_FLUX  # PR 8-bis: erg/(Angstrom s cm2) was assumed
-
-    # 2. Extract Data
-    # Column names are lowercased by astropy automatically
-    x = t['wave'].data
-    y = t['flux'].data
-    dy = t['error'].data
-
-    # 3. Create Core Columns
-    x_col = DataColumn(x, x_unit, description="Wavelength")
-    y_col = DataColumn(y, y_unit, description="Flux")
-    dy_col = DataColumn(dy, y_unit, description="Error")
-
-    # Calculate pixel edges automatically using the helper in loaders.py
-    xmin_col, xmax_col = _auto_limits(x, x_unit)
-
-    # 4. Handle Auxiliary Columns (Telluric Model)
-    aux_cols = {}
-    for col in t.colnames:
-        if 'trans_molecfit' in col.lower():
-            trans = t[col].data
-            # The column of the transmission, read by the normalization
-            # since 2.8.0 (phase 7-ter, T1)
-            aux_cols[TELLURIC_COLUMN] = DataColumn(trans, au.dimensionless_unscaled, "Telluric Model")
-            # Add as 'model' so Astrocook plots it as the green line
-            aux_cols['model'] = DataColumn(trans, au.dimensionless_unscaled, "Telluric Model")
-
-    # 5. Metadata
-    meta = {'ORIGIN': 'ascii_telluric_model_loader', 'FILENAME': file_path}
-
-    return SpectrumData(
-        x=x_col, 
-        xmin=xmin_col, 
-        xmax=xmax_col,
-        y=y_col, 
-        dy=dy_col,
-        aux_cols=aux_cols,
-        meta=meta
-    )
+    table = tables.read_table(file_path)
+    if table.colnames and table.colnames[0] == 'col1':
+        if len(table.colnames) < 3:
+            raise ValueError(f"The file has {len(table.colnames)} columns: three are "
+                             "needed (x, y, dy).")
+        table = Table([table[c] for c in table.colnames[:3]], names=['x', 'y', 'dy'])
+    return spectrum_from_table(table, file_path, 'ascii_table_loader')
 
 
 @register_loader("ascii_resvel_header")

@@ -124,7 +124,8 @@ FORMATS = {
     'xshooter_fits': ('s.fits', _xshooter),
     'generic_spectrum': ('s.fits', _generic),
     'simple_csv': ('s.csv', _simple_csv),
-    'ascii_telluric_model': ('s.dat', _telluric_ascii),
+    # 'ascii_telluric_model' until 2.8.0: read by name (phase 7-ter, T2, FT1)
+    'ascii_table': ('s.dat', _telluric_ascii),
     'ascii_resvel_header': ('s.dat', _resvel),
 }
 
@@ -151,7 +152,7 @@ UNITS = {
     'xshooter_fits': (FLAM, FLAM),              # TUNIT read; it was assumed
     'generic_spectrum': (ARB, au.dimensionless_unscaled),
     'simple_csv': (ARB, FLAM),                  # FLAM was assumed
-    'ascii_telluric_model': (ARB, FLAM),        # FLAM was assumed
+    'ascii_table': (ARB, FLAM),                 # FLAM was assumed
     'ascii_resvel_header': (ARB, au.dimensionless_unscaled),
 }
 

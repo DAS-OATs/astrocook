@@ -1106,6 +1106,7 @@ class MainPanelsMixin(HostBase):
         if hasattr(self, 'export_log_text_action'):
             self.export_log_text_action.setEnabled(is_valid_session)
         if hasattr(self, 'import_action'): self.import_action.setEnabled(is_valid_session)
+        if hasattr(self, 'import_model_action'): self.import_model_action.setEnabled(is_valid_session)
         if hasattr(self, 'close_session_action'): self.close_session_action.setEnabled(is_valid_session)
 
         # ... (Enable/Disable View menu actions) ...

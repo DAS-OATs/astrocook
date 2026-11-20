@@ -253,7 +253,8 @@ def test_ascii_telluric_model_column_now_enters_the_normalization(tmp_path):
     path = tmp_path / "s.dat"
     path.write_text("#wave\tflux\terror\ttrans_molecfit\n"
                     + "".join(f"{w}\t1.0\t0.1\t0.9\n" for w in WAVE_NM))
-    spec = _load(path, "ascii_telluric_model")
+    # Read by name since T2 (FT1), the transmission still in telluric
+    spec = _load(path, "ascii_table")
     spec = spec.update_column("cont", np.full(50, 2.0), unit=spec.y.unit)
     np.testing.assert_allclose(spec.norm.value, np.full(50, 1.8))
 

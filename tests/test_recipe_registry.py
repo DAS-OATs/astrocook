@@ -41,7 +41,7 @@ REQUIRING_RESOLUTION = {"fit_component", "add_component", "doublets_auto", "lya_
 
 def test_categories_in_the_order_of_the_menus():
     assert tuple(RECIPES) == registry.CATEGORIES
-    assert len(list(registry.all_recipes())) == 49
+    assert len(list(registry.all_recipes())) == 50
 
 
 @pytest.mark.parametrize("category", registry.CATEGORIES)
