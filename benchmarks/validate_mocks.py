@@ -364,6 +364,40 @@ def schema_params(menu, recipe):
             if not p.gui_hidden and p.name != "debug_rating"}
 
 
+#: The options of the chain (``--method`` and the parameters of the
+#: identification by hypotheses, PR 7c.4c): set by :func:`set_chain`, also in
+#: the workers of a Pool
+CHAIN: dict = {}
+
+
+def set_chain(options):
+    """The options of the chain: ``method``, and for ``identify_lines`` the
+    other keys (``multiplets``, ``prefilter``, ``screen``, ``criterion``,
+    ``temper``); ``doublets_auto`` gets ``method`` (and ``multiplets`` with
+    ``doublets_multiplets``)."""
+    CHAIN.clear()
+    CHAIN.update({k: v for k, v in options.items() if v is not None})
+    if "max_added" in CHAIN:
+        # The refinement of the hypotheses by their residuals (PR 7c.4c):
+        # not a parameter of the recipes, measured on and off
+        from astrocook.fitting import hypotheses
+        hypotheses.MAX_ADDED = int(CHAIN["max_added"])
+
+
+def chain_params(recipe):
+    """The parameters of a recipe of the chain: the GUI defaults and the
+    options of :data:`CHAIN`."""
+    params = schema_params("absorbers", recipe)
+    if "method" in CHAIN:
+        params["method"] = CHAIN["method"]
+    if recipe == "identify_lines":
+        params.update({k: str(v) for k, v in CHAIN.items()
+                       if k in ("multiplets", "prefilter", "screen", "criterion", "temper")})
+    elif "doublets_multiplets" in CHAIN:
+        params["multiplets"] = CHAIN["doublets_multiplets"]
+    return params
+
+
 def run_chain(spec):
     """Continuum, identification and doublet fit on a mock spectrum, as a
     user of the GUI would run them."""
@@ -372,9 +406,9 @@ def run_chain(spec):
     t0 = time.time()
     cont = session.continuum.estimate_auto(**schema_params("continuum", "estimate_auto"))
     t1 = time.time()
-    ident = cont.absorbers.identify_lines(**schema_params("absorbers", "identify_lines"))
+    ident = cont.absorbers.identify_lines(**chain_params("identify_lines"))
     t2 = time.time()
-    fit = cont.absorbers.doublets_auto(**schema_params("absorbers", "doublets_auto"))
+    fit = cont.absorbers.doublets_auto(**chain_params("doublets_auto"))
     t3 = time.time()
     times = dict(continuum=t1 - t0, identify=t2 - t1, doublets=t3 - t2)
     return cont, ident, fit, times
@@ -455,6 +489,119 @@ def identification_metrics(truth, systems, spec):
                                 found=i in found)
                            for i, d in enumerate(detection)]
     return out
+
+
+# --- The credibility of the hypotheses (F164, PR 7c.4c) ---------------------
+
+#: The bins of the weight of the reliability diagram
+WEIGHT_BINS = tuple(np.linspace(0.0, 1.0, 11))
+#: True components of one kind closer than this (km/s) are one system, for
+#: the truth of the hypotheses
+SYSTEM_KMS = 300.0
+
+
+def _true_systems(truth):
+    """The true components grouped into systems: {(kind, key): [components]}
+    with the kind the species of a metal or ``"HI"`` (the Lyman series), the
+    components of a kind closer than SYSTEM_KMS one system (its key the
+    index of its first)."""
+    out = {}
+    by_kind = {}
+    for c in truth.components:
+        kind = "HI" if _is_lyman(c.series.split(",")[0]) else c.series
+        by_kind.setdefault(kind, []).append(c)
+    for kind, comps in by_kind.items():
+        comps = sorted(comps, key=lambda c: c.z)
+        key = 0
+        for i, c in enumerate(comps):
+            if i and _dv(c.z, comps[i - 1].z) > SYSTEM_KMS:
+                key = i
+            out.setdefault((kind, key), []).append(c)
+    return out
+
+
+def _matched_systems(series, redshifts, systems):
+    """The true systems that components of ``series`` at ``redshifts``
+    match (a true component of the kind within MATCH_KMS)."""
+    kind = "HI" if _is_lyman(series) else series
+    hits = set()
+    for z in redshifts:
+        for key, comps in systems.items():
+            if key[0] == kind and any(_dv(z, c.z) <= MATCH_KMS for c in comps):
+                hits.add(key)
+    return hits
+
+
+def hypothesis_calibration(truth, spec):
+    """The hypotheses of the groups compared by the identification by
+    hypotheses (those with a weight), each with its weight and whether it
+    is right against the truth (F164, PR 7c.4c).
+
+    An edge (a candidate pair) is true when the components of its species
+    in the hypothesis it anchors alone match a true system of the species
+    (H I for Ly_ab) within MATCH_KMS; a hypothesis is right when none of
+    its anchors is false and its anchors match all the true systems that
+    the true edges of the group match (the hypothesis of the default labels
+    is right when the group has no true edge). A dropped hypothesis has
+    weight 0. Empty for the current method."""
+    from astrocook.core.identification import META_KEY
+    structure = spec.meta.get(META_KEY)
+    if structure is None or structure.method != "hypotheses":
+        return []
+    systems = _true_systems(truth)
+    out = []
+    for g in structure.groups:
+        if len(g.hypotheses) < 2 or not g.edges:
+            continue
+        edge_hits = {}
+        for i, e in enumerate(g.edges):
+            alone = [h for h in g.hypotheses if tuple(h.anchors) == (i,)]
+            zs = [c.z for h in alone for c in h.components if c.series == e.series]
+            edge_hits[i] = _matched_systems(e.series, zs, systems)
+        target = set().union(*[hits for hits in edge_hits.values() if hits])
+        kind = "metal" if any(not _is_lyman(e.series) for e in g.edges) else "HI"
+        for h in g.hypotheses:
+            if h.weight is None:
+                continue
+            false = any(not edge_hits[a] for a in h.anchors)
+            hits = set().union(*[edge_hits[a] for a in h.anchors]) if h.anchors else set()
+            out.append(dict(weight=float(h.weight), right=bool(not false and hits == target),
+                            kind=kind, anchored=bool(h.anchors), status=str(h.status)))
+    return out
+
+
+def calibration_summary(rows):
+    """The reliability diagram (per bin of weight: number, mean weight,
+    fraction right), its expected calibration error and the Brier score."""
+    if not rows:
+        return None
+    w = np.array([r["weight"] for r in rows])
+    y = np.array([r["right"] for r in rows], dtype=float)
+    bins = []
+    ece = 0.0
+    for lo, hi in pairwise(WEIGHT_BINS):
+        sel = (w >= lo) & ((w < hi) if hi < 1 else (w <= hi))
+        n = int(sel.sum())
+        if n:
+            conf, acc = float(w[sel].mean()), float(y[sel].mean())
+            ece += n / len(w) * abs(acc - conf)
+            bins.append(dict(lo=float(lo), hi=float(hi), n=n, weight=conf, right=acc))
+        else:
+            bins.append(dict(lo=float(lo), hi=float(hi), n=0, weight=None, right=None))
+    return dict(n=len(rows), ece=float(ece), brier=float(np.mean((w - y) ** 2)),
+                frac_right=float(y.mean()), bins=bins)
+
+
+def calibration_tables(rows):
+    """:func:`calibration_summary` of all the rows, by kind (metal, HI), by
+    S/N and by R (rows with ``snr`` and ``resol``)."""
+    if not rows:
+        return None
+    def by(key):
+        return {str(k): calibration_summary([c for c in rows if c[key] == k])
+                for k in sorted({c[key] for c in rows})}
+    return dict(all=calibration_summary(rows), by_kind=by("kind"), by_snr=by("snr"),
+                by_resol=by("resol"))
 
 
 def _flags(c):
@@ -902,6 +1049,7 @@ def run_point(point):
                        float((z_est - z_em) / (1 + z_em) * C_KMS)),
         telluric_false=telluric_false(truth, tmap, candidates),
         pixels=pixel_metrics(truth, tmap, ident.spec, candidates))
+    phase7["calibration"] = hypothesis_calibration(truth, ident.spec)
     times["metrics"] = time.time() - t0
     return dict(
         snr=snr, resol=resol, z_em=z_em, seed=seed, strong=strong, **extra,
@@ -1044,6 +1192,10 @@ def summarize_phase7(records):
         rates[k] = dict(n=n, frac_bad=bad / n if n else None,
                         frac_of_bad=bad / n_bad if n_bad else None)
     out["flag_confusion"] = dict(counts=conf, rates=rates)
+    cal = calibration_tables([dict(c, snr=r["snr"], resol=r["resol"]) for r in records
+                              for c in r["phase7"].get("calibration", [])])
+    if cal:
+        out["calibration"] = cal
     return out
 
 
@@ -1077,7 +1229,7 @@ def grid_points(grid):
 def run(grid="full", workers=1):
     points = grid_points(grid)
     if workers > 1:
-        with Pool(workers) as pool:
+        with Pool(workers, initializer=set_chain, initargs=(dict(CHAIN),)) as pool:
             records = pool.map(run_point, points, chunksize=1)
     else:
         records = [run_point(p) for p in points]
@@ -1210,6 +1362,21 @@ def compare_phase7(summary, reference):
         print(f"{key:32s}{fmt(old):>12s}{fmt(value):>12s}{mark}")
 
 
+def print_calibration(cal):
+    """Print the calibration of the credibility (:func:`calibration_tables`)."""
+    if not cal:
+        return
+    a = cal["all"]
+    print(f"credibility ({a['n']} hypotheses, {a['frac_right']:.2f} right): ECE "
+          f"{a['ece']:.3f}, Brier {a['brier']:.3f}; right by weight: " + ", ".join(
+              f"{b['lo']:.1f}-{b['hi']:.1f} {b['right']:.2f} ({b['n']})"
+              for b in a["bins"] if b["n"]))
+    for name in ("by_kind", "by_snr", "by_resol"):
+        print(f"  {name}: " + ", ".join(
+            f"{k} ECE {v['ece']:.3f} Brier {v['brier']:.3f} ({v['n']})"
+            for k, v in cal[name].items() if v))
+
+
 def print_phase7(summary):
     """Print the key numbers of the metrics of phase 7."""
     p7 = summary.get("phase7")
@@ -1228,6 +1395,7 @@ def print_phase7(summary):
         print(f"pixels {name}: " + ", ".join(
             f"{o} {v:.3f}" for o, v in pixel_fractions(p7["pixels"][name]).items()
             if v is not None))
+    print_calibration(p7.get("calibration"))
     rates = p7["flag_confusion"]["rates"]
     print("flags (n, bad fraction, fraction of the bad): " + ", ".join(
         f"{k} ({r['n']}, {r['frac_bad']:.2f}, {r['frac_of_bad']:.2f})"
@@ -1250,9 +1418,30 @@ def main():
     parser.add_argument("--save-reference", action="store_true",
                         help="write the summary of a full or robustness run in the "
                              "reference of phase 7")
+    parser.add_argument("--method", choices=("doublets", "hypotheses"), default=None,
+                        help="the method of identify_lines and doublets_auto (PR 7c.4c)")
+    parser.add_argument("--multiplets", default=None,
+                        help="the species of identify_lines (e.g. 'all,Ly_ab')")
+    parser.add_argument("--doublets-multiplets", default=None,
+                        help="the species of doublets_auto (e.g. 'all')")
+    parser.add_argument("--prefilter", type=float, default=None,
+                        help="the pre-filter of identify_lines (method hypotheses)")
+    parser.add_argument("--screen", type=float, default=None,
+                        help="the screen of identify_lines (method hypotheses)")
+    parser.add_argument("--criterion", default=None,
+                        help="the criterion of identify_lines (method hypotheses)")
+    parser.add_argument("--temper", action="store_true", default=None,
+                        help="the weights tempered (method hypotheses)")
+    parser.add_argument("--max-added", type=int, default=None,
+                        help="components added by the refinement of each hypothesis "
+                             "(method hypotheses; 0: no refinement)")
     args = parser.parse_args()
+    set_chain(dict(method=args.method, multiplets=args.multiplets, max_added=args.max_added,
+                   doublets_multiplets=args.doublets_multiplets, prefilter=args.prefilter,
+                   screen=args.screen, criterion=args.criterion, temper=args.temper))
     t0 = time.time()
     result = run(args.grid, args.workers)
+    result["chain"] = dict(CHAIN)
     result["seconds"] = time.time() - t0
     print_summary(result)
     print_phase7(result["summary"]["all"])

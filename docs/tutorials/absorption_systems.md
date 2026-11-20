@@ -47,6 +47,19 @@ For a more generic search (or if you are looking for specific ions):
 2.  This generates a list of candidate regions but *does not* fit them immediately.
 3.  You can then visualize these regions by selecting `abs_ids` in the **Auxiliary column** dropdown of the Plot Controls.
 
+(identification-hypotheses)=
+:::{note}
+**Identification as a comparison between hypotheses (prototype).** The recipe, *Auto-detect Doublets* and the general pipeline (`components_auto`) have a **Method**: `doublets` (the default) finds the absorbed regions from the mask of the continuum and accepts a doublet when the profiles of its two lines correlate (R² above **Score threshold**); `hypotheses` is the prototype of a new identification, still being measured:
+- the lines are found by filters matched to their width, also the weak ones that the mask of the continuum misses;
+- two regions at the separation of the lines of a species (the doublets, two pairs of FeII and of SiII, Ly-α and Ly-β in the forest) are a *candidate* when the R² of their profiles is above **Prefilter**; the regions linked by candidates form a group (at most **Max group** regions);
+- for each group the alternative identifications (each candidate, the regions left unidentified, or no line at all) are fitted and compared by an information criterion (**Criterion**: the SpIC of Webb et al. 2021 by default, or BIC, AIC), each with a weight, its credibility; the one with the highest weight is accepted. Each alternative gets up to three more components where its model leaves the deepest residuals, so that a system with more components than the lines found is not lost to free lines; a group whose alternatives would have more than 60 free parameters (e.g. the trough of a damped line) is not compared and keeps its regions unidentified. **Screen** (optional) drops before their fit the alternatives far behind;
+- the Ly-α of the forest only when `Ly_a` or `Ly_ab` is among the **Multiplets** (assumed when no Ly-β supports it); a Ly-α with its Ly-β is a `Ly_ab` system; `all` searches every species with a pair;
+- every region found is in `abs_ids`, the unidentified ones too, and the alternatives with their weights are kept with the session (saved in the archive).
+- it is slower: about 15 s per spectrum on the mocks of the benchmark, a few minutes for a long spectrum at high resolution.
+
+The fit of the components that follows starts from the parameters of the fit of the accepted alternative.
+:::
+
 :::{note}
 This recipe requires **Emission Redshift ($z_{em}$)**, **Resolution ($R$)** and a continuum. If missing, Astrocook will automatically prompt you to set them via the [Set Properties](#editing-properties) dialog, and to estimate the continuum, before proceeding.
 :::
