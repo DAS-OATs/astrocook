@@ -11,8 +11,10 @@ role. What changes with the role is in a :class:`ModelRole` of
 the model is found in a source, the value beyond the model, and the check
 (and conversion) of its values. T2 has the role ``telluric``, T3 ``cont``
 (a continuum in the unit of the flux, NaN beyond the model; the ``model``
-of the spectrum follows it if the user wants, as in ``fit_continuum``);
-``model`` (T4) is another entry of the table.
+of the spectrum follows it if the user wants, as in ``fit_continuum``), T4
+``model`` (an absorption model, in the unit of the flux or normalized and
+multiplied by the normalization ``cont × telluric`` at the import; the
+normalization beyond it).
 """
 from __future__ import annotations
 
@@ -77,6 +79,13 @@ class ModelRole:
     #: Whether the ``model`` of the spectrum may follow the new column (a
     #: continuum: ``renorm_model``, as in ``fit_continuum``)
     renormalizes_model: bool = False
+    #: Whether the model may be given normalized (``normalized=True``: 0-1,
+    #: multiplied by the normalization of the spectrum at the import; T4)
+    normalizable: bool = False
+    #: Whether the normalization of the spectrum (``cont × telluric``) is
+    #: the value beyond the model, instead of ``fill`` (an absorption
+    #: model: no absorption there; NaN where the spectrum has none; T4)
+    beyond_is_norm: bool = False
 
 
 #: How far a transmission may go beyond 0-1 without a warning (T2: a
@@ -119,12 +128,13 @@ def _after_telluric(spec: 'Spectrum') -> Optional[str]:
 CONTINUUM_NAMES = ('cont', 'continuum')
 
 
-def _prepare_cont(source: ModelSource, spec: 'Spectrum'):
-    """A continuum: in the unit of the flux. A unit of the source is
-    converted to that of the flux (a flux density per wavelength or per
-    frequency, at the wavelengths of the model) and refused if it cannot be
-    (e.g. a physical flux and ``arb_flux``); without a unit the values are
-    taken in the unit of the flux (checked on the grid, :func:`_check_cont`)."""
+def _prepare_in_flux(source: ModelSource, spec: 'Spectrum', what: str):
+    """A column in the unit of the flux (a continuum, an absorption model):
+    a unit of the source is converted to that of the flux (a flux density
+    per wavelength or per frequency, at the wavelengths of the model) and
+    refused if it cannot be (e.g. a physical flux and ``arb_flux``);
+    without a unit the values are taken in the unit of the flux (checked on
+    the grid, :func:`_check_cont`, :func:`_check_model`)."""
     y_unit = spec.y.unit
     unit = source.unit
     if unit is None or unit == au.dimensionless_unscaled:
@@ -134,12 +144,37 @@ def _prepare_cont(source: ModelSource, spec: 'Spectrum'):
             y_unit, equivalencies=au.spectral_density(source.x)).value
     except au.UnitConversionError as e:
         raise RecipeFailed(f"The column {source.column} of {source.where} is in {unit}, "
-                           f"the flux of the spectrum in {y_unit}: a continuum is in the "
+                           f"the flux of the spectrum in {y_unit}: {what} is in the "
                            "unit of the flux.") from e
     if unit != y_unit:
-        logger.info(f"The continuum of {source.where} was converted from {unit} to "
-                    f"{y_unit}.")
+        logger.info(f"The column {source.column} of {source.where} was converted from "
+                    f"{unit} to {y_unit}.")
     return values, y_unit
+
+
+def _prepare_cont(source: ModelSource, spec: 'Spectrum'):
+    """A continuum: in the unit of the flux (:func:`_prepare_in_flux`)."""
+    return _prepare_in_flux(source, spec, "a continuum")
+
+
+def _scale_medians(values: np.ndarray, covered: np.ndarray, source: ModelSource,
+                   spec: 'Spectrum') -> Optional[tuple]:
+    """The medians of a model without a unit and of the flux over the
+    pixels the model covers, when they differ by more than
+    :data:`CONTINUUM_SCALE_FACTOR`; None otherwise, and when the source
+    gives a unit (it was converted) or a median is not positive."""
+    if source.unit is not None and source.unit != au.dimensionless_unscaled:
+        return None
+    y = np.asarray(spec.y.value, dtype=float)
+    ok = covered & np.isfinite(values) & np.isfinite(y)
+    if not np.any(ok):
+        return None
+    m_model, m_flux = float(np.median(values[ok])), float(np.median(y[ok]))
+    if m_flux <= 0 or m_model <= 0:
+        return None
+    if max(m_model / m_flux, m_flux / m_model) > CONTINUUM_SCALE_FACTOR:
+        return m_model, m_flux
+    return None
 
 
 def _check_cont(values: np.ndarray, covered: np.ndarray, source: ModelSource,
@@ -149,19 +184,11 @@ def _check_cont(values: np.ndarray, covered: np.ndarray, source: ModelSource,
     :data:`CONTINUUM_SCALE_FACTOR` (a normalized continuum under a
     physical flux is refused). Not checked when the source gives a unit (it
     was converted) or the median of the flux is not positive."""
-    if source.unit is not None and source.unit != au.dimensionless_unscaled:
-        return
-    y = np.asarray(spec.y.value, dtype=float)
-    ok = covered & np.isfinite(values) & np.isfinite(y)
-    if not np.any(ok):
-        return
-    m_cont, m_flux = float(np.median(values[ok])), float(np.median(y[ok]))
-    if m_flux <= 0 or m_cont <= 0:
-        return
-    if max(m_cont / m_flux, m_flux / m_cont) > CONTINUUM_SCALE_FACTOR:
+    medians = _scale_medians(values, covered, source, spec)
+    if medians is not None:
         raise RecipeFailed(
             f"The column {source.column} of {source.where} has no unit and a median of "
-            f"{m_cont:.4g}, the flux of the spectrum a median of {m_flux:.4g} "
+            f"{medians[0]:.4g}, the flux of the spectrum a median of {medians[1]:.4g} "
             f"{spec.y.unit} over the same pixels: a continuum is in the unit of the "
             "flux (a normalized continuum is not one). Give the continuum in the unit "
             "of the flux, or with its unit in the file.")
@@ -178,6 +205,60 @@ def _after_cont(spec: 'Spectrum') -> Optional[str]:
     return None
 
 
+#: The names of the column of an absorption model in a source
+MODEL_NAMES = ('model',)
+
+
+def _check_model(values: np.ndarray, covered: np.ndarray, source: ModelSource,
+                 spec: 'Spectrum') -> None:
+    """An absorption model in the unit of the flux (``normalized=False``),
+    without a unit: on the scale of the flux, as a continuum
+    (:func:`_check_cont`); a normalized model is refused with a pointer to
+    ``normalized=True``."""
+    medians = _scale_medians(values, covered, source, spec)
+    if medians is not None:
+        raise RecipeFailed(
+            f"The column {source.column} of {source.where} has no unit and a median of "
+            f"{medians[0]:.4g}, the flux of the spectrum a median of {medians[1]:.4g} "
+            f"{spec.y.unit} over the same pixels: a model is in the unit of the flux. "
+            "If the model is normalized (0-1), import it with normalized=True; "
+            "otherwise give it in the unit of the flux, or with its unit in the file.")
+
+
+def _prepare_model(source: ModelSource, spec: 'Spectrum'):
+    """An absorption model in the unit of the flux (:func:`_prepare_in_flux`)."""
+    return _prepare_in_flux(source, spec, "a model")
+
+
+def _prepare_normalized(source: ModelSource) -> tuple:
+    """A normalized model (T4, ``normalized=True``): dimensionless, between
+    0 and 1 (as a transmission: values beyond, by more than
+    :data:`TRANSMISSION_TOLERANCE`, a WARNING)."""
+    unit = source.unit
+    if unit is not None and unit != au.dimensionless_unscaled:
+        raise RecipeFailed(f"The column {source.column} of {source.where} is in {unit}: "
+                           "a normalized model is dimensionless (import it with "
+                           "normalized=False to convert it to the unit of the flux).")
+    finite = source.values[np.isfinite(source.values)]
+    if len(finite) and (finite.min() < -TRANSMISSION_TOLERANCE
+                        or finite.max() > 1.0 + TRANSMISSION_TOLERANCE):
+        logger.warning(f"The column {source.column} of {source.where} goes from "
+                       f"{finite.min():.6g} to {finite.max():.6g}: a normalized model "
+                       "is between 0 and 1. Is it normalized?")
+    return source.values, au.dimensionless_unscaled
+
+
+def _after_model(spec: 'Spectrum') -> Optional[str]:
+    model = spec.get_column('model')
+    if model is None:
+        return None
+    missing = int(np.count_nonzero(~np.isfinite(np.asarray(model.value, dtype=float))))
+    if missing:
+        return (f"{missing} of {len(model)} pixels have no model (beyond the model "
+                "the spectrum has no normalization, cont × telluric).")
+    return None
+
+
 #: The roles of the models, by the value of the parameter ``role``
 MODEL_ROLES = {
     'telluric': ModelRole(column=TELLURIC_COLUMN, names=TELLURIC_NAMES,
@@ -186,6 +267,13 @@ MODEL_ROLES = {
     'cont': ModelRole(column='cont', names=CONTINUUM_NAMES, fill=np.nan,
                       label="continuum", prepare=_prepare_cont, after=_after_cont,
                       check=_check_cont, renormalizes_model=True),
+    # T4: a model in the unit of the flux is prepared and checked as a
+    # continuum (converted from a unit; on the scale of the flux without
+    # one); a normalized one by _prepare_normalized, without the check
+    'model': ModelRole(column='model', names=MODEL_NAMES, fill=np.nan,
+                       label="absorption model", prepare=_prepare_model,
+                       after=_after_model, check=_check_model,
+                       normalizable=True, beyond_is_norm=True),
 }
 
 
@@ -286,15 +374,29 @@ def _renormalized_model(old: 'Spectrum', new: 'Spectrum') -> Optional['Spectrum'
     return new.update_column('model', values, unit=model.unit, description=description)
 
 
+def _normalization(spec: 'Spectrum') -> Optional[np.ndarray]:
+    """The normalization of the spectrum (``cont × telluric``, 1 for a flux
+    already normalized without a continuum: :attr:`Spectrum.norm`) in the
+    unit of the flux, or None if it has none."""
+    norm = spec.norm
+    if norm is None:
+        return None
+    return np.asarray(au.Quantity(norm).to_value(spec.y.unit), dtype=float)
+
+
 def import_model(spec: 'Spectrum', source: ModelSource, role_name: str,
-                 renorm_model: bool = True) -> 'Spectrum':
+                 renorm_model: bool = True, normalized: bool = False) -> 'Spectrum':
     """The spectrum with the model in the column of its role; for a
     continuum, the ``model`` of the spectrum follows it if
-    ``renorm_model``."""
+    ``renorm_model``; for an absorption model, ``normalized`` says that it
+    is 0-1, multiplied by the normalization of the spectrum."""
     role = MODEL_ROLES.get(role_name)
     if role is None:
         raise InvalidParameter(f"role: {role_name!r} is not one of "
                                f"{', '.join(repr(r) for r in MODEL_ROLES)}")
+    if normalized and not role.normalizable:
+        raise InvalidParameter(f"normalized: only a model of the role 'model' can be "
+                               f"normalized, not one of the role {role_name!r}.")
     unit = spec.x.unit
     try:
         m_x, m_xmin, m_xmax = (q.to(unit, equivalencies=au.spectral()).value
@@ -305,26 +407,51 @@ def import_model(spec: 'Spectrum', source: ModelSource, role_name: str,
     if len(m_x) != len(source.values):
         raise RecipeFailed(f"{source.where}: the axis and the column {source.column} "
                            "have different lengths.")
-    values, values_unit = role.prepare(source, spec)
+    norm = _normalization(spec) if role.beyond_is_norm or normalized else None
+    if normalized:
+        if norm is None:
+            raise RecipeFailed(
+                f"The {role.label} of {source.where} is normalized: it is multiplied by "
+                "the normalization of the spectrum (cont × telluric), and the spectrum "
+                "has no continuum. Fit or import a continuum first.")
+        values, _ = _prepare_normalized(source)
+        # Normalized, no absorption beyond the model: 1 (a pixel covered in
+        # part mixed with it, as a transmission), then times the normalization
+        fill = 1.0
+    else:
+        values, values_unit = role.prepare(source, spec)
+        fill = role.fill
     xmin, xmax = spec.xmin.to(unit).value, spec.xmax.to(unit).value
-    result = model_on_grid(m_x, m_xmin, m_xmax, values, spec.x.value, xmin, xmax,
-                           role.fill)
+    result = model_on_grid(m_x, m_xmin, m_xmax, values, spec.x.value, xmin, xmax, fill)
     n, n_cov = len(result.values), int(np.count_nonzero(result.covered))
     if n_cov == 0:
         raise RecipeFailed(
             f"The {role.label} of {source.where} ({_range(np.nanmin(m_xmin), np.nanmax(m_xmax), unit)}) "
             f"does not overlap the spectrum ({_range(np.nanmin(xmin), np.nanmax(xmax), unit)}).")
-    if role.check is not None:
+    if role.check is not None and not normalized:
         role.check(result.values, result.covered, source, spec)
+    grid_values = result.values
+    if normalized:
+        assert norm is not None
+        grid_values = grid_values * norm
+        values_unit = spec.y.unit
+    elif role.beyond_is_norm:
+        beyond = np.full(n, np.nan) if norm is None else norm
+        grid_values = np.where(result.covered, grid_values, beyond)
     how = ("copied (the model is on the grid of the spectrum)" if result.method == 'copy'
            else "averaged over the pixels of the spectrum")
-    fill = "NaN" if np.isnan(role.fill) else f"{role.fill:g}"
-    beyond = "" if n_cov == n else f"; beyond, {fill}"
+    if role.beyond_is_norm:
+        fill_text = "the normalization (cont × telluric)" if norm is not None else "NaN"
+    else:
+        fill_text = "NaN" if np.isnan(role.fill) else f"{role.fill:g}"
+    beyond_text = "" if n_cov == n else f"; beyond, {fill_text}"
+    scaled = (" It was normalized: multiplied by the normalization (cont × telluric)."
+              if normalized else "")
     replaced = " It replaces the previous one." if role.column in spec.t.colnames else ""
     logger.info(f"The {role.label} of {source.where} (column {source.column}) was {how} "
-                f"into the column {role.column}: it covers {n_cov} of {n} pixels{beyond}."
-                f"{replaced}")
-    new_spec = spec.update_column(role.column, result.values, unit=values_unit,
+                f"into the column {role.column}: it covers {n_cov} of {n} pixels"
+                f"{beyond_text}.{scaled}{replaced}")
+    new_spec = spec.update_column(role.column, grid_values, unit=values_unit,
                                   description=f"{role.label} from {source.where}")
     if role.renormalizes_model and renorm_model:
         renormalized = _renormalized_model(spec, new_spec)

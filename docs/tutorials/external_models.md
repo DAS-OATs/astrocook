@@ -1,13 +1,13 @@
 # External Models
 
-A model made outside Astrocook can be brought into a spectrum: a **telluric transmission**, such as a Molecfit fit of the spectrum, or a **continuum**. A model is not a spectrum of its own: it becomes a column of the spectrum with a role, `telluric` or `cont`, which the fits use to normalize the flux (`cont × telluric`). The import is a recipe like the others: it can be undone, it is recorded in the session log and saved in the archive. The absorption model as an external model will follow in the same recipe.
+A model made outside Astrocook can be brought into a spectrum: a **telluric transmission**, such as a Molecfit fit of the spectrum, a **continuum**, or an **absorption model**. A model is not a spectrum of its own: it becomes a column of the spectrum with a role, `telluric`, `cont` or `model`; the first two are used by the fits to normalize the flux (`cont × telluric`). The import is a recipe like the others: it can be undone, it is recorded in the session log and saved in the archive.
 
 ## 1. Importing a Model
 
 1. Open the spectrum, and select it in the session list.
 2. Go to **File > Import Model...**.
 3. Choose the source of the model: a file (write its path, or **Browse...**), or another open session (click its name in the list below the fields; leave the file empty).
-4. Choose the **Role**: `telluric`, the transmission (1 where there is no telluric absorption), or `cont`, a continuum (see [The Continuum](#external-models-continuum)).
+4. Choose the **Role**: `telluric`, the transmission (1 where there is no telluric absorption), `cont`, a continuum (see [The Continuum](#external-models-continuum)), or `model`, an absorption model (see [The Absorption Model](#external-models-model)); for an absorption model normalized to 1, check the last box (*the model is normalized*).
 5. Leave the **Column** empty to let Astrocook find the column of the model by its name, or write its name.
 6. Click **Run**.
 
@@ -24,6 +24,8 @@ From a script, or from an agent through the MCP server, the same recipe:
 session = session.file.import_model(file_path="telluric_model.dat")       # a file
 session = session.file.import_model(source_session=other, column="F")     # another session
 session = session.file.import_model(file_path="cont.dat", role="cont")    # a continuum
+session = session.file.import_model(file_path="abs.dat", role="model",    # a normalized
+                                    normalized=True)                      # absorption model
 ```
 
 ## 2. The Files of the Models
@@ -42,7 +44,7 @@ The file is read by the names of its columns, in any of these formats:
 - the **CSV** written by **File > Export to ASCII...** (with its units);
 - a **FITS table**: a file of Astrocook, or a Molecfit output with the column `mtrans` (when the extension of the model has no wavelength, as the `TELLURIC_DATA` of an ESO product, that of another extension of the same length is used).
 
-The wavelength is the column `x`, `lam`, `lambda`, `wave` or `wavelength`, in the unit of the file; a text table has no units, and its wavelength is taken in nm (a FITS table without a unit: Å above 3000, nm below, as for the spectra). The edges of the pixels are `xmin` and `xmax` (or `lammin`, `lammax`) when the file has them, otherwise halfway between the centres. The column of a telluric model is found by these names, in this order, ignoring the case: `telluric`, `telluric_model`, `trans_molecfit`, `mtrans` (the `TELLURIC` of PypeIt); that of a continuum by `cont` or `continuum`. The other columns are ignored: the `dy` of the Molecfit models above is the error of the science spectrum, kept there for the co-addition, not an error of the model, and the error of the spectrum is not changed.
+The wavelength is the column `x`, `lam`, `lambda`, `wave` or `wavelength`, in the unit of the file; a text table has no units, and its wavelength is taken in nm (a FITS table without a unit: Å above 3000, nm below, as for the spectra). The edges of the pixels are `xmin` and `xmax` (or `lammin`, `lammax`) when the file has them, otherwise halfway between the centres. The column of a telluric model is found by these names, in this order, ignoring the case: `telluric`, `telluric_model`, `trans_molecfit`, `mtrans` (the `TELLURIC` of PypeIt); that of a continuum by `cont` or `continuum`, that of an absorption model by `model`. The other columns are ignored: the `dy` of the Molecfit models above is the error of the science spectrum, kept there for the co-addition, not an error of the model, and the error of the spectrum is not changed.
 
 A transmission is dimensionless: a column with a unit is refused, and values outside 0-1 are reported as a warning.
 
@@ -52,7 +54,7 @@ The model is taken in the frame of the spectrum: no shift is applied (the Molecf
 
 - Where the model is on the grid of the spectrum (the same pixels, within a tenth of a pixel, over the part where they overlap: a model of 380-780 nm on the grid of a spectrum of 400-700 nm, or the reverse), its values are **copied**.
 - Otherwise each pixel of the spectrum gets the **average** of the model over the pixel (from `λmin` to `λmax`), each pixel of the model weighted by how much of it falls in the pixel: the equivalent width of a telluric line is the same on the two grids.
-- Beyond the model the transmission is 1; a pixel at the edge, covered in part, is the mean of the model and of 1 by their widths. A continuum has no value beyond the model (NaN), and a pixel at the edge has one only if the model covers it in full. A model that does not overlap the spectrum at all is refused, with the two ranges.
+- Beyond the model the transmission is 1; a pixel at the edge, covered in part, is the mean of the model and of 1 by their widths. A continuum has no value beyond the model (NaN), and a pixel at the edge has one only if the model covers it in full. An absorption model is the normalization beyond the model (see [The Absorption Model](#external-models-model)). A model that does not overlap the spectrum at all is refused, with the two ranges.
 
 ## 4. The Normalization
 
@@ -72,6 +74,18 @@ Beyond the model the spectrum has no continuum: the column `cont` is NaN there, 
 
 If the spectrum has an absorption model (the column `model`), Astrocook asks whether to **re-normalize** it to the new continuum, as when the continuum is estimated again: the model is divided by the old continuum and multiplied by the new one, and kept as it was where there is no continuum. From a script the choice is the parameter `renorm_model` (`True` by default, as in `fit_continuum`).
 
-## 6. A Model Is Not a Spectrum
+(external-models-model)=
+## 6. The Absorption Model
+
+With the role `model` the model is an absorption model (the absorbers, over the continuum and the tellurics), written in the column `model` in place of the one the spectrum may have, and drawn as the model of a fit. It can be given in two ways:
+
+- **in the unit of the flux**, as the `model` of Astrocook (the normalization times the absorption): checked and converted as a continuum (a unit converted to that of the flux, refused if it cannot be; without a unit, refused when its median and that of the flux differ by more than a factor 10, with a pointer to the next way);
+- **normalized** (the box *the model is normalized* checked, `normalized=True` in a script): dimensionless, 1 where there is no absorption, and multiplied at the import by the normalization of the spectrum, `cont × telluric` (the continuum alone if the flux is flagged as corrected for the tellurics). The spectrum needs a continuum: without one the import is refused (a flux already normalized, without a continuum, has a normalization of 1). A column with a unit is refused, values outside 0-1 are reported as a warning; a pixel at the edge, covered in part, is the mean of the model and of 1, as a transmission. The normalization is the one at the time of the import: a continuum estimated later rescales the model only if you choose to re-normalize it.
+
+Beyond the model the column is the normalization (no absorption there), NaN where the spectrum has no continuum (a warning says on how many pixels).
+
+The imported model is **not tied to the system list**: Astrocook does not know the components that make it, and the system list is not changed. A fit, or a change of the components that redraws the model (adding, editing or deleting a component), computes the model again from the system list and **overwrites** the imported one (**Edit > Undo** brings it back).
+
+## 7. A Model Is Not a Spectrum
 
 A file with a telluric model and no flux (as the Molecfit models above) is not opened by **File > Open Session...**: the message says to open the spectrum and import the model into it with **File > Import Model...**. A text file with the columns of a spectrum (`x`, `y`, `dy`, or `lam`, `F`, `dF`, or `wave`, `flux`, `err`, with or without `xmin`, `xmax`) opens as a spectrum, and a telluric column it carries (`trans_molecfit`, `mtrans`) goes to `telluric`.
