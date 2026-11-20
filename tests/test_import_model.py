@@ -463,3 +463,27 @@ def test_the_dialog_has_a_browse_button(qapp, monkeypatch, tmp_path):
     dialog.accept()
     assert sent == [{"file_path": chosen, "source_session": "", "role": "telluric",
                      "column": ""}]
+
+
+def test_a_transmission_a_little_above_1_is_not_a_warning(tmp_path, caplog):
+    # The Molecfit model of the request reaches 1 plus a little (Guido, T2)
+    x, lo, hi = _grid()
+    trans = np.full(N, 0.5)
+    trans[10] = 1.0000004
+    path = _molecfit_file(tmp_path / "m.dat", x, lo, hi, trans)
+    with caplog.at_level(logging.WARNING):
+        _session().file.import_model(file_path=path)
+    assert "between 0 and 1" not in caplog.text
+
+
+def test_the_dialog_comes_back_in_front_after_browse(qapp, monkeypatch, tmp_path):
+    from astrocook.gui import recipe_dialog
+    from astrocook.gui.recipe_dialog import RecipeDialog
+    dialog = RecipeDialog("file", "import_model", _session())
+    raised = []
+    monkeypatch.setattr(dialog, "raise_", lambda: raised.append("raise"))
+    monkeypatch.setattr(dialog, "activateWindow", lambda: raised.append("activate"))
+    monkeypatch.setattr(recipe_dialog.QFileDialog, "getOpenFileName",
+                        staticmethod(lambda *a, **k: (str(tmp_path / "m.dat"), "")))
+    dialog.browse_button.click()
+    assert raised == ["raise", "activate"]
