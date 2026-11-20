@@ -504,10 +504,13 @@
               <span class="k">else</span> <span class="sa">f</span><span class="s2">"the session </span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'source_session'</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="n">column</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">" (column </span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'column'</span><span class="p">)</span><span class="si">}</span><span class="s2">)"</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'column'</span><span class="p">)</span> <span class="k">else</span> <span class="s2">""</span>
     <span class="n">words</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'telluric'</span><span class="p">:</span> <span class="s2">"telluric transmission"</span><span class="p">,</span>
-             <span class="s1">'cont'</span><span class="p">:</span> <span class="s2">"continuum"</span><span class="p">}</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'role'</span><span class="p">)),</span> <span class="s2">"model"</span><span class="p">)</span>
-    <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"An external </span><span class="si">{</span><span class="n">words</span><span class="si">}</span><span class="s2"> was imported from </span><span class="si">{</span><span class="n">source</span><span class="si">}{</span><span class="n">column</span><span class="si">}</span><span class="s2"> and brought "</span>
-            <span class="sa">f</span><span class="s2">"onto the grid of the spectrum (copied on the same grid, otherwise "</span>
-            <span class="sa">f</span><span class="s2">"averaged over its pixels)</span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+             <span class="s1">'cont'</span><span class="p">:</span> <span class="s2">"continuum"</span><span class="p">}</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'role'</span><span class="p">)),</span> <span class="s2">"absorption model"</span><span class="p">)</span>
+    <span class="n">normalized</span> <span class="o">=</span> <span class="p">(</span><span class="s2">", normalized, was multiplied by the normalization of the spectrum "</span>
+                  <span class="s2">"(continuum times telluric transmission) and"</span>
+                  <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'normalized'</span><span class="p">))</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">'true'</span> <span class="k">else</span> <span class="s2">" and was"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"An external </span><span class="si">{</span><span class="n">words</span><span class="si">}</span><span class="s2"> was imported from </span><span class="si">{</span><span class="n">source</span><span class="si">}{</span><span class="n">column</span><span class="si">}{</span><span class="n">normalized</span><span class="si">}</span><span class="s2"> "</span>
+            <span class="sa">f</span><span class="s2">"brought onto the grid of the spectrum (copied on the same grid, "</span>
+            <span class="sa">f</span><span class="s2">"otherwise averaged over its pixels)</span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
 
 <span class="n">FILE_RECIPES_SCHEMAS</span> <span class="o">=</span> <span class="p">{</span>
@@ -544,15 +547,17 @@
         <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Import an external model into the spectrum."</span><span class="p">,</span>
         <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"tutorials/external_models.html#importing-a-model"</span><span class="p">,</span>
         <span class="s2">"menu"</span><span class="p">:</span> <span class="s2">"File &gt; Import &amp;Model"</span><span class="p">,</span>
-        <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Reads a model (a telluric transmission, a continuum) from a file or another session and writes it in the column of its role, on the grid of the spectrum: copied on the same grid, otherwise averaged over the pixels. A telluric model is 1 beyond its range, a continuum NaN."</span><span class="p">,</span>
+        <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Reads a model (a telluric transmission, a continuum, an absorption model) from a file or another session and writes it in the column of its role, on the grid of the spectrum: copied on the same grid, otherwise averaged over the pixels. Beyond its range a telluric model is 1, a continuum NaN, an absorption model the normalization (cont × telluric)."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"file_path"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">""</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Path of the file of the model: a text table with named columns, the CSV of Export to ASCII, a FITS table. Empty if the model is in another session."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"source_session"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">""</span><span class="p">,</span> <span class="s2">"kind"</span><span class="p">:</span> <span class="s2">"session"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Name of the open session that holds the model (in a script, also the session itself); empty if it is in a file."</span><span class="p">},</span>
-            <span class="c1"># T4 adds 'model' (recipes/_models.py)</span>
-            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"role"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"telluric"</span><span class="p">,</span> <span class="s2">"choices"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"telluric"</span><span class="p">,</span> <span class="s2">"cont"</span><span class="p">],</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Role of the model: 'telluric', a transmission written in the column telluric; 'cont', a continuum in the unit of the flux written in the column cont (cont × telluric is the normalization)."</span><span class="p">},</span>
-            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"column"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">""</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Column of the model in the source; empty: found by name (telluric: telluric, telluric_model, trans_molecfit, mtrans; cont: cont, continuum)."</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"role"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"telluric"</span><span class="p">,</span> <span class="s2">"choices"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"telluric"</span><span class="p">,</span> <span class="s2">"cont"</span><span class="p">,</span> <span class="s2">"model"</span><span class="p">],</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Role of the model: 'telluric', a transmission written in the column telluric; 'cont', a continuum in the unit of the flux written in the column cont (cont × telluric is the normalization); 'model', an absorption model in the column model (a fit overwrites it)."</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"column"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">""</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Column of the model in the source; empty: found by name (telluric: telluric, telluric_model, trans_molecfit, mtrans; cont: cont, continuum; model: model)."</span><span class="p">},</span>
             <span class="c1"># T3 (Guido, 20 November 2026): as in fit_continuum</span>
-            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"renorm_model"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"With role 'cont', rescale the model to the new continuum (asked by the GUI)."</span><span class="p">,</span> <span class="s2">"gui_hidden"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"agents"</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"renorm_model"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"With role 'cont', rescale the model to the new continuum (asked by the GUI)."</span><span class="p">,</span> <span class="s2">"gui_hidden"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"agents"</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+            <span class="c1"># T4 (Guido, 20 November 2026): said by the user, not recognised</span>
+            <span class="c1"># from the values</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"normalized"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"With role 'model': the model is normalized (0-1) and is multiplied by the normalization of the spectrum (cont × telluric), which needs a continuum."</span><span class="p">}</span>
         <span class="p">],</span>
     <span class="p">}</span>
 <span class="p">}</span>
@@ -859,7 +864,7 @@
     <span class="nd">@typed_recipe</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">import_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span> <span class="n">source_session</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s1">'Session'</span><span class="p">]</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
                      <span class="n">role</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"telluric"</span><span class="p">,</span> <span class="n">column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
-                     <span class="n">renorm_model</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'Session'</span><span class="p">:</span>
+                     <span class="n">renorm_model</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">normalized</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'Session'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Import an external model into the spectrum (phase 7-ter, PR T2).</span>
 
@@ -887,7 +892,19 @@
 <span class="sd">          over the pixels covered, differ by more than a factor 10 (a</span>
 <span class="sd">          normalized continuum under a physical flux). The ``model`` of</span>
 <span class="sd">          the spectrum follows the new continuum if ``renorm_model``, as in</span>
-<span class="sd">          ``fit_continuum`` (kept as it was where there is no continuum).</span>
+<span class="sd">          ``fit_continuum`` (kept as it was where there is no continuum);</span>
+<span class="sd">        - the role ``model`` (T4): an absorption model written in the</span>
+<span class="sd">          column ``model``, the normalization of the spectrum (``cont ×</span>
+<span class="sd">          telluric``) beyond it (NaN where the spectrum has none; a</span>
+<span class="sd">          WARNING says on how many pixels). In the unit of the flux, as a</span>
+<span class="sd">          continuum (converted from a unit, refused if it cannot be;</span>
+<span class="sd">          without a unit refused when it is not on the scale of the flux);</span>
+<span class="sd">          or normalized (``normalized=True``: dimensionless, 0-1),</span>
+<span class="sd">          multiplied by the normalization at the import, so the spectrum</span>
+<span class="sd">          needs a continuum. The column is not tied to the system list: a</span>
+<span class="sd">          fit, or a change of the components that redraws the model</span>
+<span class="sd">          (``add_component``, ``update_component``, ``delete_component``,</span>
+<span class="sd">          ...), overwrites it with the model of the components.</span>
 
 <span class="sd">        The models are taken in the frame of the spectrum: no shift. A file</span>
 <span class="sd">        is read by the names of its columns (:mod:`astrocook.io.tables`):</span>
@@ -908,16 +925,20 @@
 <span class="sd">            The open session that holds the model (its name; in a script</span>
 <span class="sd">            also the session itself); empty if it is in a file.</span>
 <span class="sd">        role : str</span>
-<span class="sd">            ``'telluric'`` or ``'cont'`` (the role ``'model'`` comes in</span>
-<span class="sd">            phase 7-ter, T4).</span>
+<span class="sd">            ``'telluric'``, ``'cont'`` or ``'model'``.</span>
 <span class="sd">        column : str</span>
 <span class="sd">            The column of the model in the source; empty: found by the</span>
 <span class="sd">            names of the role (for ``'telluric'``: ``telluric``,</span>
 <span class="sd">            ``telluric_model``, ``trans_molecfit``, ``mtrans``; for</span>
-<span class="sd">            ``'cont'``: ``cont``, ``continuum``; ignoring the case).</span>
+<span class="sd">            ``'cont'``: ``cont``, ``continuum``; for ``'model'``:</span>
+<span class="sd">            ``model``; ignoring the case).</span>
 <span class="sd">        renorm_model : bool</span>
 <span class="sd">            With the role ``'cont'``, rescale the ``model`` of the spectrum</span>
 <span class="sd">            to the new continuum (the GUI asks); ignored by the other roles.</span>
+<span class="sd">        normalized : bool</span>
+<span class="sd">            With the role ``'model'``: the model is normalized (0-1) and is</span>
+<span class="sd">            multiplied by the normalization of the spectrum; refused with</span>
+<span class="sd">            the other roles.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -940,6 +961,9 @@
             <span class="k">raise</span> <span class="n">InvalidParameter</span><span class="p">(</span><span class="s2">"import_model: give file_path or source_session "</span>
                                    <span class="s2">"(one of the two)."</span><span class="p">)</span>
         <span class="n">model_role</span> <span class="o">=</span> <span class="n">_models</span><span class="o">.</span><span class="n">MODEL_ROLES</span><span class="p">[</span><span class="n">role</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">normalized</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">model_role</span><span class="o">.</span><span class="n">normalizable</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidParameter</span><span class="p">(</span><span class="sa">f</span><span class="s2">"normalized: only a model of the role 'model' can be "</span>
+                                   <span class="sa">f</span><span class="s2">"normalized, not one of the role </span><span class="si">{</span><span class="n">role</span><span class="si">!r}</span><span class="s2">."</span><span class="p">)</span>
         <span class="n">spec</span> <span class="o">=</span> <span class="n">spec_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">has_file</span><span class="p">:</span>
             <span class="n">source</span> <span class="o">=</span> <span class="n">_models</span><span class="o">.</span><span class="n">source_from_file</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span> <span class="n">model_role</span><span class="p">,</span>
@@ -948,7 +972,8 @@
             <span class="n">other</span> <span class="o">=</span> <span class="n">open_session</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">,</span> <span class="n">source_session</span><span class="p">,</span> <span class="s1">'source_session'</span><span class="p">)</span>
             <span class="n">source</span> <span class="o">=</span> <span class="n">_models</span><span class="o">.</span><span class="n">source_from_session</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">model_role</span><span class="p">,</span> <span class="n">column</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span>
-            <span class="n">_models</span><span class="o">.</span><span class="n">import_model</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">role</span><span class="p">,</span> <span class="n">renorm_model</span><span class="o">=</span><span class="n">renorm_model</span><span class="p">))</span></div>
+            <span class="n">_models</span><span class="o">.</span><span class="n">import_model</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">role</span><span class="p">,</span> <span class="n">renorm_model</span><span class="o">=</span><span class="n">renorm_model</span><span class="p">,</span>
+                                 <span class="n">normalized</span><span class="o">=</span><span class="n">normalized</span><span class="p">))</span></div>
 </div>
 
 
