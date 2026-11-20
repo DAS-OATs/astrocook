@@ -515,6 +515,11 @@
 <span class="n">UNUSED_TELLURIC_COLUMN</span> <span class="o">=</span> <span class="s1">'telluric_unused'</span>
 <span class="c1">#: The flag of the metadata: the flux is already corrected for the tellurics</span>
 <span class="n">TELLURIC_CORRECTED</span> <span class="o">=</span> <span class="s1">'TELLURIC_CORRECTED'</span>
+<span class="c1">#: The names of a column of a telluric transmission in the files, in order</span>
+<span class="c1">#: of preference (matched ignoring the case): Astrocook, before 2.8.0, the</span>
+<span class="c1">#: Molecfit outputs (``trans_molecfit`` of the ASCII files of the request of</span>
+<span class="c1">#: 7-ter, ``mtrans`` of its FITS tables), PypeIt (``TELLURIC``); T2</span>
+<span class="n">TELLURIC_NAMES</span> <span class="o">=</span> <span class="p">(</span><span class="n">TELLURIC_COLUMN</span><span class="p">,</span> <span class="n">LEGACY_TELLURIC_COLUMN</span><span class="p">,</span> <span class="s1">'trans_molecfit'</span><span class="p">,</span> <span class="s1">'mtrans'</span><span class="p">)</span>
 
 <span class="n">_TRUE</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'t'</span><span class="p">,</span> <span class="s1">'true'</span><span class="p">,</span> <span class="s1">'yes'</span><span class="p">,</span> <span class="s1">'y'</span><span class="p">,</span> <span class="s1">'1'</span><span class="p">}</span>
 

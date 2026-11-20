@@ -438,6 +438,7 @@
 <li class="toctree-l1"><a class="reference internal" href="editing_data.html">Editing Data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="flux_operations.html">Flux Operations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="continuum_fitting.html">Continuum Fitting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="external_models.html">External Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="absorption_systems.html">Absorption Systems</a></li>
 <li class="toctree-l1"><a class="reference internal" href="scripting.html">Using Astrocook from Python</a></li>
 <li class="toctree-l1 current active"><a aria-current="page" class="current reference internal" href="#">Using Astrocook from an AI Agent</a></li>
@@ -902,8 +903,9 @@ archive is not your save: save the session with <code class="docutils literal no
 folder <code class="docutils literal notranslate"><span class="pre">folder</span></code> (called <code class="docutils literal notranslate"><span class="pre">path</span></code> until 2.6.0, a name still accepted), named
 after <code class="docutils literal notranslate"><span class="pre">prefix</span></code>, and does not replace files that exist unless asked
 (<code class="docutils literal notranslate"><span class="pre">overwrite=true</span></code>). The tools that read another session
-(<code class="docutils literal notranslate"><span class="pre">flux_equalize</span></code>, <code class="docutils literal notranslate"><span class="pre">flux_resample</span></code>, <code class="docutils literal notranslate"><span class="pre">edit_import_systems</span></code>) require its
-<code class="docutils literal notranslate"><span class="pre">session_id</span></code>; those that read several (<code class="docutils literal notranslate"><span class="pre">edit_stitch</span></code>,
+(<code class="docutils literal notranslate"><span class="pre">flux_equalize</span></code>, <code class="docutils literal notranslate"><span class="pre">flux_resample</span></code>, <code class="docutils literal notranslate"><span class="pre">edit_import_systems</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">file_import_model</span></code> when the model is in a session, <code class="docutils literal notranslate"><span class="pre">source_session</span></code>)
+require its <code class="docutils literal notranslate"><span class="pre">session_id</span></code>; those that read several (<code class="docutils literal notranslate"><span class="pre">edit_stitch</span></code>,
 <code class="docutils literal notranslate"><span class="pre">edit_equalize_and_stitch</span></code>, <code class="docutils literal notranslate"><span class="pre">edit_coadd</span></code>, <code class="docutils literal notranslate"><span class="pre">edit_trim_common</span></code>; their
 schema says <code class="docutils literal notranslate"><span class="pre">x-astrocook-kind:</span> <span class="pre">sessions</span></code>) take their <code class="docutils literal notranslate"><span class="pre">session_id</span></code>s
 separated by commas, and <code class="docutils literal notranslate"><span class="pre">edit_coadd</span></code> the id of the session it runs on

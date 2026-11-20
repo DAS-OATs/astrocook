@@ -1,0 +1,7 @@
+astrocook.core.model\_grid module
+=================================
+
+.. automodule:: astrocook.core.model_grid
+   :members:
+   :show-inheritance:
+   :undoc-members:

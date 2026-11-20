@@ -440,6 +440,7 @@
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.debug_hooks.html">astrocook.core.debug_hooks module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.identification.html">astrocook.core.identification module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.line_detection.html">astrocook.core.line_detection module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.model_grid.html">astrocook.core.model_grid module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.resolution.html">astrocook.core.resolution module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.session.html">astrocook.core.session module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.session_manager.html">astrocook.core.session_manager module</a></li>
@@ -663,6 +664,64 @@ grid alignment.</p>
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.recipes.file.RecipeFile.import_model">
+<span class="sig-name descname"><span class="pre">import_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_session</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="astrocook.session.session.html#astrocook.session.session.Session" title="astrocook.session.session.Session"><span class="pre">Session</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">role</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'telluric'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.session.session.html#astrocook.session.session.Session" title="astrocook.session.session.Session"><span class="pre">Session</span></a></span></span><a class="reference internal" href="../modules/astrocook/recipes/file.html#RecipeFile.import_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.file.RecipeFile.import_model" title="Link to this definition">#</a></dt>
+<dd><p>Import an external model into the spectrum (phase 7-ter, PR T2).</p>
+<p>A model is a column of the spectrum with a role. The model is read
+from a file or from another session, brought onto the grid of the
+spectrum and written in the column of its role, replacing it if it
+exists (undo, log and archive as for any recipe):</p>
+<ul class="simple">
+<li><p>the grid: a copy when the axis of the model is that of the
+spectrum within a tenth of a pixel, otherwise the average of the
+model over each pixel of the spectrum (<code class="docutils literal notranslate"><span class="pre">xmin</span></code>-<code class="docutils literal notranslate"><span class="pre">xmax</span></code>), each
+pixel of the model weighted by its overlap
+(<a class="reference internal" href="astrocook.core.model_grid.html#module-astrocook.core.model_grid" title="astrocook.core.model_grid"><code class="xref py py-mod docutils literal notranslate"><span class="pre">astrocook.core.model_grid</span></code></a>); a pixel the model does not
+cover in full gets the value of the role beyond the model;</p></li>
+<li><p>the role <code class="docutils literal notranslate"><span class="pre">telluric</span></code>: a transmission (dimensionless, 0-1)
+written in the column <code class="docutils literal notranslate"><span class="pre">telluric</span></code>, 1 beyond the model; the
+normalization is <code class="docutils literal notranslate"><span class="pre">cont</span> <span class="pre">×</span> <span class="pre">telluric</span></code> unless the flux is flagged
+as corrected (<code class="docutils literal notranslate"><span class="pre">set_properties(telluric_corrected=...)</span></code>).</p></li>
+</ul>
+<p>The models are taken in the frame of the spectrum: no shift. A file
+is read by the names of its columns (<code class="xref py py-mod docutils literal notranslate"><span class="pre">astrocook.io.tables</span></code>):
+a text table separated by spaces, tabs or commas with a header,
+also commented (<code class="docutils literal notranslate"><span class="pre">#</span> <span class="pre">x</span> <span class="pre">xmin</span> <span class="pre">xmax</span> <span class="pre">trans_molecfit</span> <span class="pre">dy</span></code>), the CSV of
+<code class="docutils literal notranslate"><span class="pre">export_ascii</span></code>, a FITS table (Astrocook, the Molecfit outputs
+with <code class="docutils literal notranslate"><span class="pre">mtrans</span></code>); the axis is <code class="docutils literal notranslate"><span class="pre">x</span></code>, <code class="docutils literal notranslate"><span class="pre">lam</span></code>, <code class="docutils literal notranslate"><span class="pre">lambda</span></code>, <code class="docutils literal notranslate"><span class="pre">wave</span></code>
+or <code class="docutils literal notranslate"><span class="pre">wavelength</span></code> (in nm in a text file without units), its edges
+<code class="docutils literal notranslate"><span class="pre">xmin</span></code>-<code class="docutils literal notranslate"><span class="pre">xmax</span></code> (<code class="docutils literal notranslate"><span class="pre">lammin</span></code>-<code class="docutils literal notranslate"><span class="pre">lammax</span></code>) if the file has them. The
+other columns are ignored (the <code class="docutils literal notranslate"><span class="pre">dy</span></code> of a Molecfit model is the
+error of the science spectrum, not of the model).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>file_path</strong> (<em>str</em>) – The file of the model; empty if it is in another session.</p></li>
+<li><p><strong>source_session</strong> (<em>str</em><em> or </em><a class="reference internal" href="astrocook.session.session.html#astrocook.session.session.Session" title="astrocook.session.session.Session"><em>Session</em></a>) – The open session that holds the model (its name; in a script
+also the session itself); empty if it is in a file.</p></li>
+<li><p><strong>role</strong> (<em>str</em>) – <code class="docutils literal notranslate"><span class="pre">'telluric'</span></code> (the roles <code class="docutils literal notranslate"><span class="pre">'cont'</span></code> and <code class="docutils literal notranslate"><span class="pre">'model'</span></code> come in
+phase 7-ter, T3 and T4).</p></li>
+<li><p><strong>column</strong> (<em>str</em>) – The column of the model in the source; empty: found by the
+names of the role (for <code class="docutils literal notranslate"><span class="pre">'telluric'</span></code>: <code class="docutils literal notranslate"><span class="pre">telluric</span></code>,
+<code class="docutils literal notranslate"><span class="pre">telluric_model</span></code>, <code class="docutils literal notranslate"><span class="pre">trans_molecfit</span></code>, <code class="docutils literal notranslate"><span class="pre">mtrans</span></code>, ignoring
+the case).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new session with the model in its column.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="astrocook.session.session.html#astrocook.session.session.Session" title="astrocook.session.session.Session">Session</a></p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="astrocook.recipes.errors.html#astrocook.recipes.errors.RecipeError" title="astrocook.recipes.errors.RecipeError"><strong>RecipeError</strong></a> – If neither or both sources are given, the source cannot be read
+    or has no column of the model, its values cannot be this model,
+    or the model does not overlap the spectrum.</p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 </section>
@@ -719,6 +778,7 @@ grid alignment.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.file.RecipeFile.export_ascii"><code class="docutils literal notranslate"><span class="pre">RecipeFile.export_ascii()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.file.RecipeFile.export_ascii_outputs"><code class="docutils literal notranslate"><span class="pre">RecipeFile.export_ascii_outputs()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.file.RecipeFile.import_ascii"><code class="docutils literal notranslate"><span class="pre">RecipeFile.import_ascii()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.recipes.file.RecipeFile.import_model"><code class="docutils literal notranslate"><span class="pre">RecipeFile.import_model()</span></code></a></li>
 </ul>
 </li>
 </ul>

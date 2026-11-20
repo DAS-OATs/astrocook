@@ -502,6 +502,8 @@
 </li>
         <li><a href="api/astrocook.core.line_detection.html#astrocook.core.line_detection.LineDetection.__init__">(astrocook.core.line_detection.LineDetection method)</a>
 </li>
+        <li><a href="api/astrocook.core.model_grid.html#astrocook.core.model_grid.ModelOnGrid.__init__">(astrocook.core.model_grid.ModelOnGrid method)</a>
+</li>
         <li><a href="api/astrocook.core.spectrum.html#astrocook.core.spectrum.Spectrum.__init__">(astrocook.core.spectrum.Spectrum method)</a>
 </li>
         <li><a href="api/astrocook.core.spectrum.html#astrocook.core.spectrum.TableAdapter.__init__">(astrocook.core.spectrum.TableAdapter method)</a>
@@ -770,6 +772,13 @@
 
       <ul>
         <li><a href="api/astrocook.core.line_detection.html#module-astrocook.core.line_detection">module</a>
+</li>
+      </ul></li>
+      <li>
+    astrocook.core.model_grid
+
+      <ul>
+        <li><a href="api/astrocook.core.model_grid.html#module-astrocook.core.model_grid">module</a>
 </li>
       </ul></li>
       <li>
@@ -1083,6 +1092,8 @@
 </li>
       <li><a href="api/astrocook.methods_text.html#astrocook.methods_text.atomic_data_sentence">atomic_data_sentence() (in module astrocook.methods_text)</a>
 </li>
+      <li><a href="api/astrocook.core.model_grid.html#astrocook.core.model_grid.auto_edges">auto_edges() (in module astrocook.core.model_grid)</a>
+</li>
       <li><a href="api/astrocook.recipes.prerequisites.html#astrocook.recipes.prerequisites.Missing.automatic">automatic (astrocook.recipes.prerequisites.Missing attribute)</a>
 
       <ul>
@@ -1090,6 +1101,8 @@
 </li>
       </ul></li>
       <li><a href="api/astrocook.core.structures.html#astrocook.core.structures.SpectrumData.aux_cols">aux_cols (astrocook.core.structures.SpectrumData attribute)</a>
+</li>
+      <li><a href="api/astrocook.core.model_grid.html#astrocook.core.model_grid.average_over_pixels">average_over_pixels() (in module astrocook.core.model_grid)</a>
 </li>
       <li><a href="api/astrocook.core.column_names.html#astrocook.core.column_names.AXIS_COLUMNS">AXIS_COLUMNS (in module astrocook.core.column_names)</a>
 </li>
@@ -1273,10 +1286,10 @@
 </li>
       <li><a href="api/astrocook.recipes.result.html#astrocook.recipes.result.Changes.columns_changed">columns_changed (astrocook.recipes.result.Changes attribute)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/astrocook.core.spectrum.html#astrocook.core.spectrum.Spectrum.columns_in_range">columns_in_range() (astrocook.core.spectrum.Spectrum method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/astrocook.recipes.result.html#astrocook.recipes.result.Changes.columns_removed">columns_removed (astrocook.recipes.result.Changes attribute)</a>
 </li>
       <li><a href="api/astrocook.recipes.result.html#astrocook.recipes.result.compare_sessions">compare_sessions() (in module astrocook.recipes.result)</a>
@@ -1374,6 +1387,10 @@
 </li>
       </ul></li>
       <li><a href="api/astrocook.recipes.result.html#astrocook.recipes.result.RecipeResult.counts">counts (astrocook.recipes.result.RecipeResult property)</a>
+</li>
+      <li><a href="api/astrocook.core.model_grid.html#astrocook.core.model_grid.ModelOnGrid.covered">covered (astrocook.core.model_grid.ModelOnGrid attribute)</a>
+</li>
+      <li><a href="api/astrocook.core.model_grid.html#astrocook.core.model_grid.COVERED_FRACTION">COVERED_FRACTION (in module astrocook.core.model_grid)</a>
 </li>
       <li><a href="api/astrocook.recipes.result.html#astrocook.recipes.result.RecipeResult.credibility">credibility (astrocook.recipes.result.RecipeResult attribute)</a>
 </li>
@@ -1853,6 +1870,8 @@
       </ul></li>
       <li><a href="api/astrocook.recipes.file.html#astrocook.recipes.file.RecipeFile.import_ascii">import_ascii() (astrocook.recipes.file.RecipeFile method)</a>
 </li>
+      <li><a href="api/astrocook.recipes.file.html#astrocook.recipes.file.RecipeFile.import_model">import_model() (astrocook.recipes.file.RecipeFile method)</a>
+</li>
       <li><a href="api/astrocook.recipes.edit.html#astrocook.recipes.edit.RecipeEdit.import_systems">import_systems() (astrocook.recipes.edit.RecipeEdit method)</a>
 </li>
       <li><a href="api/astrocook.recipes.edit.html#astrocook.recipes.edit.RecipeEdit.import_systems_ascii">import_systems_ascii() (astrocook.recipes.edit.RecipeEdit method)</a>
@@ -2266,7 +2285,11 @@
       <li><a href="api/astrocook.recipes.absorbers.html#astrocook.recipes.absorbers.RecipeAbsorbers.metals_auto">metals_auto() (astrocook.recipes.absorbers.RecipeAbsorbers method)</a>
 </li>
       <li><a href="api/astrocook.core.identification.html#astrocook.core.identification.Identification.method">method (astrocook.core.identification.Identification attribute)</a>
+
+      <ul>
+        <li><a href="api/astrocook.core.model_grid.html#astrocook.core.model_grid.ModelOnGrid.method">(astrocook.core.model_grid.ModelOnGrid attribute)</a>
 </li>
+      </ul></li>
       <li><a href="api/astrocook.recipes.registry.html#astrocook.recipes.registry.RecipeSpec.methods">methods (astrocook.recipes.registry.RecipeSpec attribute)</a>
 </li>
       <li><a href="api/astrocook.methods_text.html#astrocook.methods_text.methods_file_name">methods_file_name() (in module astrocook.methods_text)</a>
@@ -2299,15 +2322,19 @@
 </li>
       <li><a href="api/astrocook.recipes.errors.html#astrocook.recipes.errors.MissingPrerequisite">MissingPrerequisite</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/astrocook.mocks.truth.html#astrocook.mocks.truth.MockComponent">MockComponent (class in astrocook.mocks.truth)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/astrocook.mocks.truth.html#astrocook.mocks.truth.MockTruth">MockTruth (class in astrocook.mocks.truth)</a>
 </li>
       <li><a href="api/astrocook.core.spectrum.html#astrocook.core.spectrum.Spectrum.model">model (astrocook.core.spectrum.Spectrum property)</a>
 </li>
+      <li><a href="api/astrocook.core.model_grid.html#astrocook.core.model_grid.model_on_grid">model_on_grid() (in module astrocook.core.model_grid)</a>
+</li>
       <li><a href="api/astrocook.fitting.model_evaluation.html#astrocook.fitting.model_evaluation.ModelEvaluation">ModelEvaluation (class in astrocook.fitting.model_evaluation)</a>
+</li>
+      <li><a href="api/astrocook.core.model_grid.html#astrocook.core.model_grid.ModelOnGrid">ModelOnGrid (class in astrocook.core.model_grid)</a>
 </li>
       <li>
     module
@@ -2322,6 +2349,8 @@
         <li><a href="api/astrocook.core.identification.html#module-astrocook.core.identification">astrocook.core.identification</a>
 </li>
         <li><a href="api/astrocook.core.line_detection.html#module-astrocook.core.line_detection">astrocook.core.line_detection</a>
+</li>
+        <li><a href="api/astrocook.core.model_grid.html#module-astrocook.core.model_grid">astrocook.core.model_grid</a>
 </li>
         <li><a href="api/astrocook.core.resolution.html#module-astrocook.core.resolution">astrocook.core.resolution</a>
 </li>
@@ -2902,6 +2931,10 @@
 <h2 id="S">S</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/astrocook.core.model_grid.html#astrocook.core.model_grid.same_grid">same_grid() (in module astrocook.core.model_grid)</a>
+</li>
+      <li><a href="api/astrocook.core.model_grid.html#astrocook.core.model_grid.SAME_GRID_TOLERANCE">SAME_GRID_TOLERANCE (in module astrocook.core.model_grid)</a>
+</li>
       <li><a href="api/astrocook.recipes.result.html#astrocook.recipes.result.SAME_PARAMETER_RTOL">SAME_PARAMETER_RTOL (in module astrocook.recipes.result)</a>
 </li>
       <li><a href="api/astrocook.core.spectrum.html#astrocook.core.spectrum.Spectrum.sanitize_legacy_tellurics">sanitize_legacy_tellurics() (astrocook.core.spectrum.Spectrum method)</a>
@@ -2998,10 +3031,10 @@
 </li>
       <li><a href="api/astrocook.methods_text.html#astrocook.methods_text.SOFTWARE_REFERENCE">SOFTWARE_REFERENCE (in module astrocook.methods_text)</a>
 </li>
-      <li><a href="api/astrocook.session.session.html#astrocook.session.session.Session.spec">spec (astrocook.session.session.Session property)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/astrocook.session.session.html#astrocook.session.session.Session.spec">spec (astrocook.session.session.Session property)</a>
+</li>
       <li><a href="api/astrocook.fitting.evaluation_window.html#astrocook.fitting.evaluation_window.EvaluationWindow.spectrum">spectrum (astrocook.fitting.evaluation_window.EvaluationWindow attribute)</a>
 
       <ul>
@@ -3130,6 +3163,8 @@
 </li>
       <li><a href="api/astrocook.core.telluric.html#astrocook.core.telluric.TELLURIC_CORRECTED">TELLURIC_CORRECTED (in module astrocook.core.telluric)</a>
 </li>
+      <li><a href="api/astrocook.core.telluric.html#astrocook.core.telluric.TELLURIC_NAMES">TELLURIC_NAMES (in module astrocook.core.telluric)</a>
+</li>
       <li><a href="api/astrocook.mocks.telluric.html#astrocook.mocks.telluric.telluric_optical_depth">telluric_optical_depth() (in module astrocook.mocks.telluric)</a>
 </li>
       <li><a href="api/astrocook.core.telluric.html#astrocook.core.telluric.telluric_transmission">telluric_transmission() (in module astrocook.core.telluric)</a>
@@ -3154,14 +3189,14 @@
 </li>
       <li><a href="api/astrocook.core.structures.html#astrocook.core.structures.HistoryLog.timeline">timeline() (astrocook.core.structures.HistoryLog method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/astrocook.recipes.registry.html#astrocook.recipes.registry.RecipeSpec.title">title (astrocook.recipes.registry.RecipeSpec property)</a>
 
       <ul>
         <li><a href="api/astrocook.recipes.result.html#astrocook.recipes.result.RecipeResult.title">(astrocook.recipes.result.RecipeResult attribute)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/astrocook.core.identification.html#astrocook.core.identification.RegionKind.title">title() (astrocook.core.identification.RegionKind method)</a>
 
       <ul>
@@ -3326,8 +3361,12 @@
         <li><a href="api/astrocook.recipes.result.html#astrocook.recipes.result.RecipeResult.value">(astrocook.recipes.result.RecipeResult attribute)</a>
 </li>
       </ul></li>
-      <li><a href="api/astrocook.core.structures.html#astrocook.core.structures.DataColumn.values">values (astrocook.core.structures.DataColumn attribute)</a>
+      <li><a href="api/astrocook.core.model_grid.html#astrocook.core.model_grid.ModelOnGrid.values">values (astrocook.core.model_grid.ModelOnGrid attribute)</a>
+
+      <ul>
+        <li><a href="api/astrocook.core.structures.html#astrocook.core.structures.DataColumn.values">(astrocook.core.structures.DataColumn attribute)</a>
 </li>
+      </ul></li>
       <li><a href="api/astrocook.fitting.model_evaluation.html#astrocook.fitting.model_evaluation.ModelEvaluation.velocity_components">velocity_components (astrocook.fitting.model_evaluation.ModelEvaluation attribute)</a>
 </li>
       <li><a href="api/astrocook.fitting.model_evaluation.html#astrocook.fitting.model_evaluation.velocity_components">velocity_components() (in module astrocook.fitting.model_evaluation)</a>

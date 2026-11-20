@@ -4,7 +4,7 @@ Welcome to Astrocook V2! This guide will walk you through the basics of the inte
 
 ## 1. Loading a Spectrum
 
-Let's begin by loading some data. Astrocook supports various formats, including standard FITS files and its own archive formats (`.acs`, `.acs2`). A `.csv` file written by **File > Export to ASCII...** is read back with its columns and units (see [below](#getting-started-export)); any other `.csv` file is read as three columns, by position: wavelength (nm), flux and its error, with or without a line of names on top, and further columns are ignored.
+Let's begin by loading some data. Astrocook supports various formats, including standard FITS files and its own archive formats (`.acs`, `.acs2`). A `.csv` file written by **File > Export to ASCII...** is read back with its columns and units (see [below](#getting-started-export)); any other `.csv` file is read as three columns, by position: wavelength (nm), flux and its error, with or without a line of names on top, and further columns are ignored. A text table with other separators (spaces, tabs) is read by the names of its columns, from a line on top, also commented (`# x xmin xmax y dy`; the names `lam`, `F`, `dF` and `wave`, `flux`, `err` are understood too), the further columns kept; without names, by position as a `.csv` file.
 
 (getting-started-flux-unit)=
 :::{note}
@@ -13,7 +13,7 @@ Let's begin by loading some data. Astrocook supports various formats, including 
 
 (getting-started-telluric)=
 :::{note}
-**The telluric transmission.** A spectrum may carry a model of the telluric absorption, the transmission (1 where there is none), in the column `telluric`: the fits normalize the flux by the continuum times this column, unless the flux is already corrected (**Edit > Set Properties...**, the field *telluric_corrected*). It comes from the file: the Molecfit model (`mtrans` of the `TELLURIC_DATA` extension) of an ESO X-Shooter product, whose flux is taken as already corrected; the `TELLURIC` column of a PypeIt telluric model; the `trans_molecfit` column of an ASCII file with the columns `wave flux error trans_molecfit`. The column called `telluric_model` (in the archives saved before 2.8.0) is renamed `telluric` when a spectrum is opened; the boolean `telluric` column of the archives of Astrocook 1 (the mask of the telluric bands) becomes `telluric_mask`. The `telluric_corr` of an ESPRESSO S2D file is kept as it is, outside the normalization.
+**The telluric transmission.** A spectrum may carry a model of the telluric absorption, the transmission (1 where there is none), in the column `telluric`: the fits normalize the flux by the continuum times this column, unless the flux is already corrected (**Edit > Set Properties...**, the field *telluric_corrected*). It comes from the file: the Molecfit model (`mtrans` of the `TELLURIC_DATA` extension) of an ESO X-Shooter product, whose flux is taken as already corrected; the `TELLURIC` column of a PypeIt telluric model; the `trans_molecfit` or `mtrans` column of a text table with the columns of a spectrum (e.g. `wave flux error trans_molecfit`). A model made elsewhere, such as a Molecfit fit, is brought into a spectrum with **File > Import Model...** (see [External Models](external_models.md)). The column called `telluric_model` (in the archives saved before 2.8.0) is renamed `telluric` when a spectrum is opened; the boolean `telluric` column of the archives of Astrocook 1 (the mask of the telluric bands) becomes `telluric_mask`. The `telluric_corr` of an ESPRESSO S2D file is kept as it is, outside the normalization.
 :::
 
 1.  Launch Astrocook. The window opens with the size and position you left it with, and shows the welcome screen, with the buttons **Open Session...** and **Open Recent** (a drop-down menu of the files you opened last).
@@ -257,8 +257,8 @@ so for those steps.
 
 ### Import from ASCII
 If you have manipulated your exported `_spec.csv` data externally, you can bring it back into Astrocook by going to **File > Import from ASCII...**.
-* Astrocook will match the column headers in your CSV to the columns in the active session and overwrite them; the names of the GUI (`F`, `dF`, ...) and those of the data (`y`, `dy`, ...) are both understood. The wavelength (`lam`, `lammin`, `lammax`, or `x`, `xmin`, `xmax`) is not read: the grid of the spectrum is kept. A column with a unit in the file keeps it; a flux or an error in a unit different from that of the session is refused.
-* **Safety first:** The imported file must have the exact same number of rows (pixels) as your current spectrum. Because this operates through the recipe pipeline, the import is fully undoable via the Log Scripter or `Ctrl+Z` (`Cmd+Z`).
+* Astrocook will match the column headers in your CSV to the columns in the active session and overwrite them; the names of the GUI (`F`, `dF`, ...) and those of the data (`y`, `dy`, ...) are both understood. The wavelength (`lam`, `lammin`, `lammax`, or `x`, `xmin`, `xmax`) is not imported: the grid of the spectrum is kept. A column with a unit in the file keeps it; a flux or an error in a unit different from that of the session is refused.
+* **Safety first:** The imported file must have the exact same number of rows (pixels) as your current spectrum, and its wavelength, if it has one, must be that of the spectrum (within a tenth of a pixel): a table on another grid is refused (to bring a model onto the grid of the spectrum, use **File > Import Model...**, see [External Models](external_models.md)). The log names the columns of the spectrum that the file replaced. Because this operates through the recipe pipeline, the import is fully undoable via the Log Scripter or `Ctrl+Z` (`Cmd+Z`).
 
 ## 6. The Dialog of a Recipe
 
