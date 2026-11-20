@@ -258,7 +258,10 @@ progress, its plan agreed on 13 November 2026: four blocks, 7a (measure:
 new mocks, metrics, the twin, the real spectra, the evaluation of a model
 on fixed pixels), 7b (emission model), 7c (identification), 7d
 (components and fit), each component with a design document in `design/`
-first. Phase 7-bis (small technical fixes, PRs B1-B11, interleaved with
+first. Phase 7-ter (external models: `import_model`, the column `telluric`; PRs T1-T4
+and R, release 2.8.0 from `release/2.7.x` without phase 7) was planned on
+20 November 2026, interleaved with phase 7 (`ROADMAP.md`, "Phase 7-ter").
+Phase 7-bis (small technical fixes, PRs B1-B11, interleaved with
 it) is done (16 November 2026; `ROADMAP.md`, "Phase 7-bis"). The real spectra of the benchmark (the sample of D'Odorico et
 al. 2010, public, kept private for the blindness) live in the
 private `astrocook-data` (`benchmark/`): nothing of them, data or
