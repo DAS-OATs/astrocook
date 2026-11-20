@@ -104,7 +104,13 @@ LYAB_PAIR = ("Ly_a", "Ly_b")
 #: mocks of the grid full, no screen): at 0 the purity of CIV and MgII fell
 #: to 0.56 and 0.52 (ECE 0.20, 36 s per spectrum, 10 minutes at R 140000);
 #: at 0.2 and 0.3 0.96 and 0.91-0.94, with the same completeness (ECE 0.02-
-#: 0.03, 4 s). 0.3 (chosen with Guido's leave, 19 November 2026)
+#: 0.03, 4 s). 0.3 (chosen with Guido's leave, 19 November 2026). Measured
+#: again in PR 7c.4c-bis with the score on the peaks (F169), the regions
+#: split at their gaps and the refinement without a fixed number (the same
+#: 18 mocks): at 0 the purity of CIV, SiIV, MgII 0.50, 0.79, 0.39 (ECE 0.23,
+#: 262 s per spectrum, median); at 0.2 and 0.3 0.98, 1.00, 0.95, the same
+#: hypotheses (ECE 0.044 and 0.050, 9.4 and 8.8 s). 0.3 (Guido, 20 November
+#: 2026)
 PREFILTER_R2 = 0.3
 #: The screen: the hypotheses behind the best by more than this (in the
 #: criterion, evaluated with the AOD parameters) are dropped before the
