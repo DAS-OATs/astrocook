@@ -30,7 +30,8 @@ def _methods_import_model(p):
     source = (file_name(p, 'file_path') if p.raw('file_path')
               else f"the session {p.raw('source_session')}")
     column = f" (column {p.raw('column')})" if p.raw('column') else ""
-    words = {'telluric': "telluric transmission"}.get(str(p.raw('role')), "model")
+    words = {'telluric': "telluric transmission",
+             'cont': "continuum"}.get(str(p.raw('role')), "model")
     return (f"An external {words} was imported from {source}{column} and brought "
             f"onto the grid of the spectrum (copied on the same grid, otherwise "
             f"averaged over its pixels){p.menu}")
@@ -70,13 +71,15 @@ FILE_RECIPES_SCHEMAS = {
         "brief": "Import an external model into the spectrum.",
         "url": "tutorials/external_models.html#importing-a-model",
         "menu": "File > Import &Model",
-        "details": "Reads a model (a telluric transmission) from a file or another session and writes it in the column of its role, on the grid of the spectrum: copied on the same grid, otherwise averaged over the pixels. A telluric model is 1 beyond its range.",
+        "details": "Reads a model (a telluric transmission, a continuum) from a file or another session and writes it in the column of its role, on the grid of the spectrum: copied on the same grid, otherwise averaged over the pixels. A telluric model is 1 beyond its range, a continuum NaN.",
         "params": [
             {"name": "file_path", "type": str, "default": "", "doc": "Path of the file of the model: a text table with named columns, the CSV of Export to ASCII, a FITS table. Empty if the model is in another session."},
             {"name": "source_session", "type": str, "default": "", "kind": "session", "doc": "Name of the open session that holds the model (in a script, also the session itself); empty if it is in a file."},
-            # T3 and T4 add 'cont' and 'model' (recipes/_models.py)
-            {"name": "role", "type": str, "default": "telluric", "choices": ["telluric"], "doc": "Role of the model: 'telluric', a transmission written in the column telluric (cont × telluric is the normalization)."},
-            {"name": "column", "type": str, "default": "", "doc": "Column of the model in the source; empty: found by name (for a telluric model: telluric, telluric_model, trans_molecfit, mtrans)."}
+            # T4 adds 'model' (recipes/_models.py)
+            {"name": "role", "type": str, "default": "telluric", "choices": ["telluric", "cont"], "doc": "Role of the model: 'telluric', a transmission written in the column telluric; 'cont', a continuum in the unit of the flux written in the column cont (cont × telluric is the normalization)."},
+            {"name": "column", "type": str, "default": "", "doc": "Column of the model in the source; empty: found by name (telluric: telluric, telluric_model, trans_molecfit, mtrans; cont: cont, continuum)."},
+            # T3 (Guido, 20 November 2026): as in fit_continuum
+            {"name": "renorm_model", "type": bool, "default": True, "doc": "With role 'cont', rescale the model to the new continuum (asked by the GUI).", "gui_hidden": True, "agents": False}
         ],
     }
 }
@@ -366,7 +369,8 @@ class RecipeFile:
 
     @typed_recipe
     def import_model(self, file_path: str = "", source_session: Union[str, 'Session'] = "",
-                     role: str = "telluric", column: str = "") -> 'Session':
+                     role: str = "telluric", column: str = "",
+                     renorm_model: bool = True) -> 'Session':
         """
         Import an external model into the spectrum (phase 7-ter, PR T2).
 
@@ -384,7 +388,17 @@ class RecipeFile:
         - the role ``telluric``: a transmission (dimensionless, 0-1)
           written in the column ``telluric``, 1 beyond the model; the
           normalization is ``cont × telluric`` unless the flux is flagged
-          as corrected (``set_properties(telluric_corrected=...)``).
+          as corrected (``set_properties(telluric_corrected=...)``);
+        - the role ``cont`` (T3): a continuum, in the unit of the flux,
+          written in the column ``cont``, NaN beyond the model (there the
+          flux is not normalized; a WARNING says on how many pixels). A
+          unit of the source is converted to that of the flux, refused if
+          it cannot be; without a unit the values are taken in the unit of
+          the flux, and refused when their median and that of the flux,
+          over the pixels covered, differ by more than a factor 10 (a
+          normalized continuum under a physical flux). The ``model`` of
+          the spectrum follows the new continuum if ``renorm_model``, as in
+          ``fit_continuum`` (kept as it was where there is no continuum).
 
         The models are taken in the frame of the spectrum: no shift. A file
         is read by the names of its columns (:mod:`astrocook.io.tables`):
@@ -405,13 +419,16 @@ class RecipeFile:
             The open session that holds the model (its name; in a script
             also the session itself); empty if it is in a file.
         role : str
-            ``'telluric'`` (the roles ``'cont'`` and ``'model'`` come in
-            phase 7-ter, T3 and T4).
+            ``'telluric'`` or ``'cont'`` (the role ``'model'`` comes in
+            phase 7-ter, T4).
         column : str
             The column of the model in the source; empty: found by the
             names of the role (for ``'telluric'``: ``telluric``,
-            ``telluric_model``, ``trans_molecfit``, ``mtrans``, ignoring
-            the case).
+            ``telluric_model``, ``trans_molecfit``, ``mtrans``; for
+            ``'cont'``: ``cont``, ``continuum``; ignoring the case).
+        renorm_model : bool
+            With the role ``'cont'``, rescale the ``model`` of the spectrum
+            to the new continuum (the GUI asks); ignored by the other roles.
 
         Returns
         -------
@@ -441,7 +458,8 @@ class RecipeFile:
         else:
             other = open_session(self._session, source_session, 'source_session')
             source = _models.source_from_session(other, model_role, column.strip())
-        return self._session.with_new_spectrum(_models.import_model(spec, source, role))
+        return self._session.with_new_spectrum(
+            _models.import_model(spec, source, role, renorm_model=renorm_model))
 
 
 # Old names (phase 6-quater, PR 6): see astrocook/_renamed.py

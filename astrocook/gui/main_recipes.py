@@ -726,6 +726,9 @@ class MainRecipesMixin(HostBase):
         is_cont_target = (recipe_name == 'smooth_column' and target_col == 'cont')
         # 2. Any of these recipes, which *always* create/modify 'cont'
         is_cont_recipe = recipe_name in ['fit_continuum', 'estimate_auto', 'update_from_knots']
+        # 3. An external continuum (import_model, phase 7-ter, T3)
+        is_cont_target = is_cont_target or (recipe_name == 'import_model'
+                                            and params.get('role') == 'cont')
 
         if (is_cont_target or is_cont_recipe):
             # If it's a cont recipe, check if a model exists
