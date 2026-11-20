@@ -7,7 +7,7 @@ Detecting and fitting absorption lines is the core mission of Astrocook. The sof
 For most science cases, you should start with one of the automated pipelines in the **Absorbers** menu. These recipes scan the spectrum, identify features, and perform an initial fit.
 
 :::{important}
-**Normalization:** All fitting recipes calculate absorption depth relative to the continuum. Astrocook uses the `cont` column (multiplied by `telluric_model` if present) as the reference.
+**Normalization:** All fitting recipes calculate absorption depth relative to the continuum. Astrocook uses the `cont` column (multiplied by the telluric transmission, the `telluric` column, if present and if the flux is not already corrected: see **Edit > Set Properties**) as the reference. The column was called `telluric_model` before 2.8.0: it is renamed when a spectrum is opened.
 * If no continuum exists and the flux `F` is already normalized (median $\approx$ 1), the continuum is taken as 1.
 * Otherwise the identification and the fits need a continuum first: a recipe that needs it asks how to provide it, **Estimate** (with the defaults of **Auto-estimate Continuum**), **Open Auto-estimate Continuum...** (to choose its parameters), or **Cancel**; the recipe then runs. The estimate is a step of its own in the session log, before the recipe.
 * To use an alternative continuum (e.g., a power-law `cont_pl`), you must first copy it into the main `cont` column using **Edit > Apply Expression...** (`cont = cont_pl`).

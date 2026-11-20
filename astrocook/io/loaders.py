@@ -9,6 +9,7 @@ from typing import Callable, Dict, Optional, Tuple
 
 # Import V2 structures from the core
 from astrocook.core.structures import SpectrumData, DataColumn
+from astrocook.core.telluric import TELLURIC_COLUMN, TELLURIC_CORRECTED
 from astrocook.core.units import (ARBITRARY_FLUX, FLUX_AUX_COLUMNS, known_unit,
                                   parse_flux_unit)
 
@@ -503,7 +504,11 @@ def load_pypeit_tellmodel(file_path: str, **kwargs) -> SpectrumData:
         # Stash the Quasar/Object model as an auxiliary column
         aux_cols = {
             # A flux (PR 8-bis: dimensionless, as the transmission)
-            'obj_model': DataColumn(obj_model, ARBITRARY_FLUX, "Object Model")
+            'obj_model': DataColumn(obj_model, ARBITRARY_FLUX, "Object Model"),
+            # The transmission in its column too (phase 7-ter, T1, FT4); the
+            # file is a model, not a spectrum: its import is T2's
+            TELLURIC_COLUMN: DataColumn(y.copy(), au.dimensionless_unscaled,
+                                        "Telluric Transmission"),
         }
 
         meta = dict(hdul[0].header)
@@ -685,8 +690,9 @@ def load_ascii_telluric_model(file_path: str, **kwargs) -> SpectrumData:
     for col in t.colnames:
         if 'trans_molecfit' in col.lower():
             trans = t[col].data
-            # Add as 'telluric' for general access
-            aux_cols['telluric'] = DataColumn(trans, au.dimensionless_unscaled, "Telluric Model")
+            # The column of the transmission, read by the normalization
+            # since 2.8.0 (phase 7-ter, T1)
+            aux_cols[TELLURIC_COLUMN] = DataColumn(trans, au.dimensionless_unscaled, "Telluric Model")
             # Add as 'model' so Astrocook plots it as the green line
             aux_cols['model'] = DataColumn(trans, au.dimensionless_unscaled, "Telluric Model")
 
@@ -996,13 +1002,22 @@ def load_xshooter_fits(file_path: str, **kwargs) -> SpectrumData:
                 if mtrans.ndim > 1: mtrans = mtrans.flatten()
 
                 if len(mtrans) == len(x):
-                    aux_cols['telluric_transmission'] = DataColumn(
+                    # The column of the transmission (phase 7-ter, T1, FT4;
+                    # 'telluric_transmission' before, read by nothing)
+                    aux_cols[TELLURIC_COLUMN] = DataColumn(
                         mtrans, au.dimensionless_unscaled, "Telluric Model Transmission"
                     )
 
         # 5. Metadata
         meta = dict(header)
         meta['ORIGIN'] = 'xshooter_fits_loader'
+        if TELLURIC_COLUMN in aux_cols:
+            # The FLUX of a product that carries the Molecfit model is taken
+            # as already corrected, so that the normalization stays the
+            # continuum alone, as before 2.8.0 (T1). Not established on a
+            # real file nor in the ESO documentation: to be checked by
+            # Guido (FT4); without the flag it would be cont × telluric
+            meta[TELLURIC_CORRECTED] = True
 
         return SpectrumData(
             x=x_col, xmin=xmin_col, xmax=xmax_col,

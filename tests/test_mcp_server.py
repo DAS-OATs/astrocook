@@ -195,7 +195,8 @@ def test_save_round_trip(mock_archive, tmp_path):
                                    "z_em": 2.1, "resol": "_current_",
                                    # Since PR 8-bis of phase 6-quater
                                    "yunit": "_current_",
-                                   "overwrite_resol_col": False}}]
+                                   "overwrite_resol_col": False,
+                                   "telluric_corrected": "_current_"}}]
     assert session.saved_with_version == __version__
 
 

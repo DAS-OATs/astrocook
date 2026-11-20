@@ -30,7 +30,7 @@ def spec():
         "cont": DataColumn(1e-16 * (2.0 + 0.001 * (x - 400.0)), FLUX, "Continuum"),
         "model": DataColumn(1e-16 * np.full(x.size, 1.9), FLUX, "Model"),
         "cont_pl": DataColumn(1e-16 * np.full(x.size, 2.1), FLUX, "Power law"),
-        "telluric_model": DataColumn(np.linspace(0.9, 1.0, x.size),
+        "telluric": DataColumn(np.linspace(0.9, 1.0, x.size),
                                        au.dimensionless_unscaled, "Transmission"),
         "flag": DataColumn(np.zeros(x.size, dtype=bool), au.dimensionless_unscaled),
     }
@@ -55,8 +55,8 @@ def test_scale_flux_by_a_number(spec):
         np.testing.assert_array_equal(_col(new, name).value, 2.0 * _col(spec, name).value)
         assert new._data.aux_cols[name].description == spec._data.aux_cols[name].description
     # Not scaled: the transmission (the power law was not either, F69)
-    np.testing.assert_array_equal(_col(new, "telluric_model").value,
-                                  _col(spec, "telluric_model").value)
+    np.testing.assert_array_equal(_col(new, "telluric").value,
+                                  _col(spec, "telluric").value)
     assert new.history[-1] == "Scaled flux by 2.000"
 
 
@@ -97,7 +97,7 @@ def test_smooth(spec):
     np.testing.assert_array_equal(new.dy.value, _smoothed(spec, spec.dy.value))
     assert new._data.y.description == "Smoothed Flux"
     # Also the power law (not smoothed before F69) and the transmission
-    for name in ("cont", "model", "cont_pl", "telluric_model"):
+    for name in ("cont", "model", "cont_pl", "telluric"):
         np.testing.assert_array_equal(_col(new, name).value,
                                       _smoothed(spec, _col(spec, name).value))
     assert new.history[-1] == f"Smoothed spectrum (sigma={SIGMA_KMS} km/s)"
@@ -161,9 +161,9 @@ def test_calibrate_leaves_the_transmission(spec):
     # Spectrum.norm): it was multiplied by the calibration curve and given
     # a flux unit (findings register F69)
     new = spec.calibrate(MAGS)
-    np.testing.assert_array_equal(_col(new, "telluric_model").value,
-                                  _col(spec, "telluric_model").value)
-    assert _col(new, "telluric_model").unit == au.dimensionless_unscaled
+    np.testing.assert_array_equal(_col(new, "telluric").value,
+                                  _col(spec, "telluric").value)
+    assert _col(new, "telluric").unit == au.dimensionless_unscaled
     # The normalization is unchanged by the calibration
     np.testing.assert_allclose(new.y.value / new.norm.value,
                                spec.y.value / spec.norm.value, rtol=1e-12)
@@ -187,7 +187,7 @@ def test_flux_columns_with_a_flux_without_unit(spec):
     new = nounit.scale_flux(2.0)
     for name in ("cont", "model", "cont_pl"):
         np.testing.assert_array_equal(_col(new, name).value, 2.0 * _col(nounit, name).value)
-    for name in ("telluric_model", "resol"):
+    for name in ("telluric", "resol"):
         np.testing.assert_array_equal(_col(new, name).value, _col(nounit, name).value)
 
 
