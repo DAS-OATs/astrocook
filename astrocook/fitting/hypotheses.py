@@ -143,16 +143,35 @@ MAX_FIT_K = 60
 #: a hypothesis gets a component where the residuals of its model are most
 #: negative (a 3-pixel sum below -REFINE_SIGMA): one of its species when the
 #: pixel is in a region of one of its anchors, an unidentified line (or the
-#: assumed Ly-a) elsewhere, kept when it lowers the criterion; at most
-#: MAX_ADDED. Its purpose: the components of a hypothesis are the peaks of
-#: the de-blending, fewer than the true ones in a saturated or blended
-#: system; with too few, a metal hypothesis cannot fit both lines with one
-#: ratio, and the free lines of "all default" win on the misfit (on the
-#: mocks of the grid the CIV, SiIV, MgII systems of 3-4 components lost by
-#: 20-60 in the SpIC). Every finalist gets it, so that each identification is
-#: compared with its best model of a few more components
-MAX_ADDED = 3
+#: assumed Ly-a) elsewhere, kept when it lowers the criterion. Its purpose:
+#: the components of a hypothesis are the peaks of the de-blending, fewer
+#: than the true ones in a saturated or blended system; with too few, a
+#: metal hypothesis cannot fit both lines with one ratio, and the free lines
+#: of "all default" win on the misfit (on the mocks of the grid the CIV,
+#: SiIV, MgII systems of 3-4 components lost by 20-60 in the SpIC). Every
+#: finalist gets it, so that each identification is compared with its best
+#: model. An option of the recipe (``refine``), on by default (F170, Guido,
+#: 20 November 2026)
+#: The most components the refinement adds to a hypothesis: None, no fixed
+#: number (PR 7c.4c-bis, Guido, 20 November 2026): it stops when the next
+#: component does not lower the criterion of the group, or at
+#: :data:`MAX_FIT_K`; 7c.4c added at most 3
+MAX_ADDED: Optional[int] = None
+#: Where the refinement looks: the most negative 3-pixel sum of the
+#: residuals, in sigma
 REFINE_SIGMA = 3.0
+#: The split of the regions of the matched filters at their gaps (F169, PR
+#: 7c.4c-bis): two adjacent peaks of a region are in two regions of the
+#: identification when the smoothed flux between them comes back to within
+#: GAP_SIGMA times the median error from the continuum. Its purpose: the
+#: regions of the filters are wide (F168), and in the forest they join
+#: lines that the flux separates (at z_em 3.5, R 45000, S/N 30 a region of
+#: 8500 km/s and 49 peaks, back to the continuum between 190 of 318 pairs
+#: of adjacent peaks): a pair of regions is then a pair of blends, its
+#: group has hypotheses above MAX_FIT_K, and one candidate stands for many
+#: systems
+SPLIT_GAPS = True
+GAP_SIGMA = 2.0
 #: The start of an added component
 ADDED_LOGN = 12.5
 ADDED_B = 10.0
@@ -313,16 +332,42 @@ def _peaks(v: np.ndarray, flux: np.ndarray, err: np.ndarray, lo: int, hi: int
     return tuple(_Peak(lo + int(i), float(w * dv[i])) for i, w in zip(idx, widths, strict=True))
 
 
+def _gaps(v: np.ndarray, flux: np.ndarray, err: np.ndarray, lo: int, hi: int,
+          peaks: Sequence[_Peak]) -> List[int]:
+    """The pixels of lo..hi where the region is split (F169, PR 7c.4c-bis):
+    between two adjacent peaks, the highest pixel of the smoothed flux when
+    it comes back to within :data:`GAP_SIGMA` times the median error of the
+    region from the continuum."""
+    if len(peaks) < 2:
+        return []
+    smooth = gaussian_filter1d(np.where(np.isfinite(flux[lo:hi + 1]), flux[lo:hi + 1], 1.0),
+                               sigma=1.0)
+    e = err[lo:hi + 1]
+    e = e[np.isfinite(e) & (e > 0)]
+    level = 1.0 - GAP_SIGMA * (float(np.median(e)) if e.size else 0.0)
+    out = []
+    for p, q in zip(peaks[:-1], peaks[1:], strict=True):
+        k = p.index - lo + int(np.argmax(smooth[p.index - lo:q.index - lo + 1]))
+        if smooth[k] >= level and p.index < lo + k < q.index:
+            out.append(lo + k)
+    return out
+
+
 def _regions(spec: Spectrum, labels: np.ndarray, significance: np.ndarray,
              v: np.ndarray, flux: np.ndarray, err: np.ndarray, z_em: float,
-             x_range: Optional[Tuple[float, float]]) -> List[_Region]:
+             x_range: Optional[Tuple[float, float]]
+             ) -> Tuple[List[_Region], np.ndarray]:
+    """The regions of the identification and their labels (ids from 1): the
+    runs of the matched filters, each split at its gaps (:func:`_gaps`)
+    when :data:`SPLIT_GAPS`."""
     x_nm = np.exp(v / C_KMS)
     lya = (1.0 + z_em) * xem_d['Ly_a'].to_value(au.nm)
     lylim = (1.0 + z_em) * xem_d['Ly_lim'].to_value(au.nm)
     out: List[_Region] = []
+    new_labels = np.zeros(len(labels), dtype=int)
     n = int(labels.max(initial=0))
     if n == 0:
-        return out
+        return out, new_labels
     starts = np.full(n + 1, -1)
     ends = np.full(n + 1, -1)
     idx = np.flatnonzero(labels)
@@ -339,61 +384,112 @@ def _regions(spec: Spectrum, labels: np.ndarray, significance: np.ndarray,
         centre = float(np.sqrt(x_nm[lo] * x_nm[hi]))
         if x_range is not None and not x_range[0] <= centre <= x_range[1]:
             continue
-        zone = "red" if centre >= lya else ("forest" if centre > lylim else "blue")
-        sig = significance[lo:hi + 1]
-        sig = sig[np.isfinite(sig)]
-        out.append(_Region(id=rid, lo=lo, hi=hi, zone=zone,
-                           significance=float(sig.max()) if sig.size else float('nan'),
-                           peaks=_peaks(v, flux, err, lo, hi)))
-    return out
+        peaks = _peaks(v, flux, err, lo, hi)
+        cuts = _gaps(v, flux, err, lo, hi, peaks) if SPLIT_GAPS else []
+        for s_lo, s_hi in zip([lo] + [c + 1 for c in cuts], cuts + [hi], strict=True):
+            centre = float(np.sqrt(x_nm[s_lo] * x_nm[s_hi]))
+            zone = "red" if centre >= lya else ("forest" if centre > lylim else "blue")
+            sig = significance[s_lo:s_hi + 1]
+            sig = sig[np.isfinite(sig)]
+            seg = tuple(p for p in peaks if s_lo <= p.index <= s_hi)
+            new_id = len(out) + 1
+            new_labels[s_lo:s_hi + 1] = new_id
+            out.append(_Region(id=new_id, lo=s_lo, hi=s_hi, zone=zone,
+                               significance=float(sig.max()) if sig.size else float('nan'),
+                               peaks=seg or _peaks(v, flux, err, s_lo, s_hi)))
+    return out, new_labels
 
 
 # --- Edges ---------------------------------------------------------------
 
-def pair_score(v: np.ndarray, flux: np.ndarray, region_strong: Tuple[int, int],
-               region_partner: Tuple[int, int], lines: Tuple[str, str],
-               z: float) -> float:
-    """The R^2 of F_s = F_p^gamma of a pair (the score of the current method,
-    :func:`~astrocook.core.spectrum_operations.rate_doublet_candidate`,
-    for any two transitions): the absorption of the strong line against
-    that of the partner raised to gamma = (f lambda)_s / (f lambda)_p, on
-    the velocities where the two regions overlap at the lag, 30 km/s more
-    on each side, in the frame c ln(lambda / lambda_s). 0 when it cannot be
-    rated."""
-    strong, partner = lines
-    lag = C_KMS * np.log(ATOM_DATA[partner]['wave'] / ATOM_DATA[strong]['wave'])
-    gamma = _flam(strong) / _flam(partner)
-    if gamma <= 0 or not np.isfinite(gamma):
-        return 0.0
-    v0 = C_KMS * np.log(_wave_nm(strong) * (1.0 + z))
-    vv = v - v0
-    norm = np.clip(np.where(np.isfinite(flux), flux, 1.0), 0.0, 1.5)
-    s_lo, s_hi = region_strong
-    p_lo, p_hi = region_partner
-    if s_hi - s_lo < 1 or p_hi - p_lo < 1:
-        return 0.0
-    start = max(vv[s_lo], vv[p_lo] - lag) - 30.0
-    end = min(vv[s_hi], vv[p_hi] - lag) + 30.0
-    if start >= end:
-        return 0.0
-    sel = (vv >= start) & (vv <= end)
+def _r2(v: np.ndarray, norm: np.ndarray, sel: np.ndarray, lag: float, gamma: float) -> float:
+    """The R^2 of 1 - F_s against 1 - F_p^gamma on the pixels ``sel`` of the
+    strong line, the partner read at ``v + lag``; 0 when it cannot be rated."""
     if np.count_nonzero(sel) < 3:
         return 0.0
     y_data = 1.0 - norm[sel]
-    y_model = 1.0 - np.power(np.interp(vv[sel] + lag, vv, norm, left=1.0, right=1.0), gamma)
+    y_model = 1.0 - np.power(np.interp(v[sel] + lag, v, norm, left=1.0, right=1.0), gamma)
     ss_tot = np.sum((y_data - np.mean(y_data)) ** 2)
     if ss_tot == 0:
         return 0.0
     return float(max(0.0, 1.0 - np.sum((y_data - y_model) ** 2) / ss_tot))
 
 
+def _lag_gamma(lines: Tuple[str, str]) -> Tuple[float, float]:
+    strong, partner = lines
+    lag = C_KMS * np.log(ATOM_DATA[partner]['wave'] / ATOM_DATA[strong]['wave'])
+    return float(lag), _flam(strong) / _flam(partner)
+
+
+def _norm(flux: np.ndarray) -> np.ndarray:
+    return np.clip(np.where(np.isfinite(flux), flux, 1.0), 0.0, 1.5)
+
+
+def pair_score(v: np.ndarray, flux: np.ndarray, region_strong: Tuple[int, int],
+               region_partner: Tuple[int, int], lines: Tuple[str, str],
+               z: float) -> float:
+    """The R^2 of F_s = F_p^gamma of a pair on its two regions (the score of
+    the current method,
+    :func:`~astrocook.core.spectrum_operations.rate_doublet_candidate`, for
+    any two transitions): the absorption of the strong line against that of
+    the partner raised to gamma = (f lambda)_s / (f lambda)_p, on the
+    velocities where the two regions overlap at the lag, 30 km/s more on
+    each side. 0 when it cannot be rated. The score of PR 7c.4c, replaced
+    in the identification by :func:`peak_score` (F169); kept as the
+    reference of the current method."""
+    lag, gamma = _lag_gamma(lines)
+    if gamma <= 0 or not np.isfinite(gamma):
+        return 0.0
+    s_lo, s_hi = region_strong
+    p_lo, p_hi = region_partner
+    if s_hi - s_lo < 1 or p_hi - p_lo < 1:
+        return 0.0
+    start = max(v[s_lo], v[p_lo] - lag) - 30.0
+    end = min(v[s_hi], v[p_hi] - lag) + 30.0
+    if start >= end:
+        return 0.0
+    return _r2(v, _norm(flux), (v >= start) & (v <= end), lag, gamma)
+
+
+def peak_score(c: _Candidate, by_id: Mapping[int, _Region], v: np.ndarray,
+               flux: np.ndarray, fwhm: np.ndarray,
+               matched: Optional[Sequence[Tuple[int, int]]] = None) -> float:
+    """The R^2 of F_s = F_p^gamma of a pair on the peaks of the de-blending
+    that it matches (F169, PR 7c.4c-bis): for each peak of the strong line
+    whose partner falls on a peak of the partner's region
+    (:func:`anchor_peaks`), the velocities of the share of both peaks
+    (:func:`_range`, at least +-FWHM/2 of the instrument), the union of
+    them. Not the whole regions (:func:`pair_score`): the regions of the
+    matched filters are wide (F168), and a true doublet whose two lines
+    fall in one region, or whose regions also hold other lines, scored
+    <= 0 there. 0 when no peak matches or it cannot be rated."""
+    if matched is None:
+        matched = anchor_peaks(c, by_id, v, fwhm)
+    if not matched:
+        return 0.0
+    lag, gamma = _lag_gamma(c.lines)
+    if gamma <= 0 or not np.isfinite(gamma):
+        return 0.0
+    a, b = by_id[c.regions[0]], by_id[c.regions[1]]
+    sel = np.zeros(len(v), dtype=bool)
+    for k, kk in matched:
+        vs = v[a.peaks[k].index]
+        vp = v[b.peaks[kk].index] - lag
+        rs, rp = _range(a, k, v, fwhm), _range(b, kk, v, fwhm)
+        start, end = max(vs + rs[0], vp + rp[0]), min(vs + rs[1], vp + rp[1])
+        if start < end:
+            lo, hi = np.searchsorted(v, [start, end], side="left")
+            sel[lo:hi] = True
+    return _r2(v, _norm(flux), sel, lag, gamma)
+
+
 def _candidates(regions: List[_Region], labels: np.ndarray, v: np.ndarray,
-                flux: np.ndarray, anchors: Sequence[str], z_max: float
+                flux: np.ndarray, fwhm: np.ndarray, anchors: Sequence[str], z_max: float
                 ) -> List[_Candidate]:
     """Every pair of regions at the lag of an anchor pair (the overlap of
     the regions of the strong line with those of the partner moved back by
     the lag, as the kinematic search of the current method), with its
-    R^2 (:func:`pair_score`)."""
+    R^2 on the peaks it matches (:func:`peak_score`)."""
     by_id = {r.id: r for r in regions}
     out: List[_Candidate] = []
     for species, (strong, partner) in anchor_pairs(anchors):
@@ -419,8 +515,9 @@ def _candidates(regions: List[_Region], labels: np.ndarray, v: np.ndarray,
             z = centre / _wave_nm(strong) - 1.0
             if z < 0 or z > z_max:
                 continue
-            score = pair_score(v, flux, (a.lo, a.hi), (b.lo, b.hi), (strong, partner), z)
-            out.append(_Candidate(len(out), species, (strong, partner), (a.id, b.id), z, score))
+            cand = _Candidate(len(out), species, (strong, partner), (a.id, b.id), z, 0.0)
+            score = peak_score(cand, by_id, v, flux, fwhm)
+            out.append(dataclasses.replace(cand, score=score))
     return out
 
 
@@ -644,7 +741,8 @@ class _Context:
 
     def __init__(self, spec: Spectrum, fixed: Optional[SystemList], criterion: str,
                  screen: Optional[float], temper: bool, lya: bool, labels: np.ndarray,
-                 forest: Tuple[float, float]):
+                 forest: Tuple[float, float], refine: bool = True):
+        self.refine = refine
         self.labels = labels
         self.forest = forest
         """The forest, Lyman limit to Ly-a (velocity, c ln lambda[nm])."""
@@ -654,6 +752,27 @@ class _Context:
         self.screen = screen
         self.temper = temper
         self.lya = lya
+
+
+def _window(ctx: _Context, systs: Sequence[SystemList], ids: Sequence[int]
+            ) -> EvaluationWindow:
+    """The window of a group (:meth:`EvaluationWindow.around`) without the
+    pixels of the regions of other groups (PR 7c.4c-bis): their absorption
+    is in no hypothesis of the group, and the hypotheses with more free
+    lines took it (with the regions split at their gaps, F169, the window
+    of a group of the forest reached its neighbours: chi2 of hundreds per
+    pixel).
+
+    Raises
+    ------
+    ValueError
+        If no pixel is left.
+    """
+    win = EvaluationWindow.around(ctx.spec, systs, fixed=ctx.fixed)
+    keep = win.mask & ((ctx.labels == 0) | np.isin(ctx.labels, list(ids)))
+    if keep.sum() == win.index.size:
+        return win
+    return EvaluationWindow.from_mask(ctx.spec, keep, fixed=ctx.fixed)
 
 
 def _evaluate_group(ctx: _Context, regions: List[_Region], edges: List[_Candidate],
@@ -679,8 +798,7 @@ def _evaluate_group(ctx: _Context, regions: List[_Region], edges: List[_Candidat
         _build(h, cands, v, flux, err)
     crit = ctx.criterion
     try:
-        win = EvaluationWindow.around(ctx.spec, [h.systs for h in hyps if h.systs is not None],
-                                      fixed=ctx.fixed)
+        win = _window(ctx, [h.systs for h in hyps if h.systs is not None], ids)
         for h in hyps:
             assert h.systs is not None
             h.aod = _measure(win, h.systs)
@@ -779,8 +897,8 @@ def _evaluate_group(ctx: _Context, regions: List[_Region], edges: List[_Candidat
 
 def _added(ctx: _Context, h: _Hyp, cands: Mapping[int, _Candidate], i: int,
            v: np.ndarray) -> List[_Comp]:
-    """The components that can be added to ``h`` at pixel ``i``
-    (:data:`MAX_ADDED`): its default label, and, when the pixel is in a
+    """The components that can be added to ``h`` at pixel ``i`` by the
+    refinement (:func:`_refine`): its default label, and, when the pixel is in a
     region of one of its anchors, the species of the anchor on the line of
     that region (a region of a metal line can also hold a blend, or a
     depression of the continuum)."""
@@ -801,10 +919,15 @@ def _added(ctx: _Context, h: _Hyp, cands: Mapping[int, _Candidate], i: int,
 def _refine(ctx: _Context, win: EvaluationWindow, h: _Hyp,
             cands: Mapping[int, _Candidate], v: np.ndarray) -> None:
     """Components added to a fitted hypothesis where its residuals are most
-    negative, each the best of :func:`_added` and kept when it lowers the
-    criterion (:data:`MAX_ADDED`)."""
+    negative, each the best of :func:`_added`, while it lowers the criterion
+    (:data:`MAX_ADDED`, :data:`MAX_FIT_K`); nothing when ``ctx.refine`` is
+    off."""
     crit = ctx.criterion
-    for _ in range(MAX_ADDED):
+    if not ctx.refine:
+        return
+    added = 0
+    while MAX_ADDED is None or added < MAX_ADDED:
+        added += 1
         if h.fitted is None or h.fit is None:
             return
         res = win.evaluate(h.fitted, min_influence=0.0).residuals[win.index]
@@ -862,7 +985,8 @@ def identify_hypotheses(spec: Spectrum, multiplets: Sequence[str],
                         fixed: Optional[SystemList] = None,
                         criterion: str = "spic", prefilter: float = PREFILTER_R2,
                         screen: Optional[float] = SCREEN_DELTA, max_group: int = MAX_GROUP,
-                        temper: bool = False, z_em_margin_kms: float = 3000.0,
+                        temper: bool = False, refine: bool = True,
+                        z_em_margin_kms: float = 3000.0,
                         x_range: Optional[Tuple[float, float]] = None,
                         params: Optional[Mapping[str, Any]] = None) -> HypothesesResult:
     """The identification as a comparison between hypotheses (see the
@@ -889,6 +1013,9 @@ def identify_hypotheses(spec: Spectrum, multiplets: Sequence[str],
     temper : bool
         The differences of the criterion divided by max(1, chi2_nu) of the
         accepted model of the group (design, section 3.3).
+    refine : bool
+        The refinement of the finalists by their residuals (:func:`_refine`,
+        F170).
     z_em_margin_kms : float
         No system beyond ``z_em`` by more than this (F55).
     x_range : (float, float), optional
@@ -922,9 +1049,9 @@ def identify_hypotheses(spec: Spectrum, multiplets: Sequence[str],
         err = np.asarray(spec.dy.to_value(spec.y.unit), dtype=float) / norm
     fwhm = C_KMS / spec.resolution()
 
-    regions = _regions(spec, det.regions, det.max_significance, v, flux, err, z_em, x_range)
-    labels = np.where(np.isin(det.regions, [r.id for r in regions]), det.regions, 0)
-    all_cands = _candidates(regions, labels, v, flux, anchors, z_max)
+    regions, labels = _regions(spec, det.regions, det.max_significance, v, flux, err, z_em,
+                               x_range)
+    all_cands = _candidates(regions, labels, v, flux, fwhm, anchors, z_max)
     by_id = {r.id: r for r in regions}
     unmatched = [c for c in all_cands if not anchor_peaks(c, by_id, v, fwhm)]
     edges = [c for c in all_cands if c.score >= prefilter and c not in unmatched]
@@ -934,13 +1061,14 @@ def identify_hypotheses(spec: Spectrum, multiplets: Sequence[str],
     forest = (C_KMS * np.log((1.0 + z_em) * xem_d['Ly_lim'].to_value(au.nm)),
               C_KMS * np.log((1.0 + z_em) * xem_d['Ly_a'].to_value(au.nm)))
     ctx = _Context(spec, fixed if fixed is not None and fixed.components else None,
-                   criterion, screen, temper, lya, labels, forest)
+                   criterion, screen, temper, lya, labels, forest, refine)
     results = [_evaluate_group(ctx, [by_id[i] for i in g_ids], g_edges, v, flux, err, fwhm)
                for g_ids, g_edges in groups]
     seconds = time.perf_counter() - t0
     run_params = dict(params or {})
     run_params.update(multiplets=list(multiplets), criterion=criterion, prefilter=prefilter,
-                      screen=screen, max_group=max_group, temper=temper,
+                      screen=screen, max_group=max_group, temper=temper, refine=refine,
+                      max_added=MAX_ADDED, split_gaps=SPLIT_GAPS,
                       z_em_margin_kms=z_em_margin_kms, seconds=round(seconds, 3))
     new_spec = _output(spec, x_nm, regions, labels, all_cands, results, low, cut, unmatched,
                        prefilter, run_params)

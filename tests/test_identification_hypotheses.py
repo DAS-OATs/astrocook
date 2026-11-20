@@ -251,3 +251,130 @@ def test_populate_starts_from_the_short_fit(session):
     logn = json.loads(meta["logN_map_json"])
     assert sorted(round(c.logN, 6) for c in out.systs.components) == sorted(
         round(v, 6) for v in logn.values())
+
+
+# --- PR 7c.4c-bis ------------------------------------------------------------
+
+def _arrays(spec):
+    flux = spec.y.value / spec.cont.value
+    err = spec.dy.value / spec.cont.value
+    return C_KMS * np.log(spec.x.to_value("nm")), flux, err
+
+
+def _at(v, line, z, dv=0.0):
+    return C_KMS * np.log(ATOM_DATA[line]["wave"] / 10 * (1 + z)) + dv
+
+
+def test_the_score_of_a_pair_is_on_its_peaks():
+    # F169: a CIV doublet whose partner region also holds an unrelated line
+    # scores low on the regions, high on the peaks it matches
+    z = 2.50
+    lam = ATOM_DATA["CIV_1550"]["wave"] * (1 + z) * (1 + 90.0 / C_KMS)
+    comps = [MockComponent("CIV", z, 13.8, 12.0),
+             MockComponent("Ly_a", lam / ATOM_DATA["Ly_a"]["wave"] - 1, 14.0, 20.0)]
+    spec = _mock(comps, lam=(530.0, 560.0))
+    v, flux, err = _arrays(spec)
+    fwhm = np.full(len(v), C_KMS / 45000.0)
+
+    def region(rid, lo_kms, hi_kms, line):
+        lo, hi = np.searchsorted(v, [_at(v, line, z, lo_kms), _at(v, line, z, hi_kms)])
+        return H._Region(rid, int(lo), int(hi), "red", 10.0, H._peaks(v, flux, err, lo, hi))
+
+    a, b = region(1, -40, 40, "CIV_1548"), region(2, -40, 160, "CIV_1550")
+    assert len(b.peaks) == 2
+    c = H._Candidate(0, "CIV", ("CIV_1548", "CIV_1550"), (1, 2), z, 0.0)
+    by_id = {1: a, 2: b}
+    assert H.anchor_peaks(c, by_id, v, fwhm) == [(0, 0)]
+    on_regions = H.pair_score(v, flux, (a.lo, a.hi), (b.lo, b.hi), c.lines, z)
+    on_peaks = H.peak_score(c, by_id, v, flux, fwhm)
+    assert on_peaks > 0.9
+    assert on_regions < on_peaks - 0.2
+
+
+def test_a_region_is_split_at_its_gaps():
+    # Two lines 300 km/s apart, the flux back to the continuum between them:
+    # two regions of the identification, one each
+    comps = [MockComponent("CIV", 2.50, 14.0, 10.0),
+             MockComponent("CIV", 2.50 + 300.0 / C_KMS * 3.5, 14.0, 10.0)]
+    spec = _mock(comps, lam=(530.0, 560.0))
+    v, flux, err = _arrays(spec)
+    lo, hi = np.searchsorted(v, [_at(v, "CIV_1548", 2.50, -60),
+                                 _at(v, "CIV_1548", 2.50, 360)])
+    labels = np.zeros(len(v), dtype=int)
+    labels[lo:hi + 1] = 1
+    sig = np.full(len(v), 10.0)
+    regions, new = H._regions(spec, labels, sig, v, flux, err, Z_EM, None)
+    assert len(regions) == 2
+    assert regions[0].hi + 1 == regions[1].lo
+    assert set(np.unique(new[lo:hi + 1])) == {1, 2}
+    assert all(len(r.peaks) == 1 for r in regions)
+
+
+def test_a_region_is_not_split_within_a_blend(monkeypatch):
+    comps = [MockComponent("CIV", 2.50, 14.0, 10.0),
+             MockComponent("CIV", 2.50 + 30.0 / C_KMS * 3.5, 14.0, 10.0)]
+    spec = _mock(comps, lam=(530.0, 560.0))
+    v, flux, err = _arrays(spec)
+    lo, hi = np.searchsorted(v, [_at(v, "CIV_1548", 2.50, -60),
+                                 _at(v, "CIV_1548", 2.50, 90)])
+    labels = np.zeros(len(v), dtype=int)
+    labels[lo:hi + 1] = 1
+    regions, _ = H._regions(spec, labels, np.full(len(v), 10.0), v, flux, err, Z_EM, None)
+    assert len(regions) == 1 and len(regions[0].peaks) == 2
+    monkeypatch.setattr(H, "SPLIT_GAPS", False)
+    spec2 = _mock(comps[:1] + [MockComponent("CIV", 2.50 + 300.0 / C_KMS * 3.5, 14.0, 10.0)],
+                  lam=(530.0, 560.0))
+    v, flux, err = _arrays(spec2)
+    hi = np.searchsorted(v, _at(v, "CIV_1548", 2.50, 360))
+    labels[lo:hi + 1] = 1
+    regions, _ = H._regions(spec2, labels, np.full(len(v), 10.0), v, flux, err, Z_EM, None)
+    assert len(regions) == 1
+
+
+def test_the_window_of_a_group_leaves_out_the_other_regions():
+    spec = _mock(COMPONENTS[:2])
+    v, flux, err = _arrays(spec)
+    systs = H._empty().add_component("CIV", 2.50, logN=14.0, b=10.0)
+    lo, hi = np.searchsorted(v, [_at(v, "CIV_1548", 2.50, -40), _at(v, "CIV_1548", 2.50, 40)])
+    labels = np.zeros(len(v), dtype=int)
+    labels[lo:hi + 1] = 1
+    # A region of another group inside the window of the first
+    o_lo, o_hi = np.searchsorted(v, [_at(v, "CIV_1548", 2.50, 45), _at(v, "CIV_1548", 2.50, 52)])
+    labels[o_lo:o_hi + 1] = 2
+    ctx = H._Context(spec, None, "spic", None, False, False, labels, (0.0, 0.0))
+    from astrocook.fitting.evaluation_window import EvaluationWindow
+    full = EvaluationWindow.around(spec, [systs])
+    assert full.mask[o_lo:o_hi + 1].all()
+    win = H._window(ctx, [systs], [1])
+    assert not win.mask[o_lo:o_hi + 1].any()
+    assert win.mask[lo:hi + 1].all()
+    assert (win.mask | (labels == 2)).sum() == full.mask.sum()
+
+
+def _added(res):
+    st = res.spectrum.meta[ident.META_KEY]
+    return st, [len(h.components) for g in st.groups for h in g.hypotheses]
+
+
+def test_the_refinement_is_an_option(monkeypatch):
+    # F170: on by default; off, every hypothesis keeps the components of its
+    # peaks; MAX_ADDED caps it
+    spec = _mock(COMPONENTS[1:3])
+    on = H.identify_hypotheses(spec, ["CIV"])
+    off = H.identify_hypotheses(spec, ["CIV"], refine=False)
+    assert on.spectrum.meta[ident.META_KEY].params["refine"] is True
+    assert off.spectrum.meta[ident.META_KEY].params["refine"] is False
+    n_on, n_off = _added(on)[1], _added(off)[1]
+    assert sum(n_on) > sum(n_off)
+    monkeypatch.setattr(H, "MAX_ADDED", 1)
+    capped = H.identify_hypotheses(spec, ["CIV"])
+    st = capped.spectrum.meta[ident.META_KEY]
+    assert st.params["max_added"] == 1
+    for g_off, g_cap in zip(off.spectrum.meta[ident.META_KEY].groups, st.groups, strict=True):
+        for h_off, h_cap in zip(g_off.hypotheses, g_cap.hypotheses, strict=False):
+            assert len(h_cap.components) <= len(h_off.components) + 1
+
+
+def test_the_recipe_takes_refine(session):
+    out = session.absorbers.identify_lines(multiplets="CIV", method="hypotheses", refine=False)
+    assert out.spec.meta[ident.META_KEY].params["refine"] is False

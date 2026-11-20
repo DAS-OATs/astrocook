@@ -276,8 +276,13 @@ def main():
                         help="the method of identify_lines (PR 7c.4c)")
     parser.add_argument("--prefilter", type=float, default=None)
     parser.add_argument("--screen", type=float, default=None)
+    parser.add_argument("--max-added", type=int, default=None,
+                        help="as in validate_mocks.py (PR 7c.4c-bis)")
+    parser.add_argument("--no-split-gaps", dest="split_gaps", action="store_false",
+                        default=None, help="as in validate_mocks.py (PR 7c.4c-bis)")
     args = parser.parse_args()
-    vm.set_chain(dict(method=args.method, prefilter=args.prefilter, screen=args.screen))
+    vm.set_chain(dict(method=args.method, prefilter=args.prefilter, screen=args.screen,
+                      max_added=args.max_added, split_gaps=args.split_gaps))
     t0 = time.time()
     result = run(args.workers, tuple(args.seeds))
     result["seconds"] = time.time() - t0

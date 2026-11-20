@@ -50,9 +50,8 @@ OPTIONS: dict = {}
 def _init(options):
     OPTIONS.clear()
     OPTIONS.update(options)
-    if options.get("max_added") is not None:
-        from astrocook.fitting import hypotheses
-        hypotheses.MAX_ADDED = int(options["max_added"])
+    vm.set_chain(dict(max_added=options.get("max_added"),
+                      split_gaps=options.get("split_gaps")))
 
 
 def _runs():
@@ -165,10 +164,14 @@ def main(argv=None):
     parser.add_argument("--seeds", type=int, nargs="*", default=[0, 2])
     parser.add_argument("--json", type=Path, default=None)
     parser.add_argument("--max-added", type=int, default=None,
-                        help="components added by the refinement (0: none)")
+                        help="the most components added by the refinement (0: none; "
+                             "-1: no fixed number, the default)")
+    parser.add_argument("--no-split-gaps", dest="split_gaps", action="store_false",
+                        default=None, help="the regions not split at their gaps (PR 7c.4c)")
     args = parser.parse_args(argv)
     options = dict(prefilters=args.prefilters, screens=args.screens,
-                   multiplets=args.multiplets, max_added=args.max_added)
+                   multiplets=args.multiplets, max_added=args.max_added,
+                   split_gaps=args.split_gaps)
     _init(options)
     points = [(s, r, z, seed) for s in args.snr for r in args.resol for z in args.z_em
               for seed in args.seeds]

@@ -377,11 +377,16 @@ def set_chain(options):
     ``doublets_multiplets``)."""
     CHAIN.clear()
     CHAIN.update({k: v for k, v in options.items() if v is not None})
+    from astrocook.fitting import hypotheses
     if "max_added" in CHAIN:
-        # The refinement of the hypotheses by their residuals (PR 7c.4c):
-        # not a parameter of the recipes, measured on and off
-        from astrocook.fitting import hypotheses
-        hypotheses.MAX_ADDED = int(CHAIN["max_added"])
+        # The most components the refinement of the hypotheses adds (PR
+        # 7c.4c; -1: no fixed number, the default of PR 7c.4c-bis; 0: the
+        # refinement off, as ``refine=False``)
+        n = int(CHAIN["max_added"])
+        hypotheses.MAX_ADDED = None if n < 0 else n
+    if "split_gaps" in CHAIN:
+        # The split of the regions at their gaps (PR 7c.4c-bis)
+        hypotheses.SPLIT_GAPS = bool(CHAIN["split_gaps"])
 
 
 def chain_params(recipe):
@@ -1433,10 +1438,16 @@ def main():
     parser.add_argument("--temper", action="store_true", default=None,
                         help="the weights tempered (method hypotheses)")
     parser.add_argument("--max-added", type=int, default=None,
-                        help="components added by the refinement of each hypothesis "
-                             "(method hypotheses; 0: no refinement)")
+                        help="the most components added by the refinement of each "
+                             "hypothesis (method hypotheses; 0: no refinement; -1: no "
+                             "fixed number, the default)")
+    parser.add_argument("--no-split-gaps", dest="split_gaps", action="store_false",
+                        default=None,
+                        help="the regions not split at their gaps (method hypotheses, "
+                             "as PR 7c.4c)")
     args = parser.parse_args()
     set_chain(dict(method=args.method, multiplets=args.multiplets, max_added=args.max_added,
+                   split_gaps=args.split_gaps,
                    doublets_multiplets=args.doublets_multiplets, prefilter=args.prefilter,
                    screen=args.screen, criterion=args.criterion, temper=args.temper))
     t0 = time.time()

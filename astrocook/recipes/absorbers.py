@@ -402,6 +402,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "screen", "type": float, "default": SCREEN_DELTA, "optional": True, "gt": 0, "doc": "Method 'hypotheses': the hypotheses behind the best by more than this in the criterion, by the apparent optical depth before their fit, are dropped; None for no screen (every hypothesis fitted)."},
             {"name": "max_group", "type": int, "default": MAX_GROUP, "min": 2, "doc": "Method 'hypotheses': the largest group of regions compared together; a larger one is split at its weakest pairs."},
             {"name": "temper", "type": bool, "default": False, "doc": "Method 'hypotheses': the differences of the criterion divided by the reduced chi2 of the accepted model, when above 1 (an error spectrum not calibrated)."},
+            {"name": "refine", "type": bool, "default": True, "doc": "Method 'hypotheses': each alternative refined before the comparison, with components added where its residuals ask for them, while they lower the criterion."},
         ],
     },
     "populate_from_identification": {
@@ -1635,7 +1636,8 @@ class RecipeAbsorbers:
                        prefilter: float = PREFILTER_R2,
                        screen: Optional[float] = SCREEN_DELTA,
                        max_group: int = MAX_GROUP,
-                       temper: bool = False) -> 'Session':
+                       temper: bool = False,
+                       refine: bool = True) -> 'Session':
         """
         Identify likely absorption systems.
 
@@ -1672,7 +1674,7 @@ class RecipeAbsorbers:
             weight). ``mask_col``, ``min_pix_region``, ``merge_dv``,
             ``score_threshold``, ``bypass_scoring`` and ``debug_rating``
             are of the first, ``criterion``, ``prefilter``, ``screen``,
-            ``max_group`` and ``temper`` of the second; with
+            ``max_group``, ``temper`` and ``refine`` of the second; with
             ``"hypotheses"``, ``multiplets`` also takes ``"all"`` (every
             metal anchor), and the Ly-a only when ``Ly_a`` or ``Ly_ab`` is
             asked (F51). Defaults to ``"doublets"``.
@@ -1694,6 +1696,11 @@ class RecipeAbsorbers:
             The differences of the criterion divided by the reduced chi2 of
             the accepted model of the group, when above 1 (for an error
             spectrum that is not calibrated). Defaults to ``False``.
+        refine : bool, optional
+            Each alternative of a group refined before the comparison, with
+            components added where the residuals of its short fit ask for
+            them, while they lower the criterion (method ``"hypotheses"``,
+            F170). Defaults to ``True``.
 
         Returns
         -------
@@ -1705,7 +1712,7 @@ class RecipeAbsorbers:
         if method == "hypotheses":
             new_spec_v2 = _identify_hypotheses(
                 self._session, multiplet_list, criterion=criterion, prefilter=prefilter,
-                screen=screen, max_group=max_group, temper=temper,
+                screen=screen, max_group=max_group, temper=temper, refine=refine,
                 z_em_margin_kms=z_em_margin_kms)
             for key, value in _identification_extra(new_spec_v2).items():
                 report(key, value)
