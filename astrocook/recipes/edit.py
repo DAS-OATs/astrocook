@@ -53,6 +53,9 @@ def _methods_set_properties(p):
         unit = str(p['yunit'])
         parts.append("the flux was declared in arbitrary units" if unit.strip() == 'arb_flux'
                      else f"the unit of the flux was declared as {unit}, the values unchanged")
+    if p.given('telluric_corrected'):
+        parts.append("the flux was declared " + ("" if p['telluric_corrected'] == 'yes' else "not ")
+                     + "corrected for the telluric absorption")
     p.raw('overwrite_resol_col')
     if not parts:
         return f"The properties of the session were left as they were{p.menu}"
@@ -165,7 +168,7 @@ EDIT_RECIPES_SCHEMAS = {
         "url": "tutorials/editing_data.html#setting-session-properties",
         "menu": "Edit > Set &Properties",
         "provides": ("z_em", "resolution"),
-        "details": "Sets the name of the session and of the object, the emission redshift, the resolution and the unit of the flux (declared, not converted). A field left at '_current_' keeps its value.",
+        "details": "Sets the names of the session and of the object, the emission redshift, the resolution, the unit of the flux (declared, not converted), its telluric correction. '_current_' keeps a value.",
         "params": [
             {"name": "name", "type": str, "default": "_current_", "keep": ("_current_",), "doc": "Name of the session, as shown in the session list (not empty)."},
             {"name": "object", "type": str, "default": "_current_", "keep": ("_current_",), "doc": "Name of the object (the OBJECT keyword of the header)."},
@@ -178,7 +181,9 @@ EDIT_RECIPES_SCHEMAS = {
             # Declared, not converted (PR 8-bis, Guido: a parameter of
             # set_properties, as z_em and resol); y_convert converts
             {"name": "yunit", "type": str, "default": "_current_", "keep": ("_current_",), "doc": "Unit of the flux, declared without converting the values, e.g. 'erg/(Angstrom s cm^2)', or 'arb_flux' (arbitrary units)."},
-            {"name": "overwrite_resol_col", "type": bool, "default": False, "gui_hidden": True, "doc": "Replace an existing 'resol' column that varies along the spectrum (asked by the GUI)."}
+            {"name": "overwrite_resol_col", "type": bool, "default": False, "gui_hidden": True, "doc": "Replace an existing 'resol' column that varies along the spectrum (asked by the GUI)."},
+            # The flag TELLURIC_CORRECTED (phase 7-ter, T1; core/telluric.py)
+            {"name": "telluric_corrected", "type": str, "default": "_current_", "keep": ("_current_",), "choices": ["_current_", "yes", "no"], "doc": "Whether the flux is already corrected for the tellurics: 'yes' (normalized by the continuum alone) or 'no' (by the continuum times the 'telluric' column)."},
         ],
     },
     "x_convert": {
@@ -549,7 +554,8 @@ class RecipeEdit:
     def set_properties(self, name: str = '_current_', object: str = '_current_',
                        z_em: Union[float, str] = '_current_', resol: str = '_current_',
                        overwrite_resol_col: bool = False,
-                       yunit: str = '_current_') -> Optional['Session']:
+                       yunit: str = '_current_',
+                       telluric_corrected: str = '_current_') -> Optional['Session']:
         """
         Set session properties.
 
@@ -580,6 +586,13 @@ class RecipeEdit:
             (e.g. ``'erg/(Angstrom s cm^2)'``) or ``'arb_flux'``, the
             arbitrary units of Astrocook. Defaults to ``'_current_'`` (no
             change). :meth:`y_convert` converts a flux that has a unit.
+        telluric_corrected : str, optional
+            Whether the flux is already corrected for the telluric
+            absorption (phase 7-ter, T1): ``'yes'`` sets the flag
+            ``TELLURIC_CORRECTED`` of the metadata, and the normalization
+            is the continuum alone; ``'no'`` clears it, and the
+            normalization is the continuum times the ``telluric`` column,
+            when there is one. Defaults to ``'_current_'`` (no change).
 
         Returns
         -------
@@ -632,6 +645,8 @@ class RecipeEdit:
 
         if yunit_obj is not None:
             new_spec = new_spec.with_flux_unit(yunit_obj)
+        if telluric_corrected != '_current_':
+            new_spec = new_spec.with_telluric_corrected(telluric_corrected == 'yes')
 
         # 4. Handle Session Name (Lives on the Session wrapper)
         new_session = self._session.with_new_spectrum(new_spec)

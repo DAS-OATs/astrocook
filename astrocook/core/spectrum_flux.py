@@ -16,6 +16,7 @@ from astrocook.core.photometry import generate_calibration_curve
 from astrocook.core.spectrum_operations import running_std, smooth_spectrum
 from astrocook.core.structures import DataColumn, SpectrumData
 from astrocook.core._spectrum_host import HostBase
+from astrocook.core.telluric import TELLURIC_COLUMN, TELLURIC_CORRECTED
 from astrocook.core.units import FLAM, FLUX_AUX_COLUMNS, has_no_unit, is_arbitrary_flux
 
 logger = logging.getLogger(__name__)
@@ -29,7 +30,7 @@ logger = logging.getLogger(__name__)
 # y_convert uses it too)
 # Transmissions (dimensionless, multiplied by the continuum in
 # Spectrum.norm): smoothed, as the flux they apply to, but never scaled.
-TRANSMISSION_AUX_COLUMNS = ('telluric_model',)
+TRANSMISSION_AUX_COLUMNS = (TELLURIC_COLUMN,)
 
 
 class FluxMixin(HostBase):
@@ -151,7 +152,7 @@ class FluxMixin(HostBase):
     def smooth(self, sigma_kms: float) -> Self:
         """
         Apply Gaussian smoothing to the flux (y, dy), the flux auxiliary
-        columns (cont, model, cont_pl) and the transmission (telluric_model).
+        columns (cont, model, cont_pl) and the transmission (telluric).
 
         Parameters
         ----------
@@ -340,6 +341,32 @@ class FluxMixin(HostBase):
                                        dy=relabel(self._data.dy), aux_cols=new_aux_cols)
         return self.__class__(data=new_data,
                               history=self.history + [f"Flux unit declared: {unit}"])
+
+    def with_telluric_corrected(self, corrected: bool) -> Self:
+        """
+        Declare whether the flux is already corrected for the tellurics
+        (phase 7-ter, T1): the flag ``TELLURIC_CORRECTED`` of the metadata,
+        kept in the archive. With it the normalization (``norm``) is the
+        continuum alone; without it, the continuum times the ``telluric``
+        column, when there is one (``core/telluric.py``).
+
+        Parameters
+        ----------
+        corrected : bool
+            True if the flux is already corrected.
+
+        Returns
+        -------
+        Spectrum
+            A new instance with the flag set; the values unchanged.
+        """
+        meta = {k: v for k, v in self._data.meta.items()
+                if str(k).upper() != TELLURIC_CORRECTED}
+        meta[TELLURIC_CORRECTED] = bool(corrected)
+        new_data = dataclasses.replace(self._data, meta=meta)
+        state = "corrected" if corrected else "not corrected"
+        return self.__class__(data=new_data,
+                              history=self.history + [f"Flux declared {state} for the tellurics"])
 
     def calibrate(self, magnitudes: str) -> Self:
         """

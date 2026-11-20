@@ -15,6 +15,7 @@ from typing import Self, List, Union, cast
 from astrocook.core.spectrum_operations import find_absorbed_regions, fit_powerlaw_to_regions
 from astrocook.core.structures import DataColumn
 from astrocook.core._spectrum_host import HostBase
+from astrocook.core.telluric import telluric_transmission
 
 logger = logging.getLogger(__name__)
 
@@ -117,9 +118,9 @@ class ContinuumMixin(HostBase):
         
         mask_abs = self._data.aux_cols[mask_col].values.astype(bool)
         
-        # Check for Telluric Model
-        telluric_col = self._data.aux_cols.get('telluric_model')
-        telluric_vals = telluric_col.values if telluric_col is not None else None
+        # The telluric transmission, as in Spectrum.norm (None without the
+        # column or when the flux is already corrected)
+        telluric_vals = telluric_transmission(self._data)
 
         y_fit = self._data.y.values.copy()
         y_interp = None
