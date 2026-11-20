@@ -109,7 +109,9 @@ still says 2.7.0). Python ≥3.12.
   that a FITS header cannot hold (the identification of
   `core/identification.py`, the Bayesian samples) are files of their own
   in the `.acs2` tar, by the table of `io/archive_data.py` (phase 7, PR
-  7c.3): a new one gets its entry there.
+  7c.3): a new one gets its entry there. The tables of the files are read by the names of
+  their columns by `io/tables.py` (phase 7-ter, T2), shared by the loader
+  of the text tables and `import_model`.
 - `astrocook/mcp_server/` – MCP server for agents (pilot, `ROADMAP.md`
   section 4.1): a thin layer over the recipes, optional `[mcp]` extra.
 - `astrocook/mocks/` – synthetic spectra with known parameters, independent

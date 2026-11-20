@@ -688,6 +688,49 @@ def editing_set_properties(s: Studio):
     return image
 
 
+def _mock_with_tellurics(folder: Path):
+    """A mock spectrum around the O2 A band, with tellurics, as an archive
+    named "Mock QSO", and its telluric model as a text file of the format
+    of the request of phase 7-ter (``# x xmin xmax trans_molecfit dy``, the
+    dy of the science spectrum): public data, made here (T2)."""
+    from astrocook.mocks import MockTruth, generate
+    from astrocook.mocks.truth import TelluricModel
+    from astrocook.session.session import Session
+    truth = MockTruth(components=[], lam_min_nm=755.0, lam_max_nm=775.0, dv_kms=1.5,
+                      resol=45000.0, snr=40.0, cont_amplitude=1.0,
+                      telluric=TelluricModel(), seed=7)
+    spec = generate(truth, truth_columns=False)
+    archive = folder / "Mock QSO.acs2"
+    Session("Mock QSO", None, spec=spec).save(str(archive))
+    model = generate(MockTruth(**{**truth.to_dict(), "components": [], "snr": None,
+                                  "telluric": TelluricModel()}), truth_columns=False)
+    path = folder / "telluric_model.dat"
+    with open(path, "w") as f:
+        f.write("# x xmin xmax trans_molecfit dy\n")
+        for x, lo, hi, t, dy in zip(model.x.value, model.xmin.value, model.xmax.value,
+                                    model.y.value, spec.dy.value, strict=True):
+            f.write(f"{x:.6f} {lo:.6f} {hi:.6f} {t:.6f} {dy:.5f}\n")
+    return archive, path
+
+
+@scene
+def external_models_import_dialog(s: Studio):
+    """File > Import Model... (phase 7-ter, T2): the dialog with a telluric
+    model chosen, over a mock spectrum with the O2 A band."""
+    folder = Path(tempfile.mkdtemp(prefix="astrocook-shots-models-"))
+    archive, model = _mock_with_tellurics(folder)
+    w = s.new_window()
+    w.open_session_from_path(str(archive))
+    s.pump(1.0)
+    s.limits(x=(758, 772))
+    dialog = s.recipe_dialog("file", "import_model",
+                             {"file_path": f"~/models/{model.name}"}, focus="file_path")
+    image = grab(w.plot_viewer.canvas)
+    paste(image, framed(grab(dialog), dialog.windowTitle()), (60, 60), shadow_margin=SHADOW)
+    dialog.close()
+    return image
+
+
 @scene
 def editing_apply_expression(s: Studio):
     w = s.new_window("My other QSO", "My QSO", size=(1000, 720))

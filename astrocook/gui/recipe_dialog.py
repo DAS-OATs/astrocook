@@ -5,7 +5,8 @@ import webbrowser
 import astropy.units as au
 from PySide6.QtWidgets import (
     QDialog, QFormLayout, QFrame, QGridLayout, QLabel, QLineEdit, QCheckBox,
-    QPushButton, QDialogButtonBox, QWidget, QComboBox, QMessageBox, QVBoxLayout, QApplication
+    QPushButton, QDialogButtonBox, QWidget, QComboBox, QMessageBox, QVBoxLayout, QApplication,
+    QFileDialog, QHBoxLayout
 )
 from PySide6.QtGui import QIntValidator, QDoubleValidator
 from PySide6.QtCore import Qt, QLocale, Signal, QEvent
@@ -219,7 +220,12 @@ class RecipeDialog(QDialog):
 
                 if widget:
                     self.input_widgets[param_name] = widget
-                    form_layout.addRow(label, widget)
+                    if param_name == 'file_path' and isinstance(widget, QLineEdit):
+                        # A file chosen with a Browse button (Import Model,
+                        # phase 7-ter, T2), or written in the field
+                        form_layout.addRow(label, self._file_field(widget))
+                    else:
+                        form_layout.addRow(label, widget)
                     
                     if isinstance(widget, QLineEdit):
                         widget.installEventFilter(self)
@@ -246,6 +252,26 @@ class RecipeDialog(QDialog):
         button_box.rejected.connect(self.reject) 
         button_box.helpRequested.connect(self._show_help) 
         main_layout.addWidget(button_box)
+
+    def _file_field(self, line_edit: QLineEdit) -> QWidget:
+        """The field of a file with its Browse button."""
+        container = QWidget()
+        layout = QHBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(line_edit)
+        button = QPushButton("Browse...")
+        button.setObjectName("BrowseButton")
+        button.clicked.connect(lambda: self._browse_file(line_edit))
+        layout.addWidget(button)
+        self.browse_button = button
+        return container
+
+    def _browse_file(self, line_edit: QLineEdit):
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Select the File", line_edit.text(),
+            "Tables (*.dat *.txt *.csv *.ecsv *.fits *.fit);;All Files (*)")
+        if file_path:
+            line_edit.setText(file_path)
 
     def _session_param(self):
         """The parameter of the recipe that names an open session, or None."""
@@ -325,7 +351,8 @@ class RecipeDialog(QDialog):
         if session_param is not None:
             titles = {'resample': "<b>Select Target Session:</b>",
                       'equalize': "<b>Select Reference Session:</b>",
-                      'import_systems': "<b>Select Source Session:</b>"}
+                      'import_systems': "<b>Select Source Session:</b>",
+                      'import_model': "<b>Or Select the Session of the Model:</b>"}
             title_text = titles.get(self.recipe_name, "<b>Select Session:</b>")
                 
             title = QLabel(title_text)

@@ -42,6 +42,11 @@ V1_MASK_COLUMN = 'telluric_mask'
 UNUSED_TELLURIC_COLUMN = 'telluric_unused'
 #: The flag of the metadata: the flux is already corrected for the tellurics
 TELLURIC_CORRECTED = 'TELLURIC_CORRECTED'
+#: The names of a column of a telluric transmission in the files, in order
+#: of preference (matched ignoring the case): Astrocook, before 2.8.0, the
+#: Molecfit outputs (``trans_molecfit`` of the ASCII files of the request of
+#: 7-ter, ``mtrans`` of its FITS tables), PypeIt (``TELLURIC``); T2
+TELLURIC_NAMES = (TELLURIC_COLUMN, LEGACY_TELLURIC_COLUMN, 'trans_molecfit', 'mtrans')
 
 _TRUE = {'t', 'true', 'yes', 'y', '1'}
 
