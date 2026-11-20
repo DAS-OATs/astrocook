@@ -272,6 +272,10 @@ class RecipeDialog(QDialog):
             "Tables (*.dat *.txt *.csv *.ecsv *.fits *.fit);;All Files (*)")
         if file_path:
             line_edit.setText(file_path)
+        # The dialog back in front (Guido, T2: it stayed behind the main
+        # window, as if the recipe had already run)
+        self.raise_()
+        self.activateWindow()
 
     def _session_param(self):
         """The parameter of the recipe that names an open session, or None."""
