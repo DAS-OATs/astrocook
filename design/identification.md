@@ -850,6 +850,40 @@ tempering of section 3.3.
   choice can be reopened for the fit of the strong systems. The
   Lyman-limit continuum belongs to the DLAs and LLSs of 7b.
 
+**Done in PR 7c.4c** (19-20 November 2026): the prototype,
+`identify_lines(method="hypotheses")` (`astrocook/fitting/hypotheses.py`),
+also in `components_auto` and `doublets_auto` (`method`). What differs from
+the sections above, learned on the mocks:
+- *The pre-filter*: R^2 ≥ 0.3 on the regions of the matched filters (0.2
+  and 0.3 alike; 0 doubles the time and halves the purity, F169).
+- *No screen by the AOD*: the AOD parameters of a metal hypothesis are
+  poor (a MgII fit from them started at chi2 7645, from the fit 88), and
+  every threshold measured (ΔIC 10, 20, 40) dropped half of the true CIV
+  and SiIV systems (completeness 0.44 against 0.77, ECE 0.31 against
+  0.03) to save 2.5 s per spectrum; the option stays, off.
+- *The "no line" hypothesis*, besides the n + 1: a group of noise is
+  explained by nothing; and a candidate whose lines have no peak of the
+  de-blending at its lag is dropped before the comparison.
+- *The refinement by the residuals* (up to 3 components added to each
+  finalist, kept when the criterion falls): without it a metal hypothesis
+  built on the peaks has fewer components than the system and loses against
+  the free lines of the default labels; with it the comparison is fair, but
+  it is modeling inside the identification (F170, to decide).
+- *The combination* of the anchored finalists that explain different
+  peaks, greedy from the best, kept when the criterion falls (section 3.2).
+- *A cap of the short fit*, 60 free parameters (F171): a group with a
+  larger hypothesis keeps its default labels.
+- *The species*: the anchors are the doublets of the standard multiplets
+  and the pairs of FeII and SiII; `Ly_ab` in the forest; "all" the metals.
+
+The numbers (grid full, 135 mocks; against `doublets`): completeness /
+purity CIV 0.804 / 0.975 (0.870 / 0.993), SiIV 0.795 / 0.949 (0.857 /
+0.987), MgII 0.845 / 0.961 (0.913 / 0.988); the fit after it 1494 true
+components (1242), pull widths 1.6-2.1 (3.9-5.2), detectable pixels outside
+every region 0.009 (0.100); the credibility ECE 0.022, Brier 0.038; 15 s per
+spectrum to identify (0.17 s). The row of 7c.4c in `ROADMAP.md` has the
+grid robustness and the runs without the refinement.
+
 ## Common decisions with 7b
 
 Taken to the conversation "7 · plan of the phase" (Guido, 16 November
