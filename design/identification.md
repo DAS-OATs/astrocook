@@ -875,6 +875,15 @@ the sections above, learned on the mocks:
   larger hypothesis keeps its default labels.
 - *The species*: the anchors are the doublets of the standard multiplets
   and the pairs of FeII and SiII; `Ly_ab` in the forest; "all" the metals.
+  The default is the common one of the recipe (CIV, SiIV, MgII, `Ly_ab`),
+  not "all": on 18 mocks "all" leaves the purity of the three unchanged,
+  takes 0.01-0.03 of their completeness and doubles the time (7.6 s
+  median against 4.2), and the mocks hold no other species to gain.
+- *The Ly-a/Ly-b pairs* are not found yet (`validate_lyab_pairs.py`, 54
+  mocks): 117 pairs against 674 of `doublets`, the same purity (0.85),
+  completeness of the detectable Ly-b 0.012 against 0.087, none at z_em
+  4.5; the wide regions of the forest (F169) and the groups above the cap
+  (F171) the likely causes, not yet diagnosed.
 
 The numbers (grid full, 135 mocks; against `doublets`): completeness /
 purity CIV 0.804 / 0.975 (0.870 / 0.993), SiIV 0.795 / 0.949 (0.857 /

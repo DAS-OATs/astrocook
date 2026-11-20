@@ -186,11 +186,11 @@ def test_continuum_metrics_of_the_true_continuum():
 
 def test_schema_params_are_the_gui_defaults():
     params = vm.schema_params("absorbers", "doublets_auto")
-    # mask and z_em_margin_kms since phase 6-bis (PR 6b), with the behaviour
-    # of before as their defaults
+    # mask and z_em_margin_kms since phase 6-bis (PR 6b), method since phase
+    # 7 (PR 7c.4c), with the behaviour of before as their defaults
     assert params == {"multiplets": "CIV,SiIV,MgII", "score_threshold": "0.5",
                       "z_window_kms": "20.0", "max_b": "50.0", "max_logN": "19.0",
-                      "mask": "new", "z_em_margin_kms": "3000.0"}
+                      "mask": "new", "z_em_margin_kms": "3000.0", "method": "doublets"}
     assert "debug_rating" not in vm.schema_params("absorbers", "identify_lines")
     assert vm.schema_params("continuum", "estimate_auto")["fudge"] == "auto"
 
