@@ -446,6 +446,7 @@
 <li class="toctree-l2 current active"><a aria-current="page" class="current reference internal" href="#">astrocook.core.spectrum module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.structures.html">astrocook.core.structures module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.system_list.html">astrocook.core.system_list module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.telluric.html">astrocook.core.telluric module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.templates.html">astrocook.core.templates module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.units.html">astrocook.core.units module</a></li>
 </ul>
@@ -650,10 +651,17 @@ or None if the column does not exist.</p>
 <span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">norm</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Quantity</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#astrocook.core.spectrum.Spectrum.norm" title="Link to this definition">#</a></dt>
 <dd><p>Returns the normalization vector (Continuum * Telluric).</p>
 <p>Logic:</p>
-<ol class="arabic simple">
+<ol class="arabic">
 <li><p>If cont exists:
-- Returns cont * telluric (if telluric exists).
-- Returns cont (otherwise).</p></li>
+- Returns cont * telluric (if the <code class="docutils literal notranslate"><span class="pre">telluric</span></code> column exists and</p>
+<blockquote>
+<div><p>the flux is not already corrected: the flag
+<code class="docutils literal notranslate"><span class="pre">TELLURIC_CORRECTED</span></code> of the metadata, <code class="docutils literal notranslate"><span class="pre">core/telluric.py</span></code>).</p>
+</div></blockquote>
+<ul class="simple">
+<li><p>Returns cont (otherwise).</p></li>
+</ul>
+</li>
 <li><p>If cont is missing:
 - Returns 1.0 (if flux median is ~1, assuming pre-normalized).
 - Returns None (if flux is physical, signaling need for continuum fitting).</p></li>
@@ -1393,7 +1401,7 @@ cont_pl).</p>
 <dt class="sig sig-object py" id="astrocook.core.spectrum.Spectrum.smooth">
 <span class="sig-name descname"><span class="pre">smooth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sigma_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#astrocook.core.spectrum.Spectrum.smooth" title="Link to this definition">#</a></dt>
 <dd><p>Apply Gaussian smoothing to the flux (y, dy), the flux auxiliary
-columns (cont, model, cont_pl) and the transmission (telluric_model).</p>
+columns (cont, model, cont_pl) and the transmission (telluric).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>sigma_kms</strong> (<em>float</em>) – Standard deviation of the Gaussian kernel in km/s.</p>
@@ -1506,6 +1514,27 @@ dimensionless (a dimensionless quality flag is not a flux).</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A new instance with the same values and the unit declared.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#astrocook.core.spectrum.Spectrum" title="astrocook.core.spectrum.Spectrum">Spectrum</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.core.spectrum.Spectrum.with_telluric_corrected">
+<span class="sig-name descname"><span class="pre">with_telluric_corrected</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">corrected</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="headerlink" href="#astrocook.core.spectrum.Spectrum.with_telluric_corrected" title="Link to this definition">#</a></dt>
+<dd><p>Declare whether the flux is already corrected for the tellurics
+(phase 7-ter, T1): the flag <code class="docutils literal notranslate"><span class="pre">TELLURIC_CORRECTED</span></code> of the metadata,
+kept in the archive. With it the normalization (<code class="docutils literal notranslate"><span class="pre">norm</span></code>) is the
+continuum alone; without it, the continuum times the <code class="docutils literal notranslate"><span class="pre">telluric</span></code>
+column, when there is one (<code class="docutils literal notranslate"><span class="pre">core/telluric.py</span></code>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>corrected</strong> (<em>bool</em>) – True if the flux is already corrected.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new instance with the flag set; the values unchanged.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><a class="reference internal" href="#astrocook.core.spectrum.Spectrum" title="astrocook.core.spectrum.Spectrum">Spectrum</a></p>
@@ -1705,6 +1734,7 @@ Not used from a wavelength to a wavelength.</p></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.Spectrum.stitch"><code class="docutils literal notranslate"><span class="pre">Spectrum.stitch()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.Spectrum.update_continuum_from_knots"><code class="docutils literal notranslate"><span class="pre">Spectrum.update_continuum_from_knots()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.Spectrum.with_flux_unit"><code class="docutils literal notranslate"><span class="pre">Spectrum.with_flux_unit()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.Spectrum.with_telluric_corrected"><code class="docutils literal notranslate"><span class="pre">Spectrum.with_telluric_corrected()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.Spectrum.update_model"><code class="docutils literal notranslate"><span class="pre">Spectrum.update_model()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.Spectrum.axis_z_ref"><code class="docutils literal notranslate"><span class="pre">Spectrum.axis_z_ref()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.core.spectrum.Spectrum.x_convert"><code class="docutils literal notranslate"><span class="pre">Spectrum.x_convert()</span></code></a></li>
