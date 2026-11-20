@@ -71,6 +71,12 @@ class ModelRole:
     after: Optional[Callable[['Spectrum'], Optional[str]]] = None
 
 
+#: How far a transmission may go beyond 0-1 without a warning (T2: a
+#: Molecfit model of the request reaches 1 plus a little, from the numerics
+#: of the model, and the warning said "from 0.0237 to 1")
+TRANSMISSION_TOLERANCE = 1e-3
+
+
 def _prepare_telluric(source: ModelSource, spec: 'Spectrum'):
     """A transmission: dimensionless, between 0 and 1."""
     unit = source.unit
@@ -78,9 +84,10 @@ def _prepare_telluric(source: ModelSource, spec: 'Spectrum'):
         raise RecipeFailed(f"The column {source.column} of {source.where} is in {unit}: "
                            "a telluric transmission is dimensionless.")
     finite = source.values[np.isfinite(source.values)]
-    if len(finite) and (finite.min() < 0.0 or finite.max() > 1.0 + 1e-6):
+    if len(finite) and (finite.min() < -TRANSMISSION_TOLERANCE
+                        or finite.max() > 1.0 + TRANSMISSION_TOLERANCE):
         logger.warning(f"The column {source.column} of {source.where} goes from "
-                       f"{finite.min():.3g} to {finite.max():.3g}: a transmission is "
+                       f"{finite.min():.6g} to {finite.max():.6g}: a transmission is "
                        "between 0 and 1. Is it the column of the model?")
     return source.values, au.dimensionless_unscaled
 
