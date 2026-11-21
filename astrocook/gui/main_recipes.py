@@ -163,7 +163,11 @@ class MainRecipesMixin(HostBase):
                 current_params['z_em'] = f"{spec._data.z_em:.5f}"
                 
                 median_r = resolution_summary(spec)[0]
-                current_params['resol'] = f"{median_r:.0f}" if median_r > 0 else "0"
+                # No resolution: the field stays empty, with the placeholder
+                # of the dialog ("not set", F63); "0" was refused by the
+                # recipe and the recipe that waited was lost (FT8)
+                if median_r > 0:
+                    current_params['resol'] = f"{median_r:.0f}"
             
             # Merge with any passed initial_params (which take precedence)
             if initial_params:
@@ -384,6 +388,7 @@ class MainRecipesMixin(HostBase):
         self._last_attempted_recipe = {
             'category': category,
             'recipe_name': recipe_name,
+            'params': params,
         }
 
         self._ask_to_renormalize_model(recipe_name, params)
@@ -806,9 +811,21 @@ class MainRecipesMixin(HostBase):
 
     def _on_recipe_error(self, error_data: tuple):
         """Slot called when the RecipeWorker fails."""
-        # The recipe waiting for the one that failed is not resumed (PR 5b)
-        self._pending_recipe = None
         title, message, trace = error_data
+        # Set Properties, opened as a prerequisite, failed (e.g. a resolution
+        # that is refused): its dialog opens again with what was typed and the
+        # recipe still waits, instead of being lost in silence (FT8). Any
+        # other recipe that fails drops the one waiting for it (PR 5b).
+        pending = self._pending_recipe
+        last = self._last_attempted_recipe
+        retry_prerequisite = bool(
+            pending and last and not trace and pending['after'] == 'set_properties'
+            and last['recipe_name'] == 'set_properties')
+        if pending and not retry_prerequisite:
+            self._pending_recipe = None
+            if last and last['recipe_name'] == pending['after']:
+                message = (f"{message}\n\nThe recipe {pending['name']} did not run: "
+                           f"it was waiting for {pending['after']}.")
         
         # 1. Cleanup UI
         self._cleanup_progress_ui()
@@ -832,7 +849,20 @@ class MainRecipesMixin(HostBase):
                 details_text += "Previous Warnings:\n" + "-"*40 + "\n"
                 details_text += "\n".join(unique_warnings)
 
-        if trace:
+        if retry_prerequisite:
+            # --- CASE C: the prerequisite is asked again (FT8) ---
+            assert pending is not None and last is not None
+            self._show_custom_message(
+                title="Recipe Failed",
+                header=title,
+                text=f"{message}\n\nThe recipe {pending['name']} is waiting: "
+                     "Set Properties opens again.",
+                detailed_text=details_text if details_text else None,
+                buttons=QMessageBox.StandardButton.Ok,
+            )
+            QTimer.singleShot(0, lambda: self._launch_recipe_dialog(
+                'edit', 'set_properties', last.get('params')))
+        elif trace:
             # --- CASE A: System Crash (Show Traceback) ---
             self._show_custom_message(
                 title="Internal Error",
