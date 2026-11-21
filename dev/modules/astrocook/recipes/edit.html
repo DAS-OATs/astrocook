@@ -1053,7 +1053,8 @@
 <span class="sd">            ``'_current_'`` (no change).</span>
 <span class="sd">        resol : str, optional</span>
 <span class="sd">            Resolving Power R (e.g., ``50000``) OR Pixel FWHM (e.g., ``'3px'``),</span>
-<span class="sd">            positive and finite. Defaults to ``'_current_'`` (no change).</span>
+<span class="sd">            positive and finite. Defaults to ``'_current_'`` (no change); an</span>
+<span class="sd">            empty string keeps the current resolution too (FT8).</span>
 <span class="sd">        overwrite_resol_col : bool, optional</span>
 <span class="sd">            If ``True``, a ``resol`` column that varies with wavelength is</span>
 <span class="sd">            replaced by a flat one at the new resolution; if ``False`` it is</span>
@@ -1100,8 +1101,10 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">z_em_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">z_em</span><span class="p">)</span>
                 
-            <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">resol</span><span class="p">)</span> <span class="o">==</span> <span class="s1">'_current_'</span><span class="p">:</span>
-                <span class="n">resol_f</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c1"># leave the resolution as it is (#526)</span>
+            <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">resol</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">'_current_'</span><span class="p">,</span> <span class="s1">''</span><span class="p">):</span>
+                <span class="c1"># Leave the resolution as it is (#526); an empty string too,</span>
+                <span class="c1"># as the message of the refusal says (FT8)</span>
+                <span class="n">resol_f</span> <span class="o">=</span> <span class="mf">0.0</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">resol_f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_resolution_string</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">resol</span><span class="p">))</span>
         <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
