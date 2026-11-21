@@ -921,7 +921,9 @@ prototype, before 7c.4d.
   against 0.75, MgII 0.70 against 0.76) and 2.6 times the time.
 - *The Ly-a/Ly-b pairs* (`validate_lyab_pairs.py`, 54 mocks): the two causes
   of 7c.4c were the score on the wide regions of the forest and the windows
-  full of neighbours; fixed by the three changes above.
+  full of neighbours; with the changes above 534 pairs (117; `doublets`
+  674), purity 0.88, completeness of the detectable Ly-b 0.059 (0.012;
+  0.087), still weak at z_em 4.5 (0.010).
 
 The numbers (grid full, 135 mocks; in parentheses 7c.4c, then `doublets`):
 completeness / purity CIV 0.868 / 0.972 (0.804 / 0.975; 0.870 / 0.993),
