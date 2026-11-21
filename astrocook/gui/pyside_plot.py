@@ -960,6 +960,12 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
                     ha='left', va='top', animated=True,
                     transform=blended_transform_factory(ax.transData, ax.transAxes),
                     bbox=dict(facecolor='white', alpha=0.8, edgecolor='none', pad=1.5))
+                # Opening the cursor must never change the area of the plot
+                # (FT7): the label is out of the constrained layout (it sat
+                # outside the axes when the first line was out of view, and
+                # the layout made room for it) and clipped to the axes.
+                self.canvas.cursor_label.set_in_layout(False)
+                self.canvas.cursor_label.set_clip_on(True)
                 self.canvas.update_cursor_label(z_cursor, cursor_x_positions)
             logger.debug(f"plot_spectrum: Added {len(self.canvas.cursor_artists)} cursor artists.")
         except (ValueError, AttributeError) as e:

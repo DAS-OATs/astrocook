@@ -152,6 +152,38 @@ def test_cursor_label(qtbot, window):
     assert canvas.cursor_label is None
 
 
+def test_cursor_does_not_change_the_plot_area(qtbot, window):
+    # FT7: opening the cursor must never move the axes, also when its first
+    # line is out of view (its label was outside the axes and the constrained
+    # layout made room for it)
+    canvas = window.plot_viewer.canvas
+    lo, hi = canvas.axes.get_xlim()
+    canvas.figure.canvas.draw()
+    before = canvas.axes.get_position().bounds
+    for z in ("3.0", "0.0"):  # lines in view, then (probably) first one out of view
+        window.cursor_z_input.setText(z)
+        window.cursor_show_checkbox.setChecked(True)
+        qtbot.wait(100)
+        canvas.figure.canvas.draw()
+        assert canvas.cursor_label is not None
+        assert not canvas.cursor_label.get_in_layout()
+        assert canvas.axes.get_position().bounds == pytest.approx(before)
+        window.cursor_show_checkbox.setChecked(False)
+        qtbot.wait(100)
+    # A first line far out of view, a later one in view: the label (a line
+    # out of view only) stays inside the axes and the layout does not move
+    window.cursor_z_input.setText("3.0")
+    window.cursor_show_checkbox.setChecked(True)
+    qtbot.wait(100)
+    label = canvas.cursor_label
+    label.set_x(hi + 5 * (hi - lo))
+    label.set_visible(True)
+    label.set_text(" z = 3.00000")
+    canvas.figure.canvas.draw()
+    assert canvas.axes.get_position().bounds == pytest.approx(before)
+    assert label.get_clip_on()
+
+
 def test_floating_toolbar(qtbot, window):
     # The toolbar floats over the plot as the side cards (phase 5-bis,
     # Guido's request): flush with the bottom left corner of the plot area,
