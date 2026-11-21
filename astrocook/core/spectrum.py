@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional, Union, overload
 from astrocook.core.spectrum_operations import convert_x_axis, convert_y_axis
 from astrocook.core.structures import SpectrumData, DataColumn
 from astrocook.core.resolution import column_to_resolving_power, migrate_resolution
+from astrocook.core.telluric import migrate_telluric, telluric_transmission
 from astrocook.core.spectrum_combine import CombineMixin
 from astrocook.core.spectrum_continuum import ContinuumMixin
 from astrocook.core.spectrum_expressions import ExpressionsMixin
@@ -168,8 +169,10 @@ class Spectrum(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, LinesM
     
     def __init__(self, data: SpectrumData, history: Optional[list] = None):
         # The resolution lives in the 'resol' column only: legacy sources
-        # (attribute, meta keys) are migrated into it here (#526)
-        self._data = migrate_resolution(_edges_with_unit(data))
+        # (attribute, meta keys) are migrated into it here (#526); the
+        # telluric transmission in 'telluric' (telluric_model renamed,
+        # phase 7-ter, T1: core/telluric.py)
+        self._data = migrate_telluric(migrate_resolution(_edges_with_unit(data)))
         self.history = history if history is not None else []
 
     def resolution(self) -> np.ndarray:
@@ -236,21 +239,23 @@ class Spectrum(CombineMixin, ContinuumMixin, ExpressionsMixin, FluxMixin, LinesM
         Logic:
         
         1. If cont exists: 
-           - Returns cont * telluric (if telluric exists).
+           - Returns cont * telluric (if the ``telluric`` column exists and
+             the flux is not already corrected: the flag
+             ``TELLURIC_CORRECTED`` of the metadata, ``core/telluric.py``).
            - Returns cont (otherwise).
         2. If cont is missing:
            - Returns 1.0 (if flux median is ~1, assuming pre-normalized).
            - Returns None (if flux is physical, signaling need for continuum fitting).
         """
         cont = self.get_column('cont')
-        telluric = self.get_column('telluric_model')
+        telluric = telluric_transmission(self._data)
         
         # Case 1: Continuum Exists
         if cont is not None:
             if telluric is not None:
-                # Multiply Continuum (Quantity) by Telluric (Array/Quantity)
-                # Assuming telluric is dimensionless 0..1 transmission
-                return cont * telluric.value
+                # Multiply Continuum (Quantity) by the transmission
+                # (dimensionless, 0..1)
+                return cont * telluric
             return cont
             
         # Case 2: No Continuum (Check for implicit normalization)

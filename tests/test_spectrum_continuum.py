@@ -158,7 +158,7 @@ def test_fit_continuum_renormalizes_the_model():
 def test_fit_continuum_renormalizes_the_model_with_the_tellurics():
     spec = _spec(model=True, cont=True)
     telluric = np.linspace(0.9, 1.0, spec.x.size)
-    spec = spec.update_column("telluric_model", telluric, unit=au.dimensionless_unscaled)
+    spec = spec.update_column("telluric", telluric, unit=au.dimensionless_unscaled)
     new = spec.fit_continuum(1.0, 0.0, renorm_model=True)
     cont = new.get_column("cont").value
     # The normalized model is taken with the tellurics, old and new

@@ -28,7 +28,7 @@ Smoothing is the simplest way to visualize faint features by reducing high-frequ
    - Smaller values (e.g., `10-30` km/s) preserve narrow absorption lines.
 3. Click **Run**.
 
-The operation creates a _new_ session state with the smoothed flux. The original data is preserved in the history (undo with `Ctrl+Z` / `Cmd+Z`). Note that the error array (`dy`) is also smoothed to maintain consistency, and so are the continuum (`cont`), the model (`model`), the power-law continuum (`cont_pl`) and the telluric transmission (`telluric_model`), if present.
+The operation creates a _new_ session state with the smoothed flux. The original data is preserved in the history (undo with `Ctrl+Z` / `Cmd+Z`). Note that the error array (`dy`) is also smoothed to maintain consistency, and so are the continuum (`cont`), the model (`model`), the power-law continuum (`cont_pl`) and the telluric transmission (`telluric`), if present.
 
 ```{image} ../_static/flux_smooth.png
 :alt: A smoothed spectrum
