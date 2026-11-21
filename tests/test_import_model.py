@@ -284,7 +284,7 @@ def test_a_file_without_a_column_of_the_model(tmp_path):
 
 def test_a_role_that_is_not_known():
     with pytest.raises(InvalidParameter, match="role"):
-        _session().file.import_model(file_path="m.dat", role="model")
+        _session().file.import_model(file_path="m.dat", role="absorbers")
 
 
 def test_a_transmission_with_a_unit_is_refused(tmp_path):
@@ -341,7 +341,7 @@ def test_the_session_by_its_name_and_the_log(tmp_path):
     np.testing.assert_array_equal(out.spec.get_column("telluric").value, _line(N))
     assert resolve_params("import_model", {"source_session": model}) == {
         "file_path": "", "source_session": "model", "role": "telluric", "column": "",
-        "renorm_model": True}
+        "renorm_model": True, "normalized": False}
 
 
 def test_an_axis_in_velocity_is_refused(tmp_path):
@@ -456,7 +456,8 @@ def test_the_dialog_has_a_browse_button(qapp, monkeypatch, tmp_path):
     from astrocook.gui import recipe_dialog
     from astrocook.gui.recipe_dialog import RecipeDialog
     dialog = RecipeDialog("file", "import_model", _session())
-    assert set(dialog.input_widgets) == {"file_path", "source_session", "role", "column"}
+    assert set(dialog.input_widgets) == {"file_path", "source_session", "role", "column",
+                                         "normalized"}
     chosen = str(tmp_path / "m.dat")
     monkeypatch.setattr(recipe_dialog.QFileDialog, "getOpenFileName",
                         staticmethod(lambda *a, **k: (chosen, "")))
@@ -465,7 +466,7 @@ def test_the_dialog_has_a_browse_button(qapp, monkeypatch, tmp_path):
     dialog.recipe_requested.connect(lambda cat, rec, params, aliases: sent.append(params))
     dialog.accept()
     assert sent == [{"file_path": chosen, "source_session": "", "role": "telluric",
-                     "column": ""}]
+                     "column": "", "normalized": "False"}]
 
 
 def test_a_transmission_a_little_above_1_is_not_a_warning(tmp_path, caplog):
@@ -641,3 +642,150 @@ def test_the_gui_asks_to_renormalize_for_a_continuum(role, asked):
     MainRecipesMixin._ask_to_renormalize_model(window, "import_model", params)
     assert bool(calls) == asked
     assert params.get("renorm_model") == ("False" if asked else None)
+
+
+# --- The role model (T4) ------------------------------------------------------------
+
+def _model_file(path, x, model, name="model"):
+    return _cont_file(path, x, model, name=name)
+
+
+def test_a_model_in_the_unit_of_the_flux_and_the_normalization_beyond(tmp_path, caplog):
+    # The spectrum: cont = 2, a telluric dip; the model of a line, in the
+    # unit of the flux, on a part of the grid
+    x, _, _ = _grid()
+    trans = _line(N)
+    session = _session(telluric=DataColumn(trans, au.dimensionless_unscaled))
+    sub = slice(100, 200)
+    model = np.linspace(1.0, 1.8, 100)
+    path = _model_file(tmp_path / "m.dat", x[sub], model)
+    with caplog.at_level(logging.INFO):
+        out = session.file.import_model(file_path=path, role="model")
+    got = out.spec.get_column("model")
+    assert got.unit == session.spec.y.unit
+    np.testing.assert_allclose(got.value[sub], model, rtol=1e-6)
+    # Beyond, the normalization cont × telluric
+    np.testing.assert_allclose(got.value[:100], 2.0 * trans[:100])
+    np.testing.assert_allclose(got.value[200:], 2.0 * trans[200:])
+    assert ("The absorption model of m.dat (column model) was copied" in caplog.text)
+    assert "beyond, the normalization (cont × telluric)" in caplog.text
+    # The system list is not touched
+    assert out.systs is session.systs or out.systs == session.systs
+
+
+def test_a_normalized_model_is_multiplied_by_the_normalization(tmp_path, caplog):
+    x, _, _ = _grid()
+    trans = _line(N)
+    session = _session(telluric=DataColumn(trans, au.dimensionless_unscaled))
+    profile = 1.0 - 0.5 * np.exp(-0.5 * ((np.arange(N) - 300) / 3.0) ** 2)
+    path = _model_file(tmp_path / "m.dat", x, profile)
+    with caplog.at_level(logging.INFO):
+        out = session.file.import_model(file_path=path, role="model", normalized=True)
+    np.testing.assert_allclose(out.spec.get_column("model").value,
+                               2.0 * trans * profile, rtol=1e-6)
+    assert "It was normalized: multiplied by the normalization" in caplog.text
+    # The flux flagged as corrected: the normalization is the continuum alone
+    corrected = session.edit.set_properties(telluric_corrected="yes")
+    out = corrected.file.import_model(file_path=path, role="model", normalized=True)
+    np.testing.assert_allclose(out.spec.get_column("model").value, 2.0 * profile,
+                               rtol=1e-6)
+
+
+def test_a_normalized_model_on_a_part_is_the_normalization_beyond(tmp_path):
+    x, _, _ = _grid()
+    sub = slice(100, 400)
+    path = _model_file(tmp_path / "m.dat", x[sub], np.full(300, 0.5))
+    out = _session().file.import_model(file_path=path, role="model", normalized=True)
+    got = out.spec.get_column("model").value
+    np.testing.assert_allclose(got[sub], 1.0)
+    np.testing.assert_allclose(got[:100], 2.0)
+    np.testing.assert_allclose(got[400:], 2.0)
+
+
+def test_a_normalized_model_needs_a_continuum(tmp_path):
+    x, _, _ = _grid()
+    path = _model_file(tmp_path / "m.dat", x, np.full(N, 0.9))
+    with pytest.raises(RecipeFailed, match="the spectrum has no continuum"):
+        _physical_session().file.import_model(file_path=path, role="model",
+                                              normalized=True)
+
+
+def test_a_normalized_model_with_a_unit_is_refused(tmp_path):
+    from astropy.table import Table
+    x, _, _ = _grid()
+    path = tmp_path / "m.ecsv"
+    flam = au.erg / (au.s * au.cm ** 2 * au.Angstrom)
+    Table({"lam": x * au.nm, "model": np.full(N, 2e-16) * flam}).write(
+        path, format="ascii.ecsv")
+    with pytest.raises(RecipeFailed, match="a normalized model is dimensionless"):
+        _session().file.import_model(file_path=str(path), role="model", normalized=True)
+    # Not normalized: converted to the unit of the flux
+    phys = _physical_session(cont=DataColumn(np.full(N, 2e-16),
+                                             _physical_session().spec.y.unit))
+    out = phys.file.import_model(file_path=str(path), role="model")
+    np.testing.assert_allclose(out.spec.get_column("model").value, 2e-16, rtol=1e-9)
+
+
+def test_a_normalized_model_outside_0_1_is_a_warning(tmp_path, caplog):
+    x, _, _ = _grid()
+    path = _model_file(tmp_path / "m.dat", x, np.full(N, 1.5))
+    with caplog.at_level(logging.WARNING):
+        _session().file.import_model(file_path=path, role="model", normalized=True)
+    assert "a normalized model is between 0 and 1" in caplog.text
+
+
+def test_a_normalized_model_not_said_is_refused(tmp_path):
+    # Without a unit and not on the scale of the flux: refused, with a
+    # pointer to normalized=True
+    phys = _physical_session(cont=DataColumn(np.full(N, 2e-16),
+                                             _physical_session().spec.y.unit))
+    x, _, _ = _grid()
+    path = _model_file(tmp_path / "m.dat", x, np.full(N, 0.9))
+    with pytest.raises(RecipeFailed, match="import it with normalized=True"):
+        phys.file.import_model(file_path=path, role="model")
+    out = phys.file.import_model(file_path=path, role="model", normalized=True)
+    np.testing.assert_allclose(out.spec.get_column("model").value, 1.8e-16, rtol=1e-6)
+
+
+def test_a_model_without_a_normalization_is_nan_beyond(tmp_path, caplog):
+    x, _, _ = _grid()
+    sub = slice(0, 300)
+    path = _model_file(tmp_path / "m.dat", x[sub], np.full(300, 1.4e-16))
+    with caplog.at_level(logging.INFO):
+        out = _physical_session().file.import_model(file_path=path, role="model")
+    got = out.spec.get_column("model").value
+    np.testing.assert_allclose(got[sub], 1.4e-16, rtol=1e-6)
+    assert np.all(np.isnan(got[300:]))
+    assert "covers 300 of 600 pixels; beyond, NaN" in caplog.text
+    assert "300 of 600 pixels have no model" in caplog.text
+
+
+@pytest.mark.parametrize("role", ["telluric", "cont"])
+def test_normalized_only_for_the_role_model(tmp_path, role):
+    x, _, _ = _grid()
+    path = _model_file(tmp_path / "m.dat", x, np.full(N, 0.9), name=role)
+    with pytest.raises(InvalidParameter, match="normalized: only a model of the role"):
+        _session().file.import_model(file_path=path, role=role, normalized=True)
+
+
+def test_a_model_from_another_session_and_a_fit_overwrites_it():
+    other = _session(model=DataColumn(np.full(N, 1.6), au.dimensionless_unscaled))
+    out = _session().file.import_model(source_session=other, role="model")
+    np.testing.assert_array_equal(out.spec.get_column("model").value, 1.6)
+    # A component added: the model is redrawn from the system list
+    out = out.absorbers.add_component(series="Ly_a", z=float(_grid()[0][300] / 121.567 - 1),
+                                      logN=13.5, b=10.0)
+    assert not np.allclose(out.spec.get_column("model").value, 1.6)
+
+
+@pytest.mark.parametrize("normalized", [True, "True"])
+def test_the_methods_text_of_the_role_model(normalized):
+    from astrocook.methods_text import MethodsValues
+    from astrocook.recipes.file import _methods_import_model
+    text = _methods_import_model(MethodsValues(
+        {"file_path": "/data/abs.dat", "role": "model", "normalized": normalized}))
+    assert text.startswith("An external absorption model was imported from abs.dat, "
+                           "normalized, was multiplied by the normalization")
+    text = _methods_import_model(MethodsValues({"file_path": "abs.dat", "role": "cont"}))
+    assert text.startswith("An external continuum was imported from abs.dat and was "
+                           "brought onto the grid")
