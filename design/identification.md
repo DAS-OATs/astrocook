@@ -893,6 +893,45 @@ every region 0.009 (0.100); the credibility ECE 0.022, Brier 0.038; 15 s per
 spectrum to identify (0.17 s). The row of 7c.4c in `ROADMAP.md` has the
 grid robustness and the runs without the refinement.
 
+**Done in PR 7c.4c-bis** (20-21 November 2026): the base of the
+prototype, before 7c.4d.
+- *The score of a pair on its peaks* (F169): the R^2 of the two lines on
+  the pixels of the peaks of the de-blending matched at the lag (each peak
+  with its share of its region), not on the whole regions of the matched
+  filters; the pre-filter measured again on 18 mocks at 0, 0.2 and 0.3, and
+  kept at 0.3 (Guido, 20 November 2026: 0.2 and 0.3 alike; 0 halves the
+  purity of CIV and MgII and multiplies the time by 30).
+- *The regions split at their gaps* (`SPLIT_GAPS`, `GAP_SIGMA` = 2, Guido,
+  21 November 2026): two adjacent peaks of a region of the filters are in
+  two regions when the smoothed flux between them comes back to within 2
+  sigma of the continuum. In the forest a region of the filters held tens
+  of lines (8500 km/s and 49 peaks at z_em 3.5, R 45000, S/N 30), so one
+  candidate stood for many systems and its group was above the cap of F171.
+  The cost: the tellurics, split into single lines, become CIV and MgII
+  pairs (F172).
+- *The window of a group without the other groups*: the pixels of the
+  regions of the other groups are left out of its evaluation window. With
+  the split, the window of a group held unmodelled neighbours, chi2 of
+  hundreds per pixel, and every hypothesis lost to the default labels
+  (12 of 17 groups with a Ly-a/Ly-b candidate on one mock).
+- *The refinement an option* (`refine`, on by default; F170): at most 3
+  components added (`MAX_ADDED`, Guido, 21 November 2026), and fewer when
+  the next one does not lower the criterion. With no fixed number, the
+  same completeness, a lower purity on the grid robustness (SiIV 0.71
+  against 0.75, MgII 0.70 against 0.76) and 2.6 times the time.
+- *The Ly-a/Ly-b pairs* (`validate_lyab_pairs.py`, 54 mocks): the two causes
+  of 7c.4c were the score on the wide regions of the forest and the windows
+  full of neighbours; fixed by the three changes above.
+
+The numbers (grid full, 135 mocks; in parentheses 7c.4c, then `doublets`):
+completeness / purity CIV 0.868 / 0.972 (0.804 / 0.975; 0.870 / 0.993),
+SiIV 0.864 / 0.957 (0.795 / 0.949; 0.857 / 0.987), MgII 0.917 / 0.942
+(0.845 / 0.961; 0.913 / 0.988); the fit after it 1557 true components, 55
+spurious (1494, 47; 1242, 12); the credibility ECE 0.038, Brier 0.060
+(0.022, 0.038); 4.1 s per spectrum to identify (median; 15 s). The row of
+7c.4c-bis in `ROADMAP.md` has the grid robustness, the Ly-a/Ly-b pairs and
+the runs with no fixed number of added components.
+
 ## Common decisions with 7b
 
 Taken to the conversation "7 · plan of the phase" (Guido, 16 November
