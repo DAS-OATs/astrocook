@@ -65,9 +65,9 @@ screenshots (PRs 11, 12): estimate 2 h for those.
 Astrocook: a Python package for the analysis of quasar spectra (continuum,
 identification of absorption systems, Voigt fitting). PySide6 GUI +
 scriptable API. Author and maintainer: Guido Cupani (INAF–OATs).
-Current version: 2.7.1 (17 November 2026: 2.7.0 of PR 14, 13 November,
-with the fixes of #781 and #794, from the branch `release/2.7.x`; master
-still says 2.7.0). Python ≥3.12.
+Current version: 2.8.0 (21 November 2026: 2.7.1 of 17 November plus the
+PRs of phase 7-ter, from the branch `release/2.7.x` / `release/2.8.x`,
+without phase 7; master still says 2.7.0). Python ≥3.12.
 
 ## Architecture (v2)
 - `astrocook/core/` – immutable dataclasses (`structures.py`), `Spectrum`,
