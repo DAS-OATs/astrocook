@@ -402,7 +402,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "screen", "type": float, "default": SCREEN_DELTA, "optional": True, "gt": 0, "doc": "Method 'hypotheses': the hypotheses behind the best by more than this in the criterion, by the apparent optical depth before their fit, are dropped; None for no screen (every hypothesis fitted)."},
             {"name": "max_group", "type": int, "default": MAX_GROUP, "min": 2, "doc": "Method 'hypotheses': the largest group of regions compared together; a larger one is split at its weakest pairs."},
             {"name": "temper", "type": bool, "default": False, "doc": "Method 'hypotheses': the differences of the criterion divided by the reduced chi2 of the accepted model, when above 1 (an error spectrum not calibrated)."},
-            {"name": "refine", "type": bool, "default": True, "doc": "Method 'hypotheses': each alternative refined before the comparison, with components added where its residuals ask for them, while they lower the criterion."},
+            {"name": "refine", "type": bool, "default": True, "doc": "Method 'hypotheses': each alternative refined before the comparison, with up to 3 components added where its residuals ask for them, while they lower the criterion."},
         ],
     },
     "populate_from_identification": {
@@ -1698,9 +1698,9 @@ class RecipeAbsorbers:
             spectrum that is not calibrated). Defaults to ``False``.
         refine : bool, optional
             Each alternative of a group refined before the comparison, with
-            components added where the residuals of its short fit ask for
-            them, while they lower the criterion (method ``"hypotheses"``,
-            F170). Defaults to ``True``.
+            up to 3 components added where the residuals of its short fit
+            ask for them, while they lower the criterion (method
+            ``"hypotheses"``, F170). Defaults to ``True``.
 
         Returns
         -------

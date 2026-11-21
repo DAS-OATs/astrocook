@@ -380,7 +380,7 @@ def set_chain(options):
     from astrocook.fitting import hypotheses
     if "max_added" in CHAIN:
         # The most components the refinement of the hypotheses adds (PR
-        # 7c.4c; -1: no fixed number, the default of PR 7c.4c-bis; 0: the
+        # 7c.4c; -1: no fixed number; 0: the
         # refinement off, as ``refine=False``)
         n = int(CHAIN["max_added"])
         hypotheses.MAX_ADDED = None if n < 0 else n
@@ -1440,7 +1440,7 @@ def main():
     parser.add_argument("--max-added", type=int, default=None,
                         help="the most components added by the refinement of each "
                              "hypothesis (method hypotheses; 0: no refinement; -1: no "
-                             "fixed number, the default)")
+                             "fixed number; the default 3)")
     parser.add_argument("--no-split-gaps", dest="split_gaps", action="store_false",
                         default=None,
                         help="the regions not split at their gaps (method hypotheses, "

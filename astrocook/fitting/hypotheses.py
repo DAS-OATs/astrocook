@@ -158,11 +158,13 @@ MAX_FIT_K = 60
 #: finalist gets it, so that each identification is compared with its best
 #: model. An option of the recipe (``refine``), on by default (F170, Guido,
 #: 20 November 2026)
-#: The most components the refinement adds to a hypothesis: None, no fixed
-#: number (PR 7c.4c-bis, Guido, 20 November 2026): it stops when the next
-#: component does not lower the criterion of the group, or at
-#: :data:`MAX_FIT_K`; 7c.4c added at most 3
-MAX_ADDED: Optional[int] = None
+#: The most components the refinement adds to a hypothesis (it also stops
+#: when the next component does not lower the criterion of the group, or at
+#: :data:`MAX_FIT_K`; None: no fixed number). 3, as in 7c.4c (Guido, 21
+#: November 2026): on the grid robustness no fixed number gave the same
+#: completeness, a lower purity (SiIV 0.71 against 0.75, MgII 0.70 against
+#: 0.76) and 2.6 times the time of the identification (PR 7c.4c-bis)
+MAX_ADDED: Optional[int] = 3
 #: Where the refinement looks: the most negative 3-pixel sum of the
 #: residuals, in sigma
 REFINE_SIGMA = 3.0

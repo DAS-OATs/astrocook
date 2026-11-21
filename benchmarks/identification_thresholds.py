@@ -165,7 +165,7 @@ def main(argv=None):
     parser.add_argument("--json", type=Path, default=None)
     parser.add_argument("--max-added", type=int, default=None,
                         help="the most components added by the refinement (0: none; "
-                             "-1: no fixed number, the default)")
+                             "-1: no fixed number; the default 3)")
     parser.add_argument("--no-split-gaps", dest="split_gaps", action="store_false",
                         default=None, help="the regions not split at their gaps (PR 7c.4c)")
     args = parser.parse_args(argv)
