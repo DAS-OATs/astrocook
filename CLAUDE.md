@@ -86,7 +86,9 @@ Current version: 2.7.0 (prepared in PR 14, 13 November 2026). Python ≥3.12.
   table and velocity plot in `inspector_table.py` and `velocity_plot.py`. A
   new method goes in the module of its theme; `tests/test_gui_structure.py`
   checks the interface of the split classes.
-- `astrocook/io/` – loaders and V1 → V2 migration.
+- `astrocook/io/` – loaders and V1 → V2 migration. The tables of the files are
+  read by the names of their columns by `io/tables.py` (phase 7-ter, T2), shared
+  by the loader of the text tables and `import_model`.
 - `astrocook/mcp_server/` – MCP server for agents (pilot, `ROADMAP.md`
   section 4.1): a thin layer over the recipes, optional `[mcp]` extra.
 - `astrocook/mocks/` – synthetic spectra with known parameters, independent

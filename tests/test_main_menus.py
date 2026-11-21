@@ -23,7 +23,7 @@ SEP = "---"
 MENUS = {
     # In groups (phase 5-bis, Guido): open, save, import, export, close
     "File": ["Open Session...", "Open Recent", SEP, "Save Session...", SEP,
-             "Import from ASCII...", "Import Systems from ASCII...",
+             "Import from ASCII...", "Import Model...", "Import Systems from ASCII...",
              "Import Systems from Session...", SEP, "Export to ASCII...",
              "Export Log as Text...", SEP,
              "Close Session"],

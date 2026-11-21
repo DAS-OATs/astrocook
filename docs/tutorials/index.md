@@ -9,6 +9,7 @@ getting_started
 editing_data
 flux_operations
 continuum_fitting
+external_models
 absorption_systems
 scripting
 agents

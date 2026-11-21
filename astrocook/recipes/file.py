@@ -5,11 +5,11 @@ import numpy as np
 from astropy.io import ascii
 import astropy.units as au
 from astropy.table import Column, Table
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Union
 
 from astrocook.core.column_names import internal_column, internal_expression, is_axis_column
 from astrocook.core.units import known_unit
-from astrocook.recipes.errors import RecipeFailed
+from astrocook.recipes.errors import InvalidParameter, RecipeFailed
 from astrocook.recipes._spectrum import spec_of
 from astrocook.recipes.params import typed_recipe
 
@@ -24,6 +24,16 @@ from astrocook.methods_text import file_name
 def _methods_import_ascii(p):
     return (f"Columns were read from the table {file_name(p, 'file_path')} and added "
             f"to the spectrum{p.menu}")
+
+
+def _methods_import_model(p):
+    source = (file_name(p, 'file_path') if p.raw('file_path')
+              else f"the session {p.raw('source_session')}")
+    column = f" (column {p.raw('column')})" if p.raw('column') else ""
+    words = {'telluric': "telluric transmission"}.get(str(p.raw('role')), "model")
+    return (f"An external {words} was imported from {source}{column} and brought "
+            f"onto the grid of the spectrum (copied on the same grid, otherwise "
+            f"averaged over its pixels){p.menu}")
 
 
 FILE_RECIPES_SCHEMAS = {
@@ -53,6 +63,20 @@ FILE_RECIPES_SCHEMAS = {
         "details": "Reads columns from an ASCII/CSV table with a header and adds them to the spectrum, replacing those with the same name; the table must have one row per pixel of the spectrum. A column x is not read: the grid of the spectrum is kept.",
         "params": [
             {"name": "file_path", "type": str, "default": "", "gui_hidden": True, "doc": "Path of the ASCII/CSV file to read."}
+        ],
+    },
+    "import_model": {
+        "methods": _methods_import_model,
+        "brief": "Import an external model into the spectrum.",
+        "url": "tutorials/external_models.html#importing-a-model",
+        "menu": "File > Import &Model",
+        "details": "Reads a model (a telluric transmission) from a file or another session and writes it in the column of its role, on the grid of the spectrum: copied on the same grid, otherwise averaged over the pixels. A telluric model is 1 beyond its range.",
+        "params": [
+            {"name": "file_path", "type": str, "default": "", "doc": "Path of the file of the model: a text table with named columns, the CSV of Export to ASCII, a FITS table. Empty if the model is in another session."},
+            {"name": "source_session", "type": str, "default": "", "kind": "session", "doc": "Name of the open session that holds the model (in a script, also the session itself); empty if it is in a file."},
+            # T3 and T4 add 'cont' and 'model' (recipes/_models.py)
+            {"name": "role", "type": str, "default": "telluric", "choices": ["telluric"], "doc": "Role of the model: 'telluric', a transmission written in the column telluric (cont × telluric is the normalization)."},
+            {"name": "column", "type": str, "default": "", "doc": "Column of the model in the source; empty: found by name (for a telluric model: telluric, telluric_model, trans_molecfit, mtrans)."}
         ],
     }
 }
@@ -272,7 +296,9 @@ class RecipeFile:
                                f"{current_len}: they must be the same.")
 
         new_spec = spec_of(self._session)
+        self._check_ascii_axis(table, new_spec, file_path)
         imported_cols = []
+        replaced = []
 
         # 3. Iterate through columns in the ASCII file
         for file_name_col in table.colnames:
@@ -294,12 +320,125 @@ class RecipeFile:
                                        "they must be the same.")
             # Update the column (this handles both core y/dy and aux
             # columns); the unit of the file, if it has one (PR 8-bis)
+            if col_name in new_spec.t.colnames:
+                replaced.append(file_name_col)
             new_spec = new_spec.update_column(col_name, values,
                                               unit=None if unit is None else known_unit(unit))
             imported_cols.append(file_name_col)
 
         logger.info(f"Columns imported: {', '.join(imported_cols)}.")
+        if replaced:
+            # FT3 (Guido, 20 November 2026): they were replaced without a word
+            logger.warning(f"Columns of the spectrum replaced by those of the file: "
+                           f"{', '.join(replaced)}.")
         return self._session.with_new_spectrum(new_spec)
+
+    @staticmethod
+    def _check_ascii_axis(table, spec, file_path: str) -> None:
+        """FT3 (Guido, 20 November 2026): a table whose axis is not that of
+        the spectrum is refused (only the number of rows was checked). The
+        axis of the file (``x``, ``lam``, ...; in nm without a unit) must be
+        within a tenth of a pixel of the axis of the spectrum, as for the
+        copy of ``import_model``; a table without an axis is taken as it
+        is."""
+        from astrocook.core.model_grid import same_grid
+        from astrocook.io.tables import AXIS_NAMES, find_column
+        name = find_column(table, AXIS_NAMES)
+        if name is None:
+            return
+        unit = known_unit(table[name].unit)
+        if unit is None or unit == au.dimensionless_unscaled:
+            unit = au.nm
+        try:
+            x_file = (np.asarray(table[name], dtype=float) * unit).to(
+                spec.x.unit, equivalencies=au.spectral()).value
+        except (au.UnitConversionError, TypeError, ValueError):
+            x_file = None
+        if x_file is None or not same_grid(x_file, spec.x.value, spec.xmin.value,
+                                           spec.xmax.value):
+            raise RecipeFailed(
+                f"The axis of {os.path.basename(file_path)} ({name}) is not that of the "
+                "spectrum: the columns would go to other pixels. To bring a model "
+                "onto the grid of the spectrum, use Import Model (import_model).")
+
+    @typed_recipe
+    def import_model(self, file_path: str = "", source_session: Union[str, 'Session'] = "",
+                     role: str = "telluric", column: str = "") -> 'Session':
+        """
+        Import an external model into the spectrum (phase 7-ter, PR T2).
+
+        A model is a column of the spectrum with a role. The model is read
+        from a file or from another session, brought onto the grid of the
+        spectrum and written in the column of its role, replacing it if it
+        exists (undo, log and archive as for any recipe):
+
+        - the grid: a copy when the axis of the model is that of the
+          spectrum within a tenth of a pixel, otherwise the average of the
+          model over each pixel of the spectrum (``xmin``-``xmax``), each
+          pixel of the model weighted by its overlap
+          (:mod:`astrocook.core.model_grid`); a pixel the model does not
+          cover in full gets the value of the role beyond the model;
+        - the role ``telluric``: a transmission (dimensionless, 0-1)
+          written in the column ``telluric``, 1 beyond the model; the
+          normalization is ``cont × telluric`` unless the flux is flagged
+          as corrected (``set_properties(telluric_corrected=...)``).
+
+        The models are taken in the frame of the spectrum: no shift. A file
+        is read by the names of its columns (:mod:`astrocook.io.tables`):
+        a text table separated by spaces, tabs or commas with a header,
+        also commented (``# x xmin xmax trans_molecfit dy``), the CSV of
+        ``export_ascii``, a FITS table (Astrocook, the Molecfit outputs
+        with ``mtrans``); the axis is ``x``, ``lam``, ``lambda``, ``wave``
+        or ``wavelength`` (in nm in a text file without units), its edges
+        ``xmin``-``xmax`` (``lammin``-``lammax``) if the file has them. The
+        other columns are ignored (the ``dy`` of a Molecfit model is the
+        error of the science spectrum, not of the model).
+
+        Parameters
+        ----------
+        file_path : str
+            The file of the model; empty if it is in another session.
+        source_session : str or Session
+            The open session that holds the model (its name; in a script
+            also the session itself); empty if it is in a file.
+        role : str
+            ``'telluric'`` (the roles ``'cont'`` and ``'model'`` come in
+            phase 7-ter, T3 and T4).
+        column : str
+            The column of the model in the source; empty: found by the
+            names of the role (for ``'telluric'``: ``telluric``,
+            ``telluric_model``, ``trans_molecfit``, ``mtrans``, ignoring
+            the case).
+
+        Returns
+        -------
+        Session
+            A new session with the model in its column.
+
+        Raises
+        ------
+        RecipeError
+            If neither or both sources are given, the source cannot be read
+            or has no column of the model, its values cannot be this model,
+            or the model does not overlap the spectrum.
+        """
+        from astrocook.recipes import _models
+        from astrocook.recipes._sessions import open_session
+        has_file = bool(str(file_path).strip())
+        has_session = bool(source_session) and (not isinstance(source_session, str)
+                                                or bool(source_session.strip()))
+        if has_file == has_session:
+            raise InvalidParameter("import_model: give file_path or source_session "
+                                   "(one of the two).")
+        model_role = _models.MODEL_ROLES[role]
+        spec = spec_of(self._session)
+        if has_file:
+            source = _models.source_from_file(str(file_path).strip(), model_role,
+                                              column.strip())
+        else:
+            other = open_session(self._session, source_session, 'source_session')
+            source = _models.source_from_session(other, model_role, column.strip())
+        return self._session.with_new_spectrum(_models.import_model(spec, source, role))
 
 
 # Old names (phase 6-quater, PR 6): see astrocook/_renamed.py

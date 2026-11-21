@@ -272,6 +272,10 @@ class MainMenusMixin(HostBase):
         # Insert it after Save
         file_menu.insertAction(self.save_action, import_action) 
         self.import_action = import_action
+        # An external model (phase 7-ter, T2): the dialog of the recipe, with
+        # a Browse button for the file and the open sessions
+        import_model_action = self._recipe_action("import_model", "File")
+        file_menu.insertAction(self.save_action, import_model_action)
 
         file_menu.addSeparator()
         close_action = QAction("&Close Session", self)
@@ -414,8 +418,8 @@ class MainMenusMixin(HostBase):
         for action in file_menu.actions():
             file_menu.removeAction(action)
         for group in ((open_action, self.recent_menu.menuAction()), (save_action,),
-                      (import_action, self.import_systems_ascii_action,
-                       self.import_systems_action),
+                      (import_action, import_model_action,
+                       self.import_systems_ascii_action, self.import_systems_action),
                       (export_action, methods_action), (close_action,)):
             if file_menu.actions():
                 file_menu.addSeparator()
