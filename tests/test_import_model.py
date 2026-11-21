@@ -7,7 +7,9 @@ average over the pixels) and writes it in the column of its role
 (``io/tables.py``) is shared with the loader of the ASCII spectra with
 named columns (FT2), which refuses a telluric model without a flux (FT1).
 ``import_ascii`` refuses a table whose axis is not that of the spectrum,
-and says which columns it replaced (FT3, Guido, 20 November 2026).
+and says which columns it replaced (FT3, Guido, 20 November 2026). The
+role ``cont`` (T3): a continuum in the unit of the flux, NaN beyond the
+model, a normalized one refused, the ``model`` following it on request.
 """
 import logging
 
@@ -282,7 +284,7 @@ def test_a_file_without_a_column_of_the_model(tmp_path):
 
 def test_a_role_that_is_not_known():
     with pytest.raises(InvalidParameter, match="role"):
-        _session().file.import_model(file_path="m.dat", role="cont")
+        _session().file.import_model(file_path="m.dat", role="model")
 
 
 def test_a_transmission_with_a_unit_is_refused(tmp_path):
@@ -338,7 +340,8 @@ def test_the_session_by_its_name_and_the_log(tmp_path):
     out = session.file.import_model(source_session="model")
     np.testing.assert_array_equal(out.spec.get_column("telluric").value, _line(N))
     assert resolve_params("import_model", {"source_session": model}) == {
-        "file_path": "", "source_session": "model", "role": "telluric", "column": ""}
+        "file_path": "", "source_session": "model", "role": "telluric", "column": "",
+        "renorm_model": True}
 
 
 def test_an_axis_in_velocity_is_refused(tmp_path):
@@ -487,3 +490,154 @@ def test_the_dialog_comes_back_in_front_after_browse(qapp, monkeypatch, tmp_path
                         staticmethod(lambda *a, **k: (str(tmp_path / "m.dat"), "")))
     dialog.browse_button.click()
     assert raised == ["raise", "activate"]
+
+
+# --- The role cont (T3) -------------------------------------------------------------
+
+def _physical_session(n=N, **aux):
+    """A spectrum with a physical flux (~1e-16 erg/(s cm2 Angstrom)),
+    without a continuum."""
+    x, lo, hi = _grid(n)
+    flam = au.erg / (au.s * au.cm ** 2 * au.Angstrom)
+    data = SpectrumData(
+        x=DataColumn(x, au.nm), xmin=DataColumn(lo, au.nm), xmax=DataColumn(hi, au.nm),
+        y=DataColumn(np.full(n, 1.5e-16), flam), dy=DataColumn(np.full(n, 5e-18), flam),
+        aux_cols=dict(aux))
+    return Session("qso", None, spec=Spectrum(data))
+
+
+def _cont_file(path, x, cont, name="cont"):
+    with open(path, "w") as f:
+        f.write(f"# x {name}\n")
+        for a, c in zip(x, cont, strict=True):
+            f.write(f"{a:.7f} {c:.6e}\n")
+    return str(path)
+
+
+def test_a_continuum_beyond_the_model_is_nan(tmp_path, caplog):
+    session = _physical_session()
+    x, _, _ = _grid()
+    sub = slice(100, 400)
+    cont = np.linspace(2.0e-16, 3.0e-16, 300)
+    path = _cont_file(tmp_path / "c.dat", x[sub], cont)
+    with caplog.at_level(logging.INFO):
+        out = session.file.import_model(file_path=path, role="cont")
+    got = out.spec.get_column("cont")
+    assert got.unit == session.spec.y.unit
+    np.testing.assert_allclose(got.value[sub], cont, rtol=1e-6)
+    assert np.all(np.isnan(got.value[:100])) and np.all(np.isnan(got.value[400:]))
+    assert "The continuum of c.dat (column cont) was copied" in caplog.text
+    assert "covers 300 of 600 pixels; beyond, NaN" in caplog.text
+    assert "300 of 600 pixels have no continuum" in caplog.text
+    # The normalization is the new continuum (NaN beyond it)
+    np.testing.assert_allclose(out.spec.norm.value[sub], cont, rtol=1e-6)
+
+
+def test_a_continuum_averaged_keeps_only_the_pixels_covered_in_full(tmp_path):
+    session = _physical_session(n=200)
+    mx, mlo, mhi = _grid(600, dv=1.0 / 3.0)
+    path = tmp_path / "c.dat"
+    path.write_text("# x xmin xmax continuum\n" + "".join(
+        f"{a:.9f} {b:.9f} {c:.9f} 2.0e-16\n" for a, b, c in zip(mx, mlo, mhi, strict=True)))
+    out = session.file.import_model(file_path=str(path), role="cont")
+    got = out.spec.get_column("cont").value
+    covered = np.isfinite(got)
+    assert 0 < np.count_nonzero(covered) < 200
+    np.testing.assert_allclose(got[covered], 2.0e-16, rtol=1e-6)
+
+
+def test_a_continuum_with_a_unit_is_converted(tmp_path, caplog):
+    from astropy.table import Table
+    session = _physical_session()
+    x, _, _ = _grid()
+    flam = au.erg / (au.s * au.cm ** 2 * au.Angstrom)
+    cont = np.full(N, 2.0e-16) * flam
+    table = Table({"lam": x * au.nm,
+                   "cont": cont.to(au.W / (au.m ** 2 * au.nm))})
+    path = tmp_path / "c.ecsv"
+    table.write(path, format="ascii.ecsv")
+    with caplog.at_level(logging.INFO):
+        out = session.file.import_model(file_path=str(path), role="cont")
+    np.testing.assert_allclose(out.spec.get_column("cont").value, 2.0e-16, rtol=1e-9)
+    assert "converted from" in caplog.text
+    # Per unit frequency: converted at the wavelength of each pixel
+    table["cont"] = cont.to(au.erg / (au.s * au.cm ** 2 * au.Hz),
+                            equivalencies=au.spectral_density(x * au.nm))
+    table.write(path, format="ascii.ecsv", overwrite=True)
+    out = session.file.import_model(file_path=str(path), role="cont")
+    np.testing.assert_allclose(out.spec.get_column("cont").value, 2.0e-16, rtol=1e-9)
+
+
+def test_a_continuum_in_a_unit_that_is_not_of_the_flux_is_refused(tmp_path):
+    from astropy.table import Table
+    x, _, _ = _grid()
+    path = tmp_path / "c.ecsv"
+    Table({"lam": x * au.nm, "cont": np.full(N, 2.0) * au.km}).write(
+        path, format="ascii.ecsv")
+    with pytest.raises(RecipeFailed, match="a continuum is in the unit of the flux"):
+        _physical_session().file.import_model(file_path=str(path), role="cont")
+
+
+def test_a_normalized_continuum_is_refused(tmp_path):
+    x, _, _ = _grid()
+    path = _cont_file(tmp_path / "c.dat", x, np.full(N, 1.0))
+    with pytest.raises(RecipeFailed, match="a normalized continuum is not one"):
+        _physical_session().file.import_model(file_path=path, role="cont")
+    # On the scale of the flux (a factor 10 at most): taken
+    path = _cont_file(tmp_path / "c.dat", x, np.full(N, 1.2e-15))
+    out = _physical_session().file.import_model(file_path=path, role="cont")
+    np.testing.assert_allclose(out.spec.get_column("cont").value, 1.2e-15, rtol=1e-6)
+
+
+def test_the_model_follows_the_new_continuum(tmp_path, caplog):
+    # The model of a line on the old continuum (2): rescaled to the new
+    # one (4) where it is finite, kept beyond it
+    x, _, _ = _grid()
+    profile = _line(N)
+    model = DataColumn(2.0 * profile, au.dimensionless_unscaled, "the fit")
+    sub = slice(0, 300)
+    path = _cont_file(tmp_path / "c.dat", x[sub], np.full(300, 4.0))
+    with caplog.at_level(logging.INFO):
+        out = _session(model=model).file.import_model(file_path=path, role="cont")
+    got = out.spec.get_column("model").value
+    np.testing.assert_allclose(got[sub], 4.0 * profile[sub], rtol=1e-6)
+    np.testing.assert_array_equal(got[300:], 2.0 * profile[300:])
+    assert "kept as it was on 300 pixels without a continuum" in caplog.text
+    # Not asked: the model as it was
+    out = _session(model=model).file.import_model(file_path=path, role="cont",
+                                                  renorm_model=False)
+    np.testing.assert_array_equal(out.spec.get_column("model").value, 2.0 * profile)
+    # A telluric model does not touch the model
+    path = _molecfit_file(tmp_path / "m.dat", *_grid(), np.full(N, 0.5))
+    out = _session(model=model).file.import_model(file_path=path)
+    np.testing.assert_array_equal(out.spec.get_column("model").value, 2.0 * profile)
+
+
+def test_a_continuum_from_another_session():
+    x, _, _ = _grid()
+    other = _session()            # cont = 2, in the unit of its flux
+    out = _session().file.import_model(source_session=other, role="cont")
+    np.testing.assert_array_equal(out.spec.get_column("cont").value, 2.0)
+    # A physical continuum into an arbitrary flux: refused
+    phys = _physical_session(cont=DataColumn(np.full(N, 2e-16), _physical_session().spec.y.unit))
+    arb = _session()
+    with pytest.raises(RecipeFailed, match="a continuum is in the unit of the flux"):
+        arb.edit.set_properties(yunit="arb_flux").file.import_model(
+            source_session=phys, role="cont")
+
+
+@pytest.mark.parametrize("role, asked", [("cont", True), ("telluric", False)])
+def test_the_gui_asks_to_renormalize_for_a_continuum(role, asked):
+    # As for fit_continuum: the window asks, the answer goes in renorm_model
+    from types import SimpleNamespace
+    from PySide6.QtWidgets import QMessageBox
+    from astrocook.gui.main_recipes import MainRecipesMixin
+    session = _session(model=DataColumn(np.ones(N), au.dimensionless_unscaled))
+    calls = []
+    window = SimpleNamespace(
+        active_history=SimpleNamespace(current_state=session),
+        _show_custom_message=lambda **k: calls.append(k) or QMessageBox.StandardButton.No)
+    params = {"file_path": "c.dat", "role": role}
+    MainRecipesMixin._ask_to_renormalize_model(window, "import_model", params)
+    assert bool(calls) == asked
+    assert params.get("renorm_model") == ("False" if asked else None)
