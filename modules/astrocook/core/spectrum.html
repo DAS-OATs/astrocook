@@ -6,7 +6,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>astrocook.core.spectrum &#8212; Astrocook 2.7.1 documentation</title>
+    <title>astrocook.core.spectrum &#8212; Astrocook 2.8.0 documentation</title>
   
   
   
@@ -38,7 +38,7 @@
   <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
 <link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="../../../static/documentation_options.js?v=7b940564"></script>
+    <script src="../../../static/documentation_options.js?v=69ff2ef9"></script>
     <script src="../../../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../../../static/design-tabs.js?v=fcb327ea"></script>
@@ -46,7 +46,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.7.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.8.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -56,7 +56,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.7.1" />
+  <meta name="docsearch:version" content="2.8.0" />
   
     
     <script src="../../../static/searchtools.js"></script>
@@ -483,6 +483,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum_operations</span><span class="w"> </span><span class="kn">import</span> <span class="n">convert_x_axis</span><span class="p">,</span> <span class="n">convert_y_axis</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">SpectrumData</span><span class="p">,</span> <span class="n">DataColumn</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.resolution</span><span class="w"> </span><span class="kn">import</span> <span class="n">column_to_resolving_power</span><span class="p">,</span> <span class="n">migrate_resolution</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.telluric</span><span class="w"> </span><span class="kn">import</span> <span class="n">migrate_telluric</span><span class="p">,</span> <span class="n">telluric_transmission</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum_combine</span><span class="w"> </span><span class="kn">import</span> <span class="n">CombineMixin</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum_continuum</span><span class="w"> </span><span class="kn">import</span> <span class="n">ContinuumMixin</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum_expressions</span><span class="w"> </span><span class="kn">import</span> <span class="n">ExpressionsMixin</span>
@@ -651,8 +652,10 @@
 <a class="viewcode-back" href="../../../api/astrocook.core.spectrum.html#astrocook.core.spectrum.Spectrum.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">SpectrumData</span><span class="p">,</span> <span class="n">history</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
         <span class="c1"># The resolution lives in the 'resol' column only: legacy sources</span>
-        <span class="c1"># (attribute, meta keys) are migrated into it here (#526)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">migrate_resolution</span><span class="p">(</span><span class="n">_edges_with_unit</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+        <span class="c1"># (attribute, meta keys) are migrated into it here (#526); the</span>
+        <span class="c1"># telluric transmission in 'telluric' (telluric_model renamed,</span>
+        <span class="c1"># phase 7-ter, T1: core/telluric.py)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">migrate_telluric</span><span class="p">(</span><span class="n">migrate_resolution</span><span class="p">(</span><span class="n">_edges_with_unit</span><span class="p">(</span><span class="n">data</span><span class="p">)))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="o">=</span> <span class="n">history</span> <span class="k">if</span> <span class="n">history</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[]</span></div>
 
 
@@ -723,21 +726,23 @@
 <span class="sd">        Logic:</span>
 <span class="sd">        </span>
 <span class="sd">        1. If cont exists: </span>
-<span class="sd">           - Returns cont * telluric (if telluric exists).</span>
+<span class="sd">           - Returns cont * telluric (if the ``telluric`` column exists and</span>
+<span class="sd">             the flux is not already corrected: the flag</span>
+<span class="sd">             ``TELLURIC_CORRECTED`` of the metadata, ``core/telluric.py``).</span>
 <span class="sd">           - Returns cont (otherwise).</span>
 <span class="sd">        2. If cont is missing:</span>
 <span class="sd">           - Returns 1.0 (if flux median is ~1, assuming pre-normalized).</span>
 <span class="sd">           - Returns None (if flux is physical, signaling need for continuum fitting).</span>
 <span class="sd">        """</span>
         <span class="n">cont</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_column</span><span class="p">(</span><span class="s1">'cont'</span><span class="p">)</span>
-        <span class="n">telluric</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_column</span><span class="p">(</span><span class="s1">'telluric_model'</span><span class="p">)</span>
+        <span class="n">telluric</span> <span class="o">=</span> <span class="n">telluric_transmission</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">)</span>
         
         <span class="c1"># Case 1: Continuum Exists</span>
         <span class="k">if</span> <span class="n">cont</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">telluric</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="c1"># Multiply Continuum (Quantity) by Telluric (Array/Quantity)</span>
-                <span class="c1"># Assuming telluric is dimensionless 0..1 transmission</span>
-                <span class="k">return</span> <span class="n">cont</span> <span class="o">*</span> <span class="n">telluric</span><span class="o">.</span><span class="n">value</span>
+                <span class="c1"># Multiply Continuum (Quantity) by the transmission</span>
+                <span class="c1"># (dimensionless, 0..1)</span>
+                <span class="k">return</span> <span class="n">cont</span> <span class="o">*</span> <span class="n">telluric</span>
             <span class="k">return</span> <span class="n">cont</span>
             
         <span class="c1"># Case 2: No Continuum (Check for implicit normalization)</span>

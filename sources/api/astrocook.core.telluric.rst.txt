@@ -1,0 +1,7 @@
+astrocook.core.telluric module
+==============================
+
+.. automodule:: astrocook.core.telluric
+   :members:
+   :show-inheritance:
+   :undoc-members:

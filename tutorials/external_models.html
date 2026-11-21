@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>External Models &#8212; Astrocook 2.8.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../static/styles/theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+<link href="../static/styles/pydata-sphinx-theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../static/sphinx-design.min.css?v=6a604523" />
+    <link rel="stylesheet" type="text/css" href="../static/css/custom.css?v=e8a3a7b7" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../static/scripts/fontawesome.js?digest=75c7c72ae941e8b558d8"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
+<link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
+
+    <script src="../static/documentation_options.js?v=69ff2ef9"></script>
+    <script src="../static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../static/design-tabs.js?v=fcb327ea"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'tutorials/external_models';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.8.0';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Absorption Systems" href="absorption_systems.html" />
+    <link rel="prev" title="Continuum Fitting" href="continuum_fitting.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="color-scheme" content="light dark"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="2.8.0" />
+  
+    
+    <script src="../static/searchtools.js"></script>
+    <script src="../static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation" aria-expanded="false" aria-controls="pst-primary-sidebar-modal">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../static/icon_3d_HR.png" class="logo__image only-light" alt=""/>
+    <img src="../static/icon_3d_HR.png" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">Astrocook</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../science.html">
+    Science
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference.html">
+    API Reference
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../credits.html">
+    Credits
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../changelog.html">
+    Changelog
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button type="button" class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page" aria-expanded="false" aria-controls="pst-secondary-sidebar-modal">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal" tabindex="-1"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../science.html">
+    Science
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../reference.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../credits.html">
+    Credits
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../changelog.html">
+    Changelog
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button type="button" id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+  <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="editing_data.html">Editing Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="flux_operations.html">Flux Operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="continuum_fitting.html">Continuum Fitting</a></li>
+<li class="toctree-l1 current active"><a aria-current="page" class="current reference internal" href="#">External Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="absorption_systems.html">Absorption Systems</a></li>
+<li class="toctree-l1"><a class="reference internal" href="scripting.html">Using Astrocook from Python</a></li>
+<li class="toctree-l1"><a class="reference internal" href="agents.html">Using Astrocook from an AI Agent</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-house"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">Tutorials</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">External Models</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="external-models">
+<h1>External Models<a class="headerlink" href="#external-models" title="Link to this heading">#</a></h1>
+<p>A model made outside Astrocook can be brought into a spectrum: a <strong>telluric transmission</strong>, such as a Molecfit fit of the spectrum, a <strong>continuum</strong>, or an <strong>absorption model</strong>. A model is not a spectrum of its own: it becomes a column of the spectrum with a role, <code class="docutils literal notranslate"><span class="pre">telluric</span></code>, <code class="docutils literal notranslate"><span class="pre">cont</span></code> or <code class="docutils literal notranslate"><span class="pre">model</span></code>; the first two are used by the fits to normalize the flux (<code class="docutils literal notranslate"><span class="pre">cont</span> <span class="pre">×</span> <span class="pre">telluric</span></code>). The import is a recipe like the others: it can be undone, it is recorded in the session log and saved in the archive.</p>
+<section id="importing-a-model">
+<h2>1. Importing a Model<a class="headerlink" href="#importing-a-model" title="Link to this heading">#</a></h2>
+<ol class="arabic simple">
+<li><p>Open the spectrum, and select it in the session list.</p></li>
+<li><p>Go to <strong>File &gt; Import Model…</strong>.</p></li>
+<li><p>Choose the source of the model: a file (write its path, or <strong>Browse…</strong>), or another open session (click its name in the list below the fields; leave the file empty).</p></li>
+<li><p>Choose the <strong>Role</strong>: <code class="docutils literal notranslate"><span class="pre">telluric</span></code>, the transmission (1 where there is no telluric absorption), <code class="docutils literal notranslate"><span class="pre">cont</span></code>, a continuum (see <a class="reference internal" href="#external-models-continuum">The Continuum</a>), or <code class="docutils literal notranslate"><span class="pre">model</span></code>, an absorption model (see <a class="reference internal" href="#external-models-model">The Absorption Model</a>); for an absorption model normalized to 1, check the last box (<em>the model is normalized</em>).</p></li>
+<li><p>Leave the <strong>Column</strong> empty to let Astrocook find the column of the model by its name, or write its name.</p></li>
+<li><p>Click <strong>Run</strong>.</p></li>
+</ol>
+<img alt="The dialog of Import Model with a telluric model chosen, over a spectrum with the O2 A band" class="align-center" src="../images/external_models_import_dialog.png" />
+<p>The status bar and the log say how the model was brought onto the spectrum and how many pixels it covers, e.g. <em>The telluric model of telluric_model.dat (column trans_molecfit) was copied (the model is on the grid of the spectrum) into the column telluric: it covers 26000 of 40000 pixels; beyond, 1.</em> The model replaces a <code class="docutils literal notranslate"><span class="pre">telluric</span></code> column that the spectrum already has.</p>
+<p>From a script, or from an agent through the MCP server, the same recipe:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">session</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">import_model</span><span class="p">(</span><span class="n">file_path</span><span class="o">=</span><span class="s2">"telluric_model.dat"</span><span class="p">)</span>       <span class="c1"># a file</span>
+<span class="n">session</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">import_model</span><span class="p">(</span><span class="n">source_session</span><span class="o">=</span><span class="n">other</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="s2">"F"</span><span class="p">)</span>     <span class="c1"># another session</span>
+<span class="n">session</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">import_model</span><span class="p">(</span><span class="n">file_path</span><span class="o">=</span><span class="s2">"cont.dat"</span><span class="p">,</span> <span class="n">role</span><span class="o">=</span><span class="s2">"cont"</span><span class="p">)</span>    <span class="c1"># a continuum</span>
+<span class="n">session</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">import_model</span><span class="p">(</span><span class="n">file_path</span><span class="o">=</span><span class="s2">"abs.dat"</span><span class="p">,</span> <span class="n">role</span><span class="o">=</span><span class="s2">"model"</span><span class="p">,</span>    <span class="c1"># a normalized</span>
+                                    <span class="n">normalized</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>                      <span class="c1"># absorption model</span>
+</pre></div>
+</div>
+</section>
+<section id="the-files-of-the-models">
+<h2>2. The Files of the Models<a class="headerlink" href="#the-files-of-the-models" title="Link to this heading">#</a></h2>
+<p>The file is read by the names of its columns, in any of these formats:</p>
+<ul>
+<li><p>a <strong>text table</strong>, with the columns separated by spaces, tabs or commas and their names in a line on top, also commented, e.g. the Molecfit models</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span># x xmin xmax trans_molecfit dy
+380.000000 379.999367 380.000633 0.998812 12.3
+...
+</pre></div>
+</div>
+<p>or without names (the first column is then the wavelength, and the column of the model is named as <code class="docutils literal notranslate"><span class="pre">col2</span></code>, <code class="docutils literal notranslate"><span class="pre">col3</span></code>, …);</p>
+</li>
+<li><p>the <strong>CSV</strong> written by <strong>File &gt; Export to ASCII…</strong> (with its units);</p></li>
+<li><p>a <strong>FITS table</strong>: a file of Astrocook, or a Molecfit output with the column <code class="docutils literal notranslate"><span class="pre">mtrans</span></code> (when the extension of the model has no wavelength, as the <code class="docutils literal notranslate"><span class="pre">TELLURIC_DATA</span></code> of an ESO product, that of another extension of the same length is used).</p></li>
+</ul>
+<p>The wavelength is the column <code class="docutils literal notranslate"><span class="pre">x</span></code>, <code class="docutils literal notranslate"><span class="pre">lam</span></code>, <code class="docutils literal notranslate"><span class="pre">lambda</span></code>, <code class="docutils literal notranslate"><span class="pre">wave</span></code> or <code class="docutils literal notranslate"><span class="pre">wavelength</span></code>, in the unit of the file; a text table has no units, and its wavelength is taken in nm (a FITS table without a unit: Å above 3000, nm below, as for the spectra). The edges of the pixels are <code class="docutils literal notranslate"><span class="pre">xmin</span></code> and <code class="docutils literal notranslate"><span class="pre">xmax</span></code> (or <code class="docutils literal notranslate"><span class="pre">lammin</span></code>, <code class="docutils literal notranslate"><span class="pre">lammax</span></code>) when the file has them, otherwise halfway between the centres. The column of a telluric model is found by these names, in this order, ignoring the case: <code class="docutils literal notranslate"><span class="pre">telluric</span></code>, <code class="docutils literal notranslate"><span class="pre">telluric_model</span></code>, <code class="docutils literal notranslate"><span class="pre">trans_molecfit</span></code>, <code class="docutils literal notranslate"><span class="pre">mtrans</span></code> (the <code class="docutils literal notranslate"><span class="pre">TELLURIC</span></code> of PypeIt); that of a continuum by <code class="docutils literal notranslate"><span class="pre">cont</span></code> or <code class="docutils literal notranslate"><span class="pre">continuum</span></code>, that of an absorption model by <code class="docutils literal notranslate"><span class="pre">model</span></code>. The other columns are ignored: the <code class="docutils literal notranslate"><span class="pre">dy</span></code> of the Molecfit models above is the error of the science spectrum, kept there for the co-addition, not an error of the model, and the error of the spectrum is not changed.</p>
+<p>A transmission is dimensionless: a column with a unit is refused, and values outside 0-1 are reported as a warning.</p>
+</section>
+<section id="from-the-grid-of-the-model-to-that-of-the-spectrum">
+<h2>3. From the Grid of the Model to that of the Spectrum<a class="headerlink" href="#from-the-grid-of-the-model-to-that-of-the-spectrum" title="Link to this heading">#</a></h2>
+<p>The model is taken in the frame of the spectrum: no shift is applied (the Molecfit models of a barycentric spectrum are barycentric).</p>
+<ul class="simple">
+<li><p>Where the model is on the grid of the spectrum (the same pixels, within a tenth of a pixel, over the part where they overlap: a model of 380-780 nm on the grid of a spectrum of 400-700 nm, or the reverse), its values are <strong>copied</strong>.</p></li>
+<li><p>Otherwise each pixel of the spectrum gets the <strong>average</strong> of the model over the pixel (from <code class="docutils literal notranslate"><span class="pre">λmin</span></code> to <code class="docutils literal notranslate"><span class="pre">λmax</span></code>), each pixel of the model weighted by how much of it falls in the pixel: the equivalent width of a telluric line is the same on the two grids.</p></li>
+<li><p>Beyond the model the transmission is 1; a pixel at the edge, covered in part, is the mean of the model and of 1 by their widths. A continuum has no value beyond the model (NaN), and a pixel at the edge has one only if the model covers it in full. An absorption model is the normalization beyond the model (see <a class="reference internal" href="#external-models-model">The Absorption Model</a>). A model that does not overlap the spectrum at all is refused, with the two ranges.</p></li>
+</ul>
+</section>
+<section id="the-normalization">
+<h2>4. The Normalization<a class="headerlink" href="#the-normalization" title="Link to this heading">#</a></h2>
+<p>The fits normalize the flux by <code class="docutils literal notranslate"><span class="pre">cont</span> <span class="pre">×</span> <span class="pre">telluric</span></code>: the transmission enters the fits of the absorbers as soon as it is imported. If the flux of the spectrum is already corrected for the tellurics, say so with <strong>Edit &gt; Set Properties…</strong>, the field <em>telluric_corrected</em> = <code class="docutils literal notranslate"><span class="pre">yes</span></code>: the normalization is then the continuum alone, and the column stays for the identification (the import warns if the flag is set). See also <a class="reference internal" href="getting_started.html#getting-started-telluric"><span class="std std-ref">The telluric transmission</span></a>.</p>
+<p>With a continuum, the dashed line of the normalization (<strong>Normalization</strong> among the plot elements of the right sidebar) is <code class="docutils literal notranslate"><span class="pre">cont</span> <span class="pre">×</span> <span class="pre">telluric</span></code>, so the telluric lines show in it. The transmission alone can be drawn by choosing <code class="docutils literal notranslate"><span class="pre">telluric</span></code> as the <strong>Auxiliary column</strong>, and its values read with the <strong>Data Inspector</strong> (right-click on the plot).</p>
+</section>
+<section id="external-models-continuum">
+<span id="the-continuum"></span><h2>5. The Continuum<a class="headerlink" href="#external-models-continuum" title="Link to this heading">#</a></h2>
+<p>With the role <code class="docutils literal notranslate"><span class="pre">cont</span></code> the model is a continuum, written in the column <code class="docutils literal notranslate"><span class="pre">cont</span></code> in place of the one the spectrum may have (e.g. from <strong>Continuum &gt; Auto-estimate Continuum</strong>). It is in the unit of the flux:</p>
+<ul class="simple">
+<li><p>a column with a unit (the CSV of <strong>File &gt; Export to ASCII…</strong>, an ECSV or a FITS table) is converted to the unit of the flux, also from a flux per unit frequency to one per unit wavelength (at the wavelength of each pixel of the model); a unit that cannot be converted (a length, or a physical flux into a spectrum in arbitrary units, <code class="docutils literal notranslate"><span class="pre">arb_flux</span></code>) is refused;</p></li>
+<li><p>a column without a unit (a text table) is taken in the unit of the flux, and refused when its median and that of the flux, over the pixels it covers, differ by more than a factor 10: a <strong>normalized continuum</strong> (around 1) under a flux of 1e-16 is not a continuum of that flux. Give the continuum in the unit of the flux, or with its unit.</p></li>
+</ul>
+<p>Beyond the model the spectrum has no continuum: the column <code class="docutils literal notranslate"><span class="pre">cont</span></code> is NaN there, also where the spectrum had one before, and the flux is not normalized (a warning says on how many pixels; <strong>Edit &gt; Undo</strong> brings back the previous continuum). Import a continuum that covers the part of the spectrum you work on.</p>
+<p>If the spectrum has an absorption model (the column <code class="docutils literal notranslate"><span class="pre">model</span></code>), Astrocook asks whether to <strong>re-normalize</strong> it to the new continuum, as when the continuum is estimated again: the model is divided by the old continuum and multiplied by the new one, and kept as it was where there is no continuum. From a script the choice is the parameter <code class="docutils literal notranslate"><span class="pre">renorm_model</span></code> (<code class="docutils literal notranslate"><span class="pre">True</span></code> by default, as in <code class="docutils literal notranslate"><span class="pre">fit_continuum</span></code>).</p>
+</section>
+<section id="external-models-model">
+<span id="the-absorption-model"></span><h2>6. The Absorption Model<a class="headerlink" href="#external-models-model" title="Link to this heading">#</a></h2>
+<p>With the role <code class="docutils literal notranslate"><span class="pre">model</span></code> the model is an absorption model (the absorbers, over the continuum and the tellurics), written in the column <code class="docutils literal notranslate"><span class="pre">model</span></code> in place of the one the spectrum may have, and drawn as the model of a fit. It can be given in two ways:</p>
+<ul class="simple">
+<li><p><strong>in the unit of the flux</strong>, as the <code class="docutils literal notranslate"><span class="pre">model</span></code> of Astrocook (the normalization times the absorption): checked and converted as a continuum (a unit converted to that of the flux, refused if it cannot be; without a unit, refused when its median and that of the flux differ by more than a factor 10, with a pointer to the next way);</p></li>
+<li><p><strong>normalized</strong> (the box <em>the model is normalized</em> checked, <code class="docutils literal notranslate"><span class="pre">normalized=True</span></code> in a script): dimensionless, 1 where there is no absorption, and multiplied at the import by the normalization of the spectrum, <code class="docutils literal notranslate"><span class="pre">cont</span> <span class="pre">×</span> <span class="pre">telluric</span></code> (the continuum alone if the flux is flagged as corrected for the tellurics). The spectrum needs a continuum: without one the import is refused (a flux already normalized, without a continuum, has a normalization of 1). A column with a unit is refused, values outside 0-1 are reported as a warning; a pixel at the edge, covered in part, is the mean of the model and of 1, as a transmission. The normalization is the one at the time of the import: a continuum estimated later rescales the model only if you choose to re-normalize it.</p></li>
+</ul>
+<p>Beyond the model the column is the normalization (no absorption there), NaN where the spectrum has no continuum (a warning says on how many pixels).</p>
+<p>The imported model is <strong>not tied to the system list</strong>: Astrocook does not know the components that make it, and the system list is not changed. A fit, or a change of the components that redraws the model (adding, editing or deleting a component), computes the model again from the system list and <strong>overwrites</strong> the imported one (<strong>Edit &gt; Undo</strong> brings it back).</p>
+</section>
+<section id="a-model-is-not-a-spectrum">
+<h2>7. A Model Is Not a Spectrum<a class="headerlink" href="#a-model-is-not-a-spectrum" title="Link to this heading">#</a></h2>
+<p>A file with a telluric model and no flux (as the Molecfit models above) is not opened by <strong>File &gt; Open Session…</strong>: the message says to open the spectrum and import the model into it with <strong>File &gt; Import Model…</strong>. A text file with the columns of a spectrum (<code class="docutils literal notranslate"><span class="pre">x</span></code>, <code class="docutils literal notranslate"><span class="pre">y</span></code>, <code class="docutils literal notranslate"><span class="pre">dy</span></code>, or <code class="docutils literal notranslate"><span class="pre">lam</span></code>, <code class="docutils literal notranslate"><span class="pre">F</span></code>, <code class="docutils literal notranslate"><span class="pre">dF</span></code>, or <code class="docutils literal notranslate"><span class="pre">wave</span></code>, <code class="docutils literal notranslate"><span class="pre">flux</span></code>, <code class="docutils literal notranslate"><span class="pre">err</span></code>, with or without <code class="docutils literal notranslate"><span class="pre">xmin</span></code>, <code class="docutils literal notranslate"><span class="pre">xmax</span></code>) opens as a spectrum, and a telluric column it carries (<code class="docutils literal notranslate"><span class="pre">trans_molecfit</span></code>, <code class="docutils literal notranslate"><span class="pre">mtrans</span></code>) goes to <code class="docutils literal notranslate"><span class="pre">telluric</span></code>.</p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="continuum_fitting.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Continuum Fitting</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="absorption_systems.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Absorption Systems</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal" tabindex="-1"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#importing-a-model">1. Importing a Model</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-files-of-the-models">2. The Files of the Models</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#from-the-grid-of-the-model-to-that-of-the-spectrum">3. From the Grid of the Model to that of the Spectrum</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-normalization">4. The Normalization</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#external-models-continuum">5. The Continuum</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#external-models-model">6. The Absorption Model</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#a-model-is-not-a-spectrum">7. A Model Is Not a Spectrum</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../sources/tutorials/external_models.md.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8"></script>
+<script defer src="../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Guido Cupani.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.2.0.
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.24.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

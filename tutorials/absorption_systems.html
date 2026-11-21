@@ -7,7 +7,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Absorption Systems &#8212; Astrocook 2.7.1 documentation</title>
+    <title>Absorption Systems &#8212; Astrocook 2.8.0 documentation</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="../static/documentation_options.js?v=7b940564"></script>
+    <script src="../static/documentation_options.js?v=69ff2ef9"></script>
     <script src="../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../static/design-tabs.js?v=fcb327ea"></script>
@@ -49,7 +49,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.7.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.8.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -57,11 +57,11 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Using Astrocook from Python" href="scripting.html" />
-    <link rel="prev" title="Continuum Fitting" href="continuum_fitting.html" />
+    <link rel="prev" title="External Models" href="external_models.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.7.1" />
+  <meta name="docsearch:version" content="2.8.0" />
   
     
     <script src="../static/searchtools.js"></script>
@@ -440,6 +440,7 @@
 <li class="toctree-l1"><a class="reference internal" href="editing_data.html">Editing Data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="flux_operations.html">Flux Operations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="continuum_fitting.html">Continuum Fitting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="external_models.html">External Models</a></li>
 <li class="toctree-l1 current active"><a aria-current="page" class="current reference internal" href="#">Absorption Systems</a></li>
 <li class="toctree-l1"><a class="reference internal" href="scripting.html">Using Astrocook from Python</a></li>
 <li class="toctree-l1"><a class="reference internal" href="agents.html">Using Astrocook from an AI Agent</a></li>
@@ -511,7 +512,7 @@
 <p>For most science cases, you should start with one of the automated pipelines in the <strong>Absorbers</strong> menu. These recipes scan the spectrum, identify features, and perform an initial fit.</p>
 <div class="admonition important">
 <p class="admonition-title">Important</p>
-<p><strong>Normalization:</strong> All fitting recipes calculate absorption depth relative to the continuum. Astrocook uses the <code class="docutils literal notranslate"><span class="pre">cont</span></code> column (multiplied by <code class="docutils literal notranslate"><span class="pre">telluric_model</span></code> if present) as the reference.</p>
+<p><strong>Normalization:</strong> All fitting recipes calculate absorption depth relative to the continuum. Astrocook uses the <code class="docutils literal notranslate"><span class="pre">cont</span></code> column (multiplied by the telluric transmission, the <code class="docutils literal notranslate"><span class="pre">telluric</span></code> column, if present and if the flux is not already corrected: see <strong>Edit &gt; Set Properties</strong>) as the reference. The column was called <code class="docutils literal notranslate"><span class="pre">telluric_model</span></code> before 2.8.0: it is renamed when a spectrum is opened.</p>
 <ul class="simple">
 <li><p>If no continuum exists and the flux <code class="docutils literal notranslate"><span class="pre">F</span></code> is already normalized (median <span class="math notranslate nohighlight">\(\approx\)</span> 1), the continuum is taken as 1.</p></li>
 <li><p>Otherwise the identification and the fits need a continuum first: a recipe that needs it asks how to provide it, <strong>Estimate</strong> (with the defaults of <strong>Auto-estimate Continuum</strong>), <strong>Open Auto-estimate Continuum…</strong> (to choose its parameters), or <strong>Cancel</strong>; the recipe then runs. The estimate is a step of its own in the session log, before the recipe.</p></li>
@@ -773,12 +774,12 @@ Once a Bayesian fit completes, Astrocook stores the posterior samples in the ses
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="continuum_fitting.html"
+       href="external_models.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Continuum Fitting</p>
+        <p class="prev-next-title">External Models</p>
       </div>
     </a>
     <a class="right-next"

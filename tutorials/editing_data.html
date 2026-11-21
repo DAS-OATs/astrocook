@@ -7,7 +7,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Editing Data &#8212; Astrocook 2.7.1 documentation</title>
+    <title>Editing Data &#8212; Astrocook 2.8.0 documentation</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="../static/documentation_options.js?v=7b940564"></script>
+    <script src="../static/documentation_options.js?v=69ff2ef9"></script>
     <script src="../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../static/design-tabs.js?v=fcb327ea"></script>
@@ -49,7 +49,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.7.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.8.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -61,7 +61,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.7.1" />
+  <meta name="docsearch:version" content="2.8.0" />
   
     
     <script src="../static/searchtools.js"></script>
@@ -440,6 +440,7 @@
 <li class="toctree-l1 current active"><a aria-current="page" class="current reference internal" href="#">Editing Data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="flux_operations.html">Flux Operations</a></li>
 <li class="toctree-l1"><a class="reference internal" href="continuum_fitting.html">Continuum Fitting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="external_models.html">External Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="absorption_systems.html">Absorption Systems</a></li>
 <li class="toctree-l1"><a class="reference internal" href="scripting.html">Using Astrocook from Python</a></li>
 <li class="toctree-l1"><a class="reference internal" href="agents.html">Using Astrocook from an AI Agent</a></li>
@@ -526,6 +527,7 @@
 <li><p><strong>Object:</strong> The target name (often from the FITS header).</p></li>
 <li><p><strong>Emission Redshift (<span class="math notranslate nohighlight">\(z_\mathrm{em}\)</span>):</strong> Set this carefully!</p></li>
 <li><p><strong>Flux unit (<em>yunit</em>):</strong> The unit of the flux, declared without changing the values: a flux density per unit wavelength (e.g. <code class="docutils literal notranslate"><span class="pre">erg/(Angstrom</span> <span class="pre">s</span> <span class="pre">cm^2)</span></code>, <code class="docutils literal notranslate"><span class="pre">1e-17</span> <span class="pre">erg/(Angstrom</span> <span class="pre">s</span> <span class="pre">cm^2)</span></code>), or <code class="docutils literal notranslate"><span class="pre">arb_flux</span></code> for arbitrary units. It is given to the flux, its error, the continuum and the model. Use it when the file did not say the unit (see <a class="reference internal" href="getting_started.html#getting-started-flux-unit"><span class="std std-ref">the unit of the flux</span></a>); to <em>convert</em> a flux that has a unit, use <strong>Convert Y axis</strong>.</p></li>
+<li><p><strong>Telluric correction (<em>telluric_corrected</em>):</strong> Whether the flux is already corrected for the telluric absorption. <code class="docutils literal notranslate"><span class="pre">no</span></code> (as for every spectrum that does not say otherwise): the fits normalize the flux by the continuum times the telluric transmission, the <code class="docutils literal notranslate"><span class="pre">telluric</span></code> column, when the spectrum has one. <code class="docutils literal notranslate"><span class="pre">yes</span></code>: the tellurics are already divided out of the flux, and the normalization is the continuum alone; the <code class="docutils literal notranslate"><span class="pre">telluric</span></code> column is kept, as a record of where the correction was made. The choice is kept in the archive (the flag <code class="docutils literal notranslate"><span class="pre">TELLURIC_CORRECTED</span></code> of the metadata).</p></li>
 <li><p><strong>Resolution (<span class="math notranslate nohighlight">\(R\)</span>):</strong> You can enter a resolving power (e.g., <code class="docutils literal notranslate"><span class="pre">50000</span></code>) or a pixel width (e.g., <code class="docutils literal notranslate"><span class="pre">3px</span></code>, with the x axis in wavelength). The resolution is stored in the <code class="docutils literal notranslate"><span class="pre">resol</span></code> column of the spectrum, one value per pixel, and the fits use the value of each pixel. If the resolution varies with wavelength (e.g. after co-adding spectra of different resolution), the field is left empty, with the median as a hint, and the column is kept: if you type a value there, Astrocook asks whether to replace the column with it.</p></li>
 </ul>
 <p>A field left empty keeps the current value.</p>

@@ -7,7 +7,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>astrocook.recipes.edit module &#8212; Astrocook 2.7.1 documentation</title>
+    <title>astrocook.recipes.edit module &#8212; Astrocook 2.8.0 documentation</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
 <link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="../static/documentation_options.js?v=7b940564"></script>
+    <script src="../static/documentation_options.js?v=69ff2ef9"></script>
     <script src="../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../static/design-tabs.js?v=fcb327ea"></script>
@@ -47,7 +47,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.7.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.8.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -59,7 +59,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.7.1" />
+  <meta name="docsearch:version" content="2.8.0" />
   
     
     <script src="../static/searchtools.js"></script>
@@ -438,12 +438,14 @@
 <li class="toctree-l1 has-children"><a class="reference internal" href="astrocook.core.html">astrocook.core package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.column_names.html">astrocook.core.column_names module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.debug_hooks.html">astrocook.core.debug_hooks module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.model_grid.html">astrocook.core.model_grid module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.resolution.html">astrocook.core.resolution module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.session.html">astrocook.core.session module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.session_manager.html">astrocook.core.session_manager module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.spectrum.html">astrocook.core.spectrum module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.structures.html">astrocook.core.structures module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.system_list.html">astrocook.core.system_list module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.telluric.html">astrocook.core.telluric module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.templates.html">astrocook.core.templates module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="astrocook.core.units.html">astrocook.core.units module</a></li>
 </ul>
@@ -566,7 +568,7 @@ and <a class="reference internal" href="astrocook.core.system_list.html#astrocoo
 
 <dl class="py method">
 <dt class="sig sig-object py" id="astrocook.recipes.edit.RecipeEdit.set_properties">
-<span class="sig-name descname"><span class="pre">set_properties</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'_current_'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'_current_'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_em</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'_current_'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'_current_'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite_resol_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yunit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'_current_'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.session.session.html#astrocook.session.session.Session" title="astrocook.session.session.Session"><span class="pre">Session</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="../modules/astrocook/recipes/edit.html#RecipeEdit.set_properties"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.edit.RecipeEdit.set_properties" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">set_properties</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'_current_'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'_current_'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_em</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'_current_'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'_current_'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite_resol_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yunit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'_current_'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">telluric_corrected</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'_current_'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="astrocook.session.session.html#astrocook.session.session.Session" title="astrocook.session.session.Session"><span class="pre">Session</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="../modules/astrocook/recipes/edit.html#RecipeEdit.set_properties"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.recipes.edit.RecipeEdit.set_properties" title="Link to this definition">#</a></dt>
 <dd><p>Set session properties.</p>
 <p>Set core session properties like name, object, redshift, and resolution.
 Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#astrocook.core.spectrum.Spectrum.with_properties" title="astrocook.core.spectrum.Spectrum.with_properties"><code class="xref py py-meth docutils literal notranslate"><span class="pre">astrocook.core.spectrum.Spectrum.with_properties()</span></code></a>.</p>
@@ -578,7 +580,8 @@ Delegates to <a class="reference internal" href="astrocook.core.spectrum.html#as
 <li><p><strong>z_em</strong> (<em>float</em><em> or </em><em>str</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Emission Redshift, above -1 and finite. Defaults to
 <code class="docutils literal notranslate"><span class="pre">'_current_'</span></code> (no change).</p></li>
 <li><p><strong>resol</strong> (<em>str</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Resolving Power R (e.g., <code class="docutils literal notranslate"><span class="pre">50000</span></code>) OR Pixel FWHM (e.g., <code class="docutils literal notranslate"><span class="pre">'3px'</span></code>),
-positive and finite. Defaults to <code class="docutils literal notranslate"><span class="pre">'_current_'</span></code> (no change).</p></li>
+positive and finite. Defaults to <code class="docutils literal notranslate"><span class="pre">'_current_'</span></code> (no change); an
+empty string keeps the current resolution too (FT8).</p></li>
 <li><p><strong>overwrite_resol_col</strong> (<em>bool</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, a <code class="docutils literal notranslate"><span class="pre">resol</span></code> column that varies with wavelength is
 replaced by a flat one at the new resolution; if <code class="docutils literal notranslate"><span class="pre">False</span></code> it is
 kept (a flat or missing column is always set). Defaults to
@@ -589,6 +592,12 @@ with <code class="docutils literal notranslate"><span class="pre">resol='_curren
 (e.g. <code class="docutils literal notranslate"><span class="pre">'erg/(Angstrom</span> <span class="pre">s</span> <span class="pre">cm^2)'</span></code>) or <code class="docutils literal notranslate"><span class="pre">'arb_flux'</span></code>, the
 arbitrary units of Astrocook. Defaults to <code class="docutils literal notranslate"><span class="pre">'_current_'</span></code> (no
 change). <a class="reference internal" href="#astrocook.recipes.edit.RecipeEdit.y_convert" title="astrocook.recipes.edit.RecipeEdit.y_convert"><code class="xref py py-meth docutils literal notranslate"><span class="pre">y_convert()</span></code></a> converts a flux that has a unit.</p></li>
+<li><p><strong>telluric_corrected</strong> (<em>str</em><em>, </em><a class="reference internal" href="astrocook.recipes.registry.html#astrocook.recipes.registry.ParamSpec.optional" title="astrocook.recipes.registry.ParamSpec.optional"><em>optional</em></a>) – Whether the flux is already corrected for the telluric
+absorption (phase 7-ter, T1): <code class="docutils literal notranslate"><span class="pre">'yes'</span></code> sets the flag
+<code class="docutils literal notranslate"><span class="pre">TELLURIC_CORRECTED</span></code> of the metadata, and the normalization
+is the continuum alone; <code class="docutils literal notranslate"><span class="pre">'no'</span></code> clears it, and the
+normalization is the continuum times the <code class="docutils literal notranslate"><span class="pre">telluric</span></code> column,
+when there is one. Defaults to <code class="docutils literal notranslate"><span class="pre">'_current_'</span></code> (no change).</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>

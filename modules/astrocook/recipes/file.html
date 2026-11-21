@@ -6,7 +6,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>astrocook.recipes.file &#8212; Astrocook 2.7.1 documentation</title>
+    <title>astrocook.recipes.file &#8212; Astrocook 2.8.0 documentation</title>
   
   
   
@@ -38,7 +38,7 @@
   <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
 <link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="../../../static/documentation_options.js?v=7b940564"></script>
+    <script src="../../../static/documentation_options.js?v=69ff2ef9"></script>
     <script src="../../../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../../../static/design-tabs.js?v=fcb327ea"></script>
@@ -46,7 +46,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.7.1';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.8.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -56,7 +56,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.7.1" />
+  <meta name="docsearch:version" content="2.8.0" />
   
     
     <script src="../../../static/searchtools.js"></script>
@@ -478,11 +478,11 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">astropy.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">ascii</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">astropy.units</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">au</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astropy.table</span><span class="w"> </span><span class="kn">import</span> <span class="n">Column</span><span class="p">,</span> <span class="n">Table</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">List</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.column_names</span><span class="w"> </span><span class="kn">import</span> <span class="n">internal_column</span><span class="p">,</span> <span class="n">internal_expression</span><span class="p">,</span> <span class="n">is_axis_column</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.units</span><span class="w"> </span><span class="kn">import</span> <span class="n">known_unit</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.errors</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeFailed</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.errors</span><span class="w"> </span><span class="kn">import</span> <span class="n">InvalidParameter</span><span class="p">,</span> <span class="n">RecipeFailed</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes._spectrum</span><span class="w"> </span><span class="kn">import</span> <span class="n">spec_of</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.params</span><span class="w"> </span><span class="kn">import</span> <span class="n">typed_recipe</span>
 
@@ -497,6 +497,20 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">_methods_import_ascii</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
     <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"Columns were read from the table </span><span class="si">{</span><span class="n">file_name</span><span class="p">(</span><span class="n">p</span><span class="p">,</span><span class="w"> </span><span class="s1">'file_path'</span><span class="p">)</span><span class="si">}</span><span class="s2"> and added "</span>
             <span class="sa">f</span><span class="s2">"to the spectrum</span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_methods_import_model</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+    <span class="n">source</span> <span class="o">=</span> <span class="p">(</span><span class="n">file_name</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="s1">'file_path'</span><span class="p">)</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'file_path'</span><span class="p">)</span>
+              <span class="k">else</span> <span class="sa">f</span><span class="s2">"the session </span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'source_session'</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">column</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">" (column </span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'column'</span><span class="p">)</span><span class="si">}</span><span class="s2">)"</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'column'</span><span class="p">)</span> <span class="k">else</span> <span class="s2">""</span>
+    <span class="n">words</span> <span class="o">=</span> <span class="p">{</span><span class="s1">'telluric'</span><span class="p">:</span> <span class="s2">"telluric transmission"</span><span class="p">,</span>
+             <span class="s1">'cont'</span><span class="p">:</span> <span class="s2">"continuum"</span><span class="p">}</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'role'</span><span class="p">)),</span> <span class="s2">"absorption model"</span><span class="p">)</span>
+    <span class="n">normalized</span> <span class="o">=</span> <span class="p">(</span><span class="s2">", normalized, was multiplied by the normalization of the spectrum "</span>
+                  <span class="s2">"(continuum times telluric transmission) and"</span>
+                  <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">raw</span><span class="p">(</span><span class="s1">'normalized'</span><span class="p">))</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">'true'</span> <span class="k">else</span> <span class="s2">" and was"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"An external </span><span class="si">{</span><span class="n">words</span><span class="si">}</span><span class="s2"> was imported from </span><span class="si">{</span><span class="n">source</span><span class="si">}{</span><span class="n">column</span><span class="si">}{</span><span class="n">normalized</span><span class="si">}</span><span class="s2"> "</span>
+            <span class="sa">f</span><span class="s2">"brought onto the grid of the spectrum (copied on the same grid, "</span>
+            <span class="sa">f</span><span class="s2">"otherwise averaged over its pixels)</span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">menu</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
 
 <span class="n">FILE_RECIPES_SCHEMAS</span> <span class="o">=</span> <span class="p">{</span>
@@ -526,6 +540,24 @@
         <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Reads columns from an ASCII/CSV table with a header and adds them to the spectrum, replacing those with the same name; the table must have one row per pixel of the spectrum. A column x is not read: the grid of the spectrum is kept."</span><span class="p">,</span>
         <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"file_path"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">""</span><span class="p">,</span> <span class="s2">"gui_hidden"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Path of the ASCII/CSV file to read."</span><span class="p">}</span>
+        <span class="p">],</span>
+    <span class="p">},</span>
+    <span class="s2">"import_model"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"methods"</span><span class="p">:</span> <span class="n">_methods_import_model</span><span class="p">,</span>
+        <span class="s2">"brief"</span><span class="p">:</span> <span class="s2">"Import an external model into the spectrum."</span><span class="p">,</span>
+        <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"tutorials/external_models.html#importing-a-model"</span><span class="p">,</span>
+        <span class="s2">"menu"</span><span class="p">:</span> <span class="s2">"File &gt; Import &amp;Model"</span><span class="p">,</span>
+        <span class="s2">"details"</span><span class="p">:</span> <span class="s2">"Reads a model (a telluric transmission, a continuum, an absorption model) from a file or another session and writes it in the column of its role, on the grid of the spectrum: copied on the same grid, otherwise averaged over the pixels. Beyond its range a telluric model is 1, a continuum NaN, an absorption model the normalization (cont × telluric)."</span><span class="p">,</span>
+        <span class="s2">"params"</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"file_path"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">""</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Path of the file of the model: a text table with named columns, the CSV of Export to ASCII, a FITS table. Empty if the model is in another session."</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"source_session"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">""</span><span class="p">,</span> <span class="s2">"kind"</span><span class="p">:</span> <span class="s2">"session"</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Name of the open session that holds the model (in a script, also the session itself); empty if it is in a file."</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"role"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"telluric"</span><span class="p">,</span> <span class="s2">"choices"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"telluric"</span><span class="p">,</span> <span class="s2">"cont"</span><span class="p">,</span> <span class="s2">"model"</span><span class="p">],</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Role of the model: 'telluric', a transmission written in the column telluric; 'cont', a continuum in the unit of the flux written in the column cont (cont × telluric is the normalization); 'model', an absorption model in the column model (a fit overwrites it)."</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"column"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">""</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Column of the model in the source; empty: found by name (telluric: telluric, telluric_model, trans_molecfit, mtrans; cont: cont, continuum; model: model)."</span><span class="p">},</span>
+            <span class="c1"># T3 (Guido, 20 November 2026): as in fit_continuum</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"renorm_model"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"With role 'cont', rescale the model to the new continuum (asked by the GUI)."</span><span class="p">,</span> <span class="s2">"gui_hidden"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"agents"</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+            <span class="c1"># T4 (Guido, 20 November 2026): said by the user, not recognised</span>
+            <span class="c1"># from the values</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"normalized"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"With role 'model': the model is normalized (0-1) and is multiplied by the normalization of the spectrum (cont × telluric), which needs a continuum."</span><span class="p">}</span>
         <span class="p">],</span>
     <span class="p">}</span>
 <span class="p">}</span>
@@ -758,7 +790,9 @@
                                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">current_len</span><span class="si">}</span><span class="s2">: they must be the same."</span><span class="p">)</span>
 
         <span class="n">new_spec</span> <span class="o">=</span> <span class="n">spec_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_ascii_axis</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">new_spec</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span>
         <span class="n">imported_cols</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">replaced</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="c1"># 3. Iterate through columns in the ASCII file</span>
         <span class="k">for</span> <span class="n">file_name_col</span> <span class="ow">in</span> <span class="n">table</span><span class="o">.</span><span class="n">colnames</span><span class="p">:</span>
@@ -780,12 +814,163 @@
                                        <span class="s2">"they must be the same."</span><span class="p">)</span>
             <span class="c1"># Update the column (this handles both core y/dy and aux</span>
             <span class="c1"># columns); the unit of the file, if it has one (PR 8-bis)</span>
+            <span class="k">if</span> <span class="n">col_name</span> <span class="ow">in</span> <span class="n">new_spec</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">colnames</span><span class="p">:</span>
+                <span class="n">replaced</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">file_name_col</span><span class="p">)</span>
             <span class="n">new_spec</span> <span class="o">=</span> <span class="n">new_spec</span><span class="o">.</span><span class="n">update_column</span><span class="p">(</span><span class="n">col_name</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span>
                                               <span class="n">unit</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">unit</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">known_unit</span><span class="p">(</span><span class="n">unit</span><span class="p">))</span>
             <span class="n">imported_cols</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">file_name_col</span><span class="p">)</span>
 
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Columns imported: </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">imported_cols</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">replaced</span><span class="p">:</span>
+            <span class="c1"># FT3 (Guido, 20 November 2026): they were replaced without a word</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Columns of the spectrum replaced by those of the file: "</span>
+                           <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">replaced</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec</span><span class="p">)</span></div>
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_ascii_axis</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""FT3 (Guido, 20 November 2026): a table whose axis is not that of</span>
+<span class="sd">        the spectrum is refused (only the number of rows was checked). The</span>
+<span class="sd">        axis of the file (``x``, ``lam``, ...; in nm without a unit) must be</span>
+<span class="sd">        within a tenth of a pixel of the axis of the spectrum, as for the</span>
+<span class="sd">        copy of ``import_model``; a table without an axis is taken as it</span>
+<span class="sd">        is."""</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.model_grid</span><span class="w"> </span><span class="kn">import</span> <span class="n">same_grid</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.io.tables</span><span class="w"> </span><span class="kn">import</span> <span class="n">AXIS_NAMES</span><span class="p">,</span> <span class="n">find_column</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">find_column</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">AXIS_NAMES</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">unit</span> <span class="o">=</span> <span class="n">known_unit</span><span class="p">(</span><span class="n">table</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">unit</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">unit</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">unit</span> <span class="o">==</span> <span class="n">au</span><span class="o">.</span><span class="n">dimensionless_unscaled</span><span class="p">:</span>
+            <span class="n">unit</span> <span class="o">=</span> <span class="n">au</span><span class="o">.</span><span class="n">nm</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">x_file</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">table</span><span class="p">[</span><span class="n">name</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span> <span class="o">*</span> <span class="n">unit</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span>
+                <span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span> <span class="n">equivalencies</span><span class="o">=</span><span class="n">au</span><span class="o">.</span><span class="n">spectral</span><span class="p">())</span><span class="o">.</span><span class="n">value</span>
+        <span class="k">except</span> <span class="p">(</span><span class="n">au</span><span class="o">.</span><span class="n">UnitConversionError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+            <span class="n">x_file</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">x_file</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">same_grid</span><span class="p">(</span><span class="n">x_file</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">xmin</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+                                           <span class="n">spec</span><span class="o">.</span><span class="n">xmax</span><span class="o">.</span><span class="n">value</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">RecipeFailed</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"The axis of </span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">) is not that of the "</span>
+                <span class="s2">"spectrum: the columns would go to other pixels. To bring a model "</span>
+                <span class="s2">"onto the grid of the spectrum, use Import Model (import_model)."</span><span class="p">)</span>
+
+<div class="viewcode-block" id="RecipeFile.import_model">
+<a class="viewcode-back" href="../../../api/astrocook.recipes.file.html#astrocook.recipes.file.RecipeFile.import_model">[docs]</a>
+    <span class="nd">@typed_recipe</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">import_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span> <span class="n">source_session</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s1">'Session'</span><span class="p">]</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+                     <span class="n">role</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"telluric"</span><span class="p">,</span> <span class="n">column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+                     <span class="n">renorm_model</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">normalized</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'Session'</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Import an external model into the spectrum (phase 7-ter, PR T2).</span>
+
+<span class="sd">        A model is a column of the spectrum with a role. The model is read</span>
+<span class="sd">        from a file or from another session, brought onto the grid of the</span>
+<span class="sd">        spectrum and written in the column of its role, replacing it if it</span>
+<span class="sd">        exists (undo, log and archive as for any recipe):</span>
+
+<span class="sd">        - the grid: a copy when the axis of the model is that of the</span>
+<span class="sd">          spectrum within a tenth of a pixel, otherwise the average of the</span>
+<span class="sd">          model over each pixel of the spectrum (``xmin``-``xmax``), each</span>
+<span class="sd">          pixel of the model weighted by its overlap</span>
+<span class="sd">          (:mod:`astrocook.core.model_grid`); a pixel the model does not</span>
+<span class="sd">          cover in full gets the value of the role beyond the model;</span>
+<span class="sd">        - the role ``telluric``: a transmission (dimensionless, 0-1)</span>
+<span class="sd">          written in the column ``telluric``, 1 beyond the model; the</span>
+<span class="sd">          normalization is ``cont × telluric`` unless the flux is flagged</span>
+<span class="sd">          as corrected (``set_properties(telluric_corrected=...)``);</span>
+<span class="sd">        - the role ``cont`` (T3): a continuum, in the unit of the flux,</span>
+<span class="sd">          written in the column ``cont``, NaN beyond the model (there the</span>
+<span class="sd">          flux is not normalized; a WARNING says on how many pixels). A</span>
+<span class="sd">          unit of the source is converted to that of the flux, refused if</span>
+<span class="sd">          it cannot be; without a unit the values are taken in the unit of</span>
+<span class="sd">          the flux, and refused when their median and that of the flux,</span>
+<span class="sd">          over the pixels covered, differ by more than a factor 10 (a</span>
+<span class="sd">          normalized continuum under a physical flux). The ``model`` of</span>
+<span class="sd">          the spectrum follows the new continuum if ``renorm_model``, as in</span>
+<span class="sd">          ``fit_continuum`` (kept as it was where there is no continuum);</span>
+<span class="sd">        - the role ``model`` (T4): an absorption model written in the</span>
+<span class="sd">          column ``model``, the normalization of the spectrum (``cont ×</span>
+<span class="sd">          telluric``) beyond it (NaN where the spectrum has none; a</span>
+<span class="sd">          WARNING says on how many pixels). In the unit of the flux, as a</span>
+<span class="sd">          continuum (converted from a unit, refused if it cannot be;</span>
+<span class="sd">          without a unit refused when it is not on the scale of the flux);</span>
+<span class="sd">          or normalized (``normalized=True``: dimensionless, 0-1),</span>
+<span class="sd">          multiplied by the normalization at the import, so the spectrum</span>
+<span class="sd">          needs a continuum. The column is not tied to the system list: a</span>
+<span class="sd">          fit, or a change of the components that redraws the model</span>
+<span class="sd">          (``add_component``, ``update_component``, ``delete_component``,</span>
+<span class="sd">          ...), overwrites it with the model of the components.</span>
+
+<span class="sd">        The models are taken in the frame of the spectrum: no shift. A file</span>
+<span class="sd">        is read by the names of its columns (:mod:`astrocook.io.tables`):</span>
+<span class="sd">        a text table separated by spaces, tabs or commas with a header,</span>
+<span class="sd">        also commented (``# x xmin xmax trans_molecfit dy``), the CSV of</span>
+<span class="sd">        ``export_ascii``, a FITS table (Astrocook, the Molecfit outputs</span>
+<span class="sd">        with ``mtrans``); the axis is ``x``, ``lam``, ``lambda``, ``wave``</span>
+<span class="sd">        or ``wavelength`` (in nm in a text file without units), its edges</span>
+<span class="sd">        ``xmin``-``xmax`` (``lammin``-``lammax``) if the file has them. The</span>
+<span class="sd">        other columns are ignored (the ``dy`` of a Molecfit model is the</span>
+<span class="sd">        error of the science spectrum, not of the model).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        file_path : str</span>
+<span class="sd">            The file of the model; empty if it is in another session.</span>
+<span class="sd">        source_session : str or Session</span>
+<span class="sd">            The open session that holds the model (its name; in a script</span>
+<span class="sd">            also the session itself); empty if it is in a file.</span>
+<span class="sd">        role : str</span>
+<span class="sd">            ``'telluric'``, ``'cont'`` or ``'model'``.</span>
+<span class="sd">        column : str</span>
+<span class="sd">            The column of the model in the source; empty: found by the</span>
+<span class="sd">            names of the role (for ``'telluric'``: ``telluric``,</span>
+<span class="sd">            ``telluric_model``, ``trans_molecfit``, ``mtrans``; for</span>
+<span class="sd">            ``'cont'``: ``cont``, ``continuum``; for ``'model'``:</span>
+<span class="sd">            ``model``; ignoring the case).</span>
+<span class="sd">        renorm_model : bool</span>
+<span class="sd">            With the role ``'cont'``, rescale the ``model`` of the spectrum</span>
+<span class="sd">            to the new continuum (the GUI asks); ignored by the other roles.</span>
+<span class="sd">        normalized : bool</span>
+<span class="sd">            With the role ``'model'``: the model is normalized (0-1) and is</span>
+<span class="sd">            multiplied by the normalization of the spectrum; refused with</span>
+<span class="sd">            the other roles.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Session</span>
+<span class="sd">            A new session with the model in its column.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        RecipeError</span>
+<span class="sd">            If neither or both sources are given, the source cannot be read</span>
+<span class="sd">            or has no column of the model, its values cannot be this model,</span>
+<span class="sd">            or the model does not overlap the spectrum.</span>
+<span class="sd">        """</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes</span><span class="w"> </span><span class="kn">import</span> <span class="n">_models</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes._sessions</span><span class="w"> </span><span class="kn">import</span> <span class="n">open_session</span>
+        <span class="n">has_file</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+        <span class="n">has_session</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">source_session</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">source_session</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+                                                <span class="ow">or</span> <span class="nb">bool</span><span class="p">(</span><span class="n">source_session</span><span class="o">.</span><span class="n">strip</span><span class="p">()))</span>
+        <span class="k">if</span> <span class="n">has_file</span> <span class="o">==</span> <span class="n">has_session</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidParameter</span><span class="p">(</span><span class="s2">"import_model: give file_path or source_session "</span>
+                                   <span class="s2">"(one of the two)."</span><span class="p">)</span>
+        <span class="n">model_role</span> <span class="o">=</span> <span class="n">_models</span><span class="o">.</span><span class="n">MODEL_ROLES</span><span class="p">[</span><span class="n">role</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">normalized</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">model_role</span><span class="o">.</span><span class="n">normalizable</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidParameter</span><span class="p">(</span><span class="sa">f</span><span class="s2">"normalized: only a model of the role 'model' can be "</span>
+                                   <span class="sa">f</span><span class="s2">"normalized, not one of the role </span><span class="si">{</span><span class="n">role</span><span class="si">!r}</span><span class="s2">."</span><span class="p">)</span>
+        <span class="n">spec</span> <span class="o">=</span> <span class="n">spec_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">has_file</span><span class="p">:</span>
+            <span class="n">source</span> <span class="o">=</span> <span class="n">_models</span><span class="o">.</span><span class="n">source_from_file</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span> <span class="n">model_role</span><span class="p">,</span>
+                                              <span class="n">column</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">other</span> <span class="o">=</span> <span class="n">open_session</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">,</span> <span class="n">source_session</span><span class="p">,</span> <span class="s1">'source_session'</span><span class="p">)</span>
+            <span class="n">source</span> <span class="o">=</span> <span class="n">_models</span><span class="o">.</span><span class="n">source_from_session</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">model_role</span><span class="p">,</span> <span class="n">column</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span>
+            <span class="n">_models</span><span class="o">.</span><span class="n">import_model</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">role</span><span class="p">,</span> <span class="n">renorm_model</span><span class="o">=</span><span class="n">renorm_model</span><span class="p">,</span>
+                                 <span class="n">normalized</span><span class="o">=</span><span class="n">normalized</span><span class="p">))</span></div>
 </div>
 
 
