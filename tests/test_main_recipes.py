@@ -293,7 +293,8 @@ def test_short_and_long_recipes(ready, workers, monkeypatch):
     assert window.qt_log_handler is None
     worker = workers[-1]
     assert (worker.recipe_name, worker.params) == ("smooth", {"sigma_kms": "10"})
-    assert window._last_attempted_recipe == {"category": "flux", "recipe_name": "smooth"}
+    assert window._last_attempted_recipe == {"category": "flux", "recipe_name": "smooth",
+                                              "params": {"sigma_kms": "10"}}
     for name, params, indeterminate in (("lya_auto", {}, False),
                                         ("add_component", {}, True),
                                         ("refit_all", {}, False),
@@ -577,3 +578,46 @@ def test_dead_code_is_gone(window):
     # Called by nothing, removed (findings register F80)
     assert not hasattr(window, "_show_refit_warning_with_checkbox")
     assert not hasattr(window, "_SCRIPT_LINE_REGEX")
+
+
+# --- FT8: Set Properties opened as a prerequisite ---------------------------------------------
+
+def test_ft8_dialog_without_resolution_is_empty_with_a_hint(window):
+    """The field is left empty (placeholder "not set", F63), not "0": Run
+    would send resol="0", which set_properties refuses (FT8)."""
+    from astrocook.core.resolution import resolution_summary
+    assert resolution_summary(window.active_history.current_state.spec)[0] <= 0
+    window._launch_recipe_dialog("edit", "set_properties")
+    widget = window.active_recipe_dialog.input_widgets["resol"]
+    assert widget.text() == ""
+    assert widget.placeholderText() == "not set"
+    window.active_recipe_dialog.reject()
+
+
+def test_ft8_a_failed_set_properties_keeps_the_waiting_recipe(ready, monkeypatch, qtbot):
+    """The recipe that waits for Set Properties is not dropped in silence: the
+    dialog opens again with what was typed, and the recipe still waits (FT8)."""
+    window = ready
+    shown = _messages(window, monkeypatch, "Ok")
+    opened = _dialogs(window, monkeypatch)
+    window._set_pending_action("continuum", "estimate_auto", {}, "dialog")
+    window._last_attempted_recipe = {"category": "edit", "recipe_name": "set_properties",
+                                     "params": {"resol": "0"}}
+    window._captured_warnings = []
+    window._on_recipe_error(("Recipe Failed: set_properties", "resol: R must be positive", None))
+    qtbot.waitUntil(lambda: bool(opened))
+    assert opened == [("edit", "set_properties", {"resol": "0"})]
+    assert window._pending_recipe is not None
+    assert window._pending_recipe["name"] == "estimate_auto"
+    assert shown
+
+
+def test_ft8_a_failed_recipe_says_the_waiting_one_did_not_run(ready, monkeypatch):
+    window = ready
+    shown = _messages(window, monkeypatch, "Cancel")
+    window._set_pending_action("absorbers", "refit_all", {}, "direct", after="estimate_auto")
+    window._last_attempted_recipe = {"category": "continuum", "recipe_name": "estimate_auto"}
+    window._captured_warnings = []
+    window._on_recipe_error(("Recipe Failed: estimate_auto", "no pixels", None))
+    assert window._pending_recipe is None
+    assert "refit_all did not run" in shown[-1]["text"]
