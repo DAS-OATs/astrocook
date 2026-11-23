@@ -767,6 +767,10 @@ class _Context:
         self.screen = screen
         self.temper = temper
         self.lya = lya
+        self.x_range: Optional[Tuple[float, float]] = None
+        """The range of the regions (nm), when limited: the sweep tests only
+        the lines in it (the pixels outside have no regions, and their
+        absorption no model)."""
 
 
 def _window(ctx: _Context, systs: Sequence[SystemList], ids: Sequence[int]
@@ -1081,6 +1085,7 @@ def identify_hypotheses(spec: Spectrum, multiplets: Sequence[str],
               C_KMS * np.log((1.0 + z_em) * xem_d['Ly_a'].to_value(au.nm)))
     ctx = _Context(spec, fixed if fixed is not None and fixed.components else None,
                    criterion, screen, temper, lya, labels, forest, refine)
+    ctx.x_range = x_range
     results = [_evaluate_group(ctx, [by_id[i] for i in g_ids], g_edges, v, flux, err, fwhm)
                for g_ids, g_edges in groups]
     swept = None

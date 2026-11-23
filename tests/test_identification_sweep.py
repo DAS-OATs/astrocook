@@ -153,3 +153,15 @@ def test_the_species_of_the_sweep_are_known():
         lines = series_lines(series)
         assert lines and all(t in ATOM_DATA for t in lines)
         assert not any("*" in t for t in lines)
+
+
+def test_the_sweep_stays_in_the_range_of_the_regions():
+    # With the regions limited to the red side (the doublets_auto of a
+    # pipeline), no line of the forest is tested: its pixels have no
+    # regions. The H I and SiIII of the system have their lines there only
+    spec = _rich()
+    out = H.identify_hypotheses(spec, ["CIV", "Ly_a"], x_range=(486.5, LAM[1])).spectrum
+    tested = {g.hypotheses[0].label.split()[0] for g in _sweep_groups(out)}
+    assert not tested & {"HI", "SiIII"}
+    found = {s for s, z, _ in _systems(out) if _dv(z, Z_SYS) < 50}
+    assert "AlII_1670" in found

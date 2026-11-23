@@ -261,15 +261,19 @@ def _zc(s: _System) -> float:
     return float(np.sum(w * s.z) / np.sum(w))
 
 
-def _covered(series: str, zc: float, v: np.ndarray, forest_lo: float) -> List[str]:
-    """The lines of ``series`` at ``zc`` within the spectrum and above the
-    Lyman limit of the quasar."""
+def _covered(series: str, zc: float, v: np.ndarray, forest_lo: float,
+             x_range: Optional[Tuple[float, float]] = None) -> List[str]:
+    """The lines of ``series`` at ``zc`` within the spectrum, above the
+    Lyman limit of the quasar and within ``x_range`` (nm), if given."""
+    lo, hi = max(v[0], forest_lo), v[-1]
+    if x_range is not None:
+        lo, hi = max(lo, H.C_KMS * np.log(x_range[0])), min(hi, H.C_KMS * np.log(x_range[1]))
     out = []
     for t in series_lines(series):
         if t not in ATOM_DATA or ATOM_DATA[t]['f'] <= 0:
             continue
         vc = H.C_KMS * np.log(H._wave_nm(t) * (1.0 + zc))
-        if max(v[0], forest_lo) < vc < v[-1]:
+        if lo < vc < hi:
             out.append(t)
     return out
 
@@ -488,7 +492,7 @@ def _test(ctx: H._Context, model: _Model, s: _System, species: str, cands, v, fl
                     0, len(v) - 1))
     fwhm_kms = float(fwhm[i])
     span = _span(s, fwhm_kms)
-    lines = _covered(series, zc, v, ctx.forest[0])
+    lines = _covered(series, zc, v, ctx.forest[0], ctx.x_range)
     if not lines:
         return None
     if _significance(lines, zc, span, v, flux, err) < SWEEP_SIGMA:
