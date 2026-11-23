@@ -14,18 +14,22 @@ other than that of the anchor, the hypothesis "Y at z":
   H I, at the column-weighted redshift of the anchor: the H I of a system
   is broader than its metal components and one line of it is what the
   forest resolves), N from the apparent optical depth at its predicted
-  lines, z and b free; the components without influence on the pixels
+  lines (the least over its lines: that of a line blended with the forest
+  is an upper limit), z and b free; the components without influence on the pixels
   (:func:`~astrocook.fitting.model_evaluation.evaluate_model`,
   ``min_influence`` 1) dropped after the first fit, the components that
   leave the profile of the anchor (:func:`_span`) make the hypothesis fail;
 - compared with the labels its pixels already have: the free lines of the
   default labels (the assumed Ly-a, the unidentified lines) that fall on its
-  predicted lines are replaced by it; the rest of the model (every accepted
-  component of the first pass and of the sweep so far, the components of the
-  session) is fixed. Both sides get the short fit and the refinement by
-  the residuals of the first pass on the same pixels, and Y is accepted when
-  its criterion is not above that of the labels by more than
-  :data:`SWEEP_TIE`;
+  predicted lines are replaced by it, the other default components of the
+  regions within its span (its neighbours: a line of the forest blended
+  with one of its lines) are free on both sides, the rest of the model
+  (every accepted component of the first pass and of the sweep so far, the
+  components of the session) is fixed. Both sides get the short fit on the
+  same pixels, without the refinement by the residuals of the first pass
+  (the neighbours free do its work here; with it a test of SiII in the
+  forest took minutes), and Y is accepted when its criterion is not above
+  that of the labels by more than :data:`SWEEP_TIE`;
 - an accepted species becomes an edge of the graph (from the region of the
   anchor's strong line to the region of its strongest line), the regions it
   explains labelled with its lines, its components candidate systems with
@@ -109,6 +113,12 @@ SWEEP_TIE = 0.1
 #: The least influence of a component of "Y at z" (the chi2 change of
 #: removing it, as ``evaluate_model``) to be kept after its first fit
 SWEEP_INFLUENCE = 1.0
+#: The largest comparison, in the free parameters of the labels of its
+#: pixels (the replaced components and the neighbours). Its purpose: the
+#: time; the fits of both sides and their refinement cost about k times
+#: FIT_NFEV models each (F171), and a test of SiII on a forest mock with 15
+#: free lines took 5 minutes
+SWEEP_MAX_K = 30
 #: The start of the b of the H I of a system (km/s)
 HI_B = 20.0
 
@@ -125,7 +135,7 @@ class SweepTest:
     z: float
     """The column-weighted redshift of the anchor."""
     hyp: H._Hyp
-    """Its components (Y, then those added by the refinement)."""
+    """Its components (Y, then its neighbours)."""
     labels: H._Hyp
     """The labels of its pixels (the replaced default components, refitted
     on the same pixels)."""
@@ -344,7 +354,11 @@ def _start(s: _System, species: str, series: str, lines: Sequence[str], zc: floa
             zs.append(float(s.z[k]))
             ranges.append((lo - dv[k], hi - dv[k]))
     for z, rng in zip(zs, ranges, strict=True):
-        logn, b = H.aod_guess(v, flux, err, lines, z, rng, fwhm_kms)
+        # The least column over the lines: the AOD of a line blended with the
+        # forest is an upper limit (the largest, as for the anchors, started
+        # the SiII of a system at the column of a forest line on its 1260)
+        guesses = [H.aod_guess(v, flux, err, [t], z, rng, fwhm_kms) for t in lines]
+        logn, b = min(guesses)
         if species == "HI":
             b = max(b, HI_B)
         systs = systs.add_component(series, z, logN=logn, b=b)
@@ -377,9 +391,15 @@ def _window(ctx: H._Context, model: _Model, systs: SystemList, uuids: Sequence[s
 
 
 def _fit_labels(ctx: H._Context, win: EvaluationWindow, model: _Model, uuids: Sequence[str],
-                cands: Mapping[int, H._Candidate], v: np.ndarray) -> H._Hyp:
+                cands: Mapping[int, H._Candidate], v: np.ndarray, extra: int) -> H._Hyp:
     """The labels of the pixels (the replaced components and the
-    neighbours), refitted and refined on the window."""
+    neighbours), refitted on the window and refined by its residuals, with
+    ``extra`` more components than the refinement of "Y at z" (its
+    components beyond the default lines it replaces): the null hypothesis of
+    the test is that its pixels need as many free lines as Y puts there. Its purpose: the regions of the
+    groups without pairs keep the components of the de-blending, often fewer
+    than their lines, and any species with a line on them won by the misfit
+    alone (an H I where the mock has none, by 66 in the SpIC)."""
     h = H._Hyp((), [model.defaults[u] for u in uuids])
     h.systs = model.subset(uuids)
     h.uuids = list(uuids)
@@ -387,7 +407,7 @@ def _fit_labels(ctx: H._Context, win: EvaluationWindow, model: _Model, uuids: Se
         H._fit(win, h)
     else:
         h.fitted, h.fit = h.systs, H._measure(win, h.systs)
-    H._refine(ctx, win, h, cands, v)
+    H._refine(ctx, win, h, cands, v, extra)
     return h
 
 
@@ -476,12 +496,12 @@ def _test(ctx: H._Context, model: _Model, s: _System, species: str, cands, v, fl
                          H._Hyp((), []), reason="nothing at its lines")
     gone, near = _near(model, s, species, lines, zc, span, v, fwhm, ctx.labels)
     k = 3 * (len(gone) + len(near))
-    if k > H.MAX_FIT_K:
+    if k > SWEEP_MAX_K:
         # As a group of the first pass (F171): the fits of the comparison
         # would take minutes
         return SweepTest(s.group, s.anchor, species, series, zc, H._Hyp((), []),
                          H._Hyp((), []), reason=f"not compared: the labels of its pixels "
-                         f"have k = {k} free parameters, above {H.MAX_FIT_K}")
+                         f"have k = {k} free parameters, above {SWEEP_MAX_K}")
     systs, comps = _start(s, species, series, lines, zc, span, v, flux, err, fwhm_kms)
     both = SystemList(SystemListData(
         components=list(systs.components) + list(model.subset(near).components)))
@@ -493,11 +513,12 @@ def _test(ctx: H._Context, model: _Model, s: _System, species: str, cands, v, fl
     except ValueError as e:
         test.reason = f"not evaluated: {e}"
         return test
-    test.labels = _fit_labels(ctx, win, model, gone + near, cands, v)
     why = _fit_species(win, hyp, zc, span)
     if why:
         test.reason = why
         return test
+    test.labels = _fit_labels(ctx, win, model, gone + near, cands, v,
+                              max(0, len(_own(hyp)) - len(gone)))
     H._refine(ctx, win, hyp, cands, v)
     return _decide(ctx, model, test, gone, near, lines, v)
 

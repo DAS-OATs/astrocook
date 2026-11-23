@@ -932,16 +932,16 @@ def _added(ctx: _Context, h: _Hyp, cands: Mapping[int, _Candidate], i: int,
 
 
 def _refine(ctx: _Context, win: EvaluationWindow, h: _Hyp,
-            cands: Mapping[int, _Candidate], v: np.ndarray) -> None:
+            cands: Mapping[int, _Candidate], v: np.ndarray, extra: int = 0) -> None:
     """Components added to a fitted hypothesis where its residuals are most
     negative, each the best of :func:`_added`, while it lowers the criterion
-    (:data:`MAX_ADDED`, :data:`MAX_FIT_K`); nothing when ``ctx.refine`` is
-    off."""
+    (:data:`MAX_ADDED`, ``extra`` more; :data:`MAX_FIT_K`); nothing when
+    ``ctx.refine`` is off."""
     crit = ctx.criterion
     if not ctx.refine:
         return
     added = 0
-    while MAX_ADDED is None or added < MAX_ADDED:
+    while MAX_ADDED is None or added < MAX_ADDED + extra:
         added += 1
         if h.fitted is None or h.fit is None:
             return
