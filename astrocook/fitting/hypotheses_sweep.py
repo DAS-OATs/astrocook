@@ -92,6 +92,17 @@ SWEEP_SPECIES: Dict[str, str] = {
     "ZnII": "ZnII",
     "MnII": "MnII",
 }
+#: The species swept by default: those common in the absorbers of the
+#: forest and the red side (the H I, the high ions, the low ions of the
+#: design, section 3.5, FeII and MgI). Left out, and in SWEEP_SPECIES for
+#: :func:`sweep` with ``species``: NI, SII, NiII, CrII, ZnII, MnII, the
+#: weaker lines of the damped systems. Their purpose: the purity and the
+#: time. On the 36 mocks of ``benchmarks/validate_sweep.py`` (none of
+#: them has these ions) they made 40 of the 80 false species accepted
+#: and half the time of the sweep: tests of many lines with many
+#: neighbours, minutes each (PR 7c.4d; to decide with Guido)
+SWEEP_DEFAULT: Tuple[str, ...] = ("HI", "CIV", "SiIV", "MgII", "NV", "OVI", "AlIII", "CII",
+                                  "CIII", "SiII", "SiIII", "OI", "AlII", "FeII", "MgI")
 #: The species of an anchor (``ANCHOR_PAIRS``, ``Ly_ab``) as a species of
 #: the sweep: the anchor's own is not swept
 _ANCHOR_SPECIES = {"Ly_ab": "HI"}
@@ -116,9 +127,11 @@ SWEEP_INFLUENCE = 1.0
 #: The largest comparison, in the free parameters of the labels of its
 #: pixels (the replaced components and the neighbours). Its purpose: the
 #: time; the fits of both sides and their refinement cost about k times
-#: FIT_NFEV models each (F171), and a test of SiII on a forest mock with 15
-#: free lines took 5 minutes
-SWEEP_MAX_K = 30
+#: FIT_NFEV models each (F171): a test of SiII on a forest mock with 15
+#: free lines took 5 minutes, and on the mocks of ``validate_sweep.py`` a few
+#: tests of 10-13 lines took 1-5 minutes each (the Jacobian by finite
+#: differences, one model per parameter at every step). 24: eight lines
+SWEEP_MAX_K = 24
 #: The start of the b of the H I of a system (km/s)
 HI_B = 20.0
 
@@ -557,8 +570,10 @@ def _decide(ctx: H._Context, model: _Model, test: SweepTest, gone: Sequence[str]
 
 
 def sweep(ctx: H._Context, results: Sequence[H.GroupResult], cands: Mapping[int, H._Candidate],
-          v: np.ndarray, flux: np.ndarray, err: np.ndarray, fwhm: np.ndarray) -> SweepResult:
-    """The sweep of the metal systems of ``results`` (see the module)."""
+          v: np.ndarray, flux: np.ndarray, err: np.ndarray, fwhm: np.ndarray,
+          species: Sequence[str] = SWEEP_DEFAULT) -> SweepResult:
+    """The sweep of the metal systems of ``results`` (see the module), with
+    the ``species`` of :data:`SWEEP_SPECIES`."""
     import time
     t0 = time.perf_counter()
     model = _Model(results, ctx.fixed)
@@ -567,10 +582,10 @@ def sweep(ctx: H._Context, results: Sequence[H.GroupResult], cands: Mapping[int,
     skipped = 0
     for s in _systems(results, cands):
         own = _ANCHOR_SPECIES.get(s.species, s.species)
-        for species in SWEEP_SPECIES:
-            if species == own:
+        for y in species:
+            if y == own:
                 continue
-            t = _test(ctx, model, s, species, cands, v, flux, err, fwhm)
+            t = _test(ctx, model, s, y, cands, v, flux, err, fwhm)
             if t is None:
                 continue
             if t.reason == "nothing at its lines":
