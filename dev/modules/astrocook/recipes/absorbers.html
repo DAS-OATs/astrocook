@@ -875,6 +875,7 @@
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"screen"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="n">SCREEN_DELTA</span><span class="p">,</span> <span class="s2">"optional"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"gt"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Method 'hypotheses': the hypotheses behind the best by more than this in the criterion, by the apparent optical depth before their fit, are dropped; None for no screen (every hypothesis fitted)."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_group"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="n">MAX_GROUP</span><span class="p">,</span> <span class="s2">"min"</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Method 'hypotheses': the largest group of regions compared together; a larger one is split at its weakest pairs."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"temper"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Method 'hypotheses': the differences of the criterion divided by the reduced chi2 of the accepted model, when above 1 (an error spectrum not calibrated)."</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"refine"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Method 'hypotheses': each alternative refined before the comparison, with up to 3 components added where its residuals ask for them, while they lower the criterion."</span><span class="p">},</span>
         <span class="p">],</span>
     <span class="p">},</span>
     <span class="s2">"populate_from_identification"</span><span class="p">:</span> <span class="p">{</span>
@@ -2133,7 +2134,8 @@
                        <span class="n">prefilter</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">PREFILTER_R2</span><span class="p">,</span>
                        <span class="n">screen</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">SCREEN_DELTA</span><span class="p">,</span>
                        <span class="n">max_group</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">MAX_GROUP</span><span class="p">,</span>
-                       <span class="n">temper</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'Session'</span><span class="p">:</span>
+                       <span class="n">temper</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                       <span class="n">refine</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'Session'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Identify likely absorption systems.</span>
 
@@ -2170,7 +2172,7 @@
 <span class="sd">            weight). ``mask_col``, ``min_pix_region``, ``merge_dv``,</span>
 <span class="sd">            ``score_threshold``, ``bypass_scoring`` and ``debug_rating``</span>
 <span class="sd">            are of the first, ``criterion``, ``prefilter``, ``screen``,</span>
-<span class="sd">            ``max_group`` and ``temper`` of the second; with</span>
+<span class="sd">            ``max_group``, ``temper`` and ``refine`` of the second; with</span>
 <span class="sd">            ``"hypotheses"``, ``multiplets`` also takes ``"all"`` (every</span>
 <span class="sd">            metal anchor), and the Ly-a only when ``Ly_a`` or ``Ly_ab`` is</span>
 <span class="sd">            asked (F51). Defaults to ``"doublets"``.</span>
@@ -2192,6 +2194,11 @@
 <span class="sd">            The differences of the criterion divided by the reduced chi2 of</span>
 <span class="sd">            the accepted model of the group, when above 1 (for an error</span>
 <span class="sd">            spectrum that is not calibrated). Defaults to ``False``.</span>
+<span class="sd">        refine : bool, optional</span>
+<span class="sd">            Each alternative of a group refined before the comparison, with</span>
+<span class="sd">            up to 3 components added where the residuals of its short fit</span>
+<span class="sd">            ask for them, while they lower the criterion (method</span>
+<span class="sd">            ``"hypotheses"``, F170). Defaults to ``True``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -2203,7 +2210,7 @@
         <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">"hypotheses"</span><span class="p">:</span>
             <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="n">_identify_hypotheses</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">,</span> <span class="n">multiplet_list</span><span class="p">,</span> <span class="n">criterion</span><span class="o">=</span><span class="n">criterion</span><span class="p">,</span> <span class="n">prefilter</span><span class="o">=</span><span class="n">prefilter</span><span class="p">,</span>
-                <span class="n">screen</span><span class="o">=</span><span class="n">screen</span><span class="p">,</span> <span class="n">max_group</span><span class="o">=</span><span class="n">max_group</span><span class="p">,</span> <span class="n">temper</span><span class="o">=</span><span class="n">temper</span><span class="p">,</span>
+                <span class="n">screen</span><span class="o">=</span><span class="n">screen</span><span class="p">,</span> <span class="n">max_group</span><span class="o">=</span><span class="n">max_group</span><span class="p">,</span> <span class="n">temper</span><span class="o">=</span><span class="n">temper</span><span class="p">,</span> <span class="n">refine</span><span class="o">=</span><span class="n">refine</span><span class="p">,</span>
                 <span class="n">z_em_margin_kms</span><span class="o">=</span><span class="n">z_em_margin_kms</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">_identification_extra</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="n">report</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
