@@ -331,6 +331,42 @@ coverage, each a cheap evaluation on a few windows: of the order of the
 first pass. The same sweep, with Ly-a and Ly-b, tests the H I of a
 metal system (its lines in the forest).
 
+*As implemented in PR 7c.4d* (`astrocook/fitting/hypotheses_sweep.py`;
+what changed from the text above, found on the mocks):
+- the species: by default the common ones (`SWEEP_DEFAULT`: H I, CIV,
+  SiIV, MgII, NV, OVI, AlIII, CII, CIII, SiII, SiIII, OI, AlII, FeII, MgI),
+  the ions of the damped systems (NI, SII, NiII, CrII, ZnII, MnII) in the
+  table, not swept by default (half the false species and half the time
+  on the mocks with rich systems); CII and SiII as their ground-state
+  lines (F173); only the systems of the metal anchors, not those of the
+  Ly-a/Ly-b pairs (the metals of the forest off by default, decision 2);
+- the H I one component at the column-weighted redshift of the anchor,
+  the metals one per component of the anchor; N from the AOD as the least
+  over the lines (the AOD of a line blended with the forest is an upper
+  limit);
+- the labels compared: the default components on the core of a predicted
+  component are replaced, the other default components of the regions
+  within the profile (the neighbours) are free on both sides, the rest of
+  the model fixed; the window without the pixels of the regions that the
+  test does not touch (as the window of a group);
+- the null hypothesis has as many free lines as the species puts on its
+  pixels (the refinement of the labels with that many more components):
+  the regions of the groups without pairs keep the components of the
+  de-blending, often fewer than their lines, and with the refinement of
+  both sides alone any species won by filling them (an H I where the
+  mock has none, by 66 in the SpIC);
+- accepted when its criterion is not above that of the labels by more
+  than `SWEEP_TIE` (0.1): a single line replacing a single default line
+  is the same model, and the tie goes to the known redshift; its weight
+  then about 0.5 (F174: a prior of chance coincidence would decide it);
+- the components that leave the profile of the anchor, then those without
+  influence (below 1), dropped; a comparison of more than `SWEEP_MAX_K`
+  (24) free parameters in the labels not made (the time: F167, F171);
+- in the structure each test a group of its own, `anchored_on` the group
+  of its system, one hypothesis with its weight against the labels; an
+  accepted species an edge from the strong line of the anchor to the
+  region of its strongest line.
+
 ## 4. The experiment: controlled pairs of alternatives
 
 `benchmarks/identification_hypotheses.py`. Each trial is a mock (flat
