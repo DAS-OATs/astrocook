@@ -648,6 +648,27 @@ def sweep_metrics(truth, systems, spec):
     return dict(tests=tests, hi=hi)
 
 
+class _Meta:
+    """A stand-in with the ``meta`` of a spectrum, for the metrics."""
+    def __init__(self, meta):
+        self.meta = meta
+
+
+def _without_sweep(spec):
+    """``spec`` (its ``meta``) without the candidate systems of the sweep
+    (the components of the accepted tests, groups with ``anchored_on``)."""
+    from astrocook.core.identification import META_KEY
+    structure = spec.meta.get(META_KEY)
+    out = {str(c.candidate) for g in structure.groups if g.anchored_on is not None
+           for h in g.hypotheses for c in h.components if c.candidate is not None}
+    meta = dict(spec.meta)
+    for key in ("series_map_json", "z_map_json"):
+        value = meta.get(key) or {}
+        value = json.loads(value) if isinstance(value, str) else dict(value)
+        meta[key] = json.dumps({k: v for k, v in value.items() if str(k) not in out})
+    return _Meta(meta)
+
+
 def sweep_summary(rows_by_record):
     """Pool the tests of the sweep: per species the tests, those accepted,
     right, with the species present; the purity of the rarer species (not
@@ -1185,6 +1206,11 @@ def run_point(point):
         pixels=pixel_metrics(truth, tmap, ident.spec, candidates))
     phase7["calibration"] = hypothesis_calibration(truth, ident.spec)
     phase7["sweep"] = sweep_metrics(truth, systems, ident.spec)
+    if phase7["sweep"] is not None:
+        # The identification without the candidates the sweep added: the
+        # first pass is the same with and without it (PR 7c.4d)
+        phase7["identification_first"] = identification_metrics(
+            truth, systems, _without_sweep(ident.spec))
     times["metrics"] = time.time() - t0
     return dict(
         snr=snr, resol=resol, z_em=z_em, seed=seed, strong=strong, **extra,
