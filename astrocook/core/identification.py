@@ -161,7 +161,10 @@ class Hypothesis:
     """The number of pixels."""
     criteria: Mapping[str, float] = field(default_factory=dict)
     """Every information criterion computed (``"aic"``, ``"aicc"``,
-    ``"bic"``, ``"spic"`` (SpIC_H), ...), and the ``"score"`` of the pre-filter."""
+    ``"bic"``, ``"spic"`` (SpIC_H), ...), and the ``"score"`` of the
+    pre-filter; for a test of the sweep (PR 7c.4d) also those of the labels
+    it is compared with (``"labels_spic"``, ...) and the number of default
+    lines it replaced (``"replaced_lya"``, ``"replaced_unidentified"``)."""
     anchors: Tuple[int, ...] = ()
     """The edges of the group (their index in :attr:`Group.edges`) that
     anchor it: none for the hypothesis of the default labels (PR 7c.4c)."""
@@ -174,6 +177,11 @@ class Group:
     regions: Tuple[int, ...]
     edges: Tuple[Edge, ...]
     hypotheses: Tuple[Hypothesis, ...]
+    anchored_on: Optional[int] = None
+    """The id of the group of the system whose sweep it records (phase 7,
+    PR 7c.4d: one species tested at the redshift of an accepted system, its
+    weight against the labels of its pixels); ``None`` for a group of the
+    first pass."""
 
 
 @dataclass(frozen=True)
@@ -258,8 +266,10 @@ class Identification:
             maps.append(m)
         old, new = self._remapped(maps[0]), new._remapped(maps[1])
         n_groups = max((g.id for g in old.groups), default=0)
-        groups = old.groups + tuple(dataclasses.replace(g, id=g.id + n_groups)
-                                    for g in new.groups)
+        groups = old.groups + tuple(dataclasses.replace(
+            g, id=g.id + n_groups,
+            anchored_on=None if g.anchored_on is None else g.anchored_on + n_groups)
+            for g in new.groups)
         return dataclasses.replace(
             new, regions=tuple(sorted(old.regions + new.regions, key=lambda r: r.id)),
             groups=groups, dropped=old.dropped + new.dropped)

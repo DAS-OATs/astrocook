@@ -403,6 +403,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "max_group", "type": int, "default": MAX_GROUP, "min": 2, "doc": "Method 'hypotheses': the largest group of regions compared together; a larger one is split at its weakest pairs."},
             {"name": "temper", "type": bool, "default": False, "doc": "Method 'hypotheses': the differences of the criterion divided by the reduced chi2 of the accepted model, when above 1 (an error spectrum not calibrated)."},
             {"name": "refine", "type": bool, "default": True, "doc": "Method 'hypotheses': each alternative refined before the comparison, with up to 3 components added where its residuals ask for them, while they lower the criterion."},
+            {"name": "sweep", "type": bool, "default": True, "doc": "Method 'hypotheses': after the pairs, every other species (and the H I) tested at the redshift of each metal system found, accepted where it does not raise the criterion."},
         ],
     },
     "populate_from_identification": {
@@ -1637,7 +1638,8 @@ class RecipeAbsorbers:
                        screen: Optional[float] = SCREEN_DELTA,
                        max_group: int = MAX_GROUP,
                        temper: bool = False,
-                       refine: bool = True) -> 'Session':
+                       refine: bool = True,
+                       sweep: bool = True) -> 'Session':
         """
         Identify likely absorption systems.
 
@@ -1674,7 +1676,7 @@ class RecipeAbsorbers:
             weight). ``mask_col``, ``min_pix_region``, ``merge_dv``,
             ``score_threshold``, ``bypass_scoring`` and ``debug_rating``
             are of the first, ``criterion``, ``prefilter``, ``screen``,
-            ``max_group``, ``temper`` and ``refine`` of the second; with
+            ``max_group``, ``temper``, ``refine`` and ``sweep`` of the second; with
             ``"hypotheses"``, ``multiplets`` also takes ``"all"`` (every
             metal anchor), and the Ly-a only when ``Ly_a`` or ``Ly_ab`` is
             asked (F51). Defaults to ``"doublets"``.
@@ -1701,6 +1703,13 @@ class RecipeAbsorbers:
             up to 3 components added where the residuals of its short fit
             ask for them, while they lower the criterion (method
             ``"hypotheses"``, F170). Defaults to ``True``.
+        sweep : bool, optional
+            The sweep of the anchored systems (method ``"hypotheses"``,
+            phase 7, PR 7c.4d, :mod:`astrocook.fitting.hypotheses_sweep`):
+            every other species of the table with a line in the coverage,
+            and the H I, tested at the redshift of each metal system found
+            by its pair, against the labels of its pixels. Defaults to
+            ``True``.
 
         Returns
         -------
@@ -1713,7 +1722,7 @@ class RecipeAbsorbers:
             new_spec_v2 = _identify_hypotheses(
                 self._session, multiplet_list, criterion=criterion, prefilter=prefilter,
                 screen=screen, max_group=max_group, temper=temper, refine=refine,
-                z_em_margin_kms=z_em_margin_kms)
+                sweep=sweep, z_em_margin_kms=z_em_margin_kms)
             for key, value in _identification_extra(new_spec_v2).items():
                 report(key, value)
             return self._session.with_new_spectrum(new_spec_v2)

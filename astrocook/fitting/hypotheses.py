@@ -49,16 +49,20 @@ every group, its edges and all its hypotheses.
 
 The higher orders of the Lyman series are not used (design, section 12);
 the assumed Ly-a has no Ly-b in its model (a Ly-b is modelled only by a
-Ly-a/Ly-b hypothesis, anchored by its edge); the tellurics (7c.5), the
-prior of the incidence and the sweep of the anchored systems (7c.4d) are
-not in the prototype.
+Ly-a/Ly-b hypothesis, anchored by its edge); the tellurics (7c.5) and the
+prior of the incidence are not in the prototype.
+
+7. *Sweep* (PR 7c.4d, ``sweep``, on by default): the other species and the
+   H I tested at the redshift of each accepted metal system, against the
+   labels of their pixels (:mod:`astrocook.fitting.hypotheses_sweep`); each
+   test a group of its own in the structure (``anchored_on``).
 """
 from __future__ import annotations
 
 import dataclasses
 import logging
 import time
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
 import astropy.units as au
 import numpy as np
@@ -73,6 +77,9 @@ from astrocook.core.structures import SystemListData
 from astrocook.core.system_list import SystemList
 from astrocook.fitting.evaluation_window import EvaluationWindow
 from astrocook.fitting.voigt_fitter import NoPixelsToFit
+
+if TYPE_CHECKING:
+    from astrocook.fitting.hypotheses_sweep import SweepResult
 
 logger = logging.getLogger(__name__)
 
@@ -993,7 +1000,7 @@ def identify_hypotheses(spec: Spectrum, multiplets: Sequence[str],
                         fixed: Optional[SystemList] = None,
                         criterion: str = "spic", prefilter: float = PREFILTER_R2,
                         screen: Optional[float] = SCREEN_DELTA, max_group: int = MAX_GROUP,
-                        temper: bool = False, refine: bool = True,
+                        temper: bool = False, refine: bool = True, sweep: bool = True,
                         z_em_margin_kms: float = 3000.0,
                         x_range: Optional[Tuple[float, float]] = None,
                         params: Optional[Mapping[str, Any]] = None) -> HypothesesResult:
@@ -1024,6 +1031,10 @@ def identify_hypotheses(spec: Spectrum, multiplets: Sequence[str],
     refine : bool
         The refinement of the finalists by their residuals (:func:`_refine`,
         F170).
+    sweep : bool
+        The sweep of the anchored systems (PR 7c.4d,
+        :mod:`astrocook.fitting.hypotheses_sweep`): the other species and the
+        H I at the redshift of each accepted metal system.
     z_em_margin_kms : float
         No system beyond ``z_em`` by more than this (F55).
     x_range : (float, float), optional
@@ -1072,27 +1083,35 @@ def identify_hypotheses(spec: Spectrum, multiplets: Sequence[str],
                    criterion, screen, temper, lya, labels, forest, refine)
     results = [_evaluate_group(ctx, [by_id[i] for i in g_ids], g_edges, v, flux, err, fwhm)
                for g_ids, g_edges in groups]
+    swept = None
+    if sweep:
+        from astrocook.fitting.hypotheses_sweep import sweep as run_sweep
+        swept = run_sweep(ctx, results, {c.index: c for c in all_cands}, v, flux, err, fwhm)
     seconds = time.perf_counter() - t0
     run_params = dict(params or {})
     run_params.update(multiplets=list(multiplets), criterion=criterion, prefilter=prefilter,
                       screen=screen, max_group=max_group, temper=temper, refine=refine,
-                      max_added=MAX_ADDED, split_gaps=SPLIT_GAPS,
+                      sweep=sweep, max_added=MAX_ADDED, split_gaps=SPLIT_GAPS,
                       z_em_margin_kms=z_em_margin_kms, seconds=round(seconds, 3))
+    if swept is not None:
+        run_params["sweep_seconds"] = round(swept.seconds, 3)
     new_spec = _output(spec, x_nm, regions, labels, all_cands, results, low, cut, unmatched,
-                       prefilter, run_params)
+                       prefilter, run_params, swept)
     n_compared = sum(1 for g in results if g.edges)
     n_hyps = sum(len(g.hyps) for g in results if g.edges)
     n_acc = sum(1 for g in results if g.hyps[g.accepted].anchors)
     logger.info(f"{len(regions)} regions, {len(edges)} pairs above the pre-filter (R^2 > "
                 f"{prefilter:g}) in {n_compared} groups compared ({n_hyps} hypotheses): "
-                f"{n_acc} identified by their pairs, in {seconds:.1f} s.")
+                f"{n_acc} identified by their pairs"
+                + (f", {sum(t.accepted for t in swept.tests)} species added by the sweep"
+                   if swept is not None else "") + f", in {seconds:.1f} s.")
     return HypothesesResult(new_spec, seconds, len(regions), len(results), n_compared, n_hyps)
 
 
 def _output(spec: Spectrum, x_nm: np.ndarray, regions: List[_Region], labels: np.ndarray,
             cands: List[_Candidate], results: List[GroupResult], low: List[_Candidate],
             cut: List[_Candidate], unmatched: List[_Candidate], prefilter: float,
-            params: Mapping[str, Any]) -> Spectrum:
+            params: Mapping[str, Any], swept: Optional["SweepResult"] = None) -> Spectrum:
     """The spectrum with the ``abs_ids`` column, the maps of the candidate
     systems, the labels of the regions, the dropped candidates and the
     structure (the form of the current method)."""
@@ -1103,6 +1122,7 @@ def _output(spec: Spectrum, x_nm: np.ndarray, regions: List[_Region], labels: np
 
     by_cand = {c.index: c for c in cands}
     by_id = {r.id: r for r in regions}
+    replaced = swept.replaced if swept is not None else set()
     series_map: Dict[int, str] = {}
     z_map: Dict[int, float] = {}
     logn_map: Dict[int, float] = {}
@@ -1124,7 +1144,7 @@ def _output(spec: Spectrum, x_nm: np.ndarray, regions: List[_Region], labels: np
             s_comps = []
             for c, sc in zip(h.comps, comps, strict=True):
                 sid = None
-                if is_acc and c.role != "unidentified":
+                if is_acc and c.role != "unidentified" and sc.uuid not in replaced:
                     sid = len(series_map) + 1
                     series_map[sid] = c.series
                     z_map[sid] = float(sc.z)
@@ -1164,8 +1184,8 @@ def _output(spec: Spectrum, x_nm: np.ndarray, regions: List[_Region], labels: np
                         kinds[rid] = kind
                         transitions.setdefault(rid, []).append(t)
                         region_info.setdefault(rid, []).append([t, w])
-                for c in h.comps:
-                    if c.role == "lya" and c.region not in kinds:
+                for c, u in zip(h.comps, h.uuids, strict=True):
+                    if c.role == "lya" and c.region not in kinds and u not in replaced:
                         kinds[c.region] = ident.RegionKind.FOREST_ASSUMED
                         transitions[c.region] = ["Ly_a"]
                         region_info[c.region] = [["Ly_a", 0.0]]
@@ -1174,6 +1194,9 @@ def _output(spec: Spectrum, x_nm: np.ndarray, regions: List[_Region], labels: np
                       for e in g.edges)
         s_groups.append(ident.Group(id=gi + 1, regions=tuple(g.regions), edges=edges,
                                     hypotheses=tuple(s_hyps)))
+    if swept is not None:
+        s_groups += _sweep_output(swept, by_cand, len(s_groups), series_map, z_map, logn_map,
+                                  b_map, region_map, score_map, region_info, kinds, transitions)
     s_regions = tuple(ident.Region(
         id=r.id, x_min=float(x_nm[r.lo]), x_max=float(x_nm[r.hi]),
         kind=kinds.get(r.id, ident.RegionKind.UNIDENTIFIED),
@@ -1209,6 +1232,54 @@ def _output(spec: Spectrum, x_nm: np.ndarray, regions: List[_Region], labels: np
     n_sys = len(series_map)
     return spec.__class__(data=data, history=spec.history + [
         f"Identified {n_sys} systems (hypotheses, {len(regions)} regions)"])
+
+
+def _sweep_output(swept: "SweepResult", by_cand: Mapping[int, _Candidate], n_groups: int,
+                  series_map: Dict[int, str], z_map: Dict[int, float],
+                  logn_map: Dict[int, float], b_map: Dict[int, float],
+                  region_map: Dict[int, int], score_map: Dict[int, float],
+                  region_info: Dict[int, List[List[Any]]],
+                  kinds: Dict[int, ident.RegionKind], transitions: Dict[int, List[str]]
+                  ) -> List[ident.Group]:
+    """The tests of the sweep in the maps of the candidate systems (the
+    components of an accepted species, with the weight of its test as their
+    score, and those its refinement added), the regions it explains
+    relabelled, and one group of the structure per test."""
+    from astrocook.fitting.hypotheses_sweep import structure
+    out: List[ident.Group] = []
+    for t in swept.tests:
+        h = t.hyp
+        last = h.fitted if h.fitted is not None else h.systs
+        final = {c.uuid: c for c in last.components} if last is not None else {}
+        s_comps = []
+        for c, u in zip(h.comps, h.uuids, strict=True):
+            if u not in final:
+                continue
+            sc = final[u]
+            sid = None
+            if t.accepted and c.role != "unidentified":
+                sid = len(series_map) + 1
+                series_map[sid] = c.series
+                z_map[sid] = float(sc.z)
+                logn_map[sid] = float(sc.logN)
+                b_map[sid] = float(sc.b)
+                region_map[sid] = c.region if c.region > 0 else by_cand[t.anchor].regions[0]
+                score_map[sid] = float(t.weight or 0.0) if c.role == "sweep" else 0.0
+            s_comps.append(ident.Component(
+                series=c.series, z=float(sc.z), logN=float(sc.logN), b=float(sc.b),
+                dz=_finite(sc.dz), dlogN=_finite(sc.dlogN), db=_finite(sc.db), candidate=sid))
+        if t.accepted:
+            kind = ident.RegionKind.FOREST if t.species == "HI" else ident.RegionKind.METAL
+            for rid, line in t.lines:
+                if kinds.get(rid) in (None, ident.RegionKind.FOREST_ASSUMED,
+                                      ident.RegionKind.UNIDENTIFIED):
+                    kinds[rid] = kind
+                    transitions[rid] = []
+                    region_info[rid] = []
+                transitions.setdefault(rid, []).append(line)
+                region_info.setdefault(rid, []).append([line, float(t.weight or 0.0)])
+        out.append(structure(t, by_cand, n_groups + len(out) + 1, t.group + 1, s_comps))
+    return out
 
 
 def _lag(lines: Tuple[str, str]) -> float:
