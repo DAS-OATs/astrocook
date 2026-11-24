@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>astrocook.fitting.hypotheses_sweep &#8212; Astrocook dev documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../static/styles/theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+<link href="../../../static/styles/pydata-sphinx-theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../static/sphinx-design.min.css?v=6a604523" />
+    <link rel="stylesheet" type="text/css" href="../../../static/css/custom.css?v=e8a3a7b7" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../static/scripts/fontawesome.js?digest=75c7c72ae941e8b558d8"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
+<link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
+
+    <script src="../../../static/documentation_options.js?v=3ce10a4d"></script>
+    <script src="../../../static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../../../static/design-tabs.js?v=fcb327ea"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'modules/astrocook/fitting/hypotheses_sweep';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'dev';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="color-scheme" content="light dark"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="dev" />
+  
+    
+    <script src="../../../static/searchtools.js"></script>
+    <script src="../../../static/language_data.js"></script>
+    <script src="../../../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation" aria-expanded="false" aria-controls="pst-primary-sidebar-modal">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../static/icon_3d_HR.png" class="logo__image only-light" alt=""/>
+    <img src="../../../static/icon_3d_HR.png" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">Astrocook</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../science.html">
+    Science
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference.html">
+    API Reference
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../credits.html">
+    Credits
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../changelog.html">
+    Changelog
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal" tabindex="-1"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../science.html">
+    Science
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../credits.html">
+    Credits
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../changelog.html">
+    Changelog
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-house"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">astrocook.fitting.hypotheses_sweep</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for astrocook.fitting.hypotheses_sweep</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""The sweep of the anchored systems (phase 7, PR 7c.4d): the rarer and</span>
+<span class="sd">single lines, and the H I of the metal systems.</span>
+
+<span class="sd">The second pass of the identification by hypotheses</span>
+<span class="sd">(:mod:`astrocook.fitting.hypotheses`, ``design/identification.md`` section</span>
+<span class="sd">3.5). The anchors (the doublets and the pairs) find the systems; the other</span>
+<span class="sd">lines of a system are too weak, too rare or single (CII 1334, SiIII 1206,</span>
+<span class="sd">OI 1302, AlII 1670, the weaker FeII and SiII lines, the H I in the forest)</span>
+<span class="sd">to be found by a pair. For each metal system accepted by the first pass,</span>
+<span class="sd">and for each species of :data:`SWEEP_SPECIES` with a line in the coverage</span>
+<span class="sd">other than that of the anchor, the hypothesis "Y at z":</span>
+
+<span class="sd">- its components at the redshifts of the anchor's components (one for the</span>
+<span class="sd">  H I, at the column-weighted redshift of the anchor: the H I of a system</span>
+<span class="sd">  is broader than its metal components and one line of it is what the</span>
+<span class="sd">  forest resolves), N from the apparent optical depth at its predicted</span>
+<span class="sd">  lines (the least over its lines: that of a line blended with the forest</span>
+<span class="sd">  is an upper limit), z and b free; the components without influence on the pixels</span>
+<span class="sd">  (:func:`~astrocook.fitting.model_evaluation.evaluate_model`,</span>
+<span class="sd">  ``min_influence`` 1) dropped after the first fit, the components that</span>
+<span class="sd">  leave the profile of the anchor (:func:`_span`) make the hypothesis fail;</span>
+<span class="sd">- compared with the labels its pixels already have: the free lines of the</span>
+<span class="sd">  default labels (the assumed Ly-a, the unidentified lines) that fall on its</span>
+<span class="sd">  predicted lines are replaced by it, the other default components of the</span>
+<span class="sd">  regions within its span (its neighbours: a line of the forest blended</span>
+<span class="sd">  with one of its lines) are free on both sides, the rest of the model</span>
+<span class="sd">  (every accepted component of the first pass and of the sweep so far, the</span>
+<span class="sd">  components of the session) is fixed. Both sides get the short fit on the</span>
+<span class="sd">  same pixels, without the refinement by the residuals of the first pass</span>
+<span class="sd">  (the neighbours free do its work here; with it a test of SiII in the</span>
+<span class="sd">  forest took minutes), and Y is accepted when its criterion is not above</span>
+<span class="sd">  that of the labels by more than :data:`SWEEP_TIE`;</span>
+<span class="sd">- an accepted species becomes an edge of the graph (from the region of the</span>
+<span class="sd">  anchor's strong line to the region of its strongest line), the regions it</span>
+<span class="sd">  explains labelled with its lines, its components candidate systems with</span>
+<span class="sd">  the weight of the comparison (exp(-dIC/2) normalised over the two).</span>
+
+<span class="sd">What it does not do (``design/identification.md``): the upper limits where</span>
+<span class="sd">nothing is there (F156, 7d.7; the sweep skips a species with no absorption</span>
+<span class="sd">at its lines, :data:`SWEEP_SIGMA`); the systems of the Ly-a/Ly-b pairs of</span>
+<span class="sd">the forest (their metals, the metals of the forest off by default:</span>
+<span class="sd">decision 2 of the design); the tellurics (7c.5).</span>
+<span class="sd">"""</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">dataclasses</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Tuple</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">identification</span> <span class="k">as</span> <span class="n">ident</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.atomic_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">ATOM_DATA</span><span class="p">,</span> <span class="n">series_lines</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ComponentData</span><span class="p">,</span> <span class="n">SystemListData</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.system_list</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemList</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.fitting</span><span class="w"> </span><span class="kn">import</span> <span class="n">hypotheses</span> <span class="k">as</span> <span class="n">H</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.fitting.evaluation_window</span><span class="w"> </span><span class="kn">import</span> <span class="n">EvaluationWindow</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="c1">#: The species of the sweep, with the series of their model: the metals of</span>
+<span class="c1">#: the anchors (each tested at the systems of the others: a SiIV too weak</span>
+<span class="c1">#: for its pair at the redshift of a CIV), the single lines of the design</span>
+<span class="c1">#: (section 3.5), the rarer ions of the damped systems, and the H I (Ly-a</span>
+<span class="c1">#: and Ly-b). The series of CII and SiII are written as their ground-state</span>
+<span class="c1">#: lines (a custom series, ``series_lines``): the standard multiplets also</span>
+<span class="c1">#: hold the excited fine-structure lines CII*_1335 and SiII*_1264, which a</span>
+<span class="c1">#: model would put at the column of the ground state (F173). The species of</span>
+<span class="c1">#: the optical (NaI, CaII) and the lines below 912 A of the table left out:</span>
+<span class="c1">#: never in the coverage of the forest and the red side of a UV spectrum, or</span>
+<span class="c1">#: below the Lyman limit</span>
+<span class="n">SWEEP_SPECIES</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"HI"</span><span class="p">:</span> <span class="s2">"Ly_ab"</span><span class="p">,</span>
+    <span class="s2">"CIV"</span><span class="p">:</span> <span class="s2">"CIV"</span><span class="p">,</span>
+    <span class="s2">"SiIV"</span><span class="p">:</span> <span class="s2">"SiIV"</span><span class="p">,</span>
+    <span class="s2">"MgII"</span><span class="p">:</span> <span class="s2">"MgII"</span><span class="p">,</span>
+    <span class="s2">"NV"</span><span class="p">:</span> <span class="s2">"NV"</span><span class="p">,</span>
+    <span class="s2">"OVI"</span><span class="p">:</span> <span class="s2">"OVI"</span><span class="p">,</span>
+    <span class="s2">"AlIII"</span><span class="p">:</span> <span class="s2">"AlIII"</span><span class="p">,</span>
+    <span class="s2">"CII"</span><span class="p">:</span> <span class="s2">"CII_1036,CII_1334"</span><span class="p">,</span>
+    <span class="s2">"CIII"</span><span class="p">:</span> <span class="s2">"CIII_977"</span><span class="p">,</span>
+    <span class="s2">"SiII"</span><span class="p">:</span> <span class="s2">"SiII_1190,SiII_1193,SiII_1260,SiII_1304,SiII_1526,SiII_1808"</span><span class="p">,</span>
+    <span class="s2">"SiIII"</span><span class="p">:</span> <span class="s2">"SiIII_1206"</span><span class="p">,</span>
+    <span class="s2">"OI"</span><span class="p">:</span> <span class="s2">"OI_1039,OI_1302"</span><span class="p">,</span>
+    <span class="s2">"AlII"</span><span class="p">:</span> <span class="s2">"AlII_1670"</span><span class="p">,</span>
+    <span class="s2">"MgI"</span><span class="p">:</span> <span class="s2">"MgI_2852"</span><span class="p">,</span>
+    <span class="s2">"FeII"</span><span class="p">:</span> <span class="s2">"FeII"</span><span class="p">,</span>
+    <span class="s2">"NI"</span><span class="p">:</span> <span class="s2">"NI"</span><span class="p">,</span>
+    <span class="s2">"SII"</span><span class="p">:</span> <span class="s2">"SII"</span><span class="p">,</span>
+    <span class="s2">"NiII"</span><span class="p">:</span> <span class="s2">"NiII"</span><span class="p">,</span>
+    <span class="s2">"CrII"</span><span class="p">:</span> <span class="s2">"CrII"</span><span class="p">,</span>
+    <span class="s2">"ZnII"</span><span class="p">:</span> <span class="s2">"ZnII"</span><span class="p">,</span>
+    <span class="s2">"MnII"</span><span class="p">:</span> <span class="s2">"MnII"</span><span class="p">,</span>
+<span class="p">}</span>
+<span class="c1">#: The species of ``sweep="all"``: those common in the absorbers of the</span>
+<span class="c1">#: forest and the red side (the H I, the high ions, the low ions of the</span>
+<span class="c1">#: design, section 3.5, FeII and MgI). Left out, and in SWEEP_SPECIES for</span>
+<span class="c1">#: :func:`sweep` with ``species``: NI, SII, NiII, CrII, ZnII, MnII, the</span>
+<span class="c1">#: weaker lines of the damped systems. Their purpose: the purity and the</span>
+<span class="c1">#: time. On the 36 mocks of ``benchmarks/validate_sweep.py`` (none of</span>
+<span class="c1">#: them has these ions) they made 40 of the 80 false species accepted</span>
+<span class="c1">#: and half the time of the sweep: tests of many lines with many</span>
+<span class="c1">#: neighbours, minutes each (PR 7c.4d; to decide with Guido)</span>
+<span class="n">SWEEP_ALL</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"HI"</span><span class="p">,</span> <span class="s2">"CIV"</span><span class="p">,</span> <span class="s2">"SiIV"</span><span class="p">,</span> <span class="s2">"MgII"</span><span class="p">,</span> <span class="s2">"NV"</span><span class="p">,</span> <span class="s2">"OVI"</span><span class="p">,</span> <span class="s2">"AlIII"</span><span class="p">,</span> <span class="s2">"CII"</span><span class="p">,</span>
+                              <span class="s2">"CIII"</span><span class="p">,</span> <span class="s2">"SiII"</span><span class="p">,</span> <span class="s2">"SiIII"</span><span class="p">,</span> <span class="s2">"OI"</span><span class="p">,</span> <span class="s2">"AlII"</span><span class="p">,</span> <span class="s2">"FeII"</span><span class="p">,</span> <span class="s2">"MgI"</span><span class="p">)</span>
+<span class="c1">#: The choices of the option ``sweep`` of ``identify_lines``: the species</span>
+<span class="c1">#: tested. The default is the H I alone (Guido, 24 November 2026): on the</span>
+<span class="c1">#: grid full of ``validate_mocks.py`` (no ion but CIV, SiIV, MgII and the</span>
+<span class="c1">#: H I in the mocks) "all" accepted 380 rarer species, all false (314 of</span>
+<span class="c1">#: them with every line in the forest: without a prior of the chance</span>
+<span class="c1">#: coincidences a line of the forest fits as well as CII or SiIII, F174),</span>
+<span class="c1">#: took the purity of SiIV from 0.96 to 0.88 and the median time of the</span>
+<span class="c1">#: identification from 4 s to 110 s; the H I had purity 0.96 (PR 7c.4d)</span>
+<span class="n">SWEEP_CHOICES</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"HI"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"HI"</span><span class="p">,),</span> <span class="s2">"all"</span><span class="p">:</span> <span class="n">SWEEP_ALL</span><span class="p">,</span> <span class="s2">"none"</span><span class="p">:</span> <span class="p">()}</span>
+<span class="c1">#: The species of an anchor (``ANCHOR_PAIRS``, ``Ly_ab``) as a species of</span>
+<span class="c1">#: the sweep: the anchor's own is not swept</span>
+<span class="n">_ANCHOR_SPECIES</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"Ly_ab"</span><span class="p">:</span> <span class="s2">"HI"</span><span class="p">}</span>
+<span class="c1">#: The least significance of the absorption at one of the predicted lines</span>
+<span class="c1">#: of a species (the sum of 1 - F over the profile of the anchor, in sigma</span>
+<span class="c1">#: of that sum) for it to be compared. Its purpose: the time; a species with</span>
+<span class="c1">#: nothing at its lines cannot lower the criterion (its components only add</span>
+<span class="c1">#: parameters), and its comparison is the upper limit of F156 (7d.7)</span>
+<span class="n">SWEEP_SIGMA</span> <span class="o">=</span> <span class="mf">3.0</span>
+<span class="c1">#: The tie of the comparison, in the units of the criterion: "Y at z" is</span>
+<span class="c1">#: accepted when its criterion is not above that of the labels by more than</span>
+<span class="c1">#: this. Its purpose: where the H I of a system is the assumed Ly-a of a</span>
+<span class="c1">#: line whose Ly-b is not covered, the two models are the same (one line,</span>
+<span class="c1">#: the same three parameters) and their criteria differ by the noise of the</span>
+<span class="c1">#: two fits (about 1e-6); the tie goes to the label with a known redshift,</span>
+<span class="c1">#: the prior that makes a single line credible (design, section 3.5). 0.1:</span>
+<span class="c1">#: below any difference that the weights tell apart (0.49 against 0.51)</span>
+<span class="n">SWEEP_TIE</span> <span class="o">=</span> <span class="mf">0.1</span>
+<span class="c1">#: The least influence of a component of "Y at z" (the chi2 change of</span>
+<span class="c1">#: removing it, as ``evaluate_model``) to be kept after its first fit</span>
+<span class="n">SWEEP_INFLUENCE</span> <span class="o">=</span> <span class="mf">1.0</span>
+<span class="c1">#: The largest comparison, in the free parameters of the labels of its</span>
+<span class="c1">#: pixels (the replaced components and the neighbours). Its purpose: the</span>
+<span class="c1">#: time; the fits of both sides and their refinement cost about k times</span>
+<span class="c1">#: FIT_NFEV models each (F171): a test of SiII on a forest mock with 15</span>
+<span class="c1">#: free lines took 5 minutes, and on the mocks of ``validate_sweep.py`` a few</span>
+<span class="c1">#: tests of 10-13 lines took 1-5 minutes each (the Jacobian by finite</span>
+<span class="c1">#: differences, one model per parameter at every step). 24: eight lines</span>
+<span class="n">SWEEP_MAX_K</span> <span class="o">=</span> <span class="mi">24</span>
+<span class="c1">#: The start of the b of the H I of a system (km/s)</span>
+<span class="n">HI_B</span> <span class="o">=</span> <span class="mf">20.0</span>
+
+
+<div class="viewcode-block" id="SweepTest">
+<a class="viewcode-back" href="../../../api/astrocook.fitting.hypotheses_sweep.html#astrocook.fitting.hypotheses_sweep.SweepTest">[docs]</a>
+<span class="nd">@dataclasses</span><span class="o">.</span><span class="n">dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SweepTest</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""One hypothesis "Y at z" of the sweep, and its outcome."""</span>
+    <span class="n">group</span><span class="p">:</span> <span class="nb">int</span>
+<span class="w">    </span><span class="sd">"""The index of the group of the anchored system (in the results)."""</span>
+    <span class="n">anchor</span><span class="p">:</span> <span class="nb">int</span>
+<span class="w">    </span><span class="sd">"""The candidate (edge) of the system."""</span>
+    <span class="n">species</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">series</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">z</span><span class="p">:</span> <span class="nb">float</span>
+<span class="w">    </span><span class="sd">"""The column-weighted redshift of the anchor."""</span>
+    <span class="n">hyp</span><span class="p">:</span> <span class="n">H</span><span class="o">.</span><span class="n">_Hyp</span>
+<span class="w">    </span><span class="sd">"""Its components (Y, then its neighbours)."""</span>
+    <span class="n">labels</span><span class="p">:</span> <span class="n">H</span><span class="o">.</span><span class="n">_Hyp</span>
+<span class="w">    </span><span class="sd">"""The labels of its pixels (the replaced default components, refitted</span>
+<span class="sd">    on the same pixels)."""</span>
+    <span class="n">accepted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">weight</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">reason</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span>
+    <span class="n">regions</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+<span class="w">    </span><span class="sd">"""The regions its lines explain."""</span>
+    <span class="n">from_kinds</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+<span class="w">    </span><span class="sd">"""The roles of the default components it replaced (``"lya"``,</span>
+<span class="sd">    ``"unidentified"``), one per component."""</span>
+    <span class="n">lines</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+<span class="w">    </span><span class="sd">"""(region, transition) of the lines it explains."""</span></div>
+
+
+
+<div class="viewcode-block" id="SweepResult">
+<a class="viewcode-back" href="../../../api/astrocook.fitting.hypotheses_sweep.html#astrocook.fitting.hypotheses_sweep.SweepResult">[docs]</a>
+<span class="nd">@dataclasses</span><span class="o">.</span><span class="n">dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SweepResult</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The sweep of a spectrum."""</span>
+    <span class="n">tests</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">SweepTest</span><span class="p">]</span>
+    <span class="n">replaced</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">"""The uuids of the default components replaced by an accepted species."""</span>
+    <span class="n">n_skipped</span><span class="p">:</span> <span class="nb">int</span>
+<span class="w">    </span><span class="sd">"""The species with a line in the coverage and nothing at their lines."""</span>
+    <span class="n">seconds</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">values</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ComponentData</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">"""The accepted components at the end of the sweep, by uuid: the</span>
+<span class="sd">    neighbours of an accepted test were fitted again with it."""</span></div>
+
+
+
+<span class="nd">@dataclasses</span><span class="o">.</span><span class="n">dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">_System</span><span class="p">:</span>
+    <span class="n">group</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">anchor</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">species</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">z</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+    <span class="n">logn</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+    <span class="n">b</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+    <span class="n">region</span><span class="p">:</span> <span class="nb">int</span>
+<span class="w">    </span><span class="sd">"""The region of the strong line of the anchor."""</span>
+    <span class="n">line</span><span class="p">:</span> <span class="nb">str</span>
+<span class="w">    </span><span class="sd">"""The strong line of the anchor."""</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_Model</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The accepted components of the whole spectrum (the first pass and the</span>
+<span class="sd">    sweep so far): their data by uuid, and the default ones with their</span>
+<span class="sd">    role and region (the components the sweep can replace)."""</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">results</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">H</span><span class="o">.</span><span class="n">GroupResult</span><span class="p">],</span> <span class="n">fixed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SystemList</span><span class="p">]):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comps</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ComponentData</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">defaults</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">H</span><span class="o">.</span><span class="n">_Comp</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">series</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">fixed</span><span class="o">.</span><span class="n">components</span><span class="p">)</span> <span class="k">if</span> <span class="n">fixed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
+            <span class="n">h</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">hyps</span><span class="p">[</span><span class="n">g</span><span class="o">.</span><span class="n">accepted</span><span class="p">]</span>
+            <span class="n">last</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">fitted</span> <span class="k">if</span> <span class="n">h</span><span class="o">.</span><span class="n">fitted</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">h</span><span class="o">.</span><span class="n">systs</span>
+            <span class="k">if</span> <span class="n">last</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="n">c</span><span class="o">.</span><span class="n">uuid</span><span class="p">:</span> <span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">last</span><span class="o">.</span><span class="n">components</span><span class="p">}</span>
+            <span class="k">for</span> <span class="n">comp</span><span class="p">,</span> <span class="n">u</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">comps</span><span class="p">,</span> <span class="n">h</span><span class="o">.</span><span class="n">uuids</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">u</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">comps</span><span class="p">[</span><span class="n">u</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">u</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">series</span><span class="p">[</span><span class="n">u</span><span class="p">]</span> <span class="o">=</span> <span class="n">comp</span><span class="o">.</span><span class="n">series</span>
+                <span class="k">if</span> <span class="n">comp</span><span class="o">.</span><span class="n">role</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"lya"</span><span class="p">,</span> <span class="s2">"unidentified"</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">defaults</span><span class="p">[</span><span class="n">u</span><span class="p">]</span> <span class="o">=</span> <span class="n">comp</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">without</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuids</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">SystemList</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The fixed model: the session and every accepted component but</span>
+<span class="sd">        ``uuids``."""</span>
+        <span class="n">comps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">+</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">comps</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">u</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">uuids</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">SystemList</span><span class="p">(</span><span class="n">SystemListData</span><span class="p">(</span><span class="n">components</span><span class="o">=</span><span class="n">comps</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">subset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuids</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">SystemList</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">SystemList</span><span class="p">(</span><span class="n">SystemListData</span><span class="p">(</span><span class="n">components</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">comps</span><span class="p">[</span><span class="n">u</span><span class="p">]</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">uuids</span><span class="p">]))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">replace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gone</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">new</span><span class="p">:</span> <span class="n">SystemList</span><span class="p">,</span> <span class="n">comps</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">H</span><span class="o">.</span><span class="n">_Comp</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">gone</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">comps</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">defaults</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">c</span><span class="p">,</span> <span class="n">comp</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">new</span><span class="o">.</span><span class="n">components</span><span class="p">,</span> <span class="n">comps</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">comps</span><span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">uuid</span><span class="p">]</span> <span class="o">=</span> <span class="n">c</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">series</span><span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">uuid</span><span class="p">]</span> <span class="o">=</span> <span class="n">comp</span><span class="o">.</span><span class="n">series</span>
+            <span class="k">if</span> <span class="n">comp</span><span class="o">.</span><span class="n">role</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"lya"</span><span class="p">,</span> <span class="s2">"unidentified"</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">defaults</span><span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">uuid</span><span class="p">]</span> <span class="o">=</span> <span class="n">comp</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_systems</span><span class="p">(</span><span class="n">results</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">H</span><span class="o">.</span><span class="n">GroupResult</span><span class="p">],</span> <span class="n">cands</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">H</span><span class="o">.</span><span class="n">_Candidate</span><span class="p">]</span>
+             <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">_System</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The metal systems of the accepted hypotheses: per anchor, its</span>
+<span class="sd">    components (those of the refinement on its lines too)."""</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">gi</span><span class="p">,</span> <span class="n">g</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">results</span><span class="p">):</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">hyps</span><span class="p">[</span><span class="n">g</span><span class="o">.</span><span class="n">accepted</span><span class="p">]</span>
+        <span class="n">last</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">fitted</span> <span class="k">if</span> <span class="n">h</span><span class="o">.</span><span class="n">fitted</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">h</span><span class="o">.</span><span class="n">systs</span>
+        <span class="k">if</span> <span class="n">last</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">h</span><span class="o">.</span><span class="n">anchors</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="n">c</span><span class="o">.</span><span class="n">uuid</span><span class="p">:</span> <span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">last</span><span class="o">.</span><span class="n">components</span><span class="p">}</span>
+        <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">h</span><span class="o">.</span><span class="n">anchors</span><span class="p">:</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="n">cands</span><span class="p">[</span><span class="n">a</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">species</span> <span class="o">==</span> <span class="n">H</span><span class="o">.</span><span class="n">LYAB</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">own</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="n">u</span><span class="p">]</span> <span class="k">for</span> <span class="n">comp</span><span class="p">,</span> <span class="n">u</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">comps</span><span class="p">,</span> <span class="n">h</span><span class="o">.</span><span class="n">uuids</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                   <span class="k">if</span> <span class="n">comp</span><span class="o">.</span><span class="n">role</span> <span class="o">==</span> <span class="s2">"anchor"</span> <span class="ow">and</span> <span class="n">comp</span><span class="o">.</span><span class="n">cand</span> <span class="o">==</span> <span class="n">a</span> <span class="ow">and</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">data</span><span class="p">]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">own</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_System</span><span class="p">(</span><span class="n">gi</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">c</span><span class="o">.</span><span class="n">species</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x</span><span class="o">.</span><span class="n">z</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">own</span><span class="p">]),</span>
+                               <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x</span><span class="o">.</span><span class="n">logN</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">own</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x</span><span class="o">.</span><span class="n">b</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">own</span><span class="p">]),</span>
+                               <span class="n">c</span><span class="o">.</span><span class="n">regions</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">c</span><span class="o">.</span><span class="n">lines</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+    <span class="k">return</span> <span class="n">out</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_span</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="n">_System</span><span class="p">,</span> <span class="n">fwhm_kms</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The profile of the anchor, in km/s from its column-weighted</span>
+<span class="sd">    redshift: from its first to its last component, widened by the larger</span>
+<span class="sd">    of half the instrumental FWHM and the largest b of its components (the</span>
+<span class="sd">    range of the z of "Y at z", and of the pixels of :data:`SWEEP_SIGMA`)."""</span>
+    <span class="n">zc</span> <span class="o">=</span> <span class="n">_zc</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+    <span class="n">dv</span> <span class="o">=</span> <span class="n">H</span><span class="o">.</span><span class="n">C_KMS</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">((</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">s</span><span class="o">.</span><span class="n">z</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">zc</span><span class="p">))</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">fwhm_kms</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">b</span><span class="p">)))</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">dv</span><span class="o">.</span><span class="n">min</span><span class="p">()</span> <span class="o">-</span> <span class="n">w</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">dv</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="n">w</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_zc</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="n">_System</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="mf">10.0</span> <span class="o">**</span> <span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">logn</span> <span class="o">-</span> <span class="n">s</span><span class="o">.</span><span class="n">logn</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">w</span> <span class="o">*</span> <span class="n">s</span><span class="o">.</span><span class="n">z</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">w</span><span class="p">))</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_covered</span><span class="p">(</span><span class="n">series</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">zc</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">forest_lo</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+             <span class="n">x_range</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The lines of ``series`` at ``zc`` within the spectrum, above the</span>
+<span class="sd">    Lyman limit of the quasar and within ``x_range`` (nm), if given."""</span>
+    <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">forest_lo</span><span class="p">),</span> <span class="n">v</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">x_range</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">lo</span><span class="p">,</span> <span class="n">H</span><span class="o">.</span><span class="n">C_KMS</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">x_range</span><span class="p">[</span><span class="mi">0</span><span class="p">])),</span> <span class="nb">min</span><span class="p">(</span><span class="n">hi</span><span class="p">,</span> <span class="n">H</span><span class="o">.</span><span class="n">C_KMS</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">x_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">series_lines</span><span class="p">(</span><span class="n">series</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">t</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ATOM_DATA</span> <span class="ow">or</span> <span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="s1">'f'</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">vc</span> <span class="o">=</span> <span class="n">H</span><span class="o">.</span><span class="n">C_KMS</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">H</span><span class="o">.</span><span class="n">_wave_nm</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">zc</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">lo</span> <span class="o">&lt;</span> <span class="n">vc</span> <span class="o">&lt;</span> <span class="n">hi</span><span class="p">:</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">out</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_significance</span><span class="p">(</span><span class="n">lines</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">zc</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">span</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
+                  <span class="n">v</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">flux</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">err</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The largest significance of the absorption at the lines (the sum of</span>
+<span class="sd">    1 - F over the span in sigma of that sum)."""</span>
+    <span class="n">best</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+        <span class="n">vc</span> <span class="o">=</span> <span class="n">H</span><span class="o">.</span><span class="n">C_KMS</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">H</span><span class="o">.</span><span class="n">_wave_nm</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">zc</span><span class="p">))</span>
+        <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="p">[</span><span class="n">vc</span> <span class="o">+</span> <span class="n">span</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">vc</span> <span class="o">+</span> <span class="n">span</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+        <span class="n">f</span><span class="p">,</span> <span class="n">e</span> <span class="o">=</span> <span class="n">flux</span><span class="p">[</span><span class="n">lo</span><span class="p">:</span><span class="n">hi</span><span class="p">],</span> <span class="n">err</span><span class="p">[</span><span class="n">lo</span><span class="p">:</span><span class="n">hi</span><span class="p">]</span>
+        <span class="n">ok</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">e</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ok</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">best</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">best</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">f</span><span class="p">[</span><span class="n">ok</span><span class="p">])</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">e</span><span class="p">[</span><span class="n">ok</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))))</span>
+    <span class="k">return</span> <span class="n">best</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_touched</span><span class="p">(</span><span class="n">lines</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">zc</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">span</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="n">v</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+             <span class="n">labels</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Set</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The regions within the span of the predicted lines."""</span>
+    <span class="n">out</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+        <span class="n">vc</span> <span class="o">=</span> <span class="n">H</span><span class="o">.</span><span class="n">C_KMS</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">H</span><span class="o">.</span><span class="n">_wave_nm</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">zc</span><span class="p">))</span>
+        <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="p">[</span><span class="n">vc</span> <span class="o">+</span> <span class="n">span</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">vc</span> <span class="o">+</span> <span class="n">span</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+        <span class="n">out</span> <span class="o">|=</span> <span class="p">{</span><span class="nb">int</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">labels</span><span class="p">[</span><span class="n">lo</span><span class="p">:</span><span class="n">hi</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span> <span class="k">if</span> <span class="n">r</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">}</span>
+    <span class="k">return</span> <span class="n">out</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_near</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">_Model</span><span class="p">,</span> <span class="n">s</span><span class="p">:</span> <span class="n">_System</span><span class="p">,</span> <span class="n">species</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">lines</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">zc</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+          <span class="n">span</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="n">v</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">fwhm</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">labels</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+          <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">"""The default components at the predicted lines of the species: those</span>
+<span class="sd">    on the core of one of its components (within the larger of half the</span>
+<span class="sd">    instrumental FWHM and the b of the anchor's component; for the H I the</span>
+<span class="sd">    span, :data:`HI_B` wider), which it replaces, and the others of the regions within its</span>
+<span class="sd">    span, its neighbours, free in both sides of the comparison (a line of</span>
+<span class="sd">    the forest blended with a line of the species; the components of a</span>
+<span class="sd">    group without pairs keep their AOD parameters, and fixed they left a</span>
+<span class="sd">    misfit of thousands in the chi2 of a region)."""</span>
+    <span class="k">if</span> <span class="n">species</span> <span class="o">==</span> <span class="s2">"HI"</span><span class="p">:</span>
+        <span class="c1"># One H I line for the whole system: its core the profile of the</span>
+        <span class="c1"># anchor, HI_B wider</span>
+        <span class="n">cores</span> <span class="o">=</span> <span class="p">[(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">span</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">span</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">span</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">span</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="n">HI_B</span><span class="p">)]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">cores</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">H</span><span class="o">.</span><span class="n">C_KMS</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">((</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">s</span><span class="o">.</span><span class="n">z</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">zc</span><span class="p">)),</span> <span class="n">s</span><span class="o">.</span><span class="n">b</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+    <span class="n">touched</span> <span class="o">=</span> <span class="n">_touched</span><span class="p">(</span><span class="n">lines</span><span class="p">,</span> <span class="n">zc</span><span class="p">,</span> <span class="n">span</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span>
+    <span class="n">replaced</span><span class="p">,</span> <span class="n">neighbours</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">defaults</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">vu</span> <span class="o">=</span> <span class="n">H</span><span class="o">.</span><span class="n">C_KMS</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">H</span><span class="o">.</span><span class="n">_wave_nm</span><span class="p">(</span><span class="n">H</span><span class="o">.</span><span class="n">PLACEHOLDER</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">model</span><span class="o">.</span><span class="n">comps</span><span class="p">[</span><span class="n">u</span><span class="p">]</span><span class="o">.</span><span class="n">z</span><span class="p">))</span>
+        <span class="n">on_core</span><span class="p">,</span> <span class="n">in_span</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">comp</span><span class="o">.</span><span class="n">region</span> <span class="ow">in</span> <span class="n">touched</span>
+        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+            <span class="n">vc</span> <span class="o">=</span> <span class="n">H</span><span class="o">.</span><span class="n">C_KMS</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">H</span><span class="o">.</span><span class="n">_wave_nm</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">zc</span><span class="p">))</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">vc</span><span class="p">)),</span> <span class="mi">0</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">half</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">fwhm</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">on_core</span> <span class="o">|=</span> <span class="nb">any</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">vu</span> <span class="o">-</span> <span class="n">vc</span> <span class="o">-</span> <span class="n">dv</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="nb">max</span><span class="p">(</span><span class="n">half</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span> <span class="k">for</span> <span class="n">dv</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">cores</span><span class="p">)</span>
+            <span class="n">in_span</span> <span class="o">|=</span> <span class="n">vc</span> <span class="o">+</span> <span class="n">span</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">half</span> <span class="o">&lt;=</span> <span class="n">vu</span> <span class="o">&lt;=</span> <span class="n">vc</span> <span class="o">+</span> <span class="n">span</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">half</span>
+        <span class="k">if</span> <span class="n">on_core</span><span class="p">:</span>
+            <span class="n">replaced</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">in_span</span><span class="p">:</span>
+            <span class="n">neighbours</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">replaced</span><span class="p">,</span> <span class="n">neighbours</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_start</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="n">_System</span><span class="p">,</span> <span class="n">species</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">series</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">lines</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">zc</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+           <span class="n">span</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="n">v</span><span class="p">,</span> <span class="n">flux</span><span class="p">,</span> <span class="n">err</span><span class="p">,</span> <span class="n">fwhm_kms</span><span class="p">:</span> <span class="nb">float</span>
+           <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">SystemList</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">H</span><span class="o">.</span><span class="n">_Comp</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">"""The components of "Y at z" with their AOD guesses."""</span>
+    <span class="n">systs</span> <span class="o">=</span> <span class="n">H</span><span class="o">.</span><span class="n">_empty</span><span class="p">()</span>
+    <span class="n">comps</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">H</span><span class="o">.</span><span class="n">_Comp</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">species</span> <span class="o">==</span> <span class="s2">"HI"</span><span class="p">:</span>
+        <span class="n">zs</span><span class="p">,</span> <span class="n">ranges</span> <span class="o">=</span> <span class="p">[</span><span class="n">zc</span><span class="p">],</span> <span class="p">[</span><span class="n">span</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">dv</span> <span class="o">=</span> <span class="n">H</span><span class="o">.</span><span class="n">C_KMS</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">((</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">s</span><span class="o">.</span><span class="n">z</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">zc</span><span class="p">))</span>
+        <span class="n">order</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">dv</span><span class="p">)</span>
+        <span class="n">zs</span><span class="p">,</span> <span class="n">ranges</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">order</span><span class="p">):</span>
+            <span class="n">lo</span> <span class="o">=</span> <span class="n">span</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">j</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">dv</span><span class="p">[</span><span class="n">order</span><span class="p">[</span><span class="n">j</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]]</span> <span class="o">+</span> <span class="n">dv</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+            <span class="n">hi</span> <span class="o">=</span> <span class="n">span</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">j</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">order</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">else</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">dv</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">+</span> <span class="n">dv</span><span class="p">[</span><span class="n">order</span><span class="p">[</span><span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]])</span>
+            <span class="n">zs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">z</span><span class="p">[</span><span class="n">k</span><span class="p">]))</span>
+            <span class="n">ranges</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">lo</span> <span class="o">-</span> <span class="n">dv</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">hi</span> <span class="o">-</span> <span class="n">dv</span><span class="p">[</span><span class="n">k</span><span class="p">]))</span>
+    <span class="k">for</span> <span class="n">z</span><span class="p">,</span> <span class="n">rng</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">zs</span><span class="p">,</span> <span class="n">ranges</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="c1"># The least column over the lines: the AOD of a line blended with the</span>
+        <span class="c1"># forest is an upper limit (the largest, as for the anchors, started</span>
+        <span class="c1"># the SiII of a system at the column of a forest line on its 1260)</span>
+        <span class="n">guesses</span> <span class="o">=</span> <span class="p">[</span><span class="n">H</span><span class="o">.</span><span class="n">aod_guess</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">flux</span><span class="p">,</span> <span class="n">err</span><span class="p">,</span> <span class="p">[</span><span class="n">t</span><span class="p">],</span> <span class="n">z</span><span class="p">,</span> <span class="n">rng</span><span class="p">,</span> <span class="n">fwhm_kms</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">]</span>
+        <span class="n">logn</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">guesses</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">species</span> <span class="o">==</span> <span class="s2">"HI"</span><span class="p">:</span>
+            <span class="n">b</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">HI_B</span><span class="p">)</span>
+        <span class="n">systs</span> <span class="o">=</span> <span class="n">systs</span><span class="o">.</span><span class="n">add_component</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">logN</span><span class="o">=</span><span class="n">logn</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="n">b</span><span class="p">)</span>
+        <span class="n">comps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">H</span><span class="o">.</span><span class="n">_Comp</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s2">"sweep"</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">rng</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">systs</span><span class="p">,</span> <span class="n">comps</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_window</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">H</span><span class="o">.</span><span class="n">_Context</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">_Model</span><span class="p">,</span> <span class="n">systs</span><span class="p">:</span> <span class="n">SystemList</span><span class="p">,</span> <span class="n">uuids</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+            <span class="n">lines</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">zc</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">span</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="n">v</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+            <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">EvaluationWindow</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The window of a comparison: that of its lines and of the labels it</span>
+<span class="sd">    replaces (:meth:`EvaluationWindow.around`), without the pixels of the</span>
+<span class="sd">    regions that neither touches (as the window of a group of the first</span>
+<span class="sd">    pass, ``hypotheses._window``: the components of a group without pairs</span>
+<span class="sd">    keep their AOD parameters, and the misfit of their pixels, the same for</span>
+<span class="sd">    both sides, took the fits of the comparison).</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If no pixel is left.</span>
+<span class="sd">    """</span>
+    <span class="n">win</span> <span class="o">=</span> <span class="n">EvaluationWindow</span><span class="o">.</span><span class="n">around</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="p">[</span><span class="n">systs</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">subset</span><span class="p">(</span><span class="n">uuids</span><span class="p">)],</span>
+                                  <span class="n">fixed</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">without</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">uuids</span><span class="p">)))</span>
+    <span class="n">ids</span> <span class="o">=</span> <span class="p">{</span><span class="n">model</span><span class="o">.</span><span class="n">defaults</span><span class="p">[</span><span class="n">u</span><span class="p">]</span><span class="o">.</span><span class="n">region</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">uuids</span><span class="p">}</span> <span class="o">|</span> <span class="n">_touched</span><span class="p">(</span><span class="n">lines</span><span class="p">,</span> <span class="n">zc</span><span class="p">,</span> <span class="n">span</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">ctx</span><span class="o">.</span><span class="n">labels</span><span class="p">)</span>
+    <span class="n">keep</span> <span class="o">=</span> <span class="n">win</span><span class="o">.</span><span class="n">mask</span> <span class="o">&amp;</span> <span class="p">((</span><span class="n">ctx</span><span class="o">.</span><span class="n">labels</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">labels</span><span class="p">,</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">ids</span><span class="p">)))</span>
+    <span class="k">if</span> <span class="n">keep</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">==</span> <span class="n">win</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">win</span>
+    <span class="k">return</span> <span class="n">EvaluationWindow</span><span class="o">.</span><span class="n">from_mask</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">spec</span><span class="p">,</span> <span class="n">keep</span><span class="p">,</span> <span class="n">fixed</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">without</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">uuids</span><span class="p">)))</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_fit_labels</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">H</span><span class="o">.</span><span class="n">_Context</span><span class="p">,</span> <span class="n">win</span><span class="p">:</span> <span class="n">EvaluationWindow</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">_Model</span><span class="p">,</span> <span class="n">uuids</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+                <span class="n">cands</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">H</span><span class="o">.</span><span class="n">_Candidate</span><span class="p">],</span> <span class="n">v</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">extra</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">H</span><span class="o">.</span><span class="n">_Hyp</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The labels of the pixels (the replaced components and the</span>
+<span class="sd">    neighbours), refitted on the window and refined by its residuals, with</span>
+<span class="sd">    ``extra`` more components than the refinement of "Y at z" (its</span>
+<span class="sd">    components beyond the default lines it replaces): the null hypothesis of</span>
+<span class="sd">    the test is that its pixels need as many free lines as Y puts there. Its purpose: the regions of the</span>
+<span class="sd">    groups without pairs keep the components of the de-blending, often fewer</span>
+<span class="sd">    than their lines, and any species with a line on them won by the misfit</span>
+<span class="sd">    alone (an H I where the mock has none, by 66 in the SpIC)."""</span>
+    <span class="n">h</span> <span class="o">=</span> <span class="n">H</span><span class="o">.</span><span class="n">_Hyp</span><span class="p">((),</span> <span class="p">[</span><span class="n">model</span><span class="o">.</span><span class="n">defaults</span><span class="p">[</span><span class="n">u</span><span class="p">]</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">uuids</span><span class="p">])</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">systs</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">subset</span><span class="p">(</span><span class="n">uuids</span><span class="p">)</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">uuids</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">uuids</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">uuids</span><span class="p">:</span>
+        <span class="n">H</span><span class="o">.</span><span class="n">_fit</span><span class="p">(</span><span class="n">win</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">h</span><span class="o">.</span><span class="n">fitted</span><span class="p">,</span> <span class="n">h</span><span class="o">.</span><span class="n">fit</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">systs</span><span class="p">,</span> <span class="n">H</span><span class="o">.</span><span class="n">_measure</span><span class="p">(</span><span class="n">win</span><span class="p">,</span> <span class="n">h</span><span class="o">.</span><span class="n">systs</span><span class="p">)</span>
+    <span class="n">H</span><span class="o">.</span><span class="n">_refine</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">win</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">cands</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">extra</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">h</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_drop</span><span class="p">(</span><span class="n">win</span><span class="p">:</span> <span class="n">EvaluationWindow</span><span class="p">,</span> <span class="n">h</span><span class="p">:</span> <span class="n">H</span><span class="o">.</span><span class="n">_Hyp</span><span class="p">,</span> <span class="n">gone</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The components ``gone`` left out of ``h``, the rest fitted again."""</span>
+    <span class="k">assert</span> <span class="n">h</span><span class="o">.</span><span class="n">fitted</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="n">c</span><span class="o">.</span><span class="n">uuid</span><span class="p">:</span> <span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">h</span><span class="o">.</span><span class="n">fitted</span><span class="o">.</span><span class="n">components</span><span class="p">}</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">u</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">uuids</span><span class="p">)</span> <span class="k">if</span> <span class="n">u</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">gone</span><span class="p">]</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">comps</span> <span class="o">=</span> <span class="p">[</span><span class="n">h</span><span class="o">.</span><span class="n">comps</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">idx</span><span class="p">]</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">uuids</span> <span class="o">=</span> <span class="p">[</span><span class="n">h</span><span class="o">.</span><span class="n">uuids</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">idx</span><span class="p">]</span>
+    <span class="n">h</span><span class="o">.</span><span class="n">systs</span> <span class="o">=</span> <span class="n">SystemList</span><span class="p">(</span><span class="n">SystemListData</span><span class="p">(</span><span class="n">components</span><span class="o">=</span><span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="n">u</span><span class="p">]</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">h</span><span class="o">.</span><span class="n">uuids</span><span class="p">]))</span>
+    <span class="n">H</span><span class="o">.</span><span class="n">_fit</span><span class="p">(</span><span class="n">win</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_own</span><span class="p">(</span><span class="n">h</span><span class="p">:</span> <span class="n">H</span><span class="o">.</span><span class="n">_Hyp</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The uuids of the components of the species."""</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">u</span> <span class="k">for</span> <span class="n">c</span><span class="p">,</span> <span class="n">u</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">comps</span><span class="p">,</span> <span class="n">h</span><span class="o">.</span><span class="n">uuids</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">role</span> <span class="o">==</span> <span class="s2">"sweep"</span><span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_outside</span><span class="p">(</span><span class="n">h</span><span class="p">:</span> <span class="n">H</span><span class="o">.</span><span class="n">_Hyp</span><span class="p">,</span> <span class="n">zc</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">span</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The components of the species out of the profile of the anchor."""</span>
+    <span class="k">assert</span> <span class="n">h</span><span class="o">.</span><span class="n">fitted</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="n">c</span><span class="o">.</span><span class="n">uuid</span><span class="p">:</span> <span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">h</span><span class="o">.</span><span class="n">fitted</span><span class="o">.</span><span class="n">components</span><span class="p">}</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">u</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">_own</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">span</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">H</span><span class="o">.</span><span class="n">C_KMS</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">((</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">data</span><span class="p">[</span><span class="n">u</span><span class="p">]</span><span class="o">.</span><span class="n">z</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">zc</span><span class="p">))</span> <span class="o">&lt;=</span> <span class="n">span</span><span class="p">[</span><span class="mi">1</span><span class="p">]}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_fit_species</span><span class="p">(</span><span class="n">win</span><span class="p">:</span> <span class="n">EvaluationWindow</span><span class="p">,</span> <span class="n">h</span><span class="p">:</span> <span class="n">H</span><span class="o">.</span><span class="n">_Hyp</span><span class="p">,</span> <span class="n">zc</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">span</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span>
+                 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The short fit of "Y at z": its components that leave the profile of</span>
+<span class="sd">    the anchor, then those without influence (:data:`SWEEP_INFLUENCE`),</span>
+<span class="sd">    dropped and the rest fitted again. An empty string, or why it failed."""</span>
+    <span class="n">H</span><span class="o">.</span><span class="n">_fit</span><span class="p">(</span><span class="n">win</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"out"</span><span class="p">,</span> <span class="s2">"influence"</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">h</span><span class="o">.</span><span class="n">fit</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">h</span><span class="o">.</span><span class="n">reason</span>
+        <span class="k">if</span> <span class="n">step</span> <span class="o">==</span> <span class="s2">"out"</span><span class="p">:</span>
+            <span class="n">gone</span> <span class="o">=</span> <span class="n">_outside</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">zc</span><span class="p">,</span> <span class="n">span</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">h</span><span class="o">.</span><span class="n">fitted</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="n">counted</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">win</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">fitted</span><span class="p">,</span> <span class="n">min_influence</span><span class="o">=</span><span class="n">SWEEP_INFLUENCE</span><span class="p">)</span><span class="o">.</span><span class="n">components</span><span class="p">)</span>
+            <span class="n">gone</span> <span class="o">=</span> <span class="p">{</span><span class="n">u</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">_own</span><span class="p">(</span><span class="n">h</span><span class="p">)</span> <span class="k">if</span> <span class="n">u</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">counted</span><span class="p">}</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">gone</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">_own</span><span class="p">(</span><span class="n">h</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="p">(</span><span class="s2">"its components out of the profile of the anchor"</span> <span class="k">if</span> <span class="n">step</span> <span class="o">==</span> <span class="s2">"out"</span>
+                    <span class="k">else</span> <span class="s2">"no component with an influence on the pixels"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">gone</span><span class="p">:</span>
+            <span class="n">_drop</span><span class="p">(</span><span class="n">win</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">gone</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">h</span><span class="o">.</span><span class="n">fit</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">h</span><span class="o">.</span><span class="n">reason</span>
+    <span class="k">return</span> <span class="s2">""</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">_outside</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">zc</span><span class="p">,</span> <span class="n">span</span><span class="p">)</span> <span class="k">else</span> <span class="s2">"its components out of the profile of the anchor"</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_explained</span><span class="p">(</span><span class="n">h</span><span class="p">:</span> <span class="n">H</span><span class="o">.</span><span class="n">_Hyp</span><span class="p">,</span> <span class="n">lines</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">labels</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+               <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">"""(region, line) of the lines of the species at its fitted components</span>
+<span class="sd">    that fall in a region."""</span>
+    <span class="k">assert</span> <span class="n">h</span><span class="o">.</span><span class="n">fitted</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="n">c</span><span class="o">.</span><span class="n">uuid</span><span class="p">:</span> <span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">h</span><span class="o">.</span><span class="n">fitted</span><span class="o">.</span><span class="n">components</span><span class="p">}</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">comp</span><span class="p">,</span> <span class="n">u</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">h</span><span class="o">.</span><span class="n">comps</span><span class="p">,</span> <span class="n">h</span><span class="o">.</span><span class="n">uuids</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">comp</span><span class="o">.</span><span class="n">role</span> <span class="o">!=</span> <span class="s2">"sweep"</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+            <span class="n">vc</span> <span class="o">=</span> <span class="n">H</span><span class="o">.</span><span class="n">C_KMS</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">H</span><span class="o">.</span><span class="n">_wave_nm</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">data</span><span class="p">[</span><span class="n">u</span><span class="p">]</span><span class="o">.</span><span class="n">z</span><span class="p">))</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">vc</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">labels</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">labels</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span> <span class="n">t</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">out</span><span class="p">:</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="nb">int</span><span class="p">(</span><span class="n">labels</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span> <span class="n">t</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">out</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_test</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">H</span><span class="o">.</span><span class="n">_Context</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">_Model</span><span class="p">,</span> <span class="n">s</span><span class="p">:</span> <span class="n">_System</span><span class="p">,</span> <span class="n">species</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">cands</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">flux</span><span class="p">,</span> <span class="n">err</span><span class="p">,</span>
+          <span class="n">fwhm</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SweepTest</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The comparison of "Y at z" with the labels of its pixels; None when</span>
+<span class="sd">    the species is not covered or has nothing at its lines."""</span>
+    <span class="n">series</span> <span class="o">=</span> <span class="n">SWEEP_SPECIES</span><span class="p">[</span><span class="n">species</span><span class="p">]</span>
+    <span class="n">zc</span> <span class="o">=</span> <span class="n">_zc</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">H</span><span class="o">.</span><span class="n">C_KMS</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">H</span><span class="o">.</span><span class="n">_wave_nm</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">line</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">zc</span><span class="p">))),</span>
+                    <span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="n">fwhm_kms</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">fwhm</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+    <span class="n">span</span> <span class="o">=</span> <span class="n">_span</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">fwhm_kms</span><span class="p">)</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="n">_covered</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">zc</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">ctx</span><span class="o">.</span><span class="n">forest</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ctx</span><span class="o">.</span><span class="n">x_range</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">lines</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">_significance</span><span class="p">(</span><span class="n">lines</span><span class="p">,</span> <span class="n">zc</span><span class="p">,</span> <span class="n">span</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">flux</span><span class="p">,</span> <span class="n">err</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">SWEEP_SIGMA</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">SweepTest</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">group</span><span class="p">,</span> <span class="n">s</span><span class="o">.</span><span class="n">anchor</span><span class="p">,</span> <span class="n">species</span><span class="p">,</span> <span class="n">series</span><span class="p">,</span> <span class="n">zc</span><span class="p">,</span> <span class="n">H</span><span class="o">.</span><span class="n">_Hyp</span><span class="p">((),</span> <span class="p">[]),</span>
+                         <span class="n">H</span><span class="o">.</span><span class="n">_Hyp</span><span class="p">((),</span> <span class="p">[]),</span> <span class="n">reason</span><span class="o">=</span><span class="s2">"nothing at its lines"</span><span class="p">)</span>
+    <span class="n">gone</span><span class="p">,</span> <span class="n">near</span> <span class="o">=</span> <span class="n">_near</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">species</span><span class="p">,</span> <span class="n">lines</span><span class="p">,</span> <span class="n">zc</span><span class="p">,</span> <span class="n">span</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">fwhm</span><span class="p">,</span> <span class="n">ctx</span><span class="o">.</span><span class="n">labels</span><span class="p">)</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="mi">3</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">gone</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">near</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">k</span> <span class="o">&gt;</span> <span class="n">SWEEP_MAX_K</span><span class="p">:</span>
+        <span class="c1"># As a group of the first pass (F171): the fits of the comparison</span>
+        <span class="c1"># would take minutes</span>
+        <span class="k">return</span> <span class="n">SweepTest</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">group</span><span class="p">,</span> <span class="n">s</span><span class="o">.</span><span class="n">anchor</span><span class="p">,</span> <span class="n">species</span><span class="p">,</span> <span class="n">series</span><span class="p">,</span> <span class="n">zc</span><span class="p">,</span> <span class="n">H</span><span class="o">.</span><span class="n">_Hyp</span><span class="p">((),</span> <span class="p">[]),</span>
+                         <span class="n">H</span><span class="o">.</span><span class="n">_Hyp</span><span class="p">((),</span> <span class="p">[]),</span> <span class="n">reason</span><span class="o">=</span><span class="sa">f</span><span class="s2">"not compared: the labels of its pixels "</span>
+                         <span class="sa">f</span><span class="s2">"have k = </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2"> free parameters, above </span><span class="si">{</span><span class="n">SWEEP_MAX_K</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">systs</span><span class="p">,</span> <span class="n">comps</span> <span class="o">=</span> <span class="n">_start</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">species</span><span class="p">,</span> <span class="n">series</span><span class="p">,</span> <span class="n">lines</span><span class="p">,</span> <span class="n">zc</span><span class="p">,</span> <span class="n">span</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">flux</span><span class="p">,</span> <span class="n">err</span><span class="p">,</span> <span class="n">fwhm_kms</span><span class="p">)</span>
+    <span class="n">both</span> <span class="o">=</span> <span class="n">SystemList</span><span class="p">(</span><span class="n">SystemListData</span><span class="p">(</span>
+        <span class="n">components</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">systs</span><span class="o">.</span><span class="n">components</span><span class="p">)</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">subset</span><span class="p">(</span><span class="n">near</span><span class="p">)</span><span class="o">.</span><span class="n">components</span><span class="p">)))</span>
+    <span class="n">hyp</span> <span class="o">=</span> <span class="n">H</span><span class="o">.</span><span class="n">_Hyp</span><span class="p">((),</span> <span class="n">comps</span> <span class="o">+</span> <span class="p">[</span><span class="n">model</span><span class="o">.</span><span class="n">defaults</span><span class="p">[</span><span class="n">u</span><span class="p">]</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">near</span><span class="p">],</span> <span class="n">systs</span><span class="o">=</span><span class="n">both</span><span class="p">,</span>
+                 <span class="n">uuids</span><span class="o">=</span><span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">uuid</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">both</span><span class="o">.</span><span class="n">components</span><span class="p">])</span>
+    <span class="n">test</span> <span class="o">=</span> <span class="n">SweepTest</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">group</span><span class="p">,</span> <span class="n">s</span><span class="o">.</span><span class="n">anchor</span><span class="p">,</span> <span class="n">species</span><span class="p">,</span> <span class="n">series</span><span class="p">,</span> <span class="n">zc</span><span class="p">,</span> <span class="n">hyp</span><span class="p">,</span> <span class="n">H</span><span class="o">.</span><span class="n">_Hyp</span><span class="p">((),</span> <span class="p">[]))</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">win</span> <span class="o">=</span> <span class="n">_window</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">both</span><span class="p">,</span> <span class="n">gone</span> <span class="o">+</span> <span class="n">near</span><span class="p">,</span> <span class="n">lines</span><span class="p">,</span> <span class="n">zc</span><span class="p">,</span> <span class="n">span</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">test</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"not evaluated: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span>
+        <span class="k">return</span> <span class="n">test</span>
+    <span class="n">why</span> <span class="o">=</span> <span class="n">_fit_species</span><span class="p">(</span><span class="n">win</span><span class="p">,</span> <span class="n">hyp</span><span class="p">,</span> <span class="n">zc</span><span class="p">,</span> <span class="n">span</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">why</span><span class="p">:</span>
+        <span class="n">test</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="n">why</span>
+        <span class="k">return</span> <span class="n">test</span>
+    <span class="n">test</span><span class="o">.</span><span class="n">labels</span> <span class="o">=</span> <span class="n">_fit_labels</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">win</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">gone</span> <span class="o">+</span> <span class="n">near</span><span class="p">,</span> <span class="n">cands</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span>
+                              <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">_own</span><span class="p">(</span><span class="n">hyp</span><span class="p">))</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">gone</span><span class="p">)))</span>
+    <span class="n">H</span><span class="o">.</span><span class="n">_refine</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">win</span><span class="p">,</span> <span class="n">hyp</span><span class="p">,</span> <span class="n">cands</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_decide</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">test</span><span class="p">,</span> <span class="n">gone</span><span class="p">,</span> <span class="n">near</span><span class="p">,</span> <span class="n">lines</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_decide</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">H</span><span class="o">.</span><span class="n">_Context</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">_Model</span><span class="p">,</span> <span class="n">test</span><span class="p">:</span> <span class="n">SweepTest</span><span class="p">,</span> <span class="n">gone</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+            <span class="n">near</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">lines</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">v</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SweepTest</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The weight of "Y at z" against the labels, and the model updated</span>
+<span class="sd">    when it is accepted."""</span>
+    <span class="n">crit</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">criterion</span>
+    <span class="n">h</span><span class="p">,</span> <span class="n">lab</span> <span class="o">=</span> <span class="n">test</span><span class="o">.</span><span class="n">hyp</span><span class="p">,</span> <span class="n">test</span><span class="o">.</span><span class="n">labels</span>
+    <span class="k">assert</span> <span class="n">h</span><span class="o">.</span><span class="n">fit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">h</span><span class="o">.</span><span class="n">fitted</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">lab</span><span class="o">.</span><span class="n">fit</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">test</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"the labels could not be fitted: </span><span class="si">{</span><span class="n">lab</span><span class="o">.</span><span class="n">reason</span><span class="si">}</span><span class="s2">"</span>
+        <span class="k">return</span> <span class="n">test</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">fit</span><span class="p">[</span><span class="n">crit</span><span class="p">]</span> <span class="o">-</span> <span class="n">lab</span><span class="o">.</span><span class="n">fit</span><span class="p">[</span><span class="n">crit</span><span class="p">]</span>
+    <span class="n">test</span><span class="o">.</span><span class="n">weight</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">d</span><span class="p">,</span> <span class="o">-</span><span class="mi">700</span><span class="p">,</span> <span class="mi">700</span><span class="p">))))</span>
+    <span class="n">test</span><span class="o">.</span><span class="n">accepted</span> <span class="o">=</span> <span class="n">d</span> <span class="o">&lt;=</span> <span class="n">SWEEP_TIE</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"lya"</span><span class="p">:</span> <span class="s2">"assumed Ly-a"</span><span class="p">,</span> <span class="s2">"unidentified"</span><span class="p">:</span> <span class="s2">"unidentified"</span><span class="p">}</span>
+    <span class="n">what</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">sum</span><span class="p">(</span><span class="mi">1</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">u</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">gone</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">model</span><span class="o">.</span><span class="n">defaults</span><span class="p">[</span><span class="n">u</span><span class="p">]</span><span class="o">.</span><span class="n">role</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">r</span><span class="p">)</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">"</span>
+                     <span class="k">for</span> <span class="n">r</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                     <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">defaults</span><span class="p">[</span><span class="n">u</span><span class="p">]</span><span class="o">.</span><span class="n">role</span> <span class="o">==</span> <span class="n">r</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">gone</span><span class="p">))</span> <span class="ow">or</span> <span class="s2">"no line"</span>
+    <span class="n">test</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">crit</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">d</span><span class="si">:</span><span class="s2">+.1f</span><span class="si">}</span><span class="s2"> against the labels of its pixels (</span><span class="si">{</span><span class="n">what</span><span class="si">}</span><span class="s2">)"</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">test</span><span class="o">.</span><span class="n">accepted</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">test</span>
+    <span class="n">test</span><span class="o">.</span><span class="n">from_kinds</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">defaults</span><span class="p">[</span><span class="n">u</span><span class="p">]</span><span class="o">.</span><span class="n">role</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">gone</span><span class="p">)</span>
+    <span class="n">test</span><span class="o">.</span><span class="n">lines</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">_explained</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">lines</span><span class="p">,</span> <span class="n">ctx</span><span class="o">.</span><span class="n">labels</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span>
+    <span class="n">test</span><span class="o">.</span><span class="n">regions</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">r</span> <span class="k">for</span> <span class="n">r</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">test</span><span class="o">.</span><span class="n">lines</span><span class="p">))</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="n">c</span><span class="o">.</span><span class="n">uuid</span><span class="p">:</span> <span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">h</span><span class="o">.</span><span class="n">fitted</span><span class="o">.</span><span class="n">components</span><span class="p">}</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">gone</span><span class="p">)</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">near</span><span class="p">),</span>
+                  <span class="n">SystemList</span><span class="p">(</span><span class="n">SystemListData</span><span class="p">(</span><span class="n">components</span><span class="o">=</span><span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="n">u</span><span class="p">]</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">h</span><span class="o">.</span><span class="n">uuids</span><span class="p">])),</span> <span class="n">h</span><span class="o">.</span><span class="n">comps</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">test</span>
+
+
+<div class="viewcode-block" id="sweep">
+<a class="viewcode-back" href="../../../api/astrocook.fitting.hypotheses_sweep.html#astrocook.fitting.hypotheses_sweep.sweep">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">sweep</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">H</span><span class="o">.</span><span class="n">_Context</span><span class="p">,</span> <span class="n">results</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">H</span><span class="o">.</span><span class="n">GroupResult</span><span class="p">],</span> <span class="n">cands</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">H</span><span class="o">.</span><span class="n">_Candidate</span><span class="p">],</span>
+          <span class="n">v</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">flux</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">err</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">fwhm</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+          <span class="n">species</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">SWEEP_CHOICES</span><span class="p">[</span><span class="s2">"HI"</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">SweepResult</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The sweep of the metal systems of ``results`` (see the module), with</span>
+<span class="sd">    the ``species`` of :data:`SWEEP_SPECIES`."""</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+    <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">_Model</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">ctx</span><span class="o">.</span><span class="n">fixed</span><span class="p">)</span>
+    <span class="n">first</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">defaults</span><span class="p">)</span>
+    <span class="n">tests</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">SweepTest</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">skipped</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">_systems</span><span class="p">(</span><span class="n">results</span><span class="p">,</span> <span class="n">cands</span><span class="p">):</span>
+        <span class="n">own</span> <span class="o">=</span> <span class="n">_ANCHOR_SPECIES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">species</span><span class="p">,</span> <span class="n">s</span><span class="o">.</span><span class="n">species</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">species</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">y</span> <span class="o">==</span> <span class="n">own</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">_test</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">cands</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">flux</span><span class="p">,</span> <span class="n">err</span><span class="p">,</span> <span class="n">fwhm</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">t</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">reason</span> <span class="o">==</span> <span class="s2">"nothing at its lines"</span><span class="p">:</span>
+                <span class="n">skipped</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">continue</span>
+            <span class="n">tests</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+    <span class="n">replaced</span> <span class="o">=</span> <span class="n">first</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">defaults</span><span class="p">)</span>
+    <span class="n">seconds</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span> <span class="o">-</span> <span class="n">t0</span>
+    <span class="n">n_acc</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">accepted</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tests</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Sweep of the anchored systems: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">tests</span><span class="p">)</span><span class="si">}</span><span class="s2"> species compared "</span>
+                <span class="sa">f</span><span class="s2">"(</span><span class="si">{</span><span class="n">skipped</span><span class="si">}</span><span class="s2"> with nothing at their lines), </span><span class="si">{</span><span class="n">n_acc</span><span class="si">}</span><span class="s2"> accepted, "</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">replaced</span><span class="p">)</span><span class="si">}</span><span class="s2"> default lines replaced, in </span><span class="si">{</span><span class="n">seconds</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> s."</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">SweepResult</span><span class="p">(</span><span class="n">tests</span><span class="p">,</span> <span class="n">replaced</span><span class="p">,</span> <span class="n">skipped</span><span class="p">,</span> <span class="n">seconds</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">comps</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="structure">
+<a class="viewcode-back" href="../../../api/astrocook.fitting.hypotheses_sweep.html#astrocook.fitting.hypotheses_sweep.structure">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">structure</span><span class="p">(</span><span class="n">test</span><span class="p">:</span> <span class="n">SweepTest</span><span class="p">,</span> <span class="n">cands</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">H</span><span class="o">.</span><span class="n">_Candidate</span><span class="p">],</span> <span class="n">gid</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+              <span class="n">anchored_on</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">comps</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">ident</span><span class="o">.</span><span class="n">Component</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">ident</span><span class="o">.</span><span class="n">Group</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The group of the structure of a test: the regions of the anchor and</span>
+<span class="sd">    those the species explains, an edge when it is accepted and explains a</span>
+<span class="sd">    region, its hypothesis with the weight against the labels."""</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">cands</span><span class="p">[</span><span class="n">test</span><span class="o">.</span><span class="n">anchor</span><span class="p">]</span>
+    <span class="n">edges</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">ident</span><span class="o">.</span><span class="n">Edge</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+    <span class="n">anchors</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+    <span class="k">if</span> <span class="n">test</span><span class="o">.</span><span class="n">accepted</span> <span class="ow">and</span> <span class="n">test</span><span class="o">.</span><span class="n">lines</span><span class="p">:</span>
+        <span class="n">rid</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">test</span><span class="o">.</span><span class="n">lines</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">H</span><span class="o">.</span><span class="n">_flam</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="n">lag</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">H</span><span class="o">.</span><span class="n">C_KMS</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="s1">'wave'</span><span class="p">]</span> <span class="o">/</span> <span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">lines</span><span class="p">[</span><span class="mi">0</span><span class="p">]][</span><span class="s1">'wave'</span><span class="p">]))</span>
+        <span class="n">edges</span> <span class="o">=</span> <span class="p">(</span><span class="n">ident</span><span class="o">.</span><span class="n">Edge</span><span class="p">(</span><span class="n">regions</span><span class="o">=</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">regions</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">rid</span><span class="p">),</span> <span class="n">transitions</span><span class="o">=</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">lines</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">t</span><span class="p">),</span>
+                            <span class="n">series</span><span class="o">=</span><span class="n">test</span><span class="o">.</span><span class="n">series</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">test</span><span class="o">.</span><span class="n">z</span><span class="p">),</span> <span class="n">lag_kms</span><span class="o">=</span><span class="n">lag</span><span class="p">),)</span>
+        <span class="n">anchors</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,)</span>
+    <span class="n">h</span> <span class="o">=</span> <span class="n">test</span><span class="o">.</span><span class="n">hyp</span>
+    <span class="n">stats</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">fit</span> <span class="ow">or</span> <span class="p">{}</span>
+    <span class="n">criteria</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">val</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">stats</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"k"</span><span class="p">,</span> <span class="s2">"n"</span><span class="p">,</span> <span class="s2">"chi2"</span><span class="p">,</span> <span class="s2">"chi2_reduced"</span><span class="p">)}</span>
+    <span class="k">if</span> <span class="n">test</span><span class="o">.</span><span class="n">labels</span><span class="o">.</span><span class="n">fit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">criteria</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="sa">f</span><span class="s2">"labels_</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">"</span><span class="p">:</span> <span class="n">val</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">test</span><span class="o">.</span><span class="n">labels</span><span class="o">.</span><span class="n">fit</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                         <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"chi2"</span><span class="p">,</span> <span class="s2">"spic"</span><span class="p">,</span> <span class="s2">"bic"</span><span class="p">,</span> <span class="s2">"aic"</span><span class="p">)})</span>
+    <span class="c1"># The default lines it replaced, by their role (an accepted test)</span>
+    <span class="k">for</span> <span class="n">role</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"lya"</span><span class="p">,</span> <span class="s2">"unidentified"</span><span class="p">):</span>
+        <span class="n">criteria</span><span class="p">[</span><span class="sa">f</span><span class="s2">"replaced_</span><span class="si">{</span><span class="n">role</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">r</span> <span class="o">==</span> <span class="n">role</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">test</span><span class="o">.</span><span class="n">from_kinds</span><span class="p">))</span>
+    <span class="n">regions</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">((</span><span class="n">c</span><span class="o">.</span><span class="n">regions</span><span class="p">[</span><span class="mi">0</span><span class="p">],)</span> <span class="o">+</span> <span class="n">test</span><span class="o">.</span><span class="n">regions</span><span class="p">))</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="p">(</span><span class="n">ident</span><span class="o">.</span><span class="n">Status</span><span class="o">.</span><span class="n">ACCEPTED</span> <span class="k">if</span> <span class="n">test</span><span class="o">.</span><span class="n">accepted</span> <span class="k">else</span>
+              <span class="n">ident</span><span class="o">.</span><span class="n">Status</span><span class="o">.</span><span class="n">ALTERNATIVE</span> <span class="k">if</span> <span class="n">test</span><span class="o">.</span><span class="n">weight</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">ident</span><span class="o">.</span><span class="n">Status</span><span class="o">.</span><span class="n">DROPPED</span><span class="p">)</span>
+    <span class="n">hyp</span> <span class="o">=</span> <span class="n">ident</span><span class="o">.</span><span class="n">Hypothesis</span><span class="p">(</span>
+        <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">test</span><span class="o">.</span><span class="n">species</span><span class="si">}</span><span class="s2"> at z = </span><span class="si">{</span><span class="n">test</span><span class="o">.</span><span class="n">z</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2"> (sweep of </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">species</span><span class="si">}</span><span class="s2">)"</span><span class="p">,</span>
+        <span class="n">regions</span><span class="o">=</span><span class="n">regions</span><span class="p">,</span> <span class="n">components</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">comps</span><span class="p">),</span>
+        <span class="n">stage</span><span class="o">=</span><span class="n">ident</span><span class="o">.</span><span class="n">Stage</span><span class="o">.</span><span class="n">FIT</span> <span class="k">if</span> <span class="n">h</span><span class="o">.</span><span class="n">fit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">ident</span><span class="o">.</span><span class="n">Stage</span><span class="o">.</span><span class="n">AOD</span><span class="p">,</span>
+        <span class="n">status</span><span class="o">=</span><span class="n">status</span><span class="p">,</span> <span class="n">reason</span><span class="o">=</span><span class="n">test</span><span class="o">.</span><span class="n">reason</span><span class="p">,</span>
+        <span class="n">weight</span><span class="o">=</span><span class="n">test</span><span class="o">.</span><span class="n">weight</span> <span class="k">if</span> <span class="n">test</span><span class="o">.</span><span class="n">weight</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">chi2</span><span class="o">=</span><span class="n">stats</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"chi2"</span><span class="p">),</span> <span class="n">k</span><span class="o">=</span><span class="n">H</span><span class="o">.</span><span class="n">_int</span><span class="p">(</span><span class="n">stats</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"k"</span><span class="p">)),</span> <span class="n">n</span><span class="o">=</span><span class="n">H</span><span class="o">.</span><span class="n">_int</span><span class="p">(</span><span class="n">stats</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"n"</span><span class="p">)),</span>
+        <span class="n">criteria</span><span class="o">=</span><span class="n">criteria</span><span class="p">,</span> <span class="n">anchors</span><span class="o">=</span><span class="n">anchors</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ident</span><span class="o">.</span><span class="n">Group</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">gid</span><span class="p">,</span> <span class="n">regions</span><span class="o">=</span><span class="n">regions</span><span class="p">,</span> <span class="n">edges</span><span class="o">=</span><span class="n">edges</span><span class="p">,</span> <span class="n">hypotheses</span><span class="o">=</span><span class="p">(</span><span class="n">hyp</span><span class="p">,),</span>
+                       <span class="n">anchored_on</span><span class="o">=</span><span class="n">anchored_on</span><span class="p">)</span></div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8"></script>
+<script defer src="../../../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2026, Guido Cupani.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.2.0.
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.24.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

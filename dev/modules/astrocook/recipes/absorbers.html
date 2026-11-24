@@ -876,6 +876,7 @@
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"max_group"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="n">MAX_GROUP</span><span class="p">,</span> <span class="s2">"min"</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Method 'hypotheses': the largest group of regions compared together; a larger one is split at its weakest pairs."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"temper"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Method 'hypotheses': the differences of the criterion divided by the reduced chi2 of the accepted model, when above 1 (an error spectrum not calibrated)."</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"refine"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Method 'hypotheses': each alternative refined before the comparison, with up to 3 components added where its residuals ask for them, while they lower the criterion."</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="s2">"sweep"</span><span class="p">,</span> <span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"default"</span><span class="p">:</span> <span class="s2">"HI"</span><span class="p">,</span> <span class="s2">"choices"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"HI"</span><span class="p">,</span> <span class="s2">"all"</span><span class="p">,</span> <span class="s2">"none"</span><span class="p">],</span> <span class="s2">"doc"</span><span class="p">:</span> <span class="s2">"Method 'hypotheses': after the pairs, the H I ('HI') or the H I and the other common species ('all') tested at the redshift of each metal system found, accepted where they do not raise the criterion; 'all' is slow and accepts false species in the forest."</span><span class="p">},</span>
         <span class="p">],</span>
     <span class="p">},</span>
     <span class="s2">"populate_from_identification"</span><span class="p">:</span> <span class="p">{</span>
@@ -2135,7 +2136,8 @@
                        <span class="n">screen</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">SCREEN_DELTA</span><span class="p">,</span>
                        <span class="n">max_group</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">MAX_GROUP</span><span class="p">,</span>
                        <span class="n">temper</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-                       <span class="n">refine</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'Session'</span><span class="p">:</span>
+                       <span class="n">refine</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                       <span class="n">sweep</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"HI"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">'Session'</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Identify likely absorption systems.</span>
 
@@ -2172,7 +2174,7 @@
 <span class="sd">            weight). ``mask_col``, ``min_pix_region``, ``merge_dv``,</span>
 <span class="sd">            ``score_threshold``, ``bypass_scoring`` and ``debug_rating``</span>
 <span class="sd">            are of the first, ``criterion``, ``prefilter``, ``screen``,</span>
-<span class="sd">            ``max_group``, ``temper`` and ``refine`` of the second; with</span>
+<span class="sd">            ``max_group``, ``temper``, ``refine`` and ``sweep`` of the second; with</span>
 <span class="sd">            ``"hypotheses"``, ``multiplets`` also takes ``"all"`` (every</span>
 <span class="sd">            metal anchor), and the Ly-a only when ``Ly_a`` or ``Ly_ab`` is</span>
 <span class="sd">            asked (F51). Defaults to ``"doublets"``.</span>
@@ -2199,6 +2201,15 @@
 <span class="sd">            up to 3 components added where the residuals of its short fit</span>
 <span class="sd">            ask for them, while they lower the criterion (method</span>
 <span class="sd">            ``"hypotheses"``, F170). Defaults to ``True``.</span>
+<span class="sd">        sweep : str, optional</span>
+<span class="sd">            The sweep of the anchored systems (method ``"hypotheses"``,</span>
+<span class="sd">            phase 7, PR 7c.4d, :mod:`astrocook.fitting.hypotheses_sweep`):</span>
+<span class="sd">            the species with a line in the coverage tested at the redshift</span>
+<span class="sd">            of each metal system found by its pair, against the labels of</span>
+<span class="sd">            its pixels: ``"HI"`` (the H I), ``"all"`` (the H I and the other</span>
+<span class="sd">            common species: slow, and without a prior of the chance</span>
+<span class="sd">            coincidences it accepts false species in the forest, F174) or</span>
+<span class="sd">            ``"none"``. Defaults to ``"HI"``.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -2211,7 +2222,7 @@
             <span class="n">new_spec_v2</span> <span class="o">=</span> <span class="n">_identify_hypotheses</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">,</span> <span class="n">multiplet_list</span><span class="p">,</span> <span class="n">criterion</span><span class="o">=</span><span class="n">criterion</span><span class="p">,</span> <span class="n">prefilter</span><span class="o">=</span><span class="n">prefilter</span><span class="p">,</span>
                 <span class="n">screen</span><span class="o">=</span><span class="n">screen</span><span class="p">,</span> <span class="n">max_group</span><span class="o">=</span><span class="n">max_group</span><span class="p">,</span> <span class="n">temper</span><span class="o">=</span><span class="n">temper</span><span class="p">,</span> <span class="n">refine</span><span class="o">=</span><span class="n">refine</span><span class="p">,</span>
-                <span class="n">z_em_margin_kms</span><span class="o">=</span><span class="n">z_em_margin_kms</span><span class="p">)</span>
+                <span class="n">sweep</span><span class="o">=</span><span class="n">sweep</span><span class="p">,</span> <span class="n">z_em_margin_kms</span><span class="o">=</span><span class="n">z_em_margin_kms</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">_identification_extra</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="n">report</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">with_new_spectrum</span><span class="p">(</span><span class="n">new_spec_v2</span><span class="p">)</span>

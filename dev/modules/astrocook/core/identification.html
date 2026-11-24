@@ -654,7 +654,10 @@
 <span class="w">    </span><span class="sd">"""The number of pixels."""</span>
     <span class="n">criteria</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">"""Every information criterion computed (``"aic"``, ``"aicc"``,</span>
-<span class="sd">    ``"bic"``, ``"spic"`` (SpIC_H), ...), and the ``"score"`` of the pre-filter."""</span>
+<span class="sd">    ``"bic"``, ``"spic"`` (SpIC_H), ...), and the ``"score"`` of the</span>
+<span class="sd">    pre-filter; for a test of the sweep (PR 7c.4d) also those of the labels</span>
+<span class="sd">    it is compared with (``"labels_spic"``, ...) and the number of default</span>
+<span class="sd">    lines it replaced (``"replaced_lya"``, ``"replaced_unidentified"``)."""</span>
     <span class="n">anchors</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
 <span class="w">    </span><span class="sd">"""The edges of the group (their index in :attr:`Group.edges`) that</span>
 <span class="sd">    anchor it: none for the hypothesis of the default labels (PR 7c.4c)."""</span></div>
@@ -669,7 +672,12 @@
     <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">regions</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
     <span class="n">edges</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Edge</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
-    <span class="n">hypotheses</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Hypothesis</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span></div>
+    <span class="n">hypotheses</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Hypothesis</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+    <span class="n">anchored_on</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">"""The id of the group of the system whose sweep it records (phase 7,</span>
+<span class="sd">    PR 7c.4d: one species tested at the redshift of an accepted system, its</span>
+<span class="sd">    weight against the labels of its pixels); ``None`` for a group of the</span>
+<span class="sd">    first pass."""</span></div>
 
 
 
@@ -771,8 +779,10 @@
             <span class="n">maps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
         <span class="n">old</span><span class="p">,</span> <span class="n">new</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_remapped</span><span class="p">(</span><span class="n">maps</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">new</span><span class="o">.</span><span class="n">_remapped</span><span class="p">(</span><span class="n">maps</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
         <span class="n">n_groups</span> <span class="o">=</span> <span class="nb">max</span><span class="p">((</span><span class="n">g</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">old</span><span class="o">.</span><span class="n">groups</span><span class="p">),</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-        <span class="n">groups</span> <span class="o">=</span> <span class="n">old</span><span class="o">.</span><span class="n">groups</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">g</span><span class="o">.</span><span class="n">id</span> <span class="o">+</span> <span class="n">n_groups</span><span class="p">)</span>
-                                    <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">new</span><span class="o">.</span><span class="n">groups</span><span class="p">)</span>
+        <span class="n">groups</span> <span class="o">=</span> <span class="n">old</span><span class="o">.</span><span class="n">groups</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
+            <span class="n">g</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">g</span><span class="o">.</span><span class="n">id</span> <span class="o">+</span> <span class="n">n_groups</span><span class="p">,</span>
+            <span class="n">anchored_on</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">g</span><span class="o">.</span><span class="n">anchored_on</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">g</span><span class="o">.</span><span class="n">anchored_on</span> <span class="o">+</span> <span class="n">n_groups</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">new</span><span class="o">.</span><span class="n">groups</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
             <span class="n">new</span><span class="p">,</span> <span class="n">regions</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">old</span><span class="o">.</span><span class="n">regions</span> <span class="o">+</span> <span class="n">new</span><span class="o">.</span><span class="n">regions</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">r</span><span class="p">:</span> <span class="n">r</span><span class="o">.</span><span class="n">id</span><span class="p">)),</span>
             <span class="n">groups</span><span class="o">=</span><span class="n">groups</span><span class="p">,</span> <span class="n">dropped</span><span class="o">=</span><span class="n">old</span><span class="o">.</span><span class="n">dropped</span> <span class="o">+</span> <span class="n">new</span><span class="o">.</span><span class="n">dropped</span><span class="p">)</span></div>

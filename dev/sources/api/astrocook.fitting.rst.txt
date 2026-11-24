@@ -10,6 +10,7 @@ Submodules
    astrocook.fitting.bayesian_fitter
    astrocook.fitting.evaluation_window
    astrocook.fitting.hypotheses
+   astrocook.fitting.hypotheses_sweep
    astrocook.fitting.lsf
    astrocook.fitting.model_evaluation
    astrocook.fitting.voigt_fitter

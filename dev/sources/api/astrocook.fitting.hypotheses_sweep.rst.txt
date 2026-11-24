@@ -1,0 +1,7 @@
+astrocook.fitting.hypotheses\_sweep module
+==========================================
+
+.. automodule:: astrocook.fitting.hypotheses_sweep
+   :members:
+   :show-inheritance:
+   :undoc-members:
