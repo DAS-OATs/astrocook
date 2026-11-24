@@ -397,7 +397,8 @@ def chain_params(recipe):
         params["method"] = CHAIN["method"]
     if recipe == "identify_lines":
         params.update({k: str(v) for k, v in CHAIN.items()
-                       if k in ("multiplets", "prefilter", "screen", "criterion", "temper")})
+                       if k in ("multiplets", "prefilter", "screen", "criterion", "temper",
+                                "sweep")})
     elif "doublets_multiplets" in CHAIN:
         params["multiplets"] = CHAIN["doublets_multiplets"]
     return params
@@ -573,6 +574,155 @@ def hypothesis_calibration(truth, spec):
             out.append(dict(weight=float(h.weight), right=bool(not false and hits == target),
                             kind=kind, anchored=bool(h.anchors), status=str(h.status)))
     return out
+
+
+# --- The sweep of the anchored systems (PR 7c.4d) ------------------------
+
+#: How far from the redshift of a system a true component of a species is
+#: there, for the tests of the sweep that were not accepted (km/s): the
+#: spread of the components of a system (+-50 km/s) and their b
+SWEEP_PRESENT_KMS = 100.0
+
+
+def _shares_lines(a, b):
+    """Two series with a transition in common (``Ly_ab`` and the Lyman
+    series of the truth, ``FeII`` and a list of FeII lines)."""
+    from astrocook.core.atomic_data import series_lines
+    return bool(set(series_lines(a)) & set(series_lines(b)))
+
+
+def _sweep_test(h, truth):
+    """One test of the sweep against the truth."""
+    species, rest = h.label.split(" at z = ", 1)
+    z_sys = float(rest.split()[0])
+    own = [c for c in h.components
+           if (species == "HI") == c.series.startswith("Ly_ab") and
+           not (species != "HI" and c.series.startswith("Ly_"))]
+    series = own[0].series if own else None
+    true = [c for c in truth.components
+            if series is not None and _shares_lines(series, c.series)]
+    accepted = str(h.status) == "accepted"
+    return dict(species=species, accepted=accepted, status=str(h.status),
+                weight=float(h.weight or 0.0), z=z_sys,
+                present=bool(any(_dv(c.z, z_sys) <= SWEEP_PRESENT_KMS for c in true)),
+                right=bool(accepted and any(_dv(o.z, c.z) <= MATCH_KMS
+                                            for o in own for c in true)),
+                replaced_lya=int(h.criteria.get("replaced_lya", 0)),
+                replaced_unidentified=int(h.criteria.get("replaced_unidentified", 0)),
+                hi_z=[o.z for o in own] if species == "HI" and accepted else [])
+
+
+def sweep_metrics(truth, systems, spec):
+    """The tests of the sweep of the anchored systems (the groups of the
+    structure with ``anchored_on``), each against the truth: ``present``
+    when a true component that shares a line with its series is within
+    SWEEP_PRESENT_KMS of the system, ``right`` when it is accepted and one of
+    its components is within MATCH_KMS of such a component; the default
+    lines it replaced. And the H I of the metal systems of ``systems`` whose
+    Ly-a is in the window and which the identification found (a candidate of
+    their species within MATCH_KMS): their H I (the true Lyman component
+    nearest to the system, within SWEEP_PRESENT_KMS) found by an accepted
+    H I of the sweep within MATCH_KMS. None without the structure."""
+    from astrocook.core.identification import META_KEY
+    structure = spec.meta.get(META_KEY)
+    if structure is None or structure.method != "hypotheses":
+        return None
+    tests = [_sweep_test(g.hypotheses[0], truth) for g in structure.groups
+             if g.anchored_on is not None]
+    hi_z = [z for t in tests for z in t.pop("hi_z")]
+    cands = _candidates(spec)
+    lyman = [c for c in truth.components if _is_lyman(c.series.split(",")[0])]
+    hi = dict(n_covered=0, n_found=0)
+    for s in systems:
+        if LYA_NM * (1 + s["z"]) <= truth.lam_min_nm:
+            continue
+        if not any(sp == s["species"] and min(_dv(z, c.z) for c in s["components"]) <= MATCH_KMS
+                   for sp, z in cands):
+            continue
+        near = [c for c in lyman if _dv(c.z, s["z"]) <= SWEEP_PRESENT_KMS]
+        if not near:
+            continue
+        c_hi = min(near, key=lambda c: _dv(c.z, s["z"]))
+        hi["n_covered"] += 1
+        hi["n_found"] += any(_dv(z, c_hi.z) <= MATCH_KMS for z in hi_z)
+    return dict(tests=tests, hi=hi)
+
+
+class _Meta:
+    """A stand-in with the ``meta`` of a spectrum, for the metrics."""
+    def __init__(self, meta):
+        self.meta = meta
+
+
+def _without_sweep(spec):
+    """``spec`` (its ``meta``) without the candidate systems of the sweep
+    (the components of the accepted tests, groups with ``anchored_on``)."""
+    from astrocook.core.identification import META_KEY
+    structure = spec.meta.get(META_KEY)
+    out = {str(c.candidate) for g in structure.groups if g.anchored_on is not None
+           for h in g.hypotheses for c in h.components if c.candidate is not None}
+    meta = dict(spec.meta)
+    for key in ("series_map_json", "z_map_json"):
+        value = meta.get(key) or {}
+        value = json.loads(value) if isinstance(value, str) else dict(value)
+        meta[key] = json.dumps({k: v for k, v in value.items() if str(k) not in out})
+    return _Meta(meta)
+
+
+def sweep_summary(rows_by_record):
+    """Pool the tests of the sweep: per species the tests, those accepted,
+    right, with the species present; the purity of the rarer species (not
+    the H I) and of the H I; the H I of the metal systems; the default lines
+    replaced (by right and wrong tests); the calibration of the weights
+    (right: the species present). None without tests."""
+    recs = [r for r in rows_by_record if r]
+    if not recs:
+        return None
+    tests = [t for r in recs for t in r["tests"]]
+    by_species = {}
+    for t in tests:
+        d = by_species.setdefault(t["species"], dict(n=0, accepted=0, right=0, present=0,
+                                                     present_accepted=0))
+        d["n"] += 1
+        d["accepted"] += t["accepted"]
+        d["right"] += t["right"]
+        d["present"] += t["present"]
+        d["present_accepted"] += t["present"] and t["accepted"]
+
+    def purity(sel):
+        acc = [t for t in tests if t["accepted"] and sel(t)]
+        right = sum(t["right"] for t in acc)
+        return dict(n=len(acc), right=right, purity=right / len(acc) if acc else None)
+    hi = {k: sum(r["hi"][k] for r in recs) for k in ("n_covered", "n_found")}
+    hi["completeness"] = hi["n_found"] / hi["n_covered"] if hi["n_covered"] else None
+    replaced = {f"{k}_{ok}": sum(t[f"replaced_{k}"] for t in tests
+                                 if t["accepted"] and t["right"] == (ok == "right"))
+                for k in ("lya", "unidentified") for ok in ("right", "wrong")}
+    return dict(n_tests=len(tests), by_species=by_species,
+                rare=purity(lambda t: t["species"] != "HI"),
+                hi_tests=purity(lambda t: t["species"] == "HI"),
+                hi_of_systems=hi, replaced=replaced,
+                calibration=calibration_summary([dict(weight=t["weight"], right=t["present"])
+                                                 for t in tests]))
+
+
+def print_sweep(sw):
+    """Print :func:`sweep_summary`."""
+    if not sw:
+        return
+    fmt = (lambda v: "-" if v is None else f"{v:.3f}")
+    print(f"sweep: {sw['n_tests']} tests; rarer species accepted {sw['rare']['n']}, "
+          f"purity {fmt(sw['rare']['purity'])}; H I accepted {sw['hi_tests']['n']}, purity "
+          f"{fmt(sw['hi_tests']['purity'])}; H I of the metal systems "
+          f"{sw['hi_of_systems']['n_found']}/{sw['hi_of_systems']['n_covered']} "
+          f"({fmt(sw['hi_of_systems']['completeness'])}); default lines replaced "
+          f"{sw['replaced']}")
+    print("  by species (tests/accepted/right/present/present and accepted): " + ", ".join(
+        f"{k} {v['n']}/{v['accepted']}/{v['right']}/{v['present']}/{v['present_accepted']}"
+        for k, v in sorted(sw["by_species"].items())))
+    c = sw["calibration"]
+    if c:
+        print(f"  weights: ECE {c['ece']:.3f}, Brier {c['brier']:.3f}")
 
 
 def calibration_summary(rows):
@@ -1055,6 +1205,12 @@ def run_point(point):
         telluric_false=telluric_false(truth, tmap, candidates),
         pixels=pixel_metrics(truth, tmap, ident.spec, candidates))
     phase7["calibration"] = hypothesis_calibration(truth, ident.spec)
+    phase7["sweep"] = sweep_metrics(truth, systems, ident.spec)
+    if phase7["sweep"] is not None:
+        # The identification without the candidates the sweep added: the
+        # first pass is the same with and without it (PR 7c.4d)
+        phase7["identification_first"] = identification_metrics(
+            truth, systems, _without_sweep(ident.spec))
     times["metrics"] = time.time() - t0
     return dict(
         snr=snr, resol=resol, z_em=z_em, seed=seed, strong=strong, **extra,
@@ -1201,6 +1357,9 @@ def summarize_phase7(records):
                               for c in r["phase7"].get("calibration", [])])
     if cal:
         out["calibration"] = cal
+    sw = sweep_summary([r["phase7"].get("sweep") for r in records])
+    if sw:
+        out["sweep"] = sw
     return out
 
 
@@ -1401,6 +1560,7 @@ def print_phase7(summary):
             f"{o} {v:.3f}" for o, v in pixel_fractions(p7["pixels"][name]).items()
             if v is not None))
     print_calibration(p7.get("calibration"))
+    print_sweep(p7.get("sweep"))
     rates = p7["flag_confusion"]["rates"]
     print("flags (n, bad fraction, fraction of the bad): " + ", ".join(
         f"{k} ({r['n']}, {r['frac_bad']:.2f}, {r['frac_of_bad']:.2f})"
@@ -1445,8 +1605,13 @@ def main():
                         default=None,
                         help="the regions not split at their gaps (method hypotheses, "
                              "as PR 7c.4c)")
+    parser.add_argument("--sweep", choices=["HI", "all", "none"], default=None,
+                        help="the species of the sweep of the anchored systems (method "
+                             "hypotheses; default that of identify_lines, HI; 'none' as "
+                             "PR 7c.4c-bis)")
     args = parser.parse_args()
     set_chain(dict(method=args.method, multiplets=args.multiplets, max_added=args.max_added,
+                   sweep=args.sweep,
                    split_gaps=args.split_gaps,
                    doublets_multiplets=args.doublets_multiplets, prefilter=args.prefilter,
                    screen=args.screen, criterion=args.criterion, temper=args.temper))

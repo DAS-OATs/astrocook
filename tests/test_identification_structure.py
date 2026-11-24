@@ -151,11 +151,17 @@ def _full():
                        "", 0.03))
     group = Group(1, (1, 2), (Edge((1, 2), ("CIV_1548", "CIV_1550"), "CIV", 2.5,
                                    497.9, 0.9),), hyps)
+    # A test of the sweep of the anchored systems (PR 7c.4d)
+    swept = Group(2, (1, 3), (Edge((1, 3), ("CIV_1548", "AlII_1670"), "AlII_1670", 2.5),),
+                  (Hypothesis("AlII at z = 2.50000 (sweep of CIV)", (1, 3), (), Stage.FIT,
+                              Status.ACCEPTED, "spic -3.0", 0.82, anchors=(0,),
+                              criteria={"spic": 50.0, "replaced_unidentified": 1.0}),),
+                  anchored_on=1)
     return Identification("hypotheses", {"criterion": "spic"},
                           (Region(1, 541.0, 541.2, RegionKind.METAL, ("CIV_1548",), 5.2),
                            Region(2, 542.0, 542.2, RegionKind.METAL, ("CIV_1550",), 3.1),
                            Region(3, 400.0, 400.1, RegionKind.TELLURIC)),
-                          (group,),
+                          (group, swept),
                           (ident.DroppedCandidate("SiIV", 2.9, 0.3, 0.5, 530.0, 530.1),))
 
 
@@ -202,7 +208,8 @@ def test_merged_follows_merge_region_ids():
         Region(2, 7, 8, RegionKind.FOREST_ASSUMED, ("Ly_a",)),
         Region(3, 9.5, 9.6, RegionKind.UNIDENTIFIED)),
         (Group(1, (2,), (), (Hypothesis("Ly_a (assumed)", (2,), (), Stage.SCORE,
-                                        Status.ACCEPTED),)),))
+                                        Status.ACCEPTED),)),
+         Group(2, (2,), (), (), anchored_on=1)))
     final_ids, _ = merge_region_ids(old_ids, {}, new_ids, {})
     merged = old.merged(new, int(old_ids.max()), np.unique(old_ids), np.unique(new_ids))
     ids = [r.id for r in merged.regions]
@@ -213,6 +220,9 @@ def test_merged_follows_merge_region_ids():
         assert int(rid) in by_id
     assert by_id[4].x_min == 7  # region 2 of the new run, shifted by 2
     assert merged.groups[1].regions == (4,) and merged.groups[1].id == 2
+    # A group of the sweep follows the group it was anchored on (PR 7c.4d)
+    assert merged.groups[2].id == 3 and merged.groups[2].anchored_on == 2
+    assert merged.groups[0].anchored_on is None
     assert merged.groups[0].edges[0].regions == (1, 2)
     # The unlabelled regions are numbered past the others
     assert sorted(r.id for r in merged.regions if r.kind == RegionKind.UNIDENTIFIED) == [5, 6]
