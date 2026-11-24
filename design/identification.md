@@ -333,11 +333,16 @@ metal system (its lines in the forest).
 
 *As implemented in PR 7c.4d* (`astrocook/fitting/hypotheses_sweep.py`;
 what changed from the text above, found on the mocks):
-- the species: by default the common ones (`SWEEP_DEFAULT`: H I, CIV,
-  SiIV, MgII, NV, OVI, AlIII, CII, CIII, SiII, SiIII, OI, AlII, FeII, MgI),
-  the ions of the damped systems (NI, SII, NiII, CrII, ZnII, MnII) in the
-  table, not swept by default (half the false species and half the time
-  on the mocks with rich systems); CII and SiII as their ground-state
+- the species: by default the H I alone (`sweep="HI"`, Guido, 24 November
+  2026); with `sweep="all"` the common ones (`SWEEP_ALL`: H I, CIV, SiIV,
+  MgII, NV, OVI, AlIII, CII, CIII, SiII, SiIII, OI, AlII, FeII, MgI). On
+  the grid full, whose mocks have no other ion, "all" accepted 380 rarer
+  species, all false, 314 of them with every line in the forest (a line of
+  the forest fits as CII or SiIII as well as Ly-a: no prior, F174), and
+  took the median time to identify from 4 s to 110 s. The ions of the
+  damped systems (NI, SII, NiII, CrII, ZnII, MnII) are in the table, not in
+  `SWEEP_ALL` (half the false species and half the time on the mocks with
+  rich systems); CII and SiII as their ground-state
   lines (F173); only the systems of the metal anchors, not those of the
   Ly-a/Ly-b pairs (the metals of the forest off by default, decision 2);
 - the H I one component at the column-weighted redshift of the anchor,
