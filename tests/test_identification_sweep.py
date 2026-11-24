@@ -43,7 +43,7 @@ def _rich(with_ions=True):
 
 @pytest.fixture(scope="module")
 def rich():
-    return H.identify_hypotheses(_rich(), ["CIV", "SiIV", "MgII", "Ly_a"]).spectrum
+    return H.identify_hypotheses(_rich(), ["CIV", "SiIV", "MgII", "Ly_a"], sweep="all").spectrum
 
 
 def _systems(spec):
@@ -124,16 +124,27 @@ def test_the_structure_of_the_sweep(rich):
 
 
 def test_without_the_ions_nothing_is_added():
-    spec = H.identify_hypotheses(_rich(with_ions=False), ["CIV", "SiIV", "MgII", "Ly_a"]).spectrum
+    spec = H.identify_hypotheses(_rich(with_ions=False), ["CIV", "SiIV", "MgII", "Ly_a"],
+                                 sweep="all").spectrum
     added = {s for s, z, _ in _systems(spec) if not s.startswith("Ly_") and s != "CIV"}
     assert not added
 
 
+def test_the_sweep_is_the_h_i_by_default():
+    # The rarer species only with sweep="all" (F174: false in the forest)
+    spec = H.identify_hypotheses(_rich(), ["CIV", "SiIV", "MgII", "Ly_a"]).spectrum
+    assert spec.meta[ident.META_KEY].params["sweep"] == "HI"
+    tested = {g.hypotheses[0].label.split()[0] for g in _sweep_groups(spec)}
+    assert tested == {"HI"}
+    assert {s for s, _, _ in _systems(spec)} <= {"CIV", "Ly_a", "Ly_ab"}
+    assert S.SWEEP_CHOICES["HI"] == ("HI",)
+
+
 def test_the_sweep_is_an_option():
     spec = _rich()
-    off = H.identify_hypotheses(spec, ["CIV", "SiIV", "MgII", "Ly_a"], sweep=False).spectrum
+    off = H.identify_hypotheses(spec, ["CIV", "SiIV", "MgII", "Ly_a"], sweep="none").spectrum
     st = off.meta[ident.META_KEY]
-    assert st.params["sweep"] is False
+    assert st.params["sweep"] == "none"
     assert not _sweep_groups(off)
     assert {s for s, _, _ in _systems(off)} == {"CIV", "Ly_a"}
 
@@ -141,8 +152,13 @@ def test_the_sweep_is_an_option():
 def test_the_recipe_takes_sweep():
     session = Session("mock", None, spec=_rich())
     out = session.absorbers.identify_lines(multiplets="CIV,Ly_a", method="hypotheses",
-                                           sweep=False)
-    assert out.spec.meta[ident.META_KEY].params["sweep"] is False
+                                           sweep="none")
+    assert out.spec.meta[ident.META_KEY].params["sweep"] == "none"
+
+
+def test_an_unknown_sweep_is_refused():
+    with pytest.raises(ValueError, match="Unknown sweep"):
+        H.identify_hypotheses(_rich(), ["CIV", "Ly_a"], sweep="SiII")
 
 
 def test_the_species_of_the_sweep_are_known():
@@ -160,7 +176,8 @@ def test_the_sweep_stays_in_the_range_of_the_regions():
     # pipeline), no line of the forest is tested: its pixels have no
     # regions. The H I and SiIII of the system have their lines there only
     spec = _rich()
-    out = H.identify_hypotheses(spec, ["CIV", "Ly_a"], x_range=(486.5, LAM[1])).spectrum
+    out = H.identify_hypotheses(spec, ["CIV", "Ly_a"], x_range=(486.5, LAM[1]),
+                                sweep="all").spectrum
     tested = {g.hypotheses[0].label.split()[0] for g in _sweep_groups(out)}
     assert not tested & {"HI", "SiIII"}
     found = {s for s, z, _ in _systems(out) if _dv(z, Z_SYS) < 50}

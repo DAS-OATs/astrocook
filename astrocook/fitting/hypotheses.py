@@ -52,9 +52,10 @@ the assumed Ly-a has no Ly-b in its model (a Ly-b is modelled only by a
 Ly-a/Ly-b hypothesis, anchored by its edge); the tellurics (7c.5) and the
 prior of the incidence are not in the prototype.
 
-7. *Sweep* (PR 7c.4d, ``sweep``, on by default): the other species and the
-   H I tested at the redshift of each accepted metal system, against the
-   labels of their pixels (:mod:`astrocook.fitting.hypotheses_sweep`); each
+7. *Sweep* (PR 7c.4d, ``sweep``, the H I alone by default, the other
+   species with ``sweep="all"``): the H I and the other species tested at
+   the redshift of each accepted metal system, against the labels of their
+   pixels (:mod:`astrocook.fitting.hypotheses_sweep`); each
    test a group of its own in the structure (``anchored_on``).
 """
 from __future__ import annotations
@@ -1004,7 +1005,7 @@ def identify_hypotheses(spec: Spectrum, multiplets: Sequence[str],
                         fixed: Optional[SystemList] = None,
                         criterion: str = "spic", prefilter: float = PREFILTER_R2,
                         screen: Optional[float] = SCREEN_DELTA, max_group: int = MAX_GROUP,
-                        temper: bool = False, refine: bool = True, sweep: bool = True,
+                        temper: bool = False, refine: bool = True, sweep: str = "HI",
                         z_em_margin_kms: float = 3000.0,
                         x_range: Optional[Tuple[float, float]] = None,
                         params: Optional[Mapping[str, Any]] = None) -> HypothesesResult:
@@ -1035,10 +1036,12 @@ def identify_hypotheses(spec: Spectrum, multiplets: Sequence[str],
     refine : bool
         The refinement of the finalists by their residuals (:func:`_refine`,
         F170).
-    sweep : bool
+    sweep : str
         The sweep of the anchored systems (PR 7c.4d,
-        :mod:`astrocook.fitting.hypotheses_sweep`): the other species and the
-        H I at the redshift of each accepted metal system.
+        :mod:`astrocook.fitting.hypotheses_sweep`) at the redshift of each
+        accepted metal system: ``"HI"`` (the H I, the default), ``"all"``
+        (the H I and the other species of ``SWEEP_ALL``) or ``"none"``
+        (:data:`~astrocook.fitting.hypotheses_sweep.SWEEP_CHOICES`).
     z_em_margin_kms : float
         No system beyond ``z_em`` by more than this (F55).
     x_range : (float, float), optional
@@ -1050,11 +1053,15 @@ def identify_hypotheses(spec: Spectrum, multiplets: Sequence[str],
     ------
     ValueError
         Without ``z_em``, a continuum or the resolution, for an unknown
-        criterion or species.
+        criterion, species or choice of the sweep.
     """
     t0 = time.perf_counter()
     if criterion not in CRITERIA:
         raise ValueError(f"Unknown criterion '{criterion}': one of {', '.join(CRITERIA)}.")
+    from astrocook.fitting.hypotheses_sweep import SWEEP_CHOICES
+    if sweep not in SWEEP_CHOICES:
+        raise ValueError(f"Unknown sweep '{sweep}': one of {', '.join(SWEEP_CHOICES)}.")
+    sweep_species = SWEEP_CHOICES[sweep]
     z_em = spec._data.z_em
     if not z_em:
         raise ValueError("z_em must be set before running identify_lines.")
@@ -1089,9 +1096,10 @@ def identify_hypotheses(spec: Spectrum, multiplets: Sequence[str],
     results = [_evaluate_group(ctx, [by_id[i] for i in g_ids], g_edges, v, flux, err, fwhm)
                for g_ids, g_edges in groups]
     swept = None
-    if sweep:
+    if sweep_species:
         from astrocook.fitting.hypotheses_sweep import sweep as run_sweep
-        swept = run_sweep(ctx, results, {c.index: c for c in all_cands}, v, flux, err, fwhm)
+        swept = run_sweep(ctx, results, {c.index: c for c in all_cands}, v, flux, err, fwhm,
+                          species=sweep_species)
     seconds = time.perf_counter() - t0
     run_params = dict(params or {})
     run_params.update(multiplets=list(multiplets), criterion=criterion, prefilter=prefilter,
@@ -1128,6 +1136,9 @@ def _output(spec: Spectrum, x_nm: np.ndarray, regions: List[_Region], labels: np
     by_cand = {c.index: c for c in cands}
     by_id = {r.id: r for r in regions}
     replaced = swept.replaced if swept is not None else set()
+    # The values of the maps: those after the sweep (its accepted tests fit
+    # the default components around their lines again)
+    values = swept.values if swept is not None else {}
     series_map: Dict[int, str] = {}
     z_map: Dict[int, float] = {}
     logn_map: Dict[int, float] = {}
@@ -1151,10 +1162,11 @@ def _output(spec: Spectrum, x_nm: np.ndarray, regions: List[_Region], labels: np
                 sid = None
                 if is_acc and c.role != "unidentified" and sc.uuid not in replaced:
                     sid = len(series_map) + 1
+                    now = values.get(sc.uuid, sc)
                     series_map[sid] = c.series
-                    z_map[sid] = float(sc.z)
-                    logn_map[sid] = float(sc.logN)
-                    b_map[sid] = float(sc.b)
+                    z_map[sid] = float(now.z)
+                    logn_map[sid] = float(now.logN)
+                    b_map[sid] = float(now.b)
                     region_map[sid] = c.region
                     score_map[sid] = float(h.weight) if c.role == "anchor" and h.weight else 0.0
                 s_comps.append(ident.Component(

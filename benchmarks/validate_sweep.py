@@ -26,7 +26,7 @@ rich systems (a true ion of a system found by an accepted test).
 Not a test: run it by hand. Usage::
 
     python benchmarks/validate_sweep.py [--workers N] [--json out.json]
-        [--no-sweep]
+        [--sweep HI|all|none]
 """
 import argparse
 import dataclasses
@@ -170,7 +170,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--workers", type=int, default=1)
     parser.add_argument("--json", help="write the records and the summary here")
-    parser.add_argument("--no-sweep", dest="sweep", action="store_false", default=None)
+    parser.add_argument("--sweep", choices=["HI", "all", "none"], default="all",
+                        help="the species of the sweep (default all: the rarer species "
+                             "are what these mocks measure)")
     parser.add_argument("--multiplets", default="CIV,SiIV,MgII,Ly_ab",
                         help="the species of identify_lines")
     args = parser.parse_args()

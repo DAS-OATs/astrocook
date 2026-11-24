@@ -1605,8 +1605,9 @@ def main():
                         default=None,
                         help="the regions not split at their gaps (method hypotheses, "
                              "as PR 7c.4c)")
-    parser.add_argument("--no-sweep", dest="sweep", action="store_false", default=None,
-                        help="no sweep of the anchored systems (method hypotheses, as "
+    parser.add_argument("--sweep", choices=["HI", "all", "none"], default=None,
+                        help="the species of the sweep of the anchored systems (method "
+                             "hypotheses; default that of identify_lines, HI; 'none' as "
                              "PR 7c.4c-bis)")
     args = parser.parse_args()
     set_chain(dict(method=args.method, multiplets=args.multiplets, max_added=args.max_added,

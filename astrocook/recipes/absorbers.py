@@ -403,7 +403,7 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "max_group", "type": int, "default": MAX_GROUP, "min": 2, "doc": "Method 'hypotheses': the largest group of regions compared together; a larger one is split at its weakest pairs."},
             {"name": "temper", "type": bool, "default": False, "doc": "Method 'hypotheses': the differences of the criterion divided by the reduced chi2 of the accepted model, when above 1 (an error spectrum not calibrated)."},
             {"name": "refine", "type": bool, "default": True, "doc": "Method 'hypotheses': each alternative refined before the comparison, with up to 3 components added where its residuals ask for them, while they lower the criterion."},
-            {"name": "sweep", "type": bool, "default": True, "doc": "Method 'hypotheses': after the pairs, every other species (and the H I) tested at the redshift of each metal system found, accepted where it does not raise the criterion."},
+            {"name": "sweep", "type": str, "default": "HI", "choices": ["HI", "all", "none"], "doc": "Method 'hypotheses': after the pairs, the H I ('HI') or the H I and the other common species ('all') tested at the redshift of each metal system found, accepted where they do not raise the criterion; 'all' is slow and accepts false species in the forest."},
         ],
     },
     "populate_from_identification": {
@@ -1639,7 +1639,7 @@ class RecipeAbsorbers:
                        max_group: int = MAX_GROUP,
                        temper: bool = False,
                        refine: bool = True,
-                       sweep: bool = True) -> 'Session':
+                       sweep: str = "HI") -> 'Session':
         """
         Identify likely absorption systems.
 
@@ -1703,13 +1703,15 @@ class RecipeAbsorbers:
             up to 3 components added where the residuals of its short fit
             ask for them, while they lower the criterion (method
             ``"hypotheses"``, F170). Defaults to ``True``.
-        sweep : bool, optional
+        sweep : str, optional
             The sweep of the anchored systems (method ``"hypotheses"``,
             phase 7, PR 7c.4d, :mod:`astrocook.fitting.hypotheses_sweep`):
-            every other species of the table with a line in the coverage,
-            and the H I, tested at the redshift of each metal system found
-            by its pair, against the labels of its pixels. Defaults to
-            ``True``.
+            the species with a line in the coverage tested at the redshift
+            of each metal system found by its pair, against the labels of
+            its pixels: ``"HI"`` (the H I), ``"all"`` (the H I and the other
+            common species: slow, and without a prior of the chance
+            coincidences it accepts false species in the forest, F174) or
+            ``"none"``. Defaults to ``"HI"``.
 
         Returns
         -------

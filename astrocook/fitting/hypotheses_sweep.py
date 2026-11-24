@@ -92,7 +92,7 @@ SWEEP_SPECIES: Dict[str, str] = {
     "ZnII": "ZnII",
     "MnII": "MnII",
 }
-#: The species swept by default: those common in the absorbers of the
+#: The species of ``sweep="all"``: those common in the absorbers of the
 #: forest and the red side (the H I, the high ions, the low ions of the
 #: design, section 3.5, FeII and MgI). Left out, and in SWEEP_SPECIES for
 #: :func:`sweep` with ``species``: NI, SII, NiII, CrII, ZnII, MnII, the
@@ -101,8 +101,17 @@ SWEEP_SPECIES: Dict[str, str] = {
 #: them has these ions) they made 40 of the 80 false species accepted
 #: and half the time of the sweep: tests of many lines with many
 #: neighbours, minutes each (PR 7c.4d; to decide with Guido)
-SWEEP_DEFAULT: Tuple[str, ...] = ("HI", "CIV", "SiIV", "MgII", "NV", "OVI", "AlIII", "CII",
-                                  "CIII", "SiII", "SiIII", "OI", "AlII", "FeII", "MgI")
+SWEEP_ALL: Tuple[str, ...] = ("HI", "CIV", "SiIV", "MgII", "NV", "OVI", "AlIII", "CII",
+                              "CIII", "SiII", "SiIII", "OI", "AlII", "FeII", "MgI")
+#: The choices of the option ``sweep`` of ``identify_lines``: the species
+#: tested. The default is the H I alone (Guido, 24 November 2026): on the
+#: grid full of ``validate_mocks.py`` (no ion but CIV, SiIV, MgII and the
+#: H I in the mocks) "all" accepted 380 rarer species, all false (314 of
+#: them with every line in the forest: without a prior of the chance
+#: coincidences a line of the forest fits as well as CII or SiIII, F174),
+#: took the purity of SiIV from 0.96 to 0.88 and the median time of the
+#: identification from 4 s to 110 s; the H I had purity 0.96 (PR 7c.4d)
+SWEEP_CHOICES: Dict[str, Tuple[str, ...]] = {"HI": ("HI",), "all": SWEEP_ALL, "none": ()}
 #: The species of an anchor (``ANCHOR_PAIRS``, ``Ly_ab``) as a species of
 #: the sweep: the anchor's own is not swept
 _ANCHOR_SPECIES = {"Ly_ab": "HI"}
@@ -173,6 +182,9 @@ class SweepResult:
     n_skipped: int
     """The species with a line in the coverage and nothing at their lines."""
     seconds: float = 0.0
+    values: Dict[str, ComponentData] = dataclasses.field(default_factory=dict)
+    """The accepted components at the end of the sweep, by uuid: the
+    neighbours of an accepted test were fitted again with it."""
 
 
 @dataclasses.dataclass
@@ -571,7 +583,7 @@ def _decide(ctx: H._Context, model: _Model, test: SweepTest, gone: Sequence[str]
 
 def sweep(ctx: H._Context, results: Sequence[H.GroupResult], cands: Mapping[int, H._Candidate],
           v: np.ndarray, flux: np.ndarray, err: np.ndarray, fwhm: np.ndarray,
-          species: Sequence[str] = SWEEP_DEFAULT) -> SweepResult:
+          species: Sequence[str] = SWEEP_CHOICES["HI"]) -> SweepResult:
     """The sweep of the metal systems of ``results`` (see the module), with
     the ``species`` of :data:`SWEEP_SPECIES`."""
     import time
@@ -598,7 +610,7 @@ def sweep(ctx: H._Context, results: Sequence[H.GroupResult], cands: Mapping[int,
     logger.info(f"Sweep of the anchored systems: {len(tests)} species compared "
                 f"({skipped} with nothing at their lines), {n_acc} accepted, "
                 f"{len(replaced)} default lines replaced, in {seconds:.1f} s.")
-    return SweepResult(tests, replaced, skipped, seconds)
+    return SweepResult(tests, replaced, skipped, seconds, dict(model.comps))
 
 
 def structure(test: SweepTest, cands: Mapping[int, H._Candidate], gid: int,
