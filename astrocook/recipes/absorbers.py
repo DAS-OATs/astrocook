@@ -2781,7 +2781,8 @@ class RecipeAbsorbers:
                 with local_systs.fitting_context(target_uuids, group_depth=FIT_EXPANSION_DEPTH,
                                                  spec=current_session.spec):
                     new_local_systs, _, res = fitter.fit(max_nfev=max_nfev_i, z_window_kms=z_win_f, verbose=0,
-                                                                 b_max=b_max_f, logN_max=logN_max_f)
+                                                         b_max=b_max_f, logN_max=logN_max_f,
+                                                         model=False)
                     
                 for fitted_comp in new_local_systs.components:
                     if fitted_comp.uuid in target_uuids:
