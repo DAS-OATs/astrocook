@@ -8,7 +8,7 @@ from scipy import sparse
 import dataclasses
 import logging
 import numpy as np
-from typing import List, Literal, Tuple, Dict, Any, Optional, overload
+from typing import List, Literal, Tuple, Dict, Any, Optional, Union, overload
 
 from astrocook.core.atomic_data import ATOM_DATA, STANDARD_MULTIPLETS, is_multiplet, series_lines
 from astrocook.fitting.lsf import PixelLSF
@@ -290,6 +290,9 @@ class VoigtFitter:
         self._active_fit_components: Optional[List[Tuple[int, ComponentData]]] = None
         self._active_lines_data: Any = None
         self._link_input_cache: Optional[List[int]] = None
+        #: The model of the whole spectrum only on some pixels (F167): their
+        #: indices and the fine samples (start, stop) they take
+        self._model_pixels: Optional[Tuple[np.ndarray, int, int]] = None
 
 
     def _compute_tau_component(self, comp: ComponentData, z: float, logN: float, b: float, btur: float) -> np.ndarray:
@@ -609,7 +612,7 @@ class VoigtFitter:
         Used at the end of the automatic pipelines: ``refit_all`` fits each
         group while its neighbours still have their initial values, so the
         chi2 of that fit is not the chi2 of the final model (issue #534).
-        One numerical Jacobian is computed at the current parameters.
+        One Jacobian (analytic) is computed at the current parameters.
 
         Returns
         -------
@@ -620,12 +623,19 @@ class VoigtFitter:
         lower, upper = self.prepare_fit_context(z_window_kms=z_window_kms)
         p0 = np.clip(self._constraints.p_free_vector, lower, upper)
         r0 = self._residual_function(p0)
-        jac = np.empty((len(r0), len(p0)))
-        for k in range(len(p0)):
-            h = 1e-6 * max(1.0, abs(p0[k]))
-            step = h if p0[k] + h <= upper[k] else -h
-            p = p0.copy(); p[k] += step
-            jac[:, k] = (self._residual_function(p) - r0) / step
+        if self._active_lines_data:
+            # The analytic Jacobian, as the fit (phase 7, PR 7c.4d-bis):
+            # before, forward differences with a step of 1e-6 of the
+            # parameter (in z about 0.3 km/s at z = 3), which moved the
+            # errors by up to about 1% from those of the fit
+            jac = self._jacobian(p0)
+        else:
+            jac = np.empty((len(r0), len(p0)))
+            for k in range(len(p0)):
+                h = 1e-6 * max(1.0, abs(p0[k]))
+                step = h if p0[k] + h <= upper[k] else -h
+                p = p0.copy(); p[k] += step
+                jac[:, k] = (self._residual_function(p) - r0) / step
         self._active_fit_components = None
         self._active_lines_data = None
         try:
@@ -1083,7 +1093,8 @@ class VoigtFitter:
     @overload
     def fit(self, max_nfev: int = ..., method: str = ..., z_window_kms: float = ...,
             verbose: int = ..., b_max: Optional[float] = ..., logN_max: Optional[float] = ...,
-            jac: str = ..., model: Literal[True] = ...) -> Tuple[SystemList, np.ndarray, Any]: ...
+            jac: str = ..., model: Literal[True, 'fit_pixels'] = ...
+            ) -> Tuple[SystemList, np.ndarray, Any]: ...
 
     @overload
     def fit(self, max_nfev: int = ..., method: str = ..., z_window_kms: float = ...,
@@ -1094,7 +1105,7 @@ class VoigtFitter:
             z_window_kms: float = 20.0, verbose: int = 0,
             b_max: Optional[float] = None,
             logN_max: Optional[float] = None, jac: str = 'analytic',
-            model: bool = True) -> Tuple[SystemList, Optional[np.ndarray], Any]:
+            model: Union[bool, str] = True) -> Tuple[SystemList, Optional[np.ndarray], Any]:
         """
         Execute the Voigt profile optimization.
 
@@ -1136,7 +1147,9 @@ class VoigtFitter:
             (the default). ``False`` for a caller that only needs the fitted
             list: the model is not computed and ``None`` is returned in its
             place (F167: on a long spectrum with many components it cost
-            most of a short fit).
+            most of a short fit). ``'fit_pixels'``: the model only on the
+            pixels of the fit (those of :meth:`chi2_on_fit_pixels`), NaN
+            elsewhere, the same numbers there.
 
         Returns
         -------
@@ -1318,13 +1331,17 @@ class VoigtFitter:
         else:
              self._resol_calc = None
         self._set_lsf(slice(None), cache=False)
-             
+        if isinstance(model, str):
+            self._restrict_model(self._fit_mask)
+
         # This will now loop over ALL components because active_uuids is None
-        final_model_norm = self._compute_model(res.x)
-        
-        # Restore state (good practice)
-        self._constraints._active_uuids = stored_active_uuids
-        self._x_calc, self._resol_calc, self._x_tau, self._lsf = saved
+        try:
+            final_model_norm = self._compute_model(res.x)
+        finally:
+            # Restore state (good practice)
+            self._model_pixels = None
+            self._constraints._active_uuids = stored_active_uuids
+            self._x_calc, self._resol_calc, self._x_tau, self._lsf = saved
         
         final_model_flux = final_model_norm * self._norm
 
@@ -1340,6 +1357,11 @@ class VoigtFitter:
         (``metals_auto``, F111) and the evaluation of a model (F154, phase 7,
         PR 7a.5)."""
         return (self._y_norm[mask] - model_flux[mask] / self._norm[mask]) / self._dy_norm[mask]
+
+    @property
+    def fit_mask(self) -> np.ndarray:
+        """The pixels of the last fit (on the whole spectrum)."""
+        return self._fit_mask
 
     @property
     def valid_mask(self) -> np.ndarray:
@@ -1384,6 +1406,11 @@ class VoigtFitter:
         resolution ``res_key`` and averaged over the pixels (#526)."""
         res_val, res_unit = res_key
         flux_fine = np.exp(-tau_arr)
+        pix = None
+        if self._model_pixels is not None:
+            pix, j0, j1 = self._model_pixels
+            flux_fine = np.ones(len(self._lsf.x_fine))
+            flux_fine[j0:j1] = np.exp(-tau_arr)
         r: Any
         key: Any
         if res_unit == 'column' and self._resol_calc is not None:
@@ -1392,14 +1419,29 @@ class VoigtFitter:
             r, key = res_val, res_val
         else:
             r, key = None, 'none'
-        return self._lsf.apply(flux_fine, r, key=key)
+        return self._lsf.apply(flux_fine, r, key=key, pixels=pix)
 
-    def compute_model_flux(self) -> Tuple[np.ndarray, np.ndarray]:
+    def _restrict_model(self, pixels: np.ndarray) -> None:
+        """Compute the model of the whole spectrum (set up by
+        ``_set_lsf(slice(None), cache=False)``) only on the pixels
+        ``pixels`` (a mask), the others NaN (F167): the optical depth only
+        on the fine samples they take, the same samples of the whole grid,
+        so the same numbers (up to the order of the sums)."""
+        pix = np.flatnonzero(pixels)
+        j0, j1 = self._lsf.fine_range(pix)
+        self._x_tau = self._lsf.x_fine[j0:j1]
+        self._model_pixels = (pix, j0, j1)
+
+    def compute_model_flux(self, pixels: Optional[np.ndarray] = None
+                           ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Compute the model flux for the current parameters.
 
         Calculates the Voigt profile model based on the current state of the
-        system list, without performing any fitting/optimization.
+        system list, without performing any fitting/optimization. With
+        ``pixels`` (a boolean mask on the spectrum), only on those pixels,
+        NaN elsewhere: the same numbers on them, for a caller that needs no
+        more (F167, ``metals_auto``).
 
         Returns
         -------
@@ -1418,15 +1460,19 @@ class VoigtFitter:
         else:
              self._resol_calc = None
         self._set_lsf(slice(None), cache=False)
+        if pixels is not None:
+            self._restrict_model(pixels)
 
         # Reset caches to force Case B (Standard Loop) in _compute_model
         self._cached_tau_groups = {}
         self._active_lines_data = None 
         
-        y_model_norm = self._compute_model(p_current_free)
-        
-        # Restore context
-        self._x_calc, self._resol_calc, self._x_tau, self._lsf = saved
+        try:
+            y_model_norm = self._compute_model(p_current_free)
+        finally:
+            # Restore context
+            self._model_pixels = None
+            self._x_calc, self._resol_calc, self._x_tau, self._lsf = saved
         
         y_model_phys = y_model_norm * self._norm
         return self._x_ang, y_model_phys

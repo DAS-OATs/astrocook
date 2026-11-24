@@ -208,3 +208,44 @@ def test_without_the_model_the_fit_is_the_same():
     assert none is None and model is not None
     assert with_model.components == without.components
     np.testing.assert_array_equal(model, VoigtFitter(spec, with_model).compute_model_flux()[1])
+
+
+def _forest_spec(resol, n=60, seed=4):
+    rng = np.random.default_rng(seed)
+    comps = [MockComponent("Ly_a", lam / LYA - 1, rng.uniform(12.8, 14.5), rng.uniform(15, 35))
+             for lam in rng.uniform(4560.0, 4680.0, n)]
+    comps.append(MockComponent("Ly_a", 4600.0 / LYA - 1, 20.3, 20.0))
+    systs = _empty()
+    for c in comps:
+        systs = systs.add_component("Ly_a", c.z, logN=c.logN, b=c.b)
+    return _spec(resol, comps), systs
+
+
+@pytest.mark.parametrize("resol", [45000.0, 8900.0, None])
+def test_the_model_on_some_pixels_is_that_of_the_whole_spectrum(resol):
+    # F167: metals_auto compares two models on the pixels of a fit only
+    spec, systs = _forest_spec(resol)
+    whole = VoigtFitter(spec, systs).compute_model_flux()[1]
+    pixels = np.zeros(len(whole), dtype=bool)
+    pixels[300:420] = True
+    pixels[900:905] = True
+    part = VoigtFitter(spec, systs).compute_model_flux(pixels=pixels)[1]
+    assert np.all(np.isnan(part[~pixels]))
+    np.testing.assert_allclose(part[pixels], whole[pixels], rtol=1e-13, atol=0)
+
+
+def test_the_model_on_the_pixels_of_the_fit_is_that_of_the_fit():
+    spec, systs = _forest_spec(45000.0)
+    target = [systs.components[5].uuid]
+    with systs.fitting_context(target, group_depth=0):
+        fitter = VoigtFitter(spec, systs)
+        _, whole, _ = fitter.fit(max_nfev=50)
+    with systs.fitting_context(target, group_depth=0):
+        fitter_p = VoigtFitter(spec, systs)
+        _, part, _ = fitter_p.fit(max_nfev=50, model="fit_pixels")
+    mask = fitter_p.fit_mask
+    assert np.array_equal(mask, fitter.fit_mask)
+    assert np.all(np.isnan(part[~mask]))
+    np.testing.assert_allclose(part[mask], whole[mask], rtol=1e-13, atol=0)
+    assert fitter_p.chi2_on_fit_pixels(part)[0] == pytest.approx(
+        fitter.chi2_on_fit_pixels(whole)[0], rel=1e-12)

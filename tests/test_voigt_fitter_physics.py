@@ -172,12 +172,14 @@ def test_nan_uncertainties_are_reported(monkeypatch, caplog):
 
 def test_evaluate_uncertainties_matches_the_fit():
     # Issue #534: errors recomputed at fixed parameters (used at the end of
-    # the pipelines) are those of the fit when nothing has changed
+    # the pipelines) are those of the fit when nothing has changed. The same
+    # analytic Jacobian since PR 7c.4d-bis of phase 7 (before, forward
+    # differences, within 7e-5 of the fit here, and 1e-3 was the tolerance)
     spec = _mock(snr=50.0, b=20.0)
     fitted, _, _ = VoigtFitter(spec, _systs(b=18.0, logN=13.5)).fit(
         max_nfev=2000, z_window_kms=20.0)
     evaluated = VoigtFitter(spec, fitted).evaluate_uncertainties(20.0)
     a, b = fitted.components[0], evaluated.components[0]
     for key in ("dz", "dlogN", "db", "chi2"):
-        assert getattr(b, key) == pytest.approx(getattr(a, key), rel=1e-3), key
+        assert getattr(b, key) == pytest.approx(getattr(a, key), rel=1e-9), key
     assert (b.z, b.logN, b.b) == (a.z, a.logN, a.b)
