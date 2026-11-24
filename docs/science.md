@@ -7,5 +7,6 @@ the results can be trusted.
 :maxdepth: 1
 
 atomic_data
+voigt_model
 accuracy
 ```
