@@ -62,8 +62,10 @@ Astrocook is installed:
 - **pip install** (Linux, Windows, macOS from source): the dialog shows the
   `pip install -U ...` command, with a *Copy* button; run it yourself in the
   same environment. Astrocook never runs `pip` on its own.
-- **git checkout or editable install**: the dialog only says that a new
-  version exists; update with `git pull`.
+- **git checkout or editable install**: nothing is compared (a checkout of
+  the development branch has no meaningful version number) and nothing is
+  asked of the network: the dialog shows the version and the commit and says
+  to update with `git pull`. The check at start-up skips these installs.
 
 If there is no network connection the dialog says so and nothing else
 happens. The check at start-up is off unless you turn it on in

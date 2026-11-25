@@ -114,6 +114,20 @@ def install_kind(frozen: Optional[bool] = None, platform: Optional[str] = None,
     return "pip"
 
 
+def git_commit(package_dir: Optional[Path] = None) -> Optional[str]:
+    """The short hash of the commit of a git checkout, or ``None`` when it
+    cannot be read (no git, not a repository, any error)."""
+    import subprocess
+    if package_dir is None:
+        package_dir = Path(__file__).resolve().parent.parent
+    try:
+        out = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=package_dir.parent,
+                             capture_output=True, text=True, timeout=5, check=True)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return out.stdout.strip() or None
+
+
 def pip_command(tag: str) -> str:
     """The command to update by pip (no PyPI yet: from the tag on GitHub)."""
     return f"pip install -U git+{REPO_URL}@{tag}"
@@ -243,7 +257,15 @@ class SoftwareUpdateDialog(QDialog):
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
 
-        if release is not None:  # already known (screenshot)
+        if self.kind == "editable":
+            # A development install: its version says little (the releases
+            # 2.7.x / 2.8.x do not come from master), so nothing is compared
+            # and the network is not asked
+            commit = git_commit()
+            where = f"version {self.current}" + (f", commit {commit}" if commit else "")
+            self.status.setText(f"This is a development installation ({where}): "
+                                "updates are made with git (<code>git pull</code>).")
+        elif release is not None:  # already known (screenshot)
             self._on_found(release)
         else:
             worker = _CheckWorker(self, self._urlopen)
@@ -352,8 +374,8 @@ def start_update_check(window, urlopen: Callable = urllib.request.urlopen):
     is sent, as in the dialog."""
     from astrocook import __version__
     from .settings import record_update_check, update_check_due
-    if not update_check_due():
-        return None
+    if install_kind() == "editable" or not update_check_due():
+        return None  # development installs are never compared with the releases
     worker = _CheckWorker(window, urlopen)
 
     def found(release: ReleaseInfo):
