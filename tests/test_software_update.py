@@ -30,7 +30,7 @@ def test_is_newer(tag, current, expected):
 
 
 RELEASE_JSON = {
-    "tag_name": "v2.9.0", "body": "Notes **here**", "html_url": "https://example/r",
+    "tag_name": "v3.0.0", "body": "Notes **here**", "html_url": "https://example/r",
     "assets": [{"name": "other.zip", "browser_download_url": "https://example/o"},
                {"name": "Astrocook.dmg", "browser_download_url": "https://example/a.dmg",
                 "digest": "sha256:abc", "size": 5}]}
@@ -39,8 +39,8 @@ RELEASE_JSON = {
 def test_parse_release():
     r = parse_release(RELEASE_JSON)
     assert (r.tag, r.notes, r.dmg_url, r.dmg_digest, r.dmg_size) == (
-        "v2.9.0", "Notes **here**", "https://example/a.dmg", "sha256:abc", 5)
-    bare = parse_release({"tag_name": "2.9.0", "body": None})
+        "v3.0.0", "Notes **here**", "https://example/a.dmg", "sha256:abc", 5)
+    bare = parse_release({"tag_name": "3.0.0", "body": None})
     assert bare.dmg_url is None and bare.dmg_digest is None and bare.notes == ""
 
 
@@ -71,7 +71,7 @@ def fake_urlopen(payloads):
 
 def test_fetch_sends_only_a_generic_user_agent():
     uo = fake_urlopen({su.RELEASES_API: json.dumps(RELEASE_JSON).encode()})
-    assert su.fetch_latest_release(uo).tag == "v2.9.0"
+    assert su.fetch_latest_release(uo).tag == "v3.0.0"
     headers = {k.lower(): v for k, v in uo.calls[0].header_items()}
     assert headers["user-agent"] == su.USER_AGENT and "authorization" not in headers
 
@@ -88,8 +88,8 @@ def test_install_kind(tmp_path):
 
 
 def test_pip_command():
-    assert pip_command("v2.9.0") == (
-        "pip install -U git+https://github.com/DAS-OATs/astrocook@v2.9.0")
+    assert pip_command("v3.0.0") == (
+        "pip install -U git+https://github.com/DAS-OATs/astrocook@v3.0.0")
 
 
 def test_verify_digest(tmp_path):
@@ -103,11 +103,11 @@ def test_verify_digest(tmp_path):
 
 
 def _release(digest=None):
-    return ReleaseInfo("v2.9.0", "Notes", "https://example/r", "https://example/a.dmg", digest)
+    return ReleaseInfo("v3.0.0", "Notes", "https://example/r", "https://example/a.dmg", digest)
 
 
 def test_dialog_up_to_date(qtbot):
-    dlg = SoftwareUpdateDialog(current="2.9.0", kind="pip", release=_release())
+    dlg = SoftwareUpdateDialog(current="3.0.0", kind="pip", release=_release())
     qtbot.addWidget(dlg)
     assert "up to date" in dlg.status.text() and not dlg.action_button.isVisibleTo(dlg)
 
@@ -116,10 +116,10 @@ def test_dialog_pip_shows_command_and_copies(qtbot):
     from PySide6.QtGui import QGuiApplication
     dlg = SoftwareUpdateDialog(current="2.8.0", kind="pip", release=_release())
     qtbot.addWidget(dlg)
-    assert pip_command("v2.9.0") in dlg.command.text()
+    assert pip_command("v3.0.0") in dlg.command.text()
     assert dlg.notes.toPlainText() == "Notes"
     dlg.action_button.click()
-    assert QGuiApplication.clipboard().text() == pip_command("v2.9.0")
+    assert QGuiApplication.clipboard().text() == pip_command("v3.0.0")
 
 
 def test_dialog_editable_only_warns(qtbot):
@@ -140,7 +140,7 @@ def test_dialog_check_through_thread(qtbot):
     dlg = SoftwareUpdateDialog(current="2.8.0", kind="pip", urlopen=uo)
     qtbot.addWidget(dlg)
     qtbot.waitUntil(lambda: dlg.release is not None, timeout=5000)
-    assert "v2.9.0" in dlg.status.text()
+    assert "v3.0.0" in dlg.status.text()
 
 
 @pytest.mark.parametrize("digest_ok,expect", [(True, "Checksum verified"),

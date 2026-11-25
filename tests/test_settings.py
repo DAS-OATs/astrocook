@@ -316,7 +316,7 @@ def test_the_check_at_start_opens_the_dialog_for_a_newer_release(qtbot, window, 
     worker = su.start_update_check(window, uo)
     assert worker is not None
     qtbot.waitUntil(lambda: getattr(window, "_update_dialog", None) is not None, timeout=5000)
-    assert "v2.9.0" in window._update_dialog.status.text()
+    assert "v3.0.0" in window._update_dialog.status.text()
     assert app_settings().value(S.LAST_CHECK_KEY)  # recorded: a daily check is not due again
     assert su.start_update_check(window, uo) is None
 
