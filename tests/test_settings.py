@@ -296,7 +296,21 @@ def test_no_check_when_it_is_off(window):
     assert su.start_update_check(window, fake_urlopen({})) is None
 
 
-def test_the_check_at_start_opens_the_dialog_for_a_newer_release(qtbot, window):
+@pytest.fixture
+def pip_install(monkeypatch):
+    """The tests run from a git checkout, which the check at start skips."""
+    monkeypatch.setattr(su, "install_kind", lambda *a, **k: "pip")
+
+
+def test_the_check_at_start_skips_development_installs(window, monkeypatch):
+    app_settings().setValue(S.CHECK_UPDATES_KEY, True)
+    monkeypatch.setattr(su, "install_kind", lambda *a, **k: "editable")
+    uo = fake_urlopen({})  # any call would raise KeyError
+    assert su.start_update_check(window, uo) is None
+    assert uo.calls == [] and getattr(window, "_update_dialog", None) is None
+
+
+def test_the_check_at_start_opens_the_dialog_for_a_newer_release(qtbot, window, pip_install):
     app_settings().setValue(S.CHECK_UPDATES_KEY, True)
     uo = fake_urlopen({su.RELEASES_API: json.dumps(RELEASE_JSON).encode()})
     worker = su.start_update_check(window, uo)
@@ -307,7 +321,7 @@ def test_the_check_at_start_opens_the_dialog_for_a_newer_release(qtbot, window):
     assert su.start_update_check(window, uo) is None
 
 
-def test_the_check_at_start_is_silent_without_network(qtbot, window):
+def test_the_check_at_start_is_silent_without_network(qtbot, window, pip_install):
     app_settings().setValue(S.CHECK_UPDATES_KEY, True)
     worker = su.start_update_check(window, fake_urlopen({su.RELEASES_API: OSError("offline")}))
     qtbot.waitUntil(worker.isFinished, timeout=5000)
