@@ -680,19 +680,44 @@ are 1), for a model of the whole spectrum computed once.</p></li>
 <dd></dd></dl>
 
 <dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.fitting.lsf.PixelLSF.margin">
+<span class="sig-name descname"><span class="pre">margin</span></span><a class="headerlink" href="#astrocook.fitting.lsf.PixelLSF.margin" title="Link to this definition">#</a></dt>
+<dd><p>How far beyond its edges a pixel takes the fine flux (at most)</p>
+</dd></dl>
+
+<dl class="py attribute">
 <dt class="sig sig-object py" id="astrocook.fitting.lsf.PixelLSF.x_fine">
 <span class="sig-name descname"><span class="pre">x_fine</span></span><a class="headerlink" href="#astrocook.fitting.lsf.PixelLSF.x_fine" title="Link to this definition">#</a></dt>
 <dd><p>Fine grid in Angstrom, on which the optical depth is computed</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="astrocook.fitting.lsf.PixelLSF.fine_range">
+<span class="sig-name descname"><span class="pre">fine_range</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pixels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../modules/astrocook/fitting/lsf.html#PixelLSF.fine_range"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.lsf.PixelLSF.fine_range" title="Link to this definition">#</a></dt>
+<dd><p>The fine samples (start, stop) that the pixels <code class="docutils literal notranslate"><span class="pre">pixels</span></code>
+(indices) take, with any resolution down to <code class="docutils literal notranslate"><span class="pre">r_min</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="astrocook.fitting.lsf.PixelLSF.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">flux_fine</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="../modules/astrocook/fitting/lsf.html#PixelLSF.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.lsf.PixelLSF.apply" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">flux_fine</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pixels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="../modules/astrocook/fitting/lsf.html#PixelLSF.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.lsf.PixelLSF.apply" title="Link to this definition">#</a></dt>
 <dd><p>Flux of each pixel: the fine flux convolved with the LSF of the
 pixel (resolving power <code class="docutils literal notranslate"><span class="pre">resol</span></code>, scalar or one per pixel; None or
 NaN for no LSF) and averaged over the pixel. The weights are cached
 under <code class="docutils literal notranslate"><span class="pre">key</span></code> (the resolution itself if scalar or None), unless the
-pixels are more than <code class="docutils literal notranslate"><span class="pre">CHUNK</span></code>.</p>
+pixels are more than <code class="docutils literal notranslate"><span class="pre">CHUNK</span></code>. Without the cache, <code class="docutils literal notranslate"><span class="pre">pixels</span></code>
+(indices) computes only those pixels, the others NaN (F167).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.fitting.lsf.PixelLSF.matrix">
+<span class="sig-name descname"><span class="pre">matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">None</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">csr_matrix</span></span></span><a class="reference internal" href="../modules/astrocook/fitting/lsf.html#PixelLSF.matrix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.lsf.PixelLSF.matrix" title="Link to this definition">#</a></dt>
+<dd><p>The weights of <code class="docutils literal notranslate"><span class="pre">apply</span></code> as a sparse matrix (pixels x fine
+samples): <code class="docutils literal notranslate"><span class="pre">apply(flux_fine)</span> <span class="pre">==</span> <span class="pre">matrix</span> <span class="pre">&#64;</span> <span class="pre">flux_fine</span></code> up to the order
+of the sums. For the derivatives of the model (the analytic Jacobian
+of the fitter, phase 7, PR 7c.4d-bis), which are convolved as the
+flux. Kept under <code class="docutils literal notranslate"><span class="pre">key</span></code> (as <code class="docutils literal notranslate"><span class="pre">apply</span></code>) with the cache and at most
+<code class="docutils literal notranslate"><span class="pre">CHUNK</span></code> pixels, computed again at each call otherwise.</p>
 </dd></dl>
 
 </dd></dl>
@@ -751,8 +776,11 @@ pixels are more than <code class="docutils literal notranslate"><span class="pre
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.lsf.KERNEL_SIGMAS"><code class="docutils literal notranslate"><span class="pre">KERNEL_SIGMAS</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.lsf.PixelLSF"><code class="docutils literal notranslate"><span class="pre">PixelLSF</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.lsf.PixelLSF.__init__"><code class="docutils literal notranslate"><span class="pre">PixelLSF.__init__()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.lsf.PixelLSF.margin"><code class="docutils literal notranslate"><span class="pre">PixelLSF.margin</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.lsf.PixelLSF.x_fine"><code class="docutils literal notranslate"><span class="pre">PixelLSF.x_fine</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.lsf.PixelLSF.fine_range"><code class="docutils literal notranslate"><span class="pre">PixelLSF.fine_range()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.lsf.PixelLSF.apply"><code class="docutils literal notranslate"><span class="pre">PixelLSF.apply()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.lsf.PixelLSF.matrix"><code class="docutils literal notranslate"><span class="pre">PixelLSF.matrix()</span></code></a></li>
 </ul>
 </li>
 </ul>

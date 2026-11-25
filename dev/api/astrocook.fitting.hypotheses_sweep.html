@@ -714,11 +714,16 @@ removing it, as <code class="docutils literal notranslate"><span class="pre">eva
 <span class="sig-prename descclassname"><span class="pre">astrocook.fitting.hypotheses_sweep.</span></span><span class="sig-name descname"><span class="pre">SWEEP_MAX_K</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">24</span></span><a class="headerlink" href="#astrocook.fitting.hypotheses_sweep.SWEEP_MAX_K" title="Link to this definition">#</a></dt>
 <dd><p>The largest comparison, in the free parameters of the labels of its
 pixels (the replaced components and the neighbours). Its purpose: the
-time; the fits of both sides and their refinement cost about k times
-FIT_NFEV models each (F171): a test of SiII on a forest mock with 15
-free lines took 5 minutes, and on the mocks of <code class="docutils literal notranslate"><span class="pre">validate_sweep.py</span></code> a few
-tests of 10-13 lines took 1-5 minutes each (the Jacobian by finite
-differences, one model per parameter at every step). 24: eight lines</p>
+time. 24 (eight lines) when the Jacobian of the fit was by finite
+differences (F171: a test of SiII on a forest mock with 15 free lines
+took 5 minutes). Measured again with the analytic Jacobian (PR
+7c.4d-bis, <code class="docutils literal notranslate"><span class="pre">validate_sweep.py</span></code>, sweep “all”, 36 mocks): 24, 36, 48
+take 793, 3035, 7754 s to identify in all (the largest mock 172, 754,
+3490 s) and find FeII 11, 15, 16 of 37, SiII 23, 30, 31 of 101, the rarer
+species accepted 282, 298, 303 (purity 0.81, 0.80, 0.80); the H I of
+the default sweep 42, 44, 46 of 120. Kept at 24 (Guido, 25 November
+2026): a small gain at four times the time, and the rarer species need
+other strategies than the sweep (F174)</p>
 </dd></dl>
 
 <dl class="py data">

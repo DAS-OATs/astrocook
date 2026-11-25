@@ -622,11 +622,16 @@
 <span class="n">SWEEP_INFLUENCE</span> <span class="o">=</span> <span class="mf">1.0</span>
 <span class="c1">#: The largest comparison, in the free parameters of the labels of its</span>
 <span class="c1">#: pixels (the replaced components and the neighbours). Its purpose: the</span>
-<span class="c1">#: time; the fits of both sides and their refinement cost about k times</span>
-<span class="c1">#: FIT_NFEV models each (F171): a test of SiII on a forest mock with 15</span>
-<span class="c1">#: free lines took 5 minutes, and on the mocks of ``validate_sweep.py`` a few</span>
-<span class="c1">#: tests of 10-13 lines took 1-5 minutes each (the Jacobian by finite</span>
-<span class="c1">#: differences, one model per parameter at every step). 24: eight lines</span>
+<span class="c1">#: time. 24 (eight lines) when the Jacobian of the fit was by finite</span>
+<span class="c1">#: differences (F171: a test of SiII on a forest mock with 15 free lines</span>
+<span class="c1">#: took 5 minutes). Measured again with the analytic Jacobian (PR</span>
+<span class="c1">#: 7c.4d-bis, ``validate_sweep.py``, sweep "all", 36 mocks): 24, 36, 48</span>
+<span class="c1">#: take 793, 3035, 7754 s to identify in all (the largest mock 172, 754,</span>
+<span class="c1">#: 3490 s) and find FeII 11, 15, 16 of 37, SiII 23, 30, 31 of 101, the rarer</span>
+<span class="c1">#: species accepted 282, 298, 303 (purity 0.81, 0.80, 0.80); the H I of</span>
+<span class="c1">#: the default sweep 42, 44, 46 of 120. Kept at 24 (Guido, 25 November</span>
+<span class="c1">#: 2026): a small gain at four times the time, and the rarer species need</span>
+<span class="c1">#: other strategies than the sweep (F174)</span>
 <span class="n">SWEEP_MAX_K</span> <span class="o">=</span> <span class="mi">24</span>
 <span class="c1">#: The start of the b of the H I of a system (km/s)</span>
 <span class="n">HI_B</span> <span class="o">=</span> <span class="mf">20.0</span>

@@ -630,16 +630,20 @@
 <span class="n">FIT_NFEV</span> <span class="o">=</span> <span class="mi">300</span>
 <span class="n">FIT_B_MAX</span> <span class="o">=</span> <span class="mf">100.0</span>
 <span class="n">FIT_LOGN_MAX</span> <span class="o">=</span> <span class="mf">19.0</span>
-<span class="c1">#: The largest hypothesis that gets the short fit, in free parameters (20</span>
-<span class="c1">#: components of three). Its purpose: the time. The Jacobian of the fit is</span>
-<span class="c1">#: computed by finite differences, one model per parameter, so a fit costs</span>
-<span class="c1">#: about k times FIT_NFEV models; a group with a wide region (the trough of</span>
-<span class="c1">#: a DLA, mock "combined" of the grid robustness at S/N 10) had hypotheses</span>
-<span class="c1">#: of 94 components, k = 281, and one mock did not end in 100 minutes. A</span>
-<span class="c1">#: group with a hypothesis above it is not compared: its default labels are</span>
-<span class="c1">#: accepted with their AOD parameters, as a group without edges (60:</span>
-<span class="c1">#: Guido, 19 November 2026)</span>
-<span class="n">MAX_FIT_K</span> <span class="o">=</span> <span class="mi">60</span>
+<span class="c1">#: The largest hypothesis that gets the short fit, in free parameters (40</span>
+<span class="c1">#: components of three). Its purpose: the time. A group with a hypothesis</span>
+<span class="c1">#: above it is not compared: its default labels are accepted with their AOD</span>
+<span class="c1">#: parameters, as a group without edges. 60 at first (Guido, 19 November</span>
+<span class="c1">#: 2026): the Jacobian was by finite differences, one model per parameter,</span>
+<span class="c1">#: and in the trough of a DLA (mock "combined" of the grid robustness at</span>
+<span class="c1">#: S/N 10) hypotheses of 94 components, k = 281, kept one mock running for</span>
+<span class="c1">#: more than 100 minutes. 120 since the analytic Jacobian (Guido, 25</span>
+<span class="c1">#: November 2026, PR 7c.4d-bis): a short fit of k = 120 in a DLA trough</span>
+<span class="c1">#: takes 6 s (107 s before), k = 282 18 s; on the grid robustness 120</span>
+<span class="c1">#: compares one hypothesis more than 60, with the same numbers, at 13% more</span>
+<span class="c1">#: time to identify; without a cap the grid did not end in 2 hours (a few</span>
+<span class="c1">#: groups far above 120). The room is for the joint hypotheses of F174</span>
+<span class="n">MAX_FIT_K</span> <span class="o">=</span> <span class="mi">120</span>
 <span class="c1">#: The refinement of the finalists by their residuals: after its short fit</span>
 <span class="c1">#: a hypothesis gets a component where the residuals of its model are most</span>
 <span class="c1">#: negative (a 3-pixel sum below -REFINE_SIGMA): one of its species when the</span>
