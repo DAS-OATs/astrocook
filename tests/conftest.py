@@ -45,7 +45,7 @@ def _gaps_file(tmp_path, monkeypatch):
 
 
 @pytest.fixture(autouse=True)
-def _isolated_qsettings(tmp_path, monkeypatch):
+def _isolated_qsettings(tmp_path_factory, monkeypatch):
     """``QSettings`` of a test never reads or writes the user's real ones
     (phase 7-quater, U2): before this the GUI tests wrote the recent files,
     the theme and the working folder of the machine they ran on. Every test
@@ -58,8 +58,8 @@ def _isolated_qsettings(tmp_path, monkeypatch):
     except ImportError:  # the core tests need no Qt
         yield
         return
-    folder = tmp_path / "qsettings"
-    folder.mkdir()
+    # Not inside ``tmp_path``: tests list the content of their own folder
+    folder = tmp_path_factory.mktemp("qsettings")
     for scope in (QSettings.Scope.UserScope, QSettings.Scope.SystemScope):
         QSettings.setPath(QSettings.Format.IniFormat, scope, str(folder))
     monkeypatch.setattr(settings, "SETTINGS_FORMAT", QSettings.Format.IniFormat)
