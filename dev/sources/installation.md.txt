@@ -48,6 +48,28 @@ drive Astrocook through its MCP server, installed with the `[mcp]`
 extra (or run in a Docker image): see the tutorial
 [Using Astrocook from an AI Agent](tutorials/agents).
 
+## Updating Astrocook
+
+*Help > Software Update...* asks GitHub for the latest release and compares
+it with the version you run. Nothing is sent but a generic request, and
+nothing is installed without you; what the dialog offers depends on how
+Astrocook is installed:
+
+- **macOS app**: *Download* fetches `Astrocook.dmg` (to `~/Downloads`),
+  checks its SHA-256 checksum against the one GitHub gives for the file
+  (the dialog says so when the release gives none) and opens it. Then close
+  Astrocook and drag the new app into `Applications`.
+- **pip install** (Linux, Windows, macOS from source): the dialog shows the
+  `pip install -U ...` command, with a *Copy* button; run it yourself in the
+  same environment. Astrocook never runs `pip` on its own.
+- **git checkout or editable install**: the dialog only says that a new
+  version exists; update with `git pull`.
+
+If there is no network connection the dialog says so and nothing else
+happens. There is no automatic check at start-up.
+
+![The Software Update dialog](_static/installation_software_update.png)
+
 ## Running the App
 
 With the virtual environment active, launch the GUI from any directory:
