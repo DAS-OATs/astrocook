@@ -413,6 +413,13 @@ class MainMenusMixin(HostBase):
         about_action.triggered.connect(self._on_about_requested)
         help_menu.addAction(about_action)
 
+        # 3. Software Update (phase 7-quater); on macOS Qt may move it to the
+        # application menu, as for About
+        update_action = QAction("&Software Update...", self)
+        update_action.setMenuRole(QAction.MenuRole.ApplicationSpecificRole)
+        update_action.triggered.connect(self._on_software_update_requested)
+        help_menu.addAction(update_action)
+
         # The File menu in groups (Guido): open, save, import, export, close
         # (removed one by one: clear() deletes the actions the menu owns)
         for action in file_menu.actions():
@@ -489,6 +496,12 @@ class MainMenusMixin(HostBase):
     def _on_about_requested(self):
         """Launches the About dialog."""
         dlg = AboutDialog(self)
+        dlg.exec()
+
+    def _on_software_update_requested(self):
+        """Opens the Software Update dialog (checks the latest release)."""
+        from .software_update import SoftwareUpdateDialog
+        dlg = SoftwareUpdateDialog(self)
         dlg.exec()
 
     def _open_docs(self):

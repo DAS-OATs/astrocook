@@ -38,6 +38,7 @@ dependencies = [
     "matplotlib>=3.9",
     "numexpr",
     "qtawesome",
+    "packaging",
 ]
 
 [project.optional-dependencies]
