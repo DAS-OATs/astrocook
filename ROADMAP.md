@@ -664,6 +664,21 @@ Requested by V. D'Odorico (20 November 2026): load into a spectrum the telluric 
 
 *Findings* (register, 3.2): FT1-FT8 (numbered apart, with the prefix FT, so as not to collide with the F numbers of the PRs of phase 7 not yet merged; Guido, 20 November 2026).
 
+### Phase 7-quater – Software update
+Proposed by Guido (25 November 2026): an entry *Software Update...* in a menu, so that the user can update Astrocook from the GUI. A side project, parallel to phase 7 (to use the waiting time of the benchmark runs); one PR at a time as in 7-bis and 7-ter, on its own `claude/...` branch while #549 is open. Agreed with Guido (25 November 2026), level 1 only:
+- the entry (*Help* menu; on macOS also in the application menu through the Qt menu role, to check on a real macOS) asks `https://api.github.com/repos/DAS-OATs/astrocook/releases/latest` and compares its `tag_name` with `astrocook.__version__` through `packaging.version` (never string equality: the releases 2.7.x/2.8.x do not come from master). The request is made in a thread (a Qt signal brings the result back to the GUI), carries a generic User-Agent and nothing of the user, and fails silently when the network is absent (a message in the dialog only when the user asked for the check);
+- what the dialog offers depends on how Astrocook is installed, recognised at run time: (1) the frozen app (`sys.frozen`, macOS): *Download* fetches the asset `Astrocook.dmg` of the release in a thread, with a progress bar, verifies its SHA-256 against the asset `Astrocook.dmg.sha256` and opens it with `open`; the user then closes Astrocook and drags the new app into Applications (no replacement of the running app: that would need Sparkle, level 2); (2) an editable install or a git checkout: the dialog says that a new version exists and to `git pull`, and touches nothing; (3) any other install (pip: Linux, Windows, macOS from source): the dialog shows the command to run, with a *Copy* button, and does nothing else (`pip install -U git+https://github.com/DAS-OATs/astrocook@vX.Y.Z` while there is no PyPI, `pip install -U astrocook` after #549). No `pip` run from the GUI (venv, conda, permissions, modules already imported: a failed update would leave a broken installation without a GUI); to be reconsidered only if somebody asks, and then only inside a venv (`sys.prefix != sys.base_prefix`);
+- the release notes of the release are shown in the dialog (the body of the GitHub release, as plain text);
+- an automatic check at the start is a separate choice, off by default (a box in Preferences, at most once a day): proposed in the PR, to be confirmed with Guido.
+
+Decisions reserved to Guido, before the PR: the names of the assets of a release (`Astrocook.dmg`, `Astrocook.dmg.sha256`: the checksum is a new step of the release process, now manual, `build_app.sh`), and whether the Apple Developer account (signing and notarization) exists, which decides whether level 2 is realistic. Level 2 (Sparkle on macOS, an appcast on `gh-pages`, a key for each release) is not scheduled: it is release engineering, a phase of its own.
+
+| PR | Content | Model | Estimate | Done |
+|---|---|---|---|---|
+| U1 | *Software Update...*: a module in `astrocook/gui/` (the version check with the network mocked in the tests, the recognition of the installation, the download with checksum, the dialog with its three variants), the menu entry, `docs/installation.md` (a section on the updates) and a screenshot of the dialog (a mock release: no network in the scene). Characterization tests first for the version comparison (pre-releases, `2.8.0` against `2.10.0`, a tag with `v`); the tests of the menus and of `test_gui_structure.py` | Sonnet | 3 h | |
+
+*Findings* (register, 3.2): numbered `FU1`, ... if any.
+
 ### Code quality (review of 2.5.0)
 A review of the code of 2.5.0 (November 2026, after the question of how
 the package compares with similar codes), with measurements, and where
@@ -1120,3 +1135,4 @@ One line per concluded phase; the long rows are in `ROADMAP_HISTORY.md`, "7. Pro
 | 7 – Robust components | in progress: plan agreed (13 November 2026), four blocks 7a-7d |
 | 7-bis – Small fixes | done (16 November 2026), interleaved with phase 7: PRs B1-B11 (#772, #774-#776, #778-#780, #786, #788, #790, #791); F101, F114, F30, F72, F84, F102, F112 (the immediate fix), F115 (the mechanical part), F128, F149 (the reason), F151, F152, F157 and F158 closed; F159, F161, F162 and F163 found |
 | 7-ter – External models | done (21 November 2026): PRs T1-T4, FT7, FT8 and R, release 2.8.0 from `release/2.7.x` (the tag by Guido) |
+| 7-quater – Software update | planned (25 November 2026), parallel to phase 7: PR U1, the check of the version and the dialog (download of the `.dmg` on macOS, the command to copy for pip installs); Sparkle not scheduled |
