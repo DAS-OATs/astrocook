@@ -2,11 +2,12 @@
 
 Three tabs, *General*, *Appearance* and *Performance*. The settings are about
 the interface only (``astrocook/gui/settings.py``): none changes a number,
-none applies to scripts, the MCP server or the log. OK and Apply write them
-and bring the window up to date; the theme and the colours of the plots go
-through the actions of the View menu, which stay in sync. *Restore Defaults*
-puts the defaults in the widgets of the dialog (nothing is saved until OK or
-Apply).
+none applies to scripts, the MCP server or the log. Every control applies
+its setting as soon as it changes (U3: no OK, Apply or Cancel; the spin boxes
+and the text field on a finished edit, not at every digit): ``apply`` writes
+the settings and brings the window up to date; the theme and the colours of
+the plots go through the actions of the View menu, which stay in sync.
+*Restore Defaults* puts the defaults in the widgets and applies them.
 """
 from typing import Any, Callable
 
@@ -28,6 +29,8 @@ class SettingsDialog(QDialog):
         self.setMinimumWidth(520)
         #: widget -> (getter of its value, setter, key): for load / save / reset
         self._fields: list[tuple[str, Callable[[], Any], Callable[[Any], None]]] = []
+        #: True while the widgets are set by the code (load, restore): no apply
+        self._loading = True
 
         layout = QVBoxLayout(self)
         self.tabs = QTabWidget()
@@ -37,12 +40,9 @@ class SettingsDialog(QDialog):
         layout.addWidget(self.tabs)
 
         buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
-            | QDialogButtonBox.StandardButton.Apply
+            QDialogButtonBox.StandardButton.Close
             | QDialogButtonBox.StandardButton.RestoreDefaults)
-        buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
-        buttons.button(QDialogButtonBox.StandardButton.Apply).clicked.connect(self.apply)
         buttons.button(QDialogButtonBox.StandardButton.RestoreDefaults).clicked.connect(
             self.restore_defaults)
         self.buttons = buttons
@@ -50,13 +50,22 @@ class SettingsDialog(QDialog):
         self.load()
 
     # --- Fields ---
-    def _add(self, key: str, getter: Callable[[], Any], setter: Callable[[Any], None]):
+    def _add(self, key: str, getter: Callable[[], Any], setter: Callable[[Any], None],
+             signal=None):
+        """``signal`` is emitted when the user changes the control: the
+        settings are applied."""
         self._fields.append((key, getter, setter))
+        if signal is not None:
+            signal.connect(self._changed)
+
+    def _changed(self, *_):
+        if not self._loading:
+            self.apply()
 
     def _check(self, key: str, text: str, tip: str = "") -> QCheckBox:
         box = QCheckBox(text)
         box.setToolTip(tip)
-        self._add(key, box.isChecked, box.setChecked)
+        self._add(key, box.isChecked, box.setChecked, box.toggled)
         return box
 
     def _combo(self, key: str, choices: dict) -> QComboBox:
@@ -65,16 +74,18 @@ class SettingsDialog(QDialog):
         for value, label in choices.items():
             combo.addItem(label, value)
         self._add(key, combo.currentData,
-                  lambda v: combo.setCurrentIndex(max(0, combo.findData(v))))
+                  lambda v: combo.setCurrentIndex(max(0, combo.findData(v))),
+                  combo.currentIndexChanged)
         return combo
 
     def _spin(self, key: str, limits: tuple, suffix: str = "", special: str = "") -> QSpinBox:
         spin = QSpinBox()
         spin.setRange(*limits)
+        spin.setKeyboardTracking(False)  # a typed number applies when finished
         spin.setSuffix(suffix)
         if special:
             spin.setSpecialValueText(special)
-        self._add(key, spin.value, spin.setValue)
+        self._add(key, spin.value, spin.setValue, spin.valueChanged)
         return spin
 
     # --- Tabs ---
@@ -108,7 +119,8 @@ class SettingsDialog(QDialog):
         self.fixed_row = QWidget()
         self.fixed_row.setLayout(row)
         row.setContentsMargins(0, 0, 0, 0)
-        self._add(S.FIXED_DIR_KEY, self.fixed_dir.text, self.fixed_dir.setText)
+        self._add(S.FIXED_DIR_KEY, self.fixed_dir.text, self.fixed_dir.setText,
+                  self.fixed_dir.editingFinished)
         self.dir_mode.currentIndexChanged.connect(self._sync_enabled)
         form.addRow("Fixed folder:", self.fixed_row)
         return tab
@@ -121,17 +133,20 @@ class SettingsDialog(QDialog):
         self.plot_colours = self._combo(S.PLOT_COLOURS_KEY,
                                         {n: n.capitalize() for n in PLOT_PALETTES})
         form.addRow("Plot colours:", self.plot_colours)
-        self.font_size = self._spin(S.FONT_SIZE_KEY, (0, S.FONT_RANGE[1]), " pt", "System")
-        self.font_size.setToolTip("The font of tables, panels and menus (sizes written "
-                                  "explicitly in some texts do not change).")
-        form.addRow("Font size:", self.font_size)
+        self.font_scale = self._combo(S.FONT_SCALE_KEY,
+                                      {n: n.capitalize() for n in S.FONT_SCALES})
+        self.font_scale.setToolTip("The size of the fonts of tables, panels and menus "
+                                   "(sizes written explicitly in some texts do not change).")
+        form.addRow("Font size:", self.font_scale)
         self.line_width = QDoubleSpinBox()
         self.line_width.setRange(*S.LINE_WIDTH_RANGE)
         self.line_width.setSingleStep(0.1)
+        self.line_width.setKeyboardTracking(False)
         self.line_width.setPrefix("× ")
         self.line_width.setToolTip("A factor on the widths of the lines of the main plot "
                                    "(flux, error, continuum, model).")
-        self._add(S.LINE_WIDTH_KEY, self.line_width.value, self.line_width.setValue)
+        self._add(S.LINE_WIDTH_KEY, self.line_width.value, self.line_width.setValue,
+                  self.line_width.valueChanged)
         form.addRow("Line width:", self.line_width)
         self.x_unit = self._combo(S.INITIAL_X_UNIT_KEY, {u: u for u in S.X_UNITS})
         self.x_unit.setToolTip("The unit of the x axis when Astrocook starts "
@@ -162,6 +177,7 @@ class SettingsDialog(QDialog):
         folder = QFileDialog.getExistingDirectory(self, "Fixed folder", self.fixed_dir.text())
         if folder:
             self.fixed_dir.setText(folder)
+            self._changed()
 
     def _sync_enabled(self):
         self.fixed_row.setEnabled(self.dir_mode.currentData() == "fixed")
@@ -169,9 +185,11 @@ class SettingsDialog(QDialog):
 
     def load(self):
         """The widgets from the saved settings."""
+        self._loading = True
         for key, _, setter in self._fields:
             setter(self._saved(key))
         self._sync_enabled()
+        self._loading = False
 
     @staticmethod
     def _saved(key: str):
@@ -184,13 +202,15 @@ class SettingsDialog(QDialog):
             return S.get_choice(key, S.DIR_MODES)
         if key == S.APPEARANCE_KEY:
             return S.get_choice(key, APPEARANCES)
+        if key == S.FONT_SCALE_KEY:
+            return S.get_choice(key, S.FONT_SCALES)
         if key == S.PLOT_COLOURS_KEY:
             return S.get_choice(key, PLOT_PALETTES)
         if key == S.INITIAL_X_UNIT_KEY:
             return S.initial_x_unit()
         if key == S.FIXED_DIR_KEY:
             return str(S.app_settings().value(key, default) or "")
-        limits = {S.MAX_RECENT_KEY: S.RECENT_RANGE, S.FONT_SIZE_KEY: (0, S.FONT_RANGE[1]),
+        limits = {S.MAX_RECENT_KEY: S.RECENT_RANGE,
                   S.LINE_WIDTH_KEY: S.LINE_WIDTH_RANGE, S.DECIMALS_KEY: S.DECIMALS_RANGE,
                   S.DOWNSAMPLE_KEY: S.DOWNSAMPLE_RANGE}[key]
         if key == S.DOWNSAMPLE_KEY and S.app_settings().value(key) is None:
@@ -198,10 +218,13 @@ class SettingsDialog(QDialog):
         return S.get_number(key, limits, type(default))
 
     def restore_defaults(self):
-        """The defaults in the widgets (saved only by OK or Apply)."""
+        """The defaults in the widgets, saved and applied."""
+        self._loading = True
         for key, _, setter in self._fields:
             setter(_pyside_plot_threshold() if key == S.DOWNSAMPLE_KEY else S.DEFAULTS[key])
         self._sync_enabled()
+        self._loading = False
+        self.apply()
 
     def apply(self):
         """Saves the settings and updates the window."""
@@ -215,10 +238,6 @@ class SettingsDialog(QDialog):
         self.main_window._set_appearance(values[S.APPEARANCE_KEY])
         self.main_window._set_plot_colours(values[S.PLOT_COLOURS_KEY])
         self.main_window._apply_settings()
-
-    def accept(self):
-        self.apply()
-        super().accept()
 
 
 def _pyside_plot_threshold() -> int:

@@ -175,18 +175,47 @@ def apply_appearance(mode: str):
             _palette_forced = True
 
 
-_system_font = None
+#: The classes of widget that the platform may give a font of their own (on
+#: macOS the small control sizes of tables, headers, menus, tool buttons...):
+#: a scaled font is set for each of them, so that their relations stay
+_FONT_CLASSES = (
+    "QAbstractButton", "QCheckBox", "QComboBox", "QDialog", "QDoubleSpinBox",
+    "QGroupBox", "QHeaderView", "QLabel", "QLineEdit", "QListView", "QMenu",
+    "QMenuBar", "QPlainTextEdit", "QPushButton", "QRadioButton", "QSpinBox",
+    "QStatusBar", "QTabBar", "QTableView", "QTextEdit", "QToolBar", "QToolButton",
+    "QToolTip", "QTreeView",
+)
+#: The fonts of the application before the first change: None is the font of
+#: the application, the others those of the classes above. Taken only when a
+#: scale other than 1 is asked for: with the *Normal* scale ``QApplication.setFont``
+#: is never called, so the platform keeps the font of each class of widget
+#: (U3: ``setFont(app.font())`` at the start made every widget take one
+#: font, and the headers of the right panel, bold by a stylesheet, shrank)
+_original_fonts: "dict | None" = None
 
 
-def apply_font_size(points: int):
-    """The size of the font of the application, that of tables, panels and
-    menus (Settings > Appearance); 0 gives back the font of the system.
-    Sizes written explicitly in a stylesheet or in a text are not changed."""
-    global _system_font
+def apply_font_scale(factor: float):
+    """The fonts of the application (tables, panels, menus) at ``factor``
+    times their original size (Settings > Appearance); 1 gives them back
+    exactly as they were. Sizes written explicitly in a stylesheet or in a
+    text are not changed."""
+    global _original_fonts
     app = cast(QApplication, QApplication.instance())
-    if _system_font is None:
-        _system_font = app.font()
-    font = QFont(_system_font)
-    if points > 0:
-        font.setPointSize(points)
-    app.setFont(font)
+    if _original_fonts is None:
+        if factor == 1.0:
+            return  # nothing was ever changed: nothing to do
+        _original_fonts = {None: app.font()}
+        for name in _FONT_CLASSES:
+            # the stubs lack the overload by class name (it exists in Qt)
+            _original_fonts[name] = app.font(name)  # type: ignore[call-overload]
+    for name, original in _original_fonts.items():
+        font = QFont(original)
+        if factor != 1.0:
+            if original.pointSizeF() > 0:
+                font.setPointSizeF(original.pointSizeF() * factor)
+            elif original.pixelSize() > 0:
+                font.setPixelSize(max(1, round(original.pixelSize() * factor)))
+        if name is None:
+            app.setFont(font)
+        else:
+            app.setFont(font, name)

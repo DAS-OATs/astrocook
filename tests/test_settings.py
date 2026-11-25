@@ -11,9 +11,9 @@ import numpy as np
 import pytest
 from PySide6.QtCore import QEvent
 from PySide6.QtGui import QAction
-from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox
+from PySide6.QtWidgets import QApplication, QDialogButtonBox, QFileDialog, QMessageBox
 
-from astrocook.gui import pyside_plot, software_update as su
+from astrocook.gui import pyside_plot, software_update as su, theme
 from astrocook.gui import settings as S
 from astrocook.gui.data_inspector import format_value
 from astrocook.gui.main_window import MainWindow
@@ -135,12 +135,12 @@ def test_the_dialog_shows_the_defaults(window):
     assert dlg.max_recent.value() == 10 and dlg.confirm_close.isChecked()
     assert dlg.dir_mode.currentData() == "last" and not dlg.fixed_row.isEnabled()
     assert dlg.theme.currentData() == "system" and dlg.plot_colours.currentData() == "standard"
-    assert dlg.font_size.value() == 0 and dlg.line_width.value() == 1.0
+    assert dlg.font_scale.currentData() == "normal" and dlg.line_width.value() == 1.0
     assert dlg.x_unit.currentData() == "nm" and dlg.decimals.value() == 5
     assert dlg.downsample.value() == pyside_plot.DECIMATION_THRESHOLD
 
 
-def test_ok_writes_and_the_next_dialog_reads(window, tmp_path):
+def test_changes_are_saved_and_the_next_dialog_reads(window, tmp_path):
     dlg = SettingsDialog(window)
     dlg.check_updates.setChecked(True)
     dlg.check_frequency.setCurrentIndex(dlg.check_frequency.findData("weekly"))
@@ -150,12 +150,11 @@ def test_ok_writes_and_the_next_dialog_reads(window, tmp_path):
     dlg.fixed_dir.setText(str(tmp_path))
     dlg.theme.setCurrentIndex(dlg.theme.findData("dark"))
     dlg.plot_colours.setCurrentIndex(dlg.plot_colours.findData("colorblind"))
-    dlg.font_size.setValue(14)
+    dlg.font_scale.setCurrentIndex(dlg.font_scale.findData("large"))
     dlg.line_width.setValue(2.0)
     dlg.x_unit.setCurrentIndex(dlg.x_unit.findData("Angstrom"))
     dlg.decimals.setValue(3)
     dlg.downsample.setValue(500_000)
-    dlg.accept()
     s = app_settings()
     assert S.get_bool(S.CHECK_UPDATES_KEY) and S.get_choice(S.CHECK_FREQUENCY_KEY, S.CHECK_FREQUENCIES) == "weekly"
     assert (S.max_recent_files(), S.confirm_close_unsaved()) == (3, False)
@@ -166,24 +165,46 @@ def test_ok_writes_and_the_next_dialog_reads(window, tmp_path):
     again = SettingsDialog(window)
     assert again.max_recent.value() == 3 and again.theme.currentData() == "dark"
     assert again.fixed_row.isEnabled() and again.check_frequency.isEnabled()
-    assert again.font_size.value() == 14 and again.downsample.value() == 500_000
+    assert again.font_scale.currentData() == "large" and again.downsample.value() == 500_000
 
 
-def test_cancel_writes_nothing(window):
+def test_the_buttons(window):
     dlg = SettingsDialog(window)
+    SB = QDialogButtonBox.StandardButton
+    assert dlg.buttons.standardButtons() == SB.Close | SB.RestoreDefaults
+
+
+def test_a_change_applies_without_ok(window):
+    dlg = SettingsDialog(window)
+    assert app_settings().value("max_recent_files") is None
     dlg.max_recent.setValue(2)
-    dlg.reject()
-    assert S.max_recent_files() == 10 and app_settings().value("max_recent_files") is None
+    assert S.max_recent_files() == 2
+    dlg.confirm_close.setChecked(False)
+    assert not S.confirm_close_unsaved()
+    dlg.x_unit.setCurrentIndex(dlg.x_unit.findData("micron"))
+    assert S.initial_x_unit() == "micron"
 
 
-def test_restore_defaults_acts_on_the_widgets_only(window):
+def test_loading_the_dialog_saves_nothing(window):
+    SettingsDialog(window)
+    assert app_settings().value("max_recent_files") is None
+
+
+def test_a_typed_number_applies_when_finished(window):
+    dlg = SettingsDialog(window)
+    assert not dlg.max_recent.keyboardTracking()
+    dlg.fixed_dir.setText("/somewhere")  # typing: not yet
+    assert app_settings().value(S.FIXED_DIR_KEY) is None
+    dlg.fixed_dir.editingFinished.emit()
+    assert app_settings().value(S.FIXED_DIR_KEY) == "/somewhere"
+
+
+def test_restore_defaults_applies(window):
     app_settings().setValue(S.MAX_RECENT_KEY, 4)
     dlg = SettingsDialog(window)
     assert dlg.max_recent.value() == 4
     dlg.restore_defaults()
     assert dlg.max_recent.value() == 10 and dlg.downsample.value() == 1000000
-    assert S.max_recent_files() == 4  # saved only by OK or Apply
-    dlg.apply()
     assert S.max_recent_files() == 10
 
 
@@ -198,16 +219,60 @@ def test_the_theme_stays_in_sync_with_the_menu(window):
     assert SettingsDialog(window).theme.currentData() == "system"
 
 
-def test_the_font_size(window):
+@pytest.fixture
+def fonts(monkeypatch):
+    """Fresh state of the font scaling, and the fonts back afterwards."""
     app = QApplication.instance()
-    before = app.font().pointSize()
+    saved = {None: app.font(), **{n: app.font(n) for n in theme._FONT_CLASSES}}
+    monkeypatch.setattr(theme, "_original_fonts", None)
+    yield app
+    for name, font in saved.items():
+        app.setFont(font) if name is None else app.setFont(font, name)
+
+
+def test_normal_never_calls_setfont(window, fonts, monkeypatch):
+    calls = []
+    monkeypatch.setattr(QApplication, "setFont", lambda *a, **k: calls.append(a))
+    theme.apply_font_scale(1.0)
+    window._apply_settings()
+    window._restore_view_settings()
+    assert calls == []
+
+
+def test_the_font_scale(window, fonts):
+    sizes = {n: fonts.font(n).pointSizeF() for n in ("QLabel", "QToolButton", "QHeaderView")}
+    base = fonts.font().pointSizeF()
     dlg = SettingsDialog(window)
-    dlg.font_size.setValue(S.FONT_RANGE[1])
-    dlg.apply()
-    assert app.font().pointSize() == S.FONT_RANGE[1]
-    dlg.font_size.setValue(0)
-    dlg.apply()
-    assert app.font().pointSize() == before
+    dlg.font_scale.setCurrentIndex(dlg.font_scale.findData("large"))
+    assert app_settings().value(S.FONT_SCALE_KEY) == "large"
+    assert fonts.font().pointSizeF() == pytest.approx(base * 1.2)
+    for name, size in sizes.items():  # the relations between classes stay
+        assert fonts.font(name).pointSizeF() == pytest.approx(size * 1.2)
+    dlg.font_scale.setCurrentIndex(dlg.font_scale.findData("small"))
+    assert fonts.font("QLabel").pointSizeF() == pytest.approx(sizes["QLabel"] * 0.85)
+    dlg.font_scale.setCurrentIndex(dlg.font_scale.findData("normal"))
+    assert fonts.font().pointSizeF() == base
+    for name, size in sizes.items():
+        assert fonts.font(name).pointSizeF() == size
+
+
+def test_the_headers_and_the_labels_scale_together(window, fonts):
+    from PySide6.QtWidgets import QLabel
+    from astrocook.gui.floating_cards import CollapsibleSection
+    theme.apply_font_scale(1.2)
+    section = CollapsibleSection("Group")
+    section.show()
+    label = QLabel("x")
+    assert section.header.font().pointSizeF() == pytest.approx(label.font().pointSizeF())
+
+
+def test_the_old_font_size_key_is_ignored(window, fonts):
+    app_settings().setValue("font_size", 14)
+    assert S.font_scale_factor() == 1.0
+    window._apply_settings()
+    assert SettingsDialog(window).font_scale.currentData() == "normal"
+    app_settings().setValue(S.FONT_SCALE_KEY, "huge")  # not a choice either
+    assert S.font_scale_factor() == 1.0
 
 
 # --- The effect of each setting ---
