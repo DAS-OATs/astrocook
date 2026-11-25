@@ -732,6 +732,23 @@ def external_models_import_dialog(s: Studio):
 
 
 @scene
+def installation_software_update(s: Studio):
+    """Help > Software Update... (phase 7-quater, U1): the dialog of a pip
+    install with a mock release (no network: the release is given)."""
+    from astrocook.gui.software_update import ReleaseInfo, SoftwareUpdateDialog
+    notes = ("## What's new\n\n- A mock release, only for this picture.\n"
+             "- The notes of the real release appear here as plain text.")
+    dialog = SoftwareUpdateDialog(
+        current="2.8.0", kind="pip",
+        release=ReleaseInfo("v2.9.0", notes, "https://github.com/DAS-OATs/astrocook/releases"))
+    dialog.show()
+    s.pump(0.3)
+    image = framed(grab(dialog), dialog.windowTitle())
+    dialog.close()
+    return image
+
+
+@scene
 def editing_apply_expression(s: Studio):
     w = s.new_window("My other QSO", "My QSO", size=(1000, 720))
     s.limits(x=(438, 462))

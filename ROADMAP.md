@@ -675,7 +675,7 @@ Names of the assets (decided with Guido, 25 November 2026): the fixed name `Astr
 
 | PR | Content | Model | Estimate | Done |
 |---|---|---|---|---|
-| U1 | *Software Update...*: a module in `astrocook/gui/` (the version check with the network mocked in the tests, the recognition of the installation, the download with checksum, the dialog with its three variants), the menu entry, `docs/installation.md` (a section on the updates) and a screenshot of the dialog (a mock release: no network in the scene). Characterization tests first for the version comparison (pre-releases, `2.8.0` against `2.10.0`, a tag with `v`); the tests of the menus and of `test_gui_structure.py` | Sonnet | 3 h | |
+| U1 | *Software Update...*: a module in `astrocook/gui/` (the version check with the network mocked in the tests, the recognition of the installation, the download with checksum, the dialog with its three variants), the menu entry, `docs/installation.md` (a section on the updates) and a screenshot of the dialog (a mock release: no network in the scene). Characterization tests first for the version comparison (pre-releases, `2.8.0` against `2.10.0`, a tag with `v`); the tests of the menus and of `test_gui_structure.py` | Sonnet | 3 h | 25 November 2026: `astrocook/gui/software_update.py`, Help entry, `tests/test_software_update.py` (21 tests, network faked), docs, screenshot `installation_software_update`; `packaging` declared as a dependency (already pulled by matplotlib); the automatic check at start is not done, to confirm with Guido; macOS menu role and the `digest` field of a real release to check by hand |
 
 *Findings* (register, 3.2): numbered `FU1`, ... if any.
 
@@ -1135,4 +1135,4 @@ One line per concluded phase; the long rows are in `ROADMAP_HISTORY.md`, "7. Pro
 | 7 – Robust components | in progress: plan agreed (13 November 2026), four blocks 7a-7d |
 | 7-bis – Small fixes | done (16 November 2026), interleaved with phase 7: PRs B1-B11 (#772, #774-#776, #778-#780, #786, #788, #790, #791); F101, F114, F30, F72, F84, F102, F112 (the immediate fix), F115 (the mechanical part), F128, F149 (the reason), F151, F152, F157 and F158 closed; F159, F161, F162 and F163 found |
 | 7-ter – External models | done (21 November 2026): PRs T1-T4, FT7, FT8 and R, release 2.8.0 from `release/2.7.x` (the tag by Guido) |
-| 7-quater – Software update | planned (25 November 2026), parallel to phase 7: PR U1, the check of the version and the dialog (download of the `.dmg` on macOS, the command to copy for pip installs); no automatic update (Sparkle dropped) |
+| 7-quater – Software update | in progress (25 November 2026), parallel to phase 7: PR U1 (done, in review), the check of the version and the dialog (download of the `.dmg` on macOS, the command to copy for pip installs); no automatic update (Sparkle dropped) |
