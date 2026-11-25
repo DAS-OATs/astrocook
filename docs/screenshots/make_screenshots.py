@@ -705,6 +705,37 @@ def installation_software_update(s: Studio):
     return image
 
 
+def _settings_tab(index: int):
+    """Edit > Settings... (phase 7-quater, U2): one tab of the dialog, with
+    the defaults (the run has fresh settings, see the top of this file)."""
+    from PySide6.QtWidgets import QWidget
+    from astrocook.gui.settings_dialog import SettingsDialog
+    parent = QWidget()
+    dialog = SettingsDialog(parent)
+    dialog.tabs.setCurrentIndex(index)
+    dialog.show()
+    for _ in range(5):
+        QApplication.processEvents()
+    image = framed(grab(dialog), dialog.windowTitle())
+    dialog.close()
+    return image
+
+
+@scene
+def settings_general(s: Studio):
+    return _settings_tab(0)
+
+
+@scene
+def settings_appearance(s: Studio):
+    return _settings_tab(1)
+
+
+@scene
+def settings_performance(s: Studio):
+    return _settings_tab(2)
+
+
 @scene
 def editing_apply_expression(s: Studio):
     w = s.new_window("My other QSO", "My QSO", size=(1000, 720))

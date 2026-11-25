@@ -4,7 +4,7 @@ import astropy.units as au
 import numpy as np
 import os
 from PySide6.QtCore import (
-    QEvent, Qt, QThreadPool
+    QEvent, QThreadPool, QTimer, Qt
 )
 from PySide6.QtGui import (
     QIcon, QPixmap
@@ -152,6 +152,8 @@ class MainWindow(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, MainSe
         self._apply_styles()
         self._align_combo_labels()  # with the font of the stylesheet
         self._restore_view_settings()
+        # Settings > General: the check for updates, when it is on and due
+        QTimer.singleShot(3000, self._check_update_at_start)
 
         # --- Initial State ---
         # Normalize input to a list
@@ -196,6 +198,10 @@ class MainWindow(MainMenusMixin, MainPanelsMixin, ContinuumControlsMixin, MainSe
         # the main thread through the signal (F6)
         set_debug_plot_handler(GLOBAL_PLOTTER.plot_requested.emit)
         GLOBAL_PLOTTER.plot_requested.connect(self._on_debug_plot_requested)
+
+    def _check_update_at_start(self):
+        from .software_update import start_update_check
+        start_update_check(self)
 
     def closeEvent(self, event):
         """The size and position of the window saved for the next start."""

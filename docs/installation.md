@@ -66,7 +66,8 @@ Astrocook is installed:
   version exists; update with `git pull`.
 
 If there is no network connection the dialog says so and nothing else
-happens. There is no automatic check at start-up.
+happens. The check at start-up is off unless you turn it on in
+[Settings](settings).
 
 ![The Software Update dialog](_static/installation_software_update.png)
 

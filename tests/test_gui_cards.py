@@ -12,8 +12,10 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from PySide6.QtCore import QEvent, QSettings
+from PySide6.QtCore import QEvent
 from PySide6.QtWidgets import QApplication, QMessageBox
+
+from astrocook.gui.settings import app_settings
 
 DATA = Path(__file__).parent / "data"
 SESSION_FILE = DATA / "J0103-1305_metallines_lya_new_3.acs2"
@@ -29,7 +31,7 @@ def window(qtbot, monkeypatch, tmp_path):
         monkeypatch.setattr(QMessageBox, kind,
                             staticmethod(lambda *a, **k: QMessageBox.StandardButton.Ok))
     # Sections start from their defaults, whatever an earlier test stored
-    QSettings("Astrocook", "AstrocookV2").remove("plot_controls")
+    app_settings().remove("plot_controls")
     from astrocook.gui.main_window import MainWindow
     win = MainWindow(None, None)
     qtbot.addWidget(win)
@@ -37,7 +39,7 @@ def window(qtbot, monkeypatch, tmp_path):
     win.show()
     win.open_session_from_path(str(SESSION_FILE))
     yield win
-    QSettings("Astrocook", "AstrocookV2").remove("plot_controls")
+    app_settings().remove("plot_controls")
 
 
 def _open(qtbot, win, side):

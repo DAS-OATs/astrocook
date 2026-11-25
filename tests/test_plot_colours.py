@@ -3,9 +3,10 @@ the colour-blind safe one, in the main plot, in the velocity plot and in
 the cues of the flags of the System Inspector, saved in the settings."""
 import matplotlib.colors as mcolors
 import pytest
-from PySide6.QtCore import QSettings, Qt
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QMessageBox
 
+from astrocook.gui.settings import app_settings
 from astrocook.gui import plot_style
 from astrocook.gui.inspector_table import flag_cue
 from astrocook.gui.main_window import MainWindow
@@ -75,7 +76,7 @@ def test_menu_switches_the_main_plot_and_is_saved(window):
     assert _hex(lines["Spectrum"].get_color()) == "#1f77b4"
     actions["colorblind"].trigger()
     assert actions["colorblind"].isChecked()
-    assert QSettings("Astrocook", "AstrocookV2").value("plot_colours") == "colorblind"
+    assert app_settings().value("plot_colours") == "colorblind"
     lines = _main_lines(window)
     palette = plot_style.PLOT_PALETTES["colorblind"]
     assert _hex(lines["Spectrum"].get_color()) == palette["flux"]

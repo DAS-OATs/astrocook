@@ -9,15 +9,17 @@ import logging
 import os
 from typing import Any, Optional
 
-from PySide6.QtCore import QSettings, QTimer, QUrl, Qt
+from PySide6.QtCore import QTimer, QUrl, Qt
 from PySide6.QtGui import QAction, QActionGroup, QDesktopServices, QKeySequence
 from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox
 
+from astrocook.gui.settings import (FONT_RANGE, FONT_SIZE_KEY, app_settings, get_number,
+                                    initial_x_unit, max_recent_files)
 from .about_dialog import AboutDialog
 from .script_dialog import ScriptDialog
 from .system_inspector import SystemInspector
 from .plot_style import PLOT_PALETTE_NAMES, plot_palette_name, set_plot_palette
-from .theme import APPEARANCES, apply_appearance
+from .theme import APPEARANCES, apply_appearance, apply_font_size
 from astrocook.gui._window_host import HostBase
 from astrocook.recipes.registry import DOCS_URL, find_recipe
 
@@ -25,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 #: The files opened last, in the settings (File > Open Recent, the empty window)
 RECENT_FILES_KEY = "recent_files"
-MAX_RECENT_FILES = 10
+MAX_RECENT_FILES = 10  # the default of Settings > General (``settings.DEFAULTS``)
 #: The size and position of the main window, in the settings
 GEOMETRY_KEY = "window_geometry"
 #: View > Plot Colours: the palette of the plots ("standard", "colorblind")
@@ -98,7 +100,7 @@ class MainMenusMixin(HostBase):
         apply_appearance(mode)
         self.appearance_actions[mode].setChecked(True)
         if save:
-            QSettings("Astrocook", "AstrocookV2").setValue("appearance", mode)
+            app_settings().setValue("appearance", mode)
 
     def _set_plot_colours(self, name: str, save: bool = True):
         """View > Plot Colours: the standard palette of the plots or the
@@ -107,7 +109,7 @@ class MainMenusMixin(HostBase):
         name = set_plot_palette(name)
         self.plot_colours_actions[name].setChecked(True)
         if save:
-            QSettings("Astrocook", "AstrocookV2").setValue(PLOT_COLOURS_KEY, name)
+            app_settings().setValue(PLOT_COLOURS_KEY, name)
         if getattr(self, 'plot_viewer', None) is not None and self.active_history:
             self._trigger_replot()
         inspector = getattr(self, 'system_inspector', None)
@@ -123,13 +125,13 @@ class MainMenusMixin(HostBase):
         if self.show_toolbar_action.isChecked() != visible:
             self.show_toolbar_action.setChecked(visible)
         if save:
-            QSettings("Astrocook", "AstrocookV2").setValue("show_toolbar", visible)
+            app_settings().setValue("show_toolbar", visible)
 
     # --- Recent files ---
 
     def _recent_files(self) -> list:
         """The files opened last, most recent first, those that still exist."""
-        value: Any = QSettings("Astrocook", "AstrocookV2").value(RECENT_FILES_KEY, [])
+        value: Any = app_settings().value(RECENT_FILES_KEY, [])
         if isinstance(value, str):  # one entry comes back as a string
             value = [value]
         return [p for p in (value or []) if os.path.exists(p)]
@@ -137,13 +139,13 @@ class MainMenusMixin(HostBase):
     def _add_recent_file(self, path: str):
         path = os.path.abspath(path)
         recent = [p for p in self._recent_files() if p != path]
-        QSettings("Astrocook", "AstrocookV2").setValue(
-            RECENT_FILES_KEY, ([path] + recent)[:MAX_RECENT_FILES])
+        app_settings().setValue(
+            RECENT_FILES_KEY, ([path] + recent)[:max_recent_files()])
         if hasattr(self, '_refresh_recent_list'):
             self._refresh_recent_list()
 
     def _clear_recent_files(self):
-        QSettings("Astrocook", "AstrocookV2").remove(RECENT_FILES_KEY)
+        app_settings().remove(RECENT_FILES_KEY)
         if hasattr(self, '_refresh_recent_list'):
             self._refresh_recent_list()
 
@@ -164,9 +166,15 @@ class MainMenusMixin(HostBase):
 
     def _restore_view_settings(self):
         """The appearance and the toolbar as the user left them."""
-        settings = QSettings("Astrocook", "AstrocookV2")
+        settings = app_settings()
         self._set_appearance(settings.value("appearance", "system"), save=False)
         self._set_plot_colours(settings.value(PLOT_COLOURS_KEY, "standard"), save=False)
+        # The unit of the x axis the session starts with, and the font
+        # (Settings > Appearance); the combo is the live control after that
+        self.x_unit_combo.blockSignals(True)
+        self.x_unit_combo.setCurrentText(initial_x_unit())
+        self.x_unit_combo.blockSignals(False)
+        apply_font_size(get_number(FONT_SIZE_KEY, FONT_RANGE))
         visible = settings.value("show_toolbar", True)
         self._set_toolbar_visible(visible not in (False, "false"), save=False)
         # The size and position of the window, as the user left them (they
@@ -175,8 +183,17 @@ class MainMenusMixin(HostBase):
         if geometry is not None:
             self.restoreGeometry(geometry)
 
+    def _apply_settings(self):
+        """After Settings...: what depends on a setting is brought up to date
+        (the theme and the plot colours are set by the dialog through their
+        menu actions)."""
+        apply_font_size(get_number(FONT_SIZE_KEY, FONT_RANGE))
+        self._refresh_recent_list()
+        if getattr(self, 'plot_viewer', None) is not None and self.active_history:
+            self._trigger_replot()
+
     def _save_window_geometry(self):
-        QSettings("Astrocook", "AstrocookV2").setValue(GEOMETRY_KEY, self.saveGeometry())
+        app_settings().setValue(GEOMETRY_KEY, self.saveGeometry())
 
     def _recipe_action(self, name: str, title: Optional[str], handler=None) -> QAction:
         """The (disabled) action of the entry of recipe ``name`` in the menu
@@ -374,6 +391,15 @@ class MainMenusMixin(HostBase):
 
         edit_menu.addSeparator()
 
+        # ** Settings... ** (phase 7-quater, U2). On macOS Qt moves it to the
+        # application menu (Cmd+,); elsewhere it stays in Edit
+        self.settings_action = QAction("&Settings...", self)
+        self.settings_action.setMenuRole(QAction.MenuRole.PreferencesRole)
+        self.settings_action.setShortcut(QKeySequence.StandardKey.Preferences)
+        self.settings_action.triggered.connect(self._on_settings_requested)
+        edit_menu.addAction(self.settings_action)
+        edit_menu.addSeparator()
+
         # The entries of the recipes: label from the registry (its ``menu``
         # key), in the order of RECIPE_LAYOUT
         for title, menu in (("Edit", edit_menu), ("Flux", flux_menu),
@@ -496,6 +522,12 @@ class MainMenusMixin(HostBase):
     def _on_about_requested(self):
         """Launches the About dialog."""
         dlg = AboutDialog(self)
+        dlg.exec()
+
+    def _on_settings_requested(self):
+        """Opens the Settings dialog; what it changes is applied at once."""
+        from .settings_dialog import SettingsDialog
+        dlg = SettingsDialog(self)
         dlg.exec()
 
     def _on_software_update_requested(self):
