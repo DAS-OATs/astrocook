@@ -54,7 +54,7 @@
     <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Tutorials" href="tutorials/index.html" />
+    <link rel="next" title="Settings" href="settings.html" />
     <link rel="prev" title="Welcome to Astrocook!" href="index.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
@@ -157,6 +157,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="settings.html">
+    Settings
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="tutorials/index.html">
     Tutorials
   </a>
@@ -169,13 +176,6 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="reference.html">
-    API Reference
-  </a>
-</li>
-
             <li class="nav-item dropdown">
                 <button class="btn dropdown-toggle nav-item" type="button"
                 data-bs-toggle="dropdown" aria-expanded="false"
@@ -184,6 +184,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="reference.html">
+    API Reference
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="credits.html">
     Credits
@@ -318,6 +325,13 @@
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="#" aria-current="page">
     Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="settings.html">
+    Settings
   </a>
 </li>
 
@@ -549,11 +563,14 @@ Astrocook and drag the new app into <code class="docutils literal notranslate"><
 <li><p><strong>pip install</strong> (Linux, Windows, macOS from source): the dialog shows the
 <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-U</span> <span class="pre">...</span></code> command, with a <em>Copy</em> button; run it yourself in the
 same environment. Astrocook never runs <code class="docutils literal notranslate"><span class="pre">pip</span></code> on its own.</p></li>
-<li><p><strong>git checkout or editable install</strong>: the dialog only says that a new
-version exists; update with <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">pull</span></code>.</p></li>
+<li><p><strong>git checkout or editable install</strong>: nothing is compared (a checkout of
+the development branch has no meaningful version number) and nothing is
+asked of the network: the dialog shows the version and the commit and says
+to update with <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">pull</span></code>. The check at start-up skips these installs.</p></li>
 </ul>
 <p>If there is no network connection the dialog says so and nothing else
-happens. There is no automatic check at start-up.</p>
+happens. The check at start-up is off unless you turn it on in
+<a class="reference internal" href="settings.html"><span class="doc std std-doc">Settings</span></a>.</p>
 <p><img alt="The Software Update dialog" src="images/installation_software_update.png" /></p>
 </section>
 <section id="running-the-app">
@@ -616,11 +633,11 @@ also needs <code class="docutils literal notranslate"><span class="pre">brew</sp
       </div>
     </a>
     <a class="right-next"
-       href="tutorials/index.html"
+       href="settings.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Tutorials</p>
+        <p class="prev-next-title">Settings</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>

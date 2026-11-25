@@ -26,6 +26,7 @@ It is designed to make spectral analysis—such as continuum fitting, absorption
 :caption: User Guide
 
 installation
+settings
 tutorials/index
 science
 reference
