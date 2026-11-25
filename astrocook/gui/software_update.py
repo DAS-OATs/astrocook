@@ -21,6 +21,7 @@ import os
 import subprocess
 import sys
 import urllib.request
+from http.client import HTTPException
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Literal, Optional
@@ -38,6 +39,9 @@ REPO_URL = "https://github.com/DAS-OATs/astrocook"
 DMG_ASSET = "Astrocook.dmg"
 USER_AGENT = "Astrocook-update-check"
 TIMEOUT = 10  # seconds
+
+#: What a request or the reading of its answer can raise (JSON errors are ValueErrors)
+_NETWORK_ERRORS = (OSError, ValueError, HTTPException, AttributeError)
 
 InstallKind = Literal["frozen_macos", "editable", "pip"]
 
@@ -164,7 +168,7 @@ class _CheckWorker(QThread):
     def run(self):
         try:
             self.found.emit(fetch_latest_release(self._urlopen))
-        except Exception as exc:  # network, JSON, HTTP: all end as a message
+        except _NETWORK_ERRORS as exc:  # network, JSON, HTTP: all end as a message
             self.failed.emit(str(exc))
 
 
@@ -188,7 +192,7 @@ class _DownloadWorker(QThread):
                                lambda: self._cancel, self._urlopen)
             if ok:
                 self.finished_ok.emit(self._dest, verify_digest(self._dest, self._digest))
-        except Exception as exc:
+        except _NETWORK_ERRORS as exc:
             self.failed.emit(str(exc))
 
 
