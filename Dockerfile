@@ -33,6 +33,7 @@ RUN pip install \
     "scipy>=1.14" \
     "matplotlib>=3.9" \
     "numexpr" \
+    "packaging" \
     "mcp>=2.3,<3" \
     "anyio>=4.11" \
     "emcee" \
