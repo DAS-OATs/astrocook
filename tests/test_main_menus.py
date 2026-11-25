@@ -41,7 +41,7 @@ MENUS = {
     "Absorbers": ["Auto-detect Doublets...", "Auto-fit Ly-alpha Forest...", SEP,
                   "Identify Absorption Lines...", "Refit All Systems...",
                   "Clean Negligible Components...", SEP, "Evaluate Model..."],
-    "Help": ["Online Documentation", SEP, "About Astrocook..."],
+    "Help": ["Online Documentation", SEP, "About Astrocook...", "Software Update..."],
 }
 
 #: The recipe dialog opened by each entry (category, recipe)
@@ -141,7 +141,7 @@ def test_shortcuts(empty):
 def test_actions_enabled_with_a_session(empty, qtbot):
     # Also with no session: the toolbar, the appearance and the colours of
     # the plots (phase 5-bis)
-    always = {"Open Session...", "Open Recent", "Online Documentation", "About Astrocook...",
+    always = {"Open Session...", "Open Recent", "Online Documentation", "About Astrocook...", "Software Update...",
               "Show Toolbar", "Appearance", "Plot Colours"}
     for text, action in _actions(empty).items():
         assert action.isEnabled() == (text in always), text
