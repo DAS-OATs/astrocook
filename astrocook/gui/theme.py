@@ -17,7 +17,7 @@ again when the system switches between light and dark
 from typing import cast
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor, QPalette
+from PySide6.QtGui import QColor, QFont, QPalette
 from PySide6.QtWidgets import QApplication
 
 #: The accent of Astrocook: the border of a field being edited, titles,
@@ -173,3 +173,20 @@ def apply_appearance(mode: str):
         if is_dark() != (mode == "dark"):
             app.setPalette(dark_palette() if mode == "dark" else app.style().standardPalette())
             _palette_forced = True
+
+
+_system_font = None
+
+
+def apply_font_size(points: int):
+    """The size of the font of the application, that of tables, panels and
+    menus (Settings > Appearance); 0 gives back the font of the system.
+    Sizes written explicitly in a stylesheet or in a text are not changed."""
+    global _system_font
+    app = cast(QApplication, QApplication.instance())
+    if _system_font is None:
+        _system_font = app.font()
+    font = QFont(_system_font)
+    if points > 0:
+        font.setPointSize(points)
+    app.setFont(font)

@@ -14,13 +14,14 @@ from typing import Optional, cast
 
 import qtawesome as qta
 from PySide6.QtCore import (QEasingCurve, QLocale, QParallelAnimationGroup, QPoint,
-                            QPropertyAnimation, QRect, QSettings, QSize, Qt)
+                            QPropertyAnimation, QRect, QSize, Qt)
 from PySide6.QtGui import QColor, QDoubleValidator, QIcon, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (QAbstractItemView, QApplication, QCheckBox, QComboBox,
                                QGridLayout, QHBoxLayout, QLabel, QLineEdit,
                                QListView, QMessageBox, QPushButton, QSizePolicy, QSlider,
                                QStyle, QVBoxLayout, QWidget)
 
+from astrocook.gui.settings import app_settings
 from astrocook.session.session import Session
 from astrocook.core.utils import resource_path
 
@@ -69,10 +70,10 @@ class MainPanelsMixin(HostBase):
     def _make_card_section(self, title: str, expanded: bool) -> CollapsibleSection:
         """A collapsible section of the plot controls; its state is remembered."""
         key = f"plot_controls/expanded/{title}"
-        settings = QSettings("Astrocook", "AstrocookV2")
+        settings = app_settings()
         section = CollapsibleSection(title, cast(bool, settings.value(key, expanded, type=bool)))
         section.toggled.connect(
-            lambda state: QSettings("Astrocook", "AstrocookV2").setValue(key, state))
+            lambda state: app_settings().setValue(key, state))
         return section
 
     def _toolbar_room(self) -> int:

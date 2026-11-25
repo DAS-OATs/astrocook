@@ -3,8 +3,7 @@ import json
 import logging
 import numpy as np
 import astropy.units as au
-from PySide6.QtCore import (QEvent, Qt, QLocale, QItemSelection, QItemSelectionModel, QSettings,
-                            QTimer)
+from PySide6.QtCore import (QEvent, Qt, QLocale, QItemSelection, QItemSelectionModel, QTimer)
 from PySide6.QtGui import QAction, QDoubleValidator, QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QTableView, 
@@ -13,6 +12,7 @@ from PySide6.QtWidgets import (
 )
 from typing import List, cast
 
+from astrocook.gui.settings import app_settings
 from ..core.structures import ComponentData
 from ..core.atomic_data import STANDARD_MULTIPLETS, ATOM_DATA, is_multiplet, series_lines
 from ..core.resolution import resolution_at
@@ -1166,7 +1166,7 @@ class SystemInspector(QWidget):
     def _hidden_columns(self) -> dict:
         """The columns shown or hidden by the user ({name: hidden}), from
         the settings; a column not in it follows its default."""
-        raw = QSettings("Astrocook", "AstrocookV2").value(HIDDEN_COLUMNS_KEY, "")
+        raw = app_settings().value(HIDDEN_COLUMNS_KEY, "")
         try:
             return {k: bool(v) for k, v in json.loads(cast(str, raw)).items()} if raw else {}
         except (TypeError, ValueError):
@@ -1211,11 +1211,11 @@ class SystemInspector(QWidget):
     def _set_column_shown(self, name: str, shown: bool):
         hidden = self._hidden_columns()
         hidden[name] = not shown
-        QSettings("Astrocook", "AstrocookV2").setValue(HIDDEN_COLUMNS_KEY, json.dumps(hidden))
+        app_settings().setValue(HIDDEN_COLUMNS_KEY, json.dumps(hidden))
         self._update_column_visibility()
 
     def _reset_columns(self):
-        QSettings("Astrocook", "AstrocookV2").remove(HIDDEN_COLUMNS_KEY)
+        app_settings().remove(HIDDEN_COLUMNS_KEY)
         self._update_column_visibility()
 
     def _apply_field_styles(self):

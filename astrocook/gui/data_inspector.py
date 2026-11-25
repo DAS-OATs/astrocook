@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (QAbstractItemView, QDialog, QDialogButtonBox, QHe
 from .theme import SELECTION
 from astrocook.core.column_names import display_column
 from astrocook.gui.errors import DATA_ERRORS
+from astrocook.gui.settings import table_decimals
 
 
 #: The columns of wavelength, written with a fixed number of decimals
@@ -23,7 +24,7 @@ def format_value(col_name: str, val, col_obj=None) -> str:
     of phase 5-bis: every column was in scientific notation, also the
     wavelength):
 
-    - the wavelengths with 5 decimals (0.01 pm in nm);
+    - the wavelengths with 5 decimals (0.01 pm in nm; Settings > Appearance);
     - the masks and the integer columns (e.g. ``abs_mask``, ``abs_ids``)
       as integers;
     - the other values with 5 significant digits, in fixed notation from
@@ -38,7 +39,7 @@ def format_value(col_name: str, val, col_obj=None) -> str:
     if not np.isfinite(val):
         return str(val)
     if col_name in WAVELENGTH_COLUMNS:
-        return f"{val:.5f}"
+        return f"{val:.{table_decimals()}f}"
     magnitude = abs(cast(float, val))
     if magnitude == 0:
         return "0"

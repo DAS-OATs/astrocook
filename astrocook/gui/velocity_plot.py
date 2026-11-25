@@ -10,7 +10,7 @@ import astropy.units as au
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 from matplotlib.layout_engine import ConstrainedLayoutEngine
-from PySide6.QtCore import QSettings, Qt
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction, QCursor
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QMenu, QPushButton, QSizePolicy,
@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
 )
 from typing import List, Optional
 
+from astrocook.gui.settings import app_settings
 from ..core.structures import ComponentData
 from ..core.atomic_data import STANDARD_MULTIPLETS, xem_d, ATOM_DATA, is_multiplet, series_lines
 from ..core.resolution import resolution_at
@@ -154,9 +155,9 @@ class VelocityPlotWidget(QWidget):
         # hidden as the user left it (its own setting: the inspector has no
         # View menu)
         self.toolbar.float_over(self.plot_stack)
-        self.toolbar.set_shown(QSettings("Astrocook", "AstrocookV2").value(
+        self.toolbar.set_shown(app_settings().value(
             INSPECTOR_TOOLBAR_KEY, True, type=bool))
-        self.toolbar.on_toggled = lambda shown: QSettings("Astrocook", "AstrocookV2").setValue(
+        self.toolbar.on_toggled = lambda shown: app_settings().setValue(
             INSPECTOR_TOOLBAR_KEY, shown)
 
         # Right Side

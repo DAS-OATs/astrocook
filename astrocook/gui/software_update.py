@@ -339,3 +339,30 @@ class SoftwareUpdateDialog(QDialog):
                 w.cancel()
             w.wait(3000)
         super().done(result)
+
+
+# --- The check at the start (Settings > General) ----------------------------
+
+def start_update_check(window, urlopen: Callable = urllib.request.urlopen):
+    """The automatic check of Settings > General, when it is on and due: it
+    runs in a thread, says nothing when the network is absent or the version
+    is the latest, and opens the Software Update dialog (with the release
+    already known) when a newer one exists. Returns the worker, or ``None``
+    when no check is due. Only the version is asked for: nothing of the user
+    is sent, as in the dialog."""
+    from astrocook import __version__
+    from .settings import record_update_check, update_check_due
+    if not update_check_due():
+        return None
+    worker = _CheckWorker(window, urlopen)
+
+    def found(release: ReleaseInfo):
+        record_update_check()
+        if is_newer(release.tag, __version__):
+            window._update_dialog = SoftwareUpdateDialog(window, release=release)
+            window._update_dialog.show()
+
+    worker.found.connect(found)
+    window._update_worker = worker
+    worker.start()
+    return worker

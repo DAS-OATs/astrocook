@@ -30,7 +30,7 @@ MENUS = {
     "View": ["Show Session Panel", "Show Plot Controls", "Show Toolbar", "Appearance", "Plot Colours", SEP,
              "View System Inspector", SEP,
              "View Session Log", "View Script Console", "View Identifications"],
-    "Edit": ["Undo", "Redo", SEP, "Set Properties...", SEP, "Apply Expression...",
+    "Edit": ["Undo", "Redo", SEP, "Settings...", SEP, "Set Properties...", SEP, "Apply Expression...",
              "Mask by Expression...", "Smooth Column...", "Delete Elements...", SEP,
              "Split Out Region...",
              "Extract Preset Region...", SEP, "Co-add Spectra..."],
@@ -141,7 +141,7 @@ def test_shortcuts(empty):
 def test_actions_enabled_with_a_session(empty, qtbot):
     # Also with no session: the toolbar, the appearance and the colours of
     # the plots (phase 5-bis)
-    always = {"Open Session...", "Open Recent", "Online Documentation", "About Astrocook...", "Software Update...",
+    always = {"Open Session...", "Open Recent", "Online Documentation", "About Astrocook...", "Software Update...", "Settings...",
               "Show Toolbar", "Appearance", "Plot Colours"}
     for text, action in _actions(empty).items():
         assert action.isEnabled() == (text in always), text

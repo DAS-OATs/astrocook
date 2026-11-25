@@ -345,7 +345,7 @@ def test_inspector_btur_column(loaded, monkeypatch):
     # btur, almost always a frozen 0, hidden unless a component uses it;
     # the header menu shows or hides a column, remembered (visual review)
     import dataclasses
-    from PySide6.QtCore import QSettings
+    from astrocook.gui.settings import app_settings
     from astrocook.gui import system_inspector
     from astrocook.gui.inspector_table import COLUMNS
     loaded._on_view_system_inspector()
@@ -362,7 +362,7 @@ def test_inspector_btur_column(loaded, monkeypatch):
     # The user hides it: hidden, and remembered
     inspector._set_column_shown("btur", False)
     assert view.isColumnHidden(col)
-    assert "btur" in QSettings("Astrocook", "AstrocookV2").value(
+    assert "btur" in app_settings().value(
         system_inspector.HIDDEN_COLUMNS_KEY)
     inspector._set_column_shown("logN", False)
     assert view.isColumnHidden(COLUMNS.index("logN"))

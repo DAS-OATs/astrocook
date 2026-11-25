@@ -106,7 +106,7 @@ def test_open_with_the_dialog(qtbot, empty, monkeypatch, tmp_path):
     # Several files: loaded in the background, with a progress dialog; the
     # failures told once at the end, the outcome in the status bar (phase
     # 5-bis: the window was frozen, with no sign of progress)
-    from PySide6.QtCore import QSettings
+    from astrocook.gui.settings import app_settings
     module = _module(empty, "_on_open_spectrum")
     dialog = module.QFileDialog
     bad = tmp_path / "bad.fits"
@@ -123,7 +123,7 @@ def test_open_with_the_dialog(qtbot, empty, monkeypatch, tmp_path):
     status = empty.status_recipe.text()
     assert status.startswith("Opened 2 sessions in ") and status.endswith(", 1 failed")
     assert empty._recent_files()[0] == str(SESSION_FILE)
-    assert QSettings("Astrocook", "AstrocookV2").value("last_working_dir") == str(SESSION_FILE.parent)
+    assert app_settings().value("last_working_dir") == str(SESSION_FILE.parent)
 
 
 def test_open_while_editing_the_continuum(qtbot, window, monkeypatch):
