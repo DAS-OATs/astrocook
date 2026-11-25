@@ -191,8 +191,8 @@ def test_appearance_menu(qtbot, window, qapp):
         # The interface follows (ApplicationPaletteChange)
         qtbot.wait(50)
         assert theme.palette_hex(QPalette.ColorRole.Base) in window.styleSheet()
-        from PySide6.QtCore import QSettings
-        assert QSettings("Astrocook", "AstrocookV2").value("appearance") == "dark"
+        from astrocook.gui.settings import app_settings
+        assert app_settings().value("appearance") == "dark"
         # A new window starts as the user left it
         from astrocook.gui.main_window import MainWindow
         other = MainWindow(None, None)
@@ -206,12 +206,12 @@ def test_appearance_menu(qtbot, window, qapp):
 
 
 def test_show_toolbar(qtbot, window):
-    from PySide6.QtCore import QSettings
+    from astrocook.gui.settings import app_settings
     toolbar = window.plot_viewer.toolbar
     assert window.show_toolbar_action.isChecked() and toolbar.isVisible()
     window.show_toolbar_action.trigger()
     assert not toolbar.isVisible()
-    assert QSettings("Astrocook", "AstrocookV2").value("show_toolbar") in (False, "false")
+    assert app_settings().value("show_toolbar") in (False, "false")
     from astrocook.gui.main_window import MainWindow
     other = MainWindow(None, None)
     qtbot.addWidget(other)

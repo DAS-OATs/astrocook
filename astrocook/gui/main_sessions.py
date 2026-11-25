@@ -14,13 +14,14 @@ from copy import deepcopy
 from typing import TYPE_CHECKING, Any, List, Optional, cast
 
 import numpy as np
-from PySide6.QtCore import QItemSelectionModel, QLocale, QPoint, QSettings, QStringListModel, Qt
+from PySide6.QtCore import QItemSelectionModel, QLocale, QPoint, QStringListModel, Qt
 from PySide6.QtGui import QAction, QDoubleValidator, QPalette
 from shiboken6 import isValid
 from PySide6.QtWidgets import (QApplication, QDialog, QDialogButtonBox, QFileDialog,
                                QFormLayout, QLabel, QLineEdit, QMenu, QMessageBox,
                                QProgressDialog, QSizePolicy, QVBoxLayout)
 
+from astrocook.gui.settings import app_settings, confirm_close_unsaved, starting_folder
 from astrocook.core.resolution import resolution_summary
 from astrocook.session.session import Session, load_session_from_file
 from astrocook.session.history import SessionHistory
@@ -419,8 +420,8 @@ class MainSessionsMixin(HostBase):
             return
         
         # --- Retrieve the last used directory ---
-        settings = QSettings("Astrocook", "AstrocookV2")
-        last_dir = cast(str, settings.value("last_working_dir", os.getcwd()))
+        settings = app_settings()
+        last_dir = starting_folder()
 
         file_names, _ = QFileDialog.getOpenFileNames(
             self, 
@@ -1059,8 +1060,8 @@ class MainSessionsMixin(HostBase):
         session_to_save_initial = history_to_save.states[0]
         
         # --- Sync with the last used directory ---
-        settings = QSettings("Astrocook", "AstrocookV2")
-        last_dir = cast(str, settings.value("last_working_dir", os.getcwd()))
+        settings = app_settings()
+        last_dir = starting_folder()
         default_path = os.path.join(last_dir, session_to_save_final.name + ".acs2")
 
         file_name, selected_filter = QFileDialog.getSaveFileName(
@@ -1107,8 +1108,11 @@ class MainSessionsMixin(HostBase):
         # Check for unsaved changes (basic check: has an undo history)
         # A more robust check would be a "is_dirty" flag
         is_dirty = history_to_close.can_undo() or history_to_close.can_redo()
-        
-        if is_dirty:
+
+        # Settings > General: the question can be turned off
+        if is_dirty and not confirm_close_unsaved():
+            self._close_session(history_to_close)
+        elif is_dirty:
             ret = self._show_custom_message(
                 title="Close Session",
                 header=f"Do you want to save changes to '{session_name}'?",  # Grassetto

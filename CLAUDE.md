@@ -105,6 +105,11 @@ without phase 7; master still says 2.7.0). Python ≥3.12.
   table and velocity plot in `inspector_table.py` and `velocity_plot.py`. A
   new method goes in the module of its theme; `tests/test_gui_structure.py`
   checks the interface of the split classes.
+  The user's settings (phase 7-quater, U2): `gui/settings.py` builds the
+  `QSettings` (`app_settings()`, the only place: the tests redirect it to a
+  folder of their own) and holds the keys, defaults and readers of
+  *Edit > Settings...* (`gui/settings_dialog.py`). A setting is about the
+  interface only: nothing outside `gui/` reads it, and none changes a number.
 - `astrocook/io/` – loaders and V1 → V2 migration. The structured data
   that a FITS header cannot hold (the identification of
   `core/identification.py`, the Bayesian samples) are files of their own

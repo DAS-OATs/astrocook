@@ -170,3 +170,28 @@ def test_dialog_download_bad_checksum_deletes_file(qtbot, tmp_path):
     dlg.action_button.click()
     qtbot.waitUntil(lambda: "does not match" in dlg.status.text(), timeout=5000)
     assert not opened and not (tmp_path / "Astrocook.dmg").exists()
+
+
+def test_dialog_development_install_compares_nothing(qtbot, monkeypatch):
+    """A checkout has no meaningful version: no network, no comparison, a
+    neutral message with the commit when it can be read."""
+    monkeypatch.setattr(su, "git_commit", lambda *a, **k: "abc1234")
+    uo = fake_urlopen({})  # any call would raise KeyError
+    dlg = SoftwareUpdateDialog(current="2.7.0", kind="editable", urlopen=uo)
+    qtbot.addWidget(dlg)
+    qtbot.wait(100)
+    assert uo.calls == [] and dlg._worker is None and dlg.release is None
+    text = dlg.status.text()
+    assert "development installation" in text and "version 2.7.0, commit abc1234" in text
+    assert "new version" not in text and not dlg.action_button.isVisibleTo(dlg)
+
+
+def test_dialog_development_install_without_a_readable_commit(qtbot, monkeypatch):
+    monkeypatch.setattr(su, "git_commit", lambda *a, **k: None)
+    dlg = SoftwareUpdateDialog(current="2.7.0", kind="editable", urlopen=fake_urlopen({}))
+    qtbot.addWidget(dlg)
+    assert "version 2.7.0)" in dlg.status.text() and "commit" not in dlg.status.text()
+
+
+def test_git_commit_is_none_outside_a_repository(tmp_path):
+    assert su.git_commit(tmp_path / "pkg") is None
