@@ -913,7 +913,8 @@ the sections above, learned on the mocks:
 - *The combination* of the anchored finalists that explain different
   peaks, greedy from the best, kept when the criterion falls (section 3.2).
 - *A cap of the short fit*, 60 free parameters (F171): a group with a
-  larger hypothesis keeps its default labels.
+  larger hypothesis keeps its default labels. 120 since the analytic
+  Jacobian of PR 7c.4d-bis (Guido, 25 November 2026).
 - *The species*: the anchors are the doublets of the standard multiplets
   and the pairs of FeII and SiII; `Ly_ab` in the forest; "all" the metals.
   The default is the common one of the recipe (CIV, SiIV, MgII, `Ly_ab`),

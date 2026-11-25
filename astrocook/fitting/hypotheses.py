@@ -143,16 +143,20 @@ CRITERIA = ("spic", "bic", "aic")
 FIT_NFEV = 300
 FIT_B_MAX = 100.0
 FIT_LOGN_MAX = 19.0
-#: The largest hypothesis that gets the short fit, in free parameters (20
-#: components of three). Its purpose: the time. The Jacobian of the fit is
-#: computed by finite differences, one model per parameter, so a fit costs
-#: about k times FIT_NFEV models; a group with a wide region (the trough of
-#: a DLA, mock "combined" of the grid robustness at S/N 10) had hypotheses
-#: of 94 components, k = 281, and one mock did not end in 100 minutes. A
-#: group with a hypothesis above it is not compared: its default labels are
-#: accepted with their AOD parameters, as a group without edges (60:
-#: Guido, 19 November 2026)
-MAX_FIT_K = 60
+#: The largest hypothesis that gets the short fit, in free parameters (40
+#: components of three). Its purpose: the time. A group with a hypothesis
+#: above it is not compared: its default labels are accepted with their AOD
+#: parameters, as a group without edges. 60 at first (Guido, 19 November
+#: 2026): the Jacobian was by finite differences, one model per parameter,
+#: and in the trough of a DLA (mock "combined" of the grid robustness at
+#: S/N 10) hypotheses of 94 components, k = 281, kept one mock running for
+#: more than 100 minutes. 120 since the analytic Jacobian (Guido, 25
+#: November 2026, PR 7c.4d-bis): a short fit of k = 120 in a DLA trough
+#: takes 6 s (107 s before), k = 282 18 s; on the grid robustness 120
+#: compares one hypothesis more than 60, with the same numbers, at 13% more
+#: time to identify; without a cap the grid did not end in 2 hours (a few
+#: groups far above 120). The room is for the joint hypotheses of F174
+MAX_FIT_K = 120
 #: The refinement of the finalists by their residuals: after its short fit
 #: a hypothesis gets a component where the residuals of its model are most
 #: negative (a 3-pixel sum below -REFINE_SIGMA): one of its species when the

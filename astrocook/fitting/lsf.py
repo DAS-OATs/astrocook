@@ -36,6 +36,7 @@ the pixel (findings register F10, F9).
 from typing import Dict, Optional, Tuple, Union
 
 import numpy as np
+from scipy import sparse
 from scipy.special import ndtr
 
 C_KMS = 299792.458
@@ -114,6 +115,8 @@ class PixelLSF:
         self.dv = min(steps)
         sigma_max = (C_KMS / r_min * FWHM_TO_SIGMA) if (r_min and r_min > 0) else 0.0
         margin = KERNEL_SIGMAS * sigma_max + self.dv
+        #: How far beyond its edges a pixel takes the fine flux (at most)
+        self.margin = margin
         if self.n_pix:
             v_start: float = np.nanmin(self.v_lo) - margin
             v_end: float = np.nanmax(self.v_hi) + margin
@@ -125,6 +128,7 @@ class PixelLSF:
         self.x_fine = self._lam_ref * np.exp(self.v_fine / C_KMS)
         self._use_cache = cache
         self._cache: Dict[Union[float, str], Tuple[np.ndarray, np.ndarray]] = {}
+        self._matrices: Dict[Union[float, str], sparse.csr_matrix] = {}
 
     def _weights(self, sigma: np.ndarray, sl=slice(None)
                  ) -> Tuple[np.ndarray, np.ndarray]:
@@ -165,25 +169,26 @@ class PixelLSF:
             norm[empty] = 1.0
         return idx, w / norm
 
+    def fine_range(self, pixels: np.ndarray) -> Tuple[int, int]:
+        """The fine samples (start, stop) that the pixels ``pixels``
+        (indices) take, with any resolution down to ``r_min``."""
+        if len(pixels) == 0:
+            return 0, 0
+        j0 = int(np.searchsorted(self.v_fine, np.min(self.v_lo[pixels]) - self.margin, side='left'))
+        j1 = int(np.searchsorted(self.v_fine, np.max(self.v_hi[pixels]) + self.margin, side='right'))
+        return j0, j1
+
     def apply(self, flux_fine: np.ndarray, resol: Union[None, float, np.ndarray],
-              key=None) -> np.ndarray:
+              key=None, pixels: Optional[np.ndarray] = None) -> np.ndarray:
         """Flux of each pixel: the fine flux convolved with the LSF of the
         pixel (resolving power ``resol``, scalar or one per pixel; None or
         NaN for no LSF) and averaged over the pixel. The weights are cached
         under ``key`` (the resolution itself if scalar or None), unless the
-        pixels are more than ``CHUNK``."""
-        if resol is None:
-            r = np.full(self.n_pix, np.nan)
-            key = 'none' if key is None else key
-        elif np.ndim(resol) == 0:
-            r = np.full(self.n_pix, float(resol))
-            key = float(resol) if key is None else key
-        else:
-            r = np.asarray(resol, dtype=float)
-        with np.errstate(invalid='ignore', divide='ignore'):
-            sigma = np.where(np.isfinite(r) & (r > 0), C_KMS / r * FWHM_TO_SIGMA, np.nan)
+        pixels are more than ``CHUNK``. Without the cache, ``pixels``
+        (indices) computes only those pixels, the others NaN (F167)."""
+        sigma, key = self._sigma(resol, key)
         if not self._use_cache:
-            return self._apply_absorbed(flux_fine, sigma)
+            return self._apply_absorbed(flux_fine, sigma, pixels)
         if self.n_pix > CHUNK:
             out = np.empty(self.n_pix)
             for start in range(0, self.n_pix, CHUNK):
@@ -200,18 +205,68 @@ class PixelLSF:
         idx, w = self._cache[key]
         return np.sum(flux_fine[idx] * w, axis=1)
 
-    def _apply_absorbed(self, flux_fine: np.ndarray, sigma: np.ndarray) -> np.ndarray:
+    def _sigma(self, resol: Union[None, float, np.ndarray], key=None):
+        """The sigma of the LSF of each pixel (km/s, NaN for none) and the
+        key of its weights (see ``apply``)."""
+        if resol is None:
+            r = np.full(self.n_pix, np.nan)
+            key = 'none' if key is None else key
+        elif np.ndim(resol) == 0:
+            r = np.full(self.n_pix, float(resol))
+            key = float(resol) if key is None else key
+        else:
+            r = np.asarray(resol, dtype=float)
+        with np.errstate(invalid='ignore', divide='ignore'):
+            sigma = np.where(np.isfinite(r) & (r > 0), C_KMS / r * FWHM_TO_SIGMA, np.nan)
+        return sigma, key
+
+    def matrix(self, resol: Union[None, float, np.ndarray], key=None) -> sparse.csr_matrix:
+        """The weights of ``apply`` as a sparse matrix (pixels x fine
+        samples): ``apply(flux_fine) == matrix @ flux_fine`` up to the order
+        of the sums. For the derivatives of the model (the analytic Jacobian
+        of the fitter, phase 7, PR 7c.4d-bis), which are convolved as the
+        flux. Kept under ``key`` (as ``apply``) with the cache and at most
+        ``CHUNK`` pixels, computed again at each call otherwise."""
+        sigma, key = self._sigma(resol, key)
+        keep = self._use_cache and self.n_pix <= CHUNK and key is not None
+        if keep and key in self._matrices:
+            return self._matrices[key]
+        blocks = []
+        for start in range(0, max(self.n_pix, 1), CHUNK):
+            sl = slice(start, min(start + CHUNK, self.n_pix))
+            if keep and key in self._cache:
+                idx, w = self._cache[key]
+            else:
+                idx, w = self._weights(sigma[sl], sl)
+            n, k = idx.shape
+            blocks.append(sparse.csr_matrix(
+                (w.ravel(), idx.ravel(), np.arange(0, n * k + 1, k)),
+                shape=(n, len(self.v_fine))))
+        mat = blocks[0] if len(blocks) == 1 else sparse.vstack(blocks, format='csr')
+        if keep:
+            self._matrices[key] = mat
+        return mat
+
+    def _apply_absorbed(self, flux_fine: np.ndarray, sigma: np.ndarray,
+                        pixels: Optional[np.ndarray] = None) -> np.ndarray:
         """As ``apply``, without cache: only the pixels with absorption
         (fine flux below 1) within the reach of their kernel are computed;
-        the others are exactly 1."""
-        out = np.ones(self.n_pix)
+        the others are exactly 1. With ``pixels``, only those (the others
+        NaN)."""
+        if pixels is None:
+            out = np.ones(self.n_pix)
+            cand = np.arange(self.n_pix)
+        else:
+            out = np.full(self.n_pix, np.nan)
+            cand = np.asarray(pixels)
+            out[cand] = 1.0
         absorbed = np.concatenate([[0], np.cumsum(flux_fine < 1.0)])
         if absorbed[-1] == 0:
             return out
-        reach = KERNEL_SIGMAS * np.nan_to_num(sigma, nan=0.0) + 0.5 * self.dv
-        j_lo = np.searchsorted(self.v_fine, self.v_lo - reach, side='left')
-        j_hi = np.searchsorted(self.v_fine, self.v_hi + reach, side='right')
-        pix = np.flatnonzero(absorbed[j_hi] > absorbed[j_lo])
+        reach = KERNEL_SIGMAS * np.nan_to_num(sigma[cand], nan=0.0) + 0.5 * self.dv
+        j_lo = np.searchsorted(self.v_fine, self.v_lo[cand] - reach, side='left')
+        j_hi = np.searchsorted(self.v_fine, self.v_hi[cand] + reach, side='right')
+        pix = cand[absorbed[j_hi] > absorbed[j_lo]]
         for start in range(0, len(pix), CHUNK):
             p = pix[start:start + CHUNK]
             idx, w = self._weights(sigma[p], p)

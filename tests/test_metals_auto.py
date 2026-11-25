@@ -80,6 +80,15 @@ def test_chi2_on_fit_pixels_is_unchanged(civ_and_siiv):
     assert n_pix == 88
     assert chi2_with == pytest.approx(86.62223896456908, rel=1e-9)
     assert chi2_without == pytest.approx(7018.995304906754, rel=1e-9)
+    # The same with the models only on the pixels of the fit, as
+    # metals_auto computes them (F167, phase 7, PR 7c.4d-bis)
+    fitter = VoigtFitter(spec, systs)
+    fitted, model, _ = fitter.fit(max_nfev=100, z_window_kms=20.0, verbose=0,
+                                  model="fit_pixels")
+    _, without = VoigtFitter(spec, fitted.delete_component(uuid=uuid)).compute_model_flux(
+        pixels=fitter.fit_mask)
+    assert fitter.chi2_on_fit_pixels(model) == (pytest.approx(chi2_with, rel=1e-12), n_pix)
+    assert fitter.chi2_on_fit_pixels(without)[0] == pytest.approx(chi2_without, rel=1e-12)
 
 
 @pytest.mark.parametrize("params, reason", [

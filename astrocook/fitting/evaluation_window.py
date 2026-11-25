@@ -319,7 +319,7 @@ class EvaluationWindow:
         own = [c.uuid for c in systs.components]
         model = self._with_fixed(systs, _reaching(sub, self.all_fixed))
         with model.fitting_context(own, group_depth=0):
-            fitted, _, _ = VoigtFitter(sub, model).fit(**kwargs)
+            fitted, _, _ = VoigtFitter(sub, model).fit(**kwargs, model=False)
         keep = set(own)
         return SystemList(dataclasses.replace(
             fitted._data, components=[c for c in fitted.components if c.uuid in keep]))

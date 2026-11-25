@@ -1143,7 +1143,8 @@ class SystemList:
         def fit_and_evaluate(systs_obj, target_uuids):
             with systs_obj.fitting_context(target_uuids, group_depth=group_depth, spec=spec):
                 fitter = VoigtFitter(spec, systs_obj)
-                new_systs, _, res = fitter.fit(max_nfev=max_nfev, z_window_kms=z_window_kms, verbose=0)
+                new_systs, _, res = fitter.fit(max_nfev=max_nfev, z_window_kms=z_window_kms, verbose=0,
+                                               model=False)
                 
                 # Cleanup
                 if new_systs.constraint_model:

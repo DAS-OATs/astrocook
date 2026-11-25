@@ -1557,9 +1557,12 @@ class RecipeAbsorbers:
                 with trial_systs.fitting_context(list(group), group_depth=FIT_EXPANSION_DEPTH,
                                                  spec=spec):
                     fitter = VoigtFitter(spec, trial_systs, check_stop=_fit_cancelled)
+                    # The models only on the pixels of the fit, the only
+                    # ones compared below (F167, phase 7, PR 7c.4d-bis)
                     fitted_systs, model_flux, res = fitter.fit(max_nfev=100, z_window_kms=z_win,
                                                                verbose=0, b_max=b_max,
-                                                               logN_max=logN_max)
+                                                               logN_max=logN_max,
+                                                               model='fit_pixels')
             except NoPixelsToFit:
                 # Its lines are outside the spectrum: it cannot be tried, and
                 # it was fitted on the whole spectrum, for hours on a long
@@ -1583,7 +1586,8 @@ class RecipeAbsorbers:
             # the pixels of its fit (3 more free parameters)
             chi2_with, n_pix = fitter.chi2_on_fit_pixels(model_flux)
             _, flux_without = VoigtFitter(
-                spec, fitted_systs.delete_component(uuid=new_uuid)).compute_model_flux()
+                spec, fitted_systs.delete_component(uuid=new_uuid)).compute_model_flux(
+                    pixels=fitter.fit_mask)
             chi2_without, _ = fitter.chi2_on_fit_pixels(flux_without)
             delta_aic = chi2_with - chi2_without + 2 * 3
             reason = _metals_rejection(fitted_comp, delta_aic, aic_penalty, b_max, logN_max)
@@ -2781,7 +2785,8 @@ class RecipeAbsorbers:
                 with local_systs.fitting_context(target_uuids, group_depth=FIT_EXPANSION_DEPTH,
                                                  spec=current_session.spec):
                     new_local_systs, _, res = fitter.fit(max_nfev=max_nfev_i, z_window_kms=z_win_f, verbose=0,
-                                                                 b_max=b_max_f, logN_max=logN_max_f)
+                                                         b_max=b_max_f, logN_max=logN_max_f,
+                                                         model=False)
                     
                 for fitted_comp in new_local_systs.components:
                     if fitted_comp.uuid in target_uuids:
