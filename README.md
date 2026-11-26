@@ -14,6 +14,8 @@ Developed by **Guido Cupani** at INAF–Osservatorio Astronomico di Trieste.
 
 **Many thanks** to (in alphabetical order): Giorgio Calderone, Stefano Cristiani, Simona Di Stefano, Valentina D'Odorico, Francesco Guarneri, Elena Marcuzzo, Stefano Alberto Russo, Andrea Trost.
 
+The development of Astrocook was assisted by the AI models Claude (Anthropic) and Gemini (Google).
+
 Logo and icon by **[Claudia Cupani](https://claudiacupani.com)**.
 
 Partly funded by the PRIN PNRR project “Next generation computing & data technologies to probe the cosmic metal content”.
