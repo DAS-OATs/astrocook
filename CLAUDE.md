@@ -285,8 +285,7 @@ Open constraints:
   and it is not decided whether to keep it beside Zenodo's DOI, which is the
   one in use. The publication on PyPI (#549) is done: 2.9.1 of 26 November
   (trusted publishing by `.github/workflows/publish.yml`; a release goes to
-  PyPI, a manual run to TestPyPI). The branches of the PRs need no longer be
-  `claude/...` for the license.
+  PyPI, a manual run to TestPyPI).
 - Waiting for data from Guido: sessions for the log replay, sample files for
   the loaders, X-Shooter VIS/NIR data (F15).
 - One PR at a time: wait for the merge before opening the next. New
