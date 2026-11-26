@@ -9,6 +9,7 @@ The first release with a license, and the first one on PyPI. Made from the 2.8.x
 ### Added
 - **License and citation.** `LICENSE` (GNU GPL v3 or later; copyright INAF), declared in `pyproject.toml` (SPDX expression, `setuptools>=77`); `CITATION.cff` (authors: Cupani, Calderone, Guarneri) with the Zenodo DOI of the software, `10.5281/zenodo.1346736`, and Cupani et al. 2026 (Proc. SPIE 14155, 141551X) as the paper to cite; the DOI badge in the README and the credits page; Claude and Gemini thanked in both.
 - **The tagline in the documentation.** The home page says "A thousand recipes to cook a spectrum" and what it means for the name (it was only in the credits).
+- **The page of PyPI.** The README opens with what Astrocook is, how to install it and where the documentation is (the credits follow); the short description, the keywords, the classifiers and the project URLs (documentation, changelog, citation) of `pyproject.toml` are completed.
 - **Publication on PyPI.** `.github/workflows/publish.yml` builds the package and publishes it on PyPI when a release is published (on TestPyPI from a manual run), with trusted publishing: no token is stored. `pip install astrocook` replaces the installation from GitHub in the documentation.
 
 ### Changed
