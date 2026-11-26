@@ -34,10 +34,10 @@ preferred-citation:
       given-names: Christian
     - family-names: Trost
       given-names: Andrea
-  # TODO: name of the proceedings (not verified: no network access to ADS/Crossref)
   collection-title: "Proceedings of the SPIE"
   collection-type: proceedings
   volume: 14155
   start: 141551X
+  pages: 11
   year: 2026
   doi: 10.1117/12.3101756
