@@ -7,7 +7,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Installation &#8212; Astrocook 2.8.0 documentation</title>
+    <title>Installation &#8212; Astrocook 2.9.0 documentation</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
 <link rel="preload" as="script" href="static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="static/documentation_options.js?v=69ff2ef9"></script>
+    <script src="static/documentation_options.js?v=182a64a0"></script>
     <script src="static/doctools.js?v=fd6eb6e6"></script>
     <script src="static/sphinx_highlight.js?v=6ffebe34"></script>
     <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="static/design-tabs.js?v=fcb327ea"></script>
@@ -47,19 +47,19 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.8.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.9.0';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
     <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Tutorials" href="tutorials/index.html" />
+    <link rel="next" title="Settings" href="settings.html" />
     <link rel="prev" title="Welcome to Astrocook!" href="index.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.8.0" />
+  <meta name="docsearch:version" content="2.9.0" />
   
     
     <script src="static/searchtools.js"></script>
@@ -157,6 +157,13 @@
 
 
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="settings.html">
+    Settings
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="tutorials/index.html">
     Tutorials
   </a>
@@ -169,13 +176,6 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="reference.html">
-    API Reference
-  </a>
-</li>
-
             <li class="nav-item dropdown">
                 <button class="btn dropdown-toggle nav-item" type="button"
                 data-bs-toggle="dropdown" aria-expanded="false"
@@ -184,6 +184,13 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="reference.html">
+    API Reference
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="credits.html">
     Credits
@@ -318,6 +325,13 @@
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="#" aria-current="page">
     Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="settings.html">
+    Settings
   </a>
 </li>
 
@@ -535,6 +549,30 @@ drive Astrocook through its MCP server, installed with the <code class="docutils
 extra (or run in a Docker image): see the tutorial
 <a class="reference internal" href="tutorials/agents.html"><span class="doc std std-doc">Using Astrocook from an AI Agent</span></a>.</p>
 </section>
+<section id="updating-astrocook">
+<h2>Updating Astrocook<a class="headerlink" href="#updating-astrocook" title="Link to this heading">#</a></h2>
+<p><em>Help &gt; Software Update…</em> asks GitHub for the latest release and compares
+it with the version you run. Nothing is sent but a generic request, and
+nothing is installed without you; what the dialog offers depends on how
+Astrocook is installed:</p>
+<ul class="simple">
+<li><p><strong>macOS app</strong>: <em>Download</em> fetches <code class="docutils literal notranslate"><span class="pre">Astrocook.dmg</span></code> (to <code class="docutils literal notranslate"><span class="pre">~/Downloads</span></code>),
+checks its SHA-256 checksum against the one GitHub gives for the file
+(the dialog says so when the release gives none) and opens it. Then close
+Astrocook and drag the new app into <code class="docutils literal notranslate"><span class="pre">Applications</span></code>.</p></li>
+<li><p><strong>pip install</strong> (Linux, Windows, macOS from source): the dialog shows the
+<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-U</span> <span class="pre">...</span></code> command, with a <em>Copy</em> button; run it yourself in the
+same environment. Astrocook never runs <code class="docutils literal notranslate"><span class="pre">pip</span></code> on its own.</p></li>
+<li><p><strong>git checkout or editable install</strong>: nothing is compared (a checkout of
+the development branch has no meaningful version number) and nothing is
+asked of the network: the dialog shows the version and the commit and says
+to update with <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">pull</span></code>. The check at start-up skips these installs.</p></li>
+</ul>
+<p>If there is no network connection the dialog says so and nothing else
+happens. The check at start-up is off unless you turn it on in
+<a class="reference internal" href="settings.html"><span class="doc std std-doc">Settings</span></a>.</p>
+<p><img alt="The Software Update dialog" src="images/installation_software_update.png" /></p>
+</section>
 <section id="running-the-app">
 <h2>Running the App<a class="headerlink" href="#running-the-app" title="Link to this heading">#</a></h2>
 <p>With the virtual environment active, launch the GUI from any directory:</p>
@@ -595,11 +633,11 @@ also needs <code class="docutils literal notranslate"><span class="pre">brew</sp
       </div>
     </a>
     <a class="right-next"
-       href="tutorials/index.html"
+       href="settings.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Tutorials</p>
+        <p class="prev-next-title">Settings</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -624,6 +662,7 @@ also needs <code class="docutils literal notranslate"><span class="pre">brew</sp
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#quick-start-macos">Quick Start ( macOS)</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#installing-with-pip-linux-windows-macos">Installing with pip (Linux, Windows, macOS)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#updating-astrocook">Updating Astrocook</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#running-the-app">Running the App</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#using-astrocook-from-python">Using Astrocook from Python</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#developer-installation">Developer Installation</a></li>
