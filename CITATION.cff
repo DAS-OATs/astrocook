@@ -20,12 +20,21 @@ keywords:
   - absorption lines
 preferred-citation:
   type: conference-paper
-  # TODO: title, co-authors and name of the proceedings of Cupani et al. 2026
-  # (not verified: no network access to ADS/Crossref)
-  title: "Astrocook"
+  title: "Astrocook v2: LLM-ready foundation for autonomous analysis of quasar spectra"
   authors:
     - family-names: Cupani
       given-names: Guido
+    - family-names: D'Odorico
+      given-names: Valentina
+    - family-names: Cristiani
+      given-names: Stefano
+    - family-names: Di Stefano
+      given-names: Simona
+    - family-names: Piscitelli
+      given-names: Christian
+    - family-names: Trost
+      given-names: Andrea
+  # TODO: name of the proceedings (not verified: no network access to ADS/Crossref)
   collection-title: "Proceedings of the SPIE"
   collection-type: proceedings
   volume: 14155
