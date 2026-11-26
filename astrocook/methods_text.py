@@ -43,8 +43,10 @@ import numpy as np
 #: table (``astrocook/data/atomic_data.ecsv``, docs page *Atomic Data*); a
 #: test checks that every key of the table is here.
 REFERENCES: Dict[str, Tuple[str, str]] = {
-    'C20': ("Cupani et al. 2020",
-            "Cupani G. et al. 2020, Proc. SPIE 11452, 114521U"),
+    # The software: the concept DOI of Zenodo, which resolves to the page of
+    # the record, from where every version can be downloaded
+    'Astrocook': ("doi:10.5281/zenodo.1346736",
+                  "Astrocook, Zenodo, doi:10.5281/zenodo.1346736"),
     'C26': ("Cupani et al. 2026",
             "Cupani G. et al. 2026, Proc. SPIE 14155, 141551X, doi:10.1117/12.3101756"),
     'SciPy': ("Virtanen et al. 2020",
@@ -68,8 +70,9 @@ REFERENCES: Dict[str, Tuple[str, str]] = {
     'V2': ("the table of Astrocook 2.0-2.1, original source not recorded", None),
 }
 
-#: The key of the work that describes Astrocook, cited by every text
-SOFTWARE_REFERENCE = 'C20'
+#: The key of the reference to Astrocook itself (its DOI), cited by every text;
+#: the algorithms are cited as C26 by the recipes that use them
+SOFTWARE_REFERENCE = 'Astrocook'
 #: The key whose presence among the references of the recipes run says that
 #: Voigt profiles were fitted (the closing paragraph says how)
 FIT_REFERENCE = 'SciPy'
