@@ -934,7 +934,7 @@ Review of the findings register with Guido (October 2026): the proposals agreed 
 The first estimate (October 2026) was 10–20 work sessions, 2–5 calendar weeks, with human review and test data as the bottleneck; superseded by the phases above. Full text: `ROADMAP_HISTORY.md`, "Rough estimates".
 
 ### Decisions reserved to Guido
-- License: GPLv3 or later (decided); copyright holder pending INAF (#549).
+- License: GPLv3 or later (decided); copyright holder: INAF (confirmed by Guido, 26 November 2026); first PyPI publication still pending (#549).
 - Questionable behaviours found by characterization tests (bug or intended?).
 - Approach to the continuum spike sensitivity (#465).
 - Scientific validation of results.
