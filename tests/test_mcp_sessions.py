@@ -376,7 +376,7 @@ def test_methods_text(mock_archive, tmp_path):
                              "columns like the flux were smoothed with a Gaussian kernel "
                              "of standard deviation 40 km/s (Flux > Smooth Spectrum).")
     assert smooth.endswith("Checked by eye.")
-    assert out["references"] == ["Cupani G. et al. 2020, Proc. SPIE 11452, 114521U"]
+    assert out["references"] == ["Astrocook, Zenodo, doi:10.5281/zenodo.1346736"]
     assert " > " not in ok(plain)["text"]
     assert len(ok(history)["states"]) == 3  # nothing added by the tool
     # An archive opened: its log, without what each recipe changed
