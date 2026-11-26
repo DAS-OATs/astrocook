@@ -276,8 +276,10 @@ per-object results, enters this public repository (`ROADMAP.md`, phase
 7, "Data and blindness").
 
 Open constraints:
-- #549 (LICENSE and first PyPI publication) waits for INAF; while it is open
-  each new PR goes on its own `claude/...` branch (say which).
+- #549 (first PyPI publication, and the copyright holder in the file headers)
+  waits for INAF; the LICENSE file (GPLv3 or later) is in the repository
+  since the PR of 26 November 2026. While #549 is open each new PR goes on its
+  own `claude/...` branch (say which).
 - Waiting for data from Guido: sessions for the log replay, sample files for
   the loaders, X-Shooter VIS/NIR data (F15).
 - One PR at a time: wait for the merge before opening the next. New
