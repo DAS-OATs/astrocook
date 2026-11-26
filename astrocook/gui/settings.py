@@ -44,7 +44,7 @@ CONFIRM_CLOSE_KEY = "confirm_close_unsaved"
 DIR_MODE_KEY = "working_dir_mode"
 FIXED_DIR_KEY = "working_dir_fixed"
 # Appearance
-FONT_SIZE_KEY = "font_size"
+FONT_SCALE_KEY = "font_scale"  # (the old "font_size", in points, was never released: ignored)
 LINE_WIDTH_KEY = "plot_line_width"
 INITIAL_X_UNIT_KEY = "initial_x_unit"
 DECIMALS_KEY = "table_decimals"
@@ -62,7 +62,7 @@ DEFAULTS: dict[str, Any] = {
     FIXED_DIR_KEY: "",
     APPEARANCE_KEY: "system",
     PLOT_COLOURS_KEY: "standard",
-    FONT_SIZE_KEY: 0,                 # 0: the font of the system
+    FONT_SCALE_KEY: "normal",         # the fonts as the platform gives them
     LINE_WIDTH_KEY: 1.0,              # a factor on the widths of the plot
     INITIAL_X_UNIT_KEY: "nm",
     DECIMALS_KEY: 5,                  # of the wavelengths of the Data Inspector
@@ -73,11 +73,12 @@ CHECK_FREQUENCIES = {"start": "Every start", "daily": "Once a day", "weekly": "O
 FREQUENCY_DELTA = {"start": timedelta(0), "daily": timedelta(days=1),
                    "weekly": timedelta(days=7)}
 X_UNITS = ("nm", "Angstrom", "micron")
+#: The scale of the fonts of the interface (the factor on their original size)
+FONT_SCALES = {"small": 0.85, "normal": 1.0, "large": 1.2}
 DIR_MODES = {"last": "The last one used", "fixed": "A fixed folder"}
 
 #: Limits of the numeric settings (also the ranges of the dialog)
 RECENT_RANGE = (0, 30)
-FONT_RANGE = (8, 24)
 LINE_WIDTH_RANGE = (0.5, 3.0)
 DECIMALS_RANGE = (2, 8)
 DOWNSAMPLE_RANGE = (10_000, 20_000_000)
@@ -108,6 +109,10 @@ def get_number(key: str, limits: tuple, kind=int):
     except (TypeError, ValueError):
         return DEFAULTS[key]
     return max(limits[0], min(limits[1], number))
+
+
+def font_scale_factor() -> float:
+    return FONT_SCALES[get_choice(FONT_SCALE_KEY, FONT_SCALES)]
 
 
 def max_recent_files() -> int:
