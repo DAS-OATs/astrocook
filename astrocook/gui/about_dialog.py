@@ -104,7 +104,7 @@ class AboutDialog(QDialog):
         
         # 2. Cite Button (ADS)
         cite_btn = QPushButton("Cite on ADS")
-        cite_btn.setToolTip("Open the NASA ADS citation export page for Astrocook")
+        cite_btn.setToolTip("Open the NASA ADS page of the paper to cite for Astrocook")
         cite_btn.clicked.connect(self._open_ads_citation)
         
         # Add "Cite" to the button box with ActionRole 
@@ -114,9 +114,9 @@ class AboutDialog(QDialog):
         layout.addWidget(btn_box)
 
     def _open_ads_citation(self):
-        """Opens the ADS export citation page in the default browser."""
-        # URL for the 2020 Astronomy and Computing paper
-        url = "https://ui.adsabs.harvard.edu/abs/2020SPIE11452E..1UC/exportcitation"
+        """Opens the ADS page of the paper to cite in the default browser."""
+        # Cupani et al. 2026, Proc. SPIE 14155, 141551X
+        url = "https://scixplorer.org/abs/2026SPIE14155E..1XC/abstract"
         QDesktopServices.openUrl(QUrl(url))
 
     def _open_github_issues(self):
