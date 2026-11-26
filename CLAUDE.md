@@ -291,7 +291,9 @@ Open constraints:
 - One PR at a time: wait for the merge before opening the next. New
   conversations for the PRs of a block are opened by the planning
   conversation of that block, on Guido's confirmation of the merge of the
-  previous one (16 November 2026).
+  previous one (16 November 2026). In phase 7, since 26 November 2026,
+  two lanes: at most one PR of 7b or 7e and one of 7d open at a time
+  (besides one of another phase interleaved, as 7-ter).
 - Questionable behaviour found along the way goes in the findings register
   (`ROADMAP.md`, section 3.2), reviewed with Guido; anything that loses user
   data or crashes is reported at once. Update this section and the progress
