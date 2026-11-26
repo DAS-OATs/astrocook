@@ -212,3 +212,55 @@ def test_series_lines():
     # A copy: the table cannot be changed through it
     series_lines("CIV").append("x")
     assert "x" not in STANDARD_MULTIPLETS["CIV"]
+
+
+def test_the_excited_lines_are_series_of_their_own():
+    # F173 (phase 7, PR 7c.4d-ter): CII and SiII hold their ground-state
+    # lines only; the excited fine-structure lines are the series CII* and
+    # SiII*, so that a component of CII or SiII does not put them at the
+    # column of the ground state
+    from astrocook.core.atomic_data import STANDARD_MULTIPLETS, series_lines
+    assert series_lines("CII") == ["CII_1334", "CII_1036"]
+    assert series_lines("SiII") == ["SiII_1260", "SiII_1526", "SiII_1193", "SiII_1190",
+                                    "SiII_1304", "SiII_1808"]
+    assert series_lines("CII*") == ["CII*_1335"]
+    assert series_lines("SiII*") == ["SiII*_1264"]
+    for name, lines in STANDARD_MULTIPLETS.items():
+        assert all(t in ATOM_DATA for t in lines), name
+        # A multiplet is all excited or all ground-state lines
+        assert len({"*" in t for t in lines}) == 1, name
+
+
+def test_the_anchor_of_cii_is_its_ground_state_pair():
+    # F173: the anchor pair of CII was CII_1334 and the excited CII*_1335
+    from astrocook.fitting.hypotheses import ANCHOR_PAIRS
+    assert ANCHOR_PAIRS["CII"] == (("CII_1334", "CII_1036"),)
+    assert "CII*" not in ANCHOR_PAIRS and "SiII*" not in ANCHOR_PAIRS
+    assert all("*" not in t for pairs in ANCHOR_PAIRS.values() for p in pairs for t in p)
+
+
+def test_a_component_of_cii_has_no_excited_line():
+    # F173: the model of a CII component of logN 14.5 absorbs at CII_1334
+    # and leaves the excited CII*_1335 (1.2 A to the red) to a series of
+    # its own; before, both lines at the same column, CII*_1335 as strong
+    from astrocook.core.structures import ComponentData, SystemListData
+    from astrocook.core.system_list import SystemList
+    from astrocook.fitting.voigt_fitter import VoigtFitter
+    from astrocook.mocks import MockTruth, generate
+
+    z = 2.0
+    truth = MockTruth(components=[], lam_min_nm=399.0, lam_max_nm=402.0, dv_kms=2.5,
+                      resol=45000.0, snr=None, z_em=3.1, seed=1)
+    spec = generate(truth)
+
+    def flux_at(series, transition):
+        comp = ComponentData(id=1, z=z, dz=None, logN=14.5, dlogN=None, b=10.0, db=None,
+                             series=series)
+        x, f = VoigtFitter(spec, SystemList(SystemListData(components=[comp]))
+                           ).compute_model_flux()
+        return f[np.argmin(np.abs(x - ATOM_DATA[transition]["wave"] * (1 + z)))]
+
+    assert flux_at("CII", "CII_1334") < 0.1
+    assert flux_at("CII", "CII*_1335") > 0.999
+    assert flux_at("CII*", "CII*_1335") < 0.1
+    assert flux_at("CII*", "CII_1334") > 0.999

@@ -62,13 +62,12 @@ logger = logging.getLogger(__name__)
 #: the anchors (each tested at the systems of the others: a SiIV too weak
 #: for its pair at the redshift of a CIV), the single lines of the design
 #: (section 3.5), the rarer ions of the damped systems, and the H I (Ly-a
-#: and Ly-b). The series of CII and SiII are written as their ground-state
-#: lines (a custom series, ``series_lines``): the standard multiplets also
-#: hold the excited fine-structure lines CII*_1335 and SiII*_1264, which a
-#: model would put at the column of the ground state (F173). The species of
-#: the optical (NaI, CaII) and the lines below 912 A of the table left out:
-#: never in the coverage of the forest and the red side of a UV spectrum, or
-#: below the Lyman limit
+#: and Ly-b). CII and SiII are their standard multiplets, the ground-state
+#: lines only since F173 (PR 7c.4d-ter; in PR 7c.4d custom series of the
+#: same lines, since the multiplets held the excited lines CII*_1335 and
+#: SiII*_1264). The species of the optical (NaI, CaII) and the lines below
+#: 912 A of the table left out: never in the coverage of the forest and the
+#: red side of a UV spectrum, or below the Lyman limit
 SWEEP_SPECIES: Dict[str, str] = {
     "HI": "Ly_ab",
     "CIV": "CIV",
@@ -77,9 +76,9 @@ SWEEP_SPECIES: Dict[str, str] = {
     "NV": "NV",
     "OVI": "OVI",
     "AlIII": "AlIII",
-    "CII": "CII_1036,CII_1334",
+    "CII": "CII",
     "CIII": "CIII_977",
-    "SiII": "SiII_1190,SiII_1193,SiII_1260,SiII_1304,SiII_1526,SiII_1808",
+    "SiII": "SiII",
     "SiIII": "SiIII_1206",
     "OI": "OI_1039,OI_1302",
     "AlII": "AlII_1670",
