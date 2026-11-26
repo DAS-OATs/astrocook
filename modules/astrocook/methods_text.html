@@ -6,7 +6,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>astrocook.methods_text &#8212; Astrocook 2.9.0 documentation</title>
+    <title>astrocook.methods_text &#8212; Astrocook 2.9.1 documentation</title>
   
   
   
@@ -38,7 +38,7 @@
   <link rel="preload" as="script" href="../../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
 <link rel="preload" as="script" href="../../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="../../static/documentation_options.js?v=182a64a0"></script>
+    <script src="../../static/documentation_options.js?v=bc52e0b9"></script>
     <script src="../../static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../static/sphinx_highlight.js?v=6ffebe34"></script>
     <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../../static/design-tabs.js?v=fcb327ea"></script>
@@ -46,7 +46,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.9.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.9.1';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -56,7 +56,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.9.0" />
+  <meta name="docsearch:version" content="2.9.1" />
   
     
     <script src="../../static/searchtools.js"></script>
@@ -530,8 +530,10 @@
 <span class="c1">#: table (``astrocook/data/atomic_data.ecsv``, docs page *Atomic Data*); a</span>
 <span class="c1">#: test checks that every key of the table is here.</span>
 <span class="n">REFERENCES</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s1">'C20'</span><span class="p">:</span> <span class="p">(</span><span class="s2">"Cupani et al. 2020"</span><span class="p">,</span>
-            <span class="s2">"Cupani G. et al. 2020, Proc. SPIE 11452, 114521U"</span><span class="p">),</span>
+    <span class="c1"># The software: the concept DOI of Zenodo, which resolves to the page of</span>
+    <span class="c1"># the record, from where every version can be downloaded</span>
+    <span class="s1">'Astrocook'</span><span class="p">:</span> <span class="p">(</span><span class="s2">"doi:10.5281/zenodo.1346736"</span><span class="p">,</span>
+                  <span class="s2">"Astrocook, Zenodo, doi:10.5281/zenodo.1346736"</span><span class="p">),</span>
     <span class="s1">'C26'</span><span class="p">:</span> <span class="p">(</span><span class="s2">"Cupani et al. 2026"</span><span class="p">,</span>
             <span class="s2">"Cupani G. et al. 2026, Proc. SPIE 14155, 141551X, doi:10.1117/12.3101756"</span><span class="p">),</span>
     <span class="s1">'SciPy'</span><span class="p">:</span> <span class="p">(</span><span class="s2">"Virtanen et al. 2020"</span><span class="p">,</span>
@@ -552,8 +554,9 @@
     <span class="s1">'V2'</span><span class="p">:</span> <span class="p">(</span><span class="s2">"the table of Astrocook 2.0-2.1, original source not recorded"</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
 <span class="p">}</span>
 
-<span class="c1">#: The key of the work that describes Astrocook, cited by every text</span>
-<span class="n">SOFTWARE_REFERENCE</span> <span class="o">=</span> <span class="s1">'C20'</span>
+<span class="c1">#: The key of the reference to Astrocook itself (its DOI), cited by every text;</span>
+<span class="c1">#: the algorithms are cited as C26 by the recipes that use them</span>
+<span class="n">SOFTWARE_REFERENCE</span> <span class="o">=</span> <span class="s1">'Astrocook'</span>
 <span class="c1">#: The key whose presence among the references of the recipes run says that</span>
 <span class="c1">#: Voigt profiles were fitted (the closing paragraph says how)</span>
 <span class="n">FIT_REFERENCE</span> <span class="o">=</span> <span class="s1">'SciPy'</span>
@@ -1299,7 +1302,7 @@
 
   <p class="copyright">
     
-      © Copyright 2026, Guido Cupani.
+      © Copyright 2017-2026, INAF – Istituto Nazionale di Astrofisica.
       <br/>
     
   </p>

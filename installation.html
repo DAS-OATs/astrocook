@@ -7,7 +7,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Installation &#8212; Astrocook 2.9.0 documentation</title>
+    <title>Installation &#8212; Astrocook 2.9.1 documentation</title>
   
   
   
@@ -39,7 +39,7 @@
   <link rel="preload" as="script" href="static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
 <link rel="preload" as="script" href="static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="static/documentation_options.js?v=182a64a0"></script>
+    <script src="static/documentation_options.js?v=bc52e0b9"></script>
     <script src="static/doctools.js?v=fd6eb6e6"></script>
     <script src="static/sphinx_highlight.js?v=6ffebe34"></script>
     <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="static/design-tabs.js?v=fcb327ea"></script>
@@ -47,7 +47,7 @@
     <script>
         DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
-        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.9.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = '2.9.1';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
             true;
         </script>
@@ -59,7 +59,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="2.9.0" />
+  <meta name="docsearch:version" content="2.9.1" />
   
     
     <script src="static/searchtools.js"></script>
@@ -523,17 +523,17 @@
 <h2>Installing with pip (Linux, Windows, macOS)<a class="headerlink" href="#installing-with-pip-linux-windows-macos" title="Link to this heading">#</a></h2>
 <p>Astrocook requires <strong>Python 3.12 or later</strong>. <code class="docutils literal notranslate"><span class="pre">pip</span></code> installs all the other
 dependencies (PySide6, astropy, numpy, scipy, matplotlib, …).</p>
-<p>Astrocook is not on PyPI yet; install it directly from GitHub, preferably in
+<p>Install it from <a class="reference external" href="https://pypi.org/project/astrocook/">PyPI</a>, preferably in
 a virtual environment:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python3</span> <span class="o">-</span><span class="n">m</span> <span class="n">venv</span> <span class="n">ac2</span>
 <span class="n">source</span> <span class="n">ac2</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">activate</span>  <span class="c1"># On Windows: ac2\Scripts\activate</span>
-<span class="n">pip</span> <span class="n">install</span> <span class="n">git</span><span class="o">+</span><span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">DAS</span><span class="o">-</span><span class="n">OATs</span><span class="o">/</span><span class="n">astrocook</span><span class="o">.</span><span class="n">git</span>
+<span class="n">pip</span> <span class="n">install</span> <span class="n">astrocook</span>
 </pre></div>
 </div>
 <p>The Bayesian fit (MCMC and nested sampling, corner plots) needs optional
 dependencies (emcee, dynesty, corner), which the macOS app already
 includes. To install them with the package:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="s2">"astrocook[bayes] @ git+https://github.com/DAS-OATs/astrocook.git"</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="s2">"astrocook[bayes]"</span>
 </pre></div>
 </div>
 <p>Without them, the Bayesian entries of the system inspector are disabled and
@@ -542,8 +542,10 @@ the <code class="docutils literal notranslate"><span class="pre">fit_bayesian</s
 <p class="admonition-title">Note</p>
 <p>If the <code class="docutils literal notranslate"><span class="pre">venv</span></code> command fails, you may need to install the module first (e.g., <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">apt</span> <span class="pre">install</span> <span class="pre">python3-venv</span></code> on Ubuntu/Debian). Check the Python version with <code class="docutils literal notranslate"><span class="pre">python3</span> <span class="pre">--version</span></code>; if it is older than 3.12, use a newer interpreter (e.g., <code class="docutils literal notranslate"><span class="pre">python3.12</span> <span class="pre">-m</span> <span class="pre">venv</span> <span class="pre">ac2</span></code>).</p>
 </div>
-<p>To update to the latest version, run the same <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span></code> command with
-<code class="docutils literal notranslate"><span class="pre">--upgrade</span></code>.</p>
+<p>To update to the latest version, run <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">--upgrade</span> <span class="pre">astrocook</span></code>. The
+development version (the <code class="docutils literal notranslate"><span class="pre">master</span></code> branch of the repository, not released)
+installs from GitHub with
+<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">git+https://github.com/DAS-OATs/astrocook.git</span></code>.</p>
 <p>AI agents (Claude Code, the Claude desktop app, other MCP clients) can
 drive Astrocook through its MCP server, installed with the <code class="docutils literal notranslate"><span class="pre">[mcp]</span></code>
 extra (or run in a Docker image): see the tutorial
@@ -703,7 +705,7 @@ also needs <code class="docutils literal notranslate"><span class="pre">brew</sp
 
   <p class="copyright">
     
-      © Copyright 2026, Guido Cupani.
+      © Copyright 2017-2026, INAF – Istituto Nazionale di Astrofisica.
       <br/>
     
   </p>
