@@ -530,8 +530,10 @@
 <span class="c1">#: table (``astrocook/data/atomic_data.ecsv``, docs page *Atomic Data*); a</span>
 <span class="c1">#: test checks that every key of the table is here.</span>
 <span class="n">REFERENCES</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s1">'C20'</span><span class="p">:</span> <span class="p">(</span><span class="s2">"Cupani et al. 2020"</span><span class="p">,</span>
-            <span class="s2">"Cupani G. et al. 2020, Proc. SPIE 11452, 114521U"</span><span class="p">),</span>
+    <span class="c1"># The software: the concept DOI of Zenodo, which resolves to the page of</span>
+    <span class="c1"># the record, from where every version can be downloaded</span>
+    <span class="s1">'Astrocook'</span><span class="p">:</span> <span class="p">(</span><span class="s2">"doi:10.5281/zenodo.1346736"</span><span class="p">,</span>
+                  <span class="s2">"Astrocook, Zenodo, doi:10.5281/zenodo.1346736"</span><span class="p">),</span>
     <span class="s1">'C26'</span><span class="p">:</span> <span class="p">(</span><span class="s2">"Cupani et al. 2026"</span><span class="p">,</span>
             <span class="s2">"Cupani G. et al. 2026, Proc. SPIE 14155, 141551X, doi:10.1117/12.3101756"</span><span class="p">),</span>
     <span class="s1">'SciPy'</span><span class="p">:</span> <span class="p">(</span><span class="s2">"Virtanen et al. 2020"</span><span class="p">,</span>
@@ -555,8 +557,9 @@
     <span class="s1">'V2'</span><span class="p">:</span> <span class="p">(</span><span class="s2">"the table of Astrocook 2.0-2.1, original source not recorded"</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
 <span class="p">}</span>
 
-<span class="c1">#: The key of the work that describes Astrocook, cited by every text</span>
-<span class="n">SOFTWARE_REFERENCE</span> <span class="o">=</span> <span class="s1">'C20'</span>
+<span class="c1">#: The key of the reference to Astrocook itself (its DOI), cited by every text;</span>
+<span class="c1">#: the algorithms are cited as C26 by the recipes that use them</span>
+<span class="n">SOFTWARE_REFERENCE</span> <span class="o">=</span> <span class="s1">'Astrocook'</span>
 <span class="c1">#: The key whose presence among the references of the recipes run says that</span>
 <span class="c1">#: Voigt profiles were fitted (the closing paragraph says how)</span>
 <span class="n">FIT_REFERENCE</span> <span class="o">=</span> <span class="s1">'SciPy'</span>
@@ -1343,7 +1346,7 @@
 
   <p class="copyright">
     
-      © Copyright 2026, Guido Cupani.
+      © Copyright 2017-2026, INAF – Istituto Nazionale di Astrofisica.
       <br/>
     
   </p>
