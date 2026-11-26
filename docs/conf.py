@@ -25,7 +25,7 @@ sys.path.insert(0, os.path.abspath('..'))
 
 # -- Project information -----------------------------------------------------
 project = 'Astrocook'
-copyright = '2026, Guido Cupani'
+copyright = '2017-2026, INAF – Istituto Nazionale di Astrofisica'
 author = 'Guido Cupani'
 release = version
 

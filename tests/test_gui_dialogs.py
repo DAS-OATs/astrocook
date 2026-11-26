@@ -103,7 +103,7 @@ def test_about_dialog(qtbot, monkeypatch):
     buttons["Report Issue"].click()
     buttons["Cite on ADS"].click()
     assert opened == ["https://github.com/DAS-OATs/astrocook/issues",
-                      "https://ui.adsabs.harvard.edu/abs/2020SPIE11452E..1UC/exportcitation"]
+                      "https://scixplorer.org/abs/2026SPIE14155E..1XC/abstract"]
     box = dialog.findChild(QDialogButtonBox)
     box.button(QDialogButtonBox.StandardButton.Ok).click()
     assert dialog.result() == dialog.DialogCode.Accepted

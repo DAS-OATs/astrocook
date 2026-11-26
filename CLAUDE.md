@@ -68,6 +68,9 @@ scriptable API. Author and maintainer: Guido Cupani (INAF–OATs).
 Current version: 2.9.0 (25 November 2026: 2.8.0 of 21 November plus the
 PRs U1 and U2 of phase 7-quater, from the branch `release/2.8.x`,
 without phase 7; master still says 2.7.0). Python ≥3.12.
+License: GPLv3 or later (`LICENSE`), copyright INAF. To cite: the paper Cupani
+et al. 2026 (Proc. SPIE 14155, 141551X, doi:10.1117/12.3101756) and the Zenodo
+DOI of the software, 10.5281/zenodo.1346736 (`CITATION.cff`, README, `docs/credits.md`).
 
 ## Architecture (v2)
 - `astrocook/core/` – immutable dataclasses (`structures.py`), `Spectrum`,
@@ -276,8 +279,11 @@ per-object results, enters this public repository (`ROADMAP.md`, phase
 7, "Data and blindness").
 
 Open constraints:
-- #549 (LICENSE and first PyPI publication) waits for INAF; while it is open
-  each new PR goes on its own `claude/...` branch (say which).
+- #549 (first PyPI publication) waits for INAF; the LICENSE file (GPLv3 or
+  later) is in the repository since the PR of 26 November 2026, and the
+  copyright holder is INAF (the DOI of INAF is pending, Zenodo's is the one in
+  use). While #549 is open each new PR goes on its
+  own `claude/...` branch (say which).
 - Waiting for data from Guido: sessions for the log replay, sample files for
   the loaders, X-Shooter VIS/NIR data (F15).
 - One PR at a time: wait for the merge before opening the next. New

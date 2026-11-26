@@ -71,7 +71,7 @@ def test_one_paragraph_per_recipe(history):
     opening = out.paragraphs[0].text
     assert opening.startswith("The spectrum of mock (")
     assert "pixels, 440-460 nm) was analysed with Astrocook" in opening
-    assert "(Cupani et al. 2020) in the three steps described below." in opening
+    assert "(doi:10.5281/zenodo.1346736) in the three steps described below." in opening
     assert out.text == "\n\n".join(p.text for p in out.paragraphs) + \
         "\n\nReferences\n" + "\n".join(out.references)
     assert str(out) == out.text
@@ -111,7 +111,7 @@ def test_the_recipes_undone_are_left_out(history):
 def test_references(history):
     refs = methods_text(history).references
     assert refs == tuple(sorted(refs))
-    for key in ("C20", "C26", "SciPy", "M03", "PA04"):
+    for key in ("Astrocook", "C26", "SciPy", "M03", "PA04"):
         assert REFERENCES[key][1] in refs
     assert REFERENCES["emcee"][1] not in refs
 
@@ -150,7 +150,7 @@ def test_an_empty_log():
     out = methods_text(SessionHistory(_mock(), HistoryLog()))
     assert [p.kind for p in out.paragraphs] == ["opening"]
     assert "was opened with Astrocook" in out.text and "its log has no recipes" in out.text
-    assert out.references == (REFERENCES["C20"][1],)
+    assert out.references == (REFERENCES["Astrocook"][1],)
 
 
 def test_notes_before_the_first_recipe_and_gaps():

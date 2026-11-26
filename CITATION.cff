@@ -1,0 +1,49 @@
+cff-version: 1.2.0
+message: "If you use Astrocook in your research, please cite the paper below (Cupani et al. 2026). To cite the software itself, use the DOI of the software."
+title: "Astrocook"
+abstract: "Astrocook is a Python package for the analysis of quasar spectra: continuum fitting, identification of absorption systems and Voigt fitting, with a PySide6 graphical interface and a scriptable API."
+type: software
+authors:
+  - family-names: Cupani
+    given-names: Guido
+    email: guido.cupani@inaf.it
+    affiliation: "INAF - Osservatorio Astronomico di Trieste"
+  # Founder of the first architecture (2017) and contributor (2021-2024),
+  # listed for historical reasons
+  - family-names: Calderone
+    given-names: Giorgio
+  - family-names: Guarneri
+    given-names: Francesco
+# Concept DOI of Zenodo ("Cite all versions"): it always resolves to the latest version
+doi: 10.5281/zenodo.1346736
+repository-code: "https://github.com/DAS-OATs/astrocook"
+url: "https://github.com/DAS-OATs/astrocook"
+license: GPL-3.0-or-later
+keywords:
+  - astronomy
+  - spectroscopy
+  - quasar
+  - absorption lines
+preferred-citation:
+  type: conference-paper
+  title: "Astrocook v2: LLM-ready foundation for autonomous analysis of quasar spectra"
+  authors:
+    - family-names: Cupani
+      given-names: Guido
+    - family-names: D'Odorico
+      given-names: Valentina
+    - family-names: Cristiani
+      given-names: Stefano
+    - family-names: Di Stefano
+      given-names: Simona
+    - family-names: Piscitelli
+      given-names: Christian
+    - family-names: Trost
+      given-names: Andrea
+  collection-title: "Proceedings of the SPIE"
+  collection-type: proceedings
+  volume: 14155
+  start: 141551X
+  pages: 11
+  year: 2026
+  doi: 10.1117/12.3101756
