@@ -506,10 +506,11 @@
   <section class="tex2jax_ignore mathjax_ignore" id="settings">
 <h1>Settings<a class="headerlink" href="#settings" title="Link to this heading">#</a></h1>
 <p><em>Edit &gt; Settings…</em> (on macOS <em>Astrocook &gt; Settings…</em>, or <code class="docutils literal notranslate"><span class="pre">Cmd+,</span></code>) opens
-the settings of the interface, in three tabs. <strong>OK</strong> saves them and closes
-the dialog, <strong>Apply</strong> saves them and keeps it open, <strong>Restore Defaults</strong> puts
-the default of every setting in the dialog (nothing is saved until OK or
-Apply), <strong>Cancel</strong> throws the changes away.</p>
+the settings of the interface, in three tabs. Every change
+applies at once, with no OK button (a number or a folder typed in a field
+applies when the edit is finished, with Enter or by leaving the field).
+<strong>Restore Defaults</strong> puts the default of every setting and applies it;
+<strong>Close</strong> closes the dialog.</p>
 <p>Settings are about the interface only. None of them changes a number, and
 none applies to scripts, to the MCP server or to the log of a session: the
 defaults of a recipe, the atomic data and the thresholds of identification
@@ -542,8 +543,11 @@ last one used is taken.</p></li>
 <ul class="simple">
 <li><p><strong>Theme</strong> and <strong>Plot colours</strong> are the same as <em>View &gt; Appearance</em> and
 <em>View &gt; Plot Colours</em>: changing one changes the other.</p></li>
-<li><p><strong>Font size</strong>: the font of tables, panels and menus (the system font by
-default). A few texts have a size of their own and do not change.</p></li>
+<li><p><strong>Font size</strong>: <em>Small</em>, <em>Normal</em> or <em>Large</em>. <em>Normal</em> (the default) is the
+look that the system gives to each part of the window; <em>Small</em> and <em>Large</em>
+make all the fonts of tables, panels, group headers and menus about 15%
+smaller or 20% larger, keeping their relations. A few texts have a size of
+their own and do not change.</p></li>
 <li><p><strong>Line width</strong>: a factor on the width of the lines of the main plot (flux,
 error, continuum, model); 1 gives the usual widths.</p></li>
 <li><p><strong>Initial x unit</strong>: the unit of the x axis when Astrocook starts (nm, Å or
