@@ -758,17 +758,19 @@ name, in the order in which they are done: phase 6-ter – full MCP server;
 phase 6-quater – review of the recipe parameters (the recipes that phase 7
 does not rewrite); phase 7 – robust components.
 **LICENSE and PyPI** (agreed with Guido, October 2026): an independent
-step, not tied to a phase. Update (27 November 2026): the LICENSE and the
+step, not tied to a phase. Done (26 November 2026): the LICENSE and the
 copyright (INAF) are settled; the first release with them and the first on
-PyPI is **2.9.1**, made from `release/2.8.x` without phase 7 (PRs #831 for
-the release and #832 for master, merged). Sequence agreed with Guido:
+PyPI is **2.9.1**, made from `release/2.8.x` without phase 7 (PRs #830, #831,
+#832 and #833, merged) and published the same day. Sequence followed:
 publishers registered on PyPI and TestPyPI and environments `pypi` and
 `testpypi` created on GitHub (Guido); this workflow on master
 (`.github/workflows/publish.yml`, trusted publishing: a published release
 goes to PyPI, a manual run to TestPyPI); a test on TestPyPI; the release
-`v2.9.1` with the macOS app, which publishes on PyPI; then the request of
-the DOI of INAF (abstract prepared, version 2.9.1; Zenodo's DOI stays the one
-in use). Until the publication Astrocook installs with pip from GitHub.
+`v2.9.1` with the macOS app, which published on PyPI (checked: version,
+license, metadata, files, the Publish and Docs runs). The request of the DOI of
+INAF was opened by Guido on 26 November 2026 (abstract prepared, version
+2.9.1): the answer is pending, and Zenodo's DOI stays the one in use.
+Astrocook installs with `pip install astrocook`.
 Documentation (agreed with Guido, October 2026): the root of the website
 shows the docs of the latest release, `/dev/` those of master (see
 `.github/workflows/docs.yml`). Before publishing a release, update the
@@ -941,7 +943,7 @@ Review of the findings register with Guido (October 2026): the proposals agreed 
 The first estimate (October 2026) was 10–20 work sessions, 2–5 calendar weeks, with human review and test data as the bottleneck; superseded by the phases above. Full text: `ROADMAP_HISTORY.md`, "Rough estimates".
 
 ### Decisions reserved to Guido
-- License: GPLv3 or later (decided); copyright holder: INAF (confirmed by Guido, 26 November 2026); the LICENSE file, `CITATION.cff` and the DOI badge are in the repository since 26 November 2026; first PyPI publication: release 2.9.1 prepared (see "Releases"), waiting for the publishers (#549).
+- License: GPLv3 or later (decided); copyright holder: INAF (confirmed by Guido, 26 November 2026); the LICENSE file, `CITATION.cff` and the DOI badge are in the repository since 26 November 2026; first PyPI publication: release 2.9.1, done on 26 November 2026 (see "Releases"; #549 can be closed). The INAF DOI was requested by Guido on 26 November 2026: pending.
 - Citation (Guido, 26 November 2026): the paper to cite is Cupani et al. 2026 (Proc. SPIE 14155, 141551X, doi:10.1117/12.3101756); the software has the Zenodo concept DOI 10.5281/zenodo.1346736 (checked by Guido). An INAF DOI (`10.20371/INAF/SW/...`) was asked of the ICT office: pending, not decided whether to keep both. In the methods text the software is cited by its Zenodo DOI (`SOFTWARE_REFERENCE = 'Astrocook'`: "Astrocook 2.9.0 (doi:10.5281/zenodo.1346736)"; the concept DOI resolves to the record, where every version can be downloaded), the algorithms as Cupani et al. 2026 (`C26`); Cupani et al. 2020 is no longer cited; the "Cite on ADS" button of the About dialog opens Cupani et al. 2026.
 - Questionable behaviours found by characterization tests (bug or intended?).
 - Approach to the continuum spike sensitivity (#465).
@@ -1120,7 +1122,7 @@ The twins of the development part also give phase 7 realistic
 development cases, which the mocks of phase 4 do not cover.
 
 **Software paper (B, JOSS)**: the LICENSE is in the repository since 26
-November 2026 (GPLv3 or later, copyright INAF; release 2.9.1, #549 stays open until the publication on PyPI); the
+November 2026 (GPLv3 or later, copyright INAF; release 2.9.1, on PyPI); the
 recipe API is stable after phase 6-bis.
 
 ---
@@ -1135,7 +1137,7 @@ One line per concluded phase; the long rows are in `ROADMAP_HISTORY.md`, "7. Pro
 | 0 – Environment | done (October 2026) |
 | 1 – Safety net | done (October 2026; log replay, V1 `.acs` and loader tests wait for data) |
 | 1-bis – Findings and urgent issues (section 3.3) | done (October 2026): see 3.3; F3 accepted; F15 waits for data |
-| 2 – Cleanup and packaging | done (October 2026), release 2.0.3; LICENSE added on 26 November 2026 (release 2.9.1), PyPI publication pending (#549) |
+| 2 – Cleanup and packaging | done (October 2026), release 2.0.3; LICENSE added and first publication on PyPI on 26 November 2026 (release 2.9.1) |
 | 2-bis – Leftovers of phase 2 (F34, Ruff, Sphinx, `[bayes]`) | done (October 2026) |
 | 3 – Decoupling from legacy | done (October 2026), PRs #565-#584 |
 | 3-bis – Small fixes before 2.1.0 | done (October 2026), PRs #587-#592; release 2.1.0 |
