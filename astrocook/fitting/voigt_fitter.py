@@ -4,10 +4,11 @@ from scipy.ndimage import gaussian_filter1d
 from scipy.optimize import least_squares
 from scipy.special import wofz
 from scipy.linalg import pinv
+from scipy import sparse
 import dataclasses
 import logging
 import numpy as np
-from typing import List, Tuple, Dict, Any, Optional
+from typing import List, Literal, Tuple, Dict, Any, Optional, Union, overload
 
 from astrocook.core.atomic_data import ATOM_DATA, STANDARD_MULTIPLETS, is_multiplet, series_lines
 from astrocook.fitting.lsf import PixelLSF
@@ -98,6 +99,30 @@ def line_reach(lambda_0: np.ndarray, f_val: np.ndarray, gamma: np.ndarray,
     return lambda_c, x_cut * dop_width_ang
 
 
+def _line_samples(wave_grid_ang: np.ndarray, lambda_0: np.ndarray, f_val: np.ndarray,
+                  gamma: np.ndarray, z: np.ndarray, N_col: np.ndarray, b_kms: np.ndarray):
+    """The samples of the grid where each line is evaluated (its optical
+    depth above ``TAU_CUT``, #526): the index of each sample in the grid, the
+    line it belongs to, its distance from the centre in Doppler widths, the
+    Faddeeva function there, and the terms of the lines
+    (:func:`_line_terms`). ``None`` if no sample."""
+    lambda_c, dop_width_ang, a, tau0, x_cut = _line_terms(
+        lambda_0, f_val, gamma, z, N_col, b_kms)
+    lo = np.searchsorted(wave_grid_ang, lambda_c - x_cut * dop_width_ang, side='left')
+    hi = np.searchsorted(wave_grid_ang, lambda_c + x_cut * dop_width_ang, side='right')
+    lens = np.maximum(hi - lo, 0)
+    total = int(lens.sum())
+    if total == 0:
+        return None
+    line = np.repeat(np.arange(len(lens)), lens)
+    idx = lo[line] + np.arange(total) - np.repeat(np.cumsum(lens) - lens, lens)
+
+    # Faddeeva (Voigt): the expensive step
+    x = (wave_grid_ang[idx] - lambda_c[line]) / dop_width_ang[line]
+    w = wofz(x + 1j * a[line])
+    return idx, line, x, w, (lambda_c, dop_width_ang, a, tau0)
+
+
 def voigt_optical_depth(wave_grid_ang: np.ndarray,
                         lambda_0: np.ndarray, f_val: np.ndarray,
                         gamma: np.ndarray, z: np.ndarray,
@@ -113,21 +138,60 @@ def voigt_optical_depth(wave_grid_ang: np.ndarray,
     # Each line only where its optical depth exceeds TAU_CUT (#526: the
     # grid is finer than the pixels): the samples of all lines are
     # gathered in one flat array, and summed back onto the grid
-    lambda_c, dop_width_ang, a, tau0, x_cut = _line_terms(
-        lambda_0, f_val, gamma, z, N_col, b_kms)
-    lo = np.searchsorted(wave_grid_ang, lambda_c - x_cut * dop_width_ang, side='left')
-    hi = np.searchsorted(wave_grid_ang, lambda_c + x_cut * dop_width_ang, side='right')
-    lens = np.maximum(hi - lo, 0)
-    total = int(lens.sum())
-    if total == 0:
+    samples = _line_samples(wave_grid_ang, lambda_0, f_val, gamma, z, N_col, b_kms)
+    if samples is None:
         return np.zeros_like(wave_grid_ang)
-    line = np.repeat(np.arange(len(lens)), lens)
-    idx = lo[line] + np.arange(total) - np.repeat(np.cumsum(lens) - lens, lens)
+    idx, line, _, w, (_, _, _, tau0) = samples
+    return np.bincount(idx, weights=tau0[line] * w.real, minlength=len(wave_grid_ang))
 
-    # Faddeeva (Voigt): the expensive step
-    x = (wave_grid_ang[idx] - lambda_c[line]) / dop_width_ang[line]
-    H_ax = wofz(x + 1j * a[line]).real
-    return np.bincount(idx, weights=tau0[line] * H_ax, minlength=len(wave_grid_ang))
+
+def voigt_optical_depth_derivatives(wave_grid_ang: np.ndarray,
+                                    lambda_0: np.ndarray, f_val: np.ndarray,
+                                    gamma: np.ndarray, z: np.ndarray,
+                                    N_col: np.ndarray, b_kms: np.ndarray):
+    """The optical depth of :func:`voigt_optical_depth` and its analytic
+    derivatives (phase 7, PR 7c.4d-bis, F171), sample by sample: the index
+    of each sample in the grid, the line it belongs to, and the derivatives
+    of the optical depth of that line there with respect to its z, its
+    log10 N and its b (the b given, ``b_kms``). ``tau`` is summed on the
+    grid, as :func:`voigt_optical_depth` (the same operations: identical).
+
+    With tau = tau0 H(x, a), H the real part of the Faddeeva function
+    w(x + i a), x = (lambda - lambda_c) / Delta_D, Delta_D = b lambda_c / c,
+    a = Gamma lambda_0 / (4 pi b), tau0 proportional to N / b:
+    w' = -2 (x + i a) w + 2 i / sqrt(pi), dH/dx = Re w', dH/da = -Im w';
+    d tau / d log10 N = ln(10) tau; d tau / dz = tau0 dH/dx dx/dz with
+    dx/dz = -(x + c / b) / (1 + z); d tau / db = -(tau0 / b)
+    (H + x dH/dx + a dH/da). The cut of each line at ``TAU_CUT`` moves with
+    its parameters: its derivative (the samples entering or leaving the
+    cut, below 1e-6 in optical depth) is left out.
+
+    Returns
+    -------
+    tuple or None
+        ``(tau, idx, line, dtau_dz, dtau_dlogN, dtau_db)``, ``None`` if no
+        line has samples on the grid.
+    """
+    c_kms = 2.99792458e5
+    samples = _line_samples(wave_grid_ang, lambda_0, f_val, gamma, z, N_col, b_kms)
+    if samples is None:
+        return None
+    idx, line, x, w, (_, _, a, tau0) = samples
+    a_s = a[line]
+    t0 = tau0[line]
+    tau_s = t0 * w.real
+    tau = np.bincount(idx, weights=tau_s, minlength=len(wave_grid_ang))
+    # w' = -2 (x + i a) w + 2 i / sqrt(pi)
+    dh_dx = -2.0 * (x * w.real - a_s * w.imag)
+    dh_da = 2.0 * (x * w.imag + a_s * w.real) - 2.0 / np.sqrt(np.pi)
+    b_safe = np.maximum(b_kms, 0.1)[line]
+    dtau_dz = t0 * dh_dx * (-(x + c_kms / b_safe) / (1.0 + z[line]))
+    dtau_dlogN = np.log(10.0) * tau_s
+    dtau_db = -(t0 / b_safe) * (w.real + x * dh_dx + a_s * dh_da)
+    # Below the smallest b of the model (0.1 km/s) the optical depth does
+    # not follow b
+    dtau_db = np.where(b_kms[line] > 0.1, dtau_db, 0.0)
+    return tau, idx, line, dtau_dz, dtau_dlogN, dtau_db
 
 
 class NoPixelsToFit(ValueError):
@@ -224,6 +288,11 @@ class VoigtFitter:
         # [OPTIMIZATION] Cache list of active components for the inner loop
         # Stores tuples: (index_in_system_list, component_object)
         self._active_fit_components: Optional[List[Tuple[int, ComponentData]]] = None
+        self._active_lines_data: Any = None
+        self._link_input_cache: Optional[List[int]] = None
+        #: The model of the whole spectrum only on some pixels (F167): their
+        #: indices and the fine samples (start, stop) they take
+        self._model_pixels: Optional[Tuple[np.ndarray, int, int]] = None
 
 
     def _compute_tau_component(self, comp: ComponentData, z: float, logN: float, b: float, btur: float) -> np.ndarray:
@@ -362,6 +431,120 @@ class VoigtFitter:
             
         return final_model
 
+    def _free_to_full(self, p_free: np.ndarray) -> sparse.csr_matrix:
+        """The derivatives of the full parameter vector with respect to the
+        free one (``map_p_free_to_full``), sparse (full x free): 1 for a free
+        parameter, the gradient of its expression for a linked one (central
+        differences on the free parameters the links read, as
+        ``_linked_errors``: exact for the usual links, a copy or a shift),
+        nothing for a frozen one."""
+        is_free = self._constraints._param_map['is_free']
+        n_full, n_free = len(is_free), len(p_free)
+        rows = list(np.flatnonzero(is_free))
+        cols = list(range(n_free))
+        vals = [1.0] * n_free
+        links = self._constraints._compiled_links
+        if links and n_free:
+            linked = np.array([idx for idx, _ in links])
+            for k in self._link_inputs(p_free):
+                h = 1e-6 * max(1.0, abs(p_free[k]))
+                p_plus = p_free.copy(); p_plus[k] += h
+                p_minus = p_free.copy(); p_minus[k] -= h
+                grad = (self._constraints.map_p_free_to_full(p_plus)[linked]
+                        - self._constraints.map_p_free_to_full(p_minus)[linked]) / (2 * h)
+                nz = np.flatnonzero(grad)
+                rows.extend(linked[nz]); cols.extend([k] * len(nz)); vals.extend(grad[nz])
+        return sparse.csr_matrix((vals, (rows, cols)), shape=(n_full, n_free))
+
+    def _link_inputs(self, p_free: np.ndarray) -> List[int]:
+        """The free parameters that the links may read: those whose change
+        moves a linked parameter (found once per fit, by moving each free
+        parameter in turn; all of them if any link is not a function of the
+        free parameters alone)."""
+        if self._link_input_cache is not None:
+            return self._link_input_cache
+        links = self._constraints._compiled_links
+        linked = np.array([idx for idx, _ in links])
+        base = self._constraints.map_p_free_to_full(p_free)[linked]
+        inputs = []
+        for k in range(len(p_free)):
+            p = p_free.copy(); p[k] += 1e-3 * max(1.0, abs(p_free[k]))
+            if np.any(self._constraints.map_p_free_to_full(p)[linked] != base):
+                inputs.append(k)
+        self._link_input_cache = inputs
+        return inputs
+
+    def _jacobian(self, p_free: np.ndarray) -> np.ndarray:
+        """The analytic Jacobian of ``_residual_function`` (phase 7, PR
+        7c.4d-bis, F171), in place of finite differences (one model per free
+        parameter): the derivatives of the optical depth of each line
+        (:func:`voigt_optical_depth_derivatives`), times the fine flux,
+        convolved with the LSF as the flux (``PixelLSF.matrix``), the
+        resolution groups by the product rule, through the links
+        (``_free_to_full``). Equal to the finite differences within their
+        own error (tests)."""
+        if self._check_stop and self._check_stop():
+            raise RuntimeError("Optimization stopped by user.")
+        p_full = self._constraints.map_p_free_to_full(p_free)
+        n_full = len(p_full)
+        d_free = self._free_to_full(p_free)
+        groups = []
+        for res_key in set(self._cached_tau_groups) | set(self._active_lines_data or {}):
+            tau = self._cached_tau_groups.get(res_key)
+            tau = np.zeros_like(self._x_tau) if tau is None else tau.copy()
+            data = (self._active_lines_data or {}).get(res_key)
+            d_fine = None
+            if data is not None:
+                btur = p_full[data['idx_btur']]
+                b = p_full[data['idx_b']]
+                b_eff = np.sqrt(b**2 + btur**2)
+                out = voigt_optical_depth_derivatives(
+                    self._x_tau, data['lambda'], data['f'], data['gamma'],
+                    p_full[data['idx_z']], 10**p_full[data['idx_N']], b_eff)
+                if out is not None:
+                    tau_act, idx, line, d_z, d_logn, d_beff = out
+                    tau += tau_act
+                    with np.errstate(invalid='ignore', divide='ignore'):
+                        db_db = np.where(b_eff > 0, b / b_eff, 1.0)[line]
+                        db_dbtur = np.where(b_eff > 0, btur / b_eff, 0.0)[line]
+                    cols = np.concatenate([data['idx_z'][line], data['idx_N'][line],
+                                           data['idx_b'][line], data['idx_btur'][line]])
+                    rows = np.tile(idx, 4)
+                    vals = np.concatenate([d_z, d_logn, d_beff * db_db, d_beff * db_dbtur])
+                    d_fine = (rows, cols, vals)
+            d_pix = None
+            if d_fine is not None:
+                rows, cols, vals = d_fine
+                g = sparse.csr_matrix((-np.exp(-tau[rows]) * vals, (rows, cols)),
+                                      shape=(len(self._x_tau), n_full))
+                d_pix = self._lsf_matrix(res_key) @ (g @ d_free)
+            groups.append((res_key, tau, d_pix))
+        # The model is the product of the convolved flux of the groups
+        jac = np.zeros((len(self._x_calc), len(p_free)))
+        for i, (_, _, d_pix) in enumerate(groups):
+            if d_pix is None:
+                continue
+            others = np.ones(len(self._x_calc))
+            for j, (res_key, tau, _) in enumerate(groups):
+                if j != i:
+                    others *= self._convolved(res_key, tau)
+            jac += d_pix.multiply(others[:, None]).toarray()
+        # The residuals are (data - model) / error, 0 where not finite
+        mask = self._fit_mask_calc
+        resid_ok = np.isfinite(self._y_norm_calc) & np.isfinite(self._dy_norm_calc)
+        jac = -jac / self._dy_norm_calc[:, None]
+        jac[~resid_ok] = 0.0
+        return jac[mask]
+
+    def _lsf_matrix(self, res_key: Tuple[float, str]) -> sparse.csr_matrix:
+        """The LSF of ``_convolved`` as a matrix (``PixelLSF.matrix``)."""
+        res_val, res_unit = res_key
+        if res_unit == 'column' and self._resol_calc is not None:
+            return self._lsf.matrix(self._resol_calc, key='column')
+        if res_val > 0:
+            return self._lsf.matrix(res_val, key=res_val)
+        return self._lsf.matrix(None, key='none')
+
     @staticmethod
     def _scaled_errors(residuals: np.ndarray, jac: np.ndarray
                        ) -> Tuple[np.ndarray, float, np.ndarray]:
@@ -429,7 +612,7 @@ class VoigtFitter:
         Used at the end of the automatic pipelines: ``refit_all`` fits each
         group while its neighbours still have their initial values, so the
         chi2 of that fit is not the chi2 of the final model (issue #534).
-        One numerical Jacobian is computed at the current parameters.
+        One Jacobian (analytic) is computed at the current parameters.
 
         Returns
         -------
@@ -440,14 +623,21 @@ class VoigtFitter:
         lower, upper = self.prepare_fit_context(z_window_kms=z_window_kms)
         p0 = np.clip(self._constraints.p_free_vector, lower, upper)
         r0 = self._residual_function(p0)
-        jac = np.empty((len(r0), len(p0)))
-        for k in range(len(p0)):
-            h = 1e-6 * max(1.0, abs(p0[k]))
-            step = h if p0[k] + h <= upper[k] else -h
-            p = p0.copy(); p[k] += step
-            jac[:, k] = (self._residual_function(p) - r0) / step
+        if self._active_lines_data:
+            # The analytic Jacobian, as the fit (phase 7, PR 7c.4d-bis):
+            # before, forward differences with a step of 1e-6 of the
+            # parameter (in z about 0.3 km/s at z = 3), which moved the
+            # errors by up to about 1% from those of the fit
+            jac = self._jacobian(p0)
+        else:
+            jac = np.empty((len(r0), len(p0)))
+            for k in range(len(p0)):
+                h = 1e-6 * max(1.0, abs(p0[k]))
+                step = h if p0[k] + h <= upper[k] else -h
+                p = p0.copy(); p[k] += step
+                jac[:, k] = (self._residual_function(p) - r0) / step
         self._active_fit_components = None
-        self._active_lines_data: Any = None
+        self._active_lines_data = None
         try:
             errors, red_chi2, cov = self._scaled_errors(r0, jac)
             linked_errors = self._linked_errors(p0, cov)
@@ -758,6 +948,7 @@ class VoigtFitter:
         active_components = [c for c in self._system_list.components if c.uuid in active_uuids] if active_uuids else self._system_list.components
 
         self._fit_mask = self.feature_mask(active_components, z_window_kms)
+        self._link_input_cache = None
         
         if np.any(self._fit_mask):
             indices = np.where(self._fit_mask)[0]
@@ -899,10 +1090,22 @@ class VoigtFitter:
             'compute_model': self._compute_model
         }
 
-    def fit(self, max_nfev: int = 2000, method: str = 'trf', 
+    @overload
+    def fit(self, max_nfev: int = ..., method: str = ..., z_window_kms: float = ...,
+            verbose: int = ..., b_max: Optional[float] = ..., logN_max: Optional[float] = ...,
+            jac: str = ..., model: Literal[True, 'fit_pixels'] = ...
+            ) -> Tuple[SystemList, np.ndarray, Any]: ...
+
+    @overload
+    def fit(self, max_nfev: int = ..., method: str = ..., z_window_kms: float = ...,
+            verbose: int = ..., b_max: Optional[float] = ..., logN_max: Optional[float] = ...,
+            jac: str = ..., *, model: Literal[False]) -> Tuple[SystemList, None, Any]: ...
+
+    def fit(self, max_nfev: int = 2000, method: str = 'trf',
             z_window_kms: float = 20.0, verbose: int = 0,
             b_max: Optional[float] = None,
-            logN_max: Optional[float] = None) -> Tuple[SystemList, np.ndarray, Any]:
+            logN_max: Optional[float] = None, jac: str = 'analytic',
+            model: Union[bool, str] = True) -> Tuple[SystemList, Optional[np.ndarray], Any]:
         """
         Execute the Voigt profile optimization.
 
@@ -935,6 +1138,18 @@ class VoigtFitter:
             component can otherwise fill the trough with its damping wings
             and run away to logN 20-23 (findings register F62). Defaults to
             ``None`` (no extra bound).
+        jac : str, optional
+            The Jacobian of the optimization: ``'analytic'`` (the default,
+            phase 7, PR 7c.4d-bis), or a finite-difference scheme of
+            ``scipy.optimize.least_squares`` (``'2-point'``, as before).
+        model : bool, optional
+            Return the model of the whole spectrum with all the components
+            (the default). ``False`` for a caller that only needs the fitted
+            list: the model is not computed and ``None`` is returned in its
+            place (F167: on a long spectrum with many components it cost
+            most of a short fit). ``'fit_pixels'``: the model only on the
+            pixels of the fit (those of :meth:`chi2_on_fit_pixels`), NaN
+            elsewhere, the same numbers there.
 
         Returns
         -------
@@ -943,8 +1158,9 @@ class VoigtFitter:
             
             1. **new_system_list** (:class:`~astrocook.core.system_list.SystemList`):
                A new system list containing the optimized parameter values and errors.
-            2. **final_model_flux** (*np.ndarray*):
-               The full model flux array (physical units), evaluated on the entire grid.
+            2. **final_model_flux** (*np.ndarray* or ``None``):
+               The full model flux array (physical units), evaluated on the entire grid
+               (``None`` with ``model=False``).
             3. **res** (*OptimizeResult*):
                The raw result object from ``scipy.optimize``.
         """
@@ -977,7 +1193,11 @@ class VoigtFitter:
         p0 = np.clip(p0, bounds[0], bounds[1])
 
         # Fit
-        res = least_squares(self._residual_function, p0, bounds=bounds, method=method, loss='linear', max_nfev=max_nfev, x_scale='jac', verbose=verbose)
+        # The analytic Jacobian (phase 7, PR 7c.4d-bis, F171): before, finite
+        # differences, one model per free parameter at each iteration
+        jac_fn: Any = self._jacobian if (jac == 'analytic' and self._active_lines_data) else '2-point'
+        res = least_squares(self._residual_function, p0, jac=jac_fn, bounds=bounds, method=method,
+                            loss='linear', max_nfev=max_nfev, x_scale='jac', verbose=verbose)
         
         # Restore system list (it will be updated properly at the end)
         self._system_list = old_systs
@@ -1092,6 +1312,9 @@ class VoigtFitter:
         
         # 4. Final Flux Model (Un-sliced)
         self._cached_tau_groups = {} # Clear cache
+        if not model:
+            logger.debug(f"Fit complete. Reduced chi2 (constraining pixels): {red_chi2:.2f}.")
+            return new_system_list, None, res
 
         # [FIX] Temporarily disable active_uuids so _compute_model calculates EVERYTHING
         # We need the full model (static + active) for the green line.
@@ -1108,13 +1331,17 @@ class VoigtFitter:
         else:
              self._resol_calc = None
         self._set_lsf(slice(None), cache=False)
-             
+        if isinstance(model, str):
+            self._restrict_model(self._fit_mask)
+
         # This will now loop over ALL components because active_uuids is None
-        final_model_norm = self._compute_model(res.x)
-        
-        # Restore state (good practice)
-        self._constraints._active_uuids = stored_active_uuids
-        self._x_calc, self._resol_calc, self._x_tau, self._lsf = saved
+        try:
+            final_model_norm = self._compute_model(res.x)
+        finally:
+            # Restore state (good practice)
+            self._model_pixels = None
+            self._constraints._active_uuids = stored_active_uuids
+            self._x_calc, self._resol_calc, self._x_tau, self._lsf = saved
         
         final_model_flux = final_model_norm * self._norm
 
@@ -1130,6 +1357,11 @@ class VoigtFitter:
         (``metals_auto``, F111) and the evaluation of a model (F154, phase 7,
         PR 7a.5)."""
         return (self._y_norm[mask] - model_flux[mask] / self._norm[mask]) / self._dy_norm[mask]
+
+    @property
+    def fit_mask(self) -> np.ndarray:
+        """The pixels of the last fit (on the whole spectrum)."""
+        return self._fit_mask
 
     @property
     def valid_mask(self) -> np.ndarray:
@@ -1174,6 +1406,11 @@ class VoigtFitter:
         resolution ``res_key`` and averaged over the pixels (#526)."""
         res_val, res_unit = res_key
         flux_fine = np.exp(-tau_arr)
+        pix = None
+        if self._model_pixels is not None:
+            pix, j0, j1 = self._model_pixels
+            flux_fine = np.ones(len(self._lsf.x_fine))
+            flux_fine[j0:j1] = np.exp(-tau_arr)
         r: Any
         key: Any
         if res_unit == 'column' and self._resol_calc is not None:
@@ -1182,14 +1419,29 @@ class VoigtFitter:
             r, key = res_val, res_val
         else:
             r, key = None, 'none'
-        return self._lsf.apply(flux_fine, r, key=key)
+        return self._lsf.apply(flux_fine, r, key=key, pixels=pix)
 
-    def compute_model_flux(self) -> Tuple[np.ndarray, np.ndarray]:
+    def _restrict_model(self, pixels: np.ndarray) -> None:
+        """Compute the model of the whole spectrum (set up by
+        ``_set_lsf(slice(None), cache=False)``) only on the pixels
+        ``pixels`` (a mask), the others NaN (F167): the optical depth only
+        on the fine samples they take, the same samples of the whole grid,
+        so the same numbers (up to the order of the sums)."""
+        pix = np.flatnonzero(pixels)
+        j0, j1 = self._lsf.fine_range(pix)
+        self._x_tau = self._lsf.x_fine[j0:j1]
+        self._model_pixels = (pix, j0, j1)
+
+    def compute_model_flux(self, pixels: Optional[np.ndarray] = None
+                           ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Compute the model flux for the current parameters.
 
         Calculates the Voigt profile model based on the current state of the
-        system list, without performing any fitting/optimization.
+        system list, without performing any fitting/optimization. With
+        ``pixels`` (a boolean mask on the spectrum), only on those pixels,
+        NaN elsewhere: the same numbers on them, for a caller that needs no
+        more (F167, ``metals_auto``).
 
         Returns
         -------
@@ -1208,15 +1460,19 @@ class VoigtFitter:
         else:
              self._resol_calc = None
         self._set_lsf(slice(None), cache=False)
+        if pixels is not None:
+            self._restrict_model(pixels)
 
         # Reset caches to force Case B (Standard Loop) in _compute_model
         self._cached_tau_groups = {}
         self._active_lines_data = None 
         
-        y_model_norm = self._compute_model(p_current_free)
-        
-        # Restore context
-        self._x_calc, self._resol_calc, self._x_tau, self._lsf = saved
+        try:
+            y_model_norm = self._compute_model(p_current_free)
+        finally:
+            # Restore context
+            self._model_pixels = None
+            self._x_calc, self._resol_calc, self._x_tau, self._lsf = saved
         
         y_model_phys = y_model_norm * self._norm
         return self._x_ang, y_model_phys

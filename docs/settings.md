@@ -1,10 +1,11 @@
 # Settings
 
 *Edit > Settings...* (on macOS *Astrocook > Settings...*, or `Cmd+,`) opens
-the settings of the interface, in three tabs. **OK** saves them and closes
-the dialog, **Apply** saves them and keeps it open, **Restore Defaults** puts
-the default of every setting in the dialog (nothing is saved until OK or
-Apply), **Cancel** throws the changes away.
+the settings of the interface, in three tabs. Every change
+applies at once, with no OK button (a number or a folder typed in a field
+applies when the edit is finished, with Enter or by leaving the field).
+**Restore Defaults** puts the default of every setting and applies it;
+**Close** closes the dialog.
 
 Settings are about the interface only. None of them changes a number, and
 none applies to scripts, to the MCP server or to the log of a session: the
@@ -38,8 +39,11 @@ files, last folder, size of the window) are the same ones.
 
 - **Theme** and **Plot colours** are the same as *View > Appearance* and
   *View > Plot Colours*: changing one changes the other.
-- **Font size**: the font of tables, panels and menus (the system font by
-  default). A few texts have a size of their own and do not change.
+- **Font size**: *Small*, *Normal* or *Large*. *Normal* (the default) is the
+  look that the system gives to each part of the window; *Small* and *Large*
+  make all the fonts of tables, panels, group headers and menus about 15%
+  smaller or 20% larger, keeping their relations. A few texts have a size of
+  their own and do not change.
 - **Line width**: a factor on the width of the lines of the main plot (flux,
   error, continuum, model); 1 gives the usual widths.
 - **Initial x unit**: the unit of the x axis when Astrocook starts (nm, Å or

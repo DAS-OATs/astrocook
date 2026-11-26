@@ -10,13 +10,14 @@
 
 ## [2.9.0] - 2026-11-25
 
-Software Update and Settings in the Help and Edit menus. Made from the 2.8.x line (`release/2.8.x`) with the PRs U1 and U2 of phase 7-quater, without the work of phase 7 done on master: identification, benchmark and recipes are those of 2.8.0.
+Software Update and Settings in the Help and Edit menus. Made from the 2.8.x line (`release/2.8.x`) with the PRs U1, U2 and U3 of phase 7-quater, without the work of phase 7 done on master: identification, benchmark and recipes are those of 2.8.0.
 
 **Numerical results.** Unchanged: only the interface (`astrocook/gui/`) and the tests are touched, nothing of fitting, identification or the automatic pipelines (the benchmark was not rerun). No setting changes a number.
 
 ### Added
 - **Help > Software Update...** (phase 7-quater, PR U1). Asks GitHub for the latest release and compares its version with the installed one (as versions, not as strings: `2.10.0` is newer than `2.8.0`; pre-releases are handled). The request runs in a thread, carries a generic User-Agent and nothing of the user, and fails silently when the network is absent unless the user asked for the check. The dialog shows the release notes and offers what fits the installation: in the macOS app, *Download* fetches `Astrocook.dmg` with a progress bar, verifies its SHA-256 against the digest given by the GitHub API (the dialog says so when there is none) and opens it; in the other installations it shows the command to update. A development installation (a checkout, an editable install) is not compared with the releases: its version says little, and the dialog says so. No update is applied without the user. See the section on updates in *Installation*.
 - **Edit > Settings...** (phase 7-quater, PR U2). A dialog with three tabs: *General* (the automatic check for updates at start, off by default, every start / daily / weekly; the number of recent files; the question before closing a changed session; the starting folder of the file dialogs), *Appearance* (theme and plot colours, also in the View menu; font size; width of the plot lines; initial unit of the x axis; decimals of the wavelengths in the Data Inspector) and *Performance* (the pixels above which the plot is downsampled). The defaults are the values of before. No setting changes a number or applies to scripts, MCP or the log. See the page *Settings* of the documentation.
+- **Settings applied at once, and the font size as a scale** (phase 7-quater, PR U3). The changes of *Edit > Settings...* take effect as they are made, without an OK button. The font size is a choice, *Small / Normal / Large*, where *Normal* is the look of before; it replaces the number of points.
 
 ### Changed
 - **The tests no longer read or write the user's real settings** (phase 7-quater, PR U2): `QSettings` is redirected to a folder of its own in every test.

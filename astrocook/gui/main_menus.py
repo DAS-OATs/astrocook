@@ -13,13 +13,13 @@ from PySide6.QtCore import QTimer, QUrl, Qt
 from PySide6.QtGui import QAction, QActionGroup, QDesktopServices, QKeySequence
 from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox
 
-from astrocook.gui.settings import (FONT_RANGE, FONT_SIZE_KEY, app_settings, get_number,
-                                    initial_x_unit, max_recent_files)
+from astrocook.gui.settings import (app_settings, font_scale_factor, initial_x_unit,
+                                    max_recent_files)
 from .about_dialog import AboutDialog
 from .script_dialog import ScriptDialog
 from .system_inspector import SystemInspector
 from .plot_style import PLOT_PALETTE_NAMES, plot_palette_name, set_plot_palette
-from .theme import APPEARANCES, apply_appearance, apply_font_size
+from .theme import APPEARANCES, apply_appearance, apply_font_scale
 from astrocook.gui._window_host import HostBase
 from astrocook.recipes.registry import DOCS_URL, find_recipe
 
@@ -145,7 +145,7 @@ class MainMenusMixin(HostBase):
         self.x_unit_combo.blockSignals(True)
         self.x_unit_combo.setCurrentText(initial_x_unit())
         self.x_unit_combo.blockSignals(False)
-        apply_font_size(get_number(FONT_SIZE_KEY, FONT_RANGE))
+        apply_font_scale(font_scale_factor())
         visible = settings.value("show_toolbar", True)
         self._set_toolbar_visible(visible not in (False, "false"), save=False)
         # The size and position of the window, as the user left them (they
@@ -158,7 +158,7 @@ class MainMenusMixin(HostBase):
         """After Settings...: what depends on a setting is brought up to date
         (the theme and the plot colours are set by the dialog through their
         menu actions)."""
-        apply_font_size(get_number(FONT_SIZE_KEY, FONT_RANGE))
+        apply_font_scale(font_scale_factor())
         self._refresh_recent_list()
         if getattr(self, 'plot_viewer', None) is not None and self.active_history:
             self._trigger_replot()

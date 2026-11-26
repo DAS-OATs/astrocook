@@ -135,11 +135,16 @@ SWEEP_TIE = 0.1
 SWEEP_INFLUENCE = 1.0
 #: The largest comparison, in the free parameters of the labels of its
 #: pixels (the replaced components and the neighbours). Its purpose: the
-#: time; the fits of both sides and their refinement cost about k times
-#: FIT_NFEV models each (F171): a test of SiII on a forest mock with 15
-#: free lines took 5 minutes, and on the mocks of ``validate_sweep.py`` a few
-#: tests of 10-13 lines took 1-5 minutes each (the Jacobian by finite
-#: differences, one model per parameter at every step). 24: eight lines
+#: time. 24 (eight lines) when the Jacobian of the fit was by finite
+#: differences (F171: a test of SiII on a forest mock with 15 free lines
+#: took 5 minutes). Measured again with the analytic Jacobian (PR
+#: 7c.4d-bis, ``validate_sweep.py``, sweep "all", 36 mocks): 24, 36, 48
+#: take 793, 3035, 7754 s to identify in all (the largest mock 172, 754,
+#: 3490 s) and find FeII 11, 15, 16 of 37, SiII 23, 30, 31 of 101, the rarer
+#: species accepted 282, 298, 303 (purity 0.81, 0.80, 0.80); the H I of
+#: the default sweep 42, 44, 46 of 120. Kept at 24 (Guido, 25 November
+#: 2026): a small gain at four times the time, and the rarer species need
+#: other strategies than the sweep (F174)
 SWEEP_MAX_K = 24
 #: The start of the b of the H I of a system (km/s)
 HI_B = 20.0
