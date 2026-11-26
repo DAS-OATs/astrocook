@@ -1,6 +1,6 @@
 ## [Unreleased]
 
-## [2.9.0] - 2026-11-25
+## [2.9.0] - 2026-11-26
 
 Software Update and Settings in the Help and Edit menus. Made from the 2.8.x line (`release/2.8.x`) with the PRs U1, U2 and U3 of phase 7-quater, without the work of phase 7 done on master: identification, benchmark and recipes are those of 2.8.0.
 
