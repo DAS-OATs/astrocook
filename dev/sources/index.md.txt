@@ -7,8 +7,13 @@
 
 # Welcome to Astrocook!
 
+*A thousand recipes to cook a spectrum.*
+
+
 **Astrocook** is a Python package and GUI for analyzing quasar spectra, built on the modern Scientific Python stack (**PySide6**, **Astropy**, **Matplotlib**).  
 It is designed to make spectral analysis—such as continuum fitting, absorption line identification, and Voigt profile modeling—interactive, reproducible, and easy.
+
+The tagline explains the name: every operation of Astrocook (smoothing, estimating the continuum, identifying the systems, fitting the profiles, ...) is a **recipe**, a step with its own parameters, available from the menus, from Python scripts and from AI agents, and recorded in the history of the session. An analysis is a sequence of recipes, applied to a spectrum.
 
 ## Key Features
 
