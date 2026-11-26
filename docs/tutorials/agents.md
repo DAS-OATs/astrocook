@@ -29,7 +29,7 @@ The server is an optional part of Astrocook, installed with the `[mcp]`
 extra (Python 3.12 or later, preferably in a virtual environment, see
 [Installation](../installation)):
 ```
-pip install "astrocook[mcp] @ git+https://github.com/DAS-OATs/astrocook.git"
+pip install "astrocook[mcp]"
 ```
 This also installs the `mcp` package (the official Python SDK of the
 protocol) and the `astrocook-mcp` command. The macOS app does not include

@@ -1,5 +1,22 @@
 ## [Unreleased]
 
+## [2.9.1] - 2026-11-27
+
+The first release with a license, and the first one on PyPI. Made from the 2.8.x line (`release/2.8.x`), as 2.9.0: it takes the license and the citation from master (PR #830) and the publication on PyPI, without phase 7.
+
+**Numerical results.** Unchanged: nothing of fitting, identification or the automatic pipelines is touched (the methods text, which is not a result, cites the software differently, see below).
+
+### Added
+- **License and citation.** `LICENSE` (GNU GPL v3 or later; copyright INAF), declared in `pyproject.toml` (SPDX expression, `setuptools>=77`); `CITATION.cff` (authors: Cupani, Calderone, Guarneri) with the Zenodo DOI of the software, `10.5281/zenodo.1346736`, and Cupani et al. 2026 (Proc. SPIE 14155, 141551X) as the paper to cite; the DOI badge in the README and the credits page; Claude and Gemini thanked in both.
+- **The tagline in the documentation.** The home page says "A thousand recipes to cook a spectrum" and what it means for the name (it was only in the credits).
+- **The page of PyPI.** The README opens with what Astrocook is, how to install it and where the documentation is (the credits follow); the short description, the keywords, the classifiers and the project URLs (documentation, changelog, citation) of `pyproject.toml` are completed.
+- **Publication on PyPI.** `.github/workflows/publish.yml` builds the package and publishes it on PyPI when a release is published (on TestPyPI from a manual run), with trusted publishing: no token is stored. `pip install astrocook` replaces the installation from GitHub in the documentation.
+
+### Changed
+- **The copyright holder is INAF** (README, credits, documentation, About dialog).
+- **The methods text cites the software by its Zenodo DOI** ("Astrocook 2.9.1 (doi:10.5281/zenodo.1346736)") instead of Cupani et al. 2020, which is no longer cited; the algorithms stay cited as Cupani et al. 2026.
+- **Help > About: *Cite on ADS*** opens the page of Cupani et al. 2026.
+
 ## [2.9.0] - 2026-11-26
 
 Software Update and Settings in the Help and Edit menus. Made from the 2.8.x line (`release/2.8.x`) with the PRs U1, U2 and U3 of phase 7-quater, without the work of phase 7 done on master: identification, benchmark and recipes are those of 2.8.0.

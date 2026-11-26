@@ -1,26 +1,29 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+# >= 77: SPDX license expression (PEP 639)
+requires = ["setuptools>=77.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "astrocook"
-version = "2.9.0"
-description = "Python package for the analysis of quasar spectra"
+version = "2.9.1"
+description = "A thousand recipes to cook a spectrum: analysis of quasar spectra (continuum, absorption systems, Voigt fitting)"
 readme = "README.md"
 requires-python = ">=3.12"
-# License: GPLv3, to be added with the LICENSE file (phase 2, ROADMAP.md)
-#license = { file = "LICENSE" }
+# GPLv3 or later; the PEP 639 form replaces the "License ::" classifier
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE"]
 authors = [
   { name = "Guido Cupani", email = "guido.cupani@inaf.it" },
 ]
 maintainers = [
   { name = "Guido Cupani", email = "guido.cupani@inaf.it" },
 ]
-keywords = ["astronomy", "spectroscopy", "quasar", "science", "spectra"]
+keywords = ["astronomy", "spectroscopy", "quasar", "science", "spectra", "voigt", "absorption lines", "mcp"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
-    #"License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Environment :: X11 Applications :: Qt",
+    "Natural Language :: English",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.12",
@@ -96,6 +99,9 @@ astrocook-gaps = "astrocook.gaps:main"
 Homepage = "https://github.com/DAS-OATs/astrocook"
 Repository = "https://github.com/DAS-OATs/astrocook"
 Issues = "https://github.com/DAS-OATs/astrocook/issues"
+Documentation = "https://das-oats.github.io/astrocook/"
+Changelog = "https://das-oats.github.io/astrocook/changelog.html"
+Citation = "https://doi.org/10.5281/zenodo.1346736"
 
 [tool.setuptools]
 # Ships astrocook/data (grafted in MANIFEST.in)
