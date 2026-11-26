@@ -34,6 +34,7 @@ from .theme import SELECTION
 from .plot_toolbar import AstrocookToolbar
 
 from astrocook.gui.errors import DATA_ERRORS, QT_ERRORS
+from astrocook.gui.settings import downsample_threshold, line_width_factor
 logger = logging.getLogger(__name__)
 
 #: When more pixels than this are in view, they are decimated (min-max) to
@@ -44,6 +45,13 @@ logger = logging.getLogger(__name__)
 #: (with the legend, since removed from the plot, in a fixed corner: F86)
 DECIMATION_THRESHOLD = 1000000
 DECIMATION_FACTOR = 10       # Plot 2 points for every 10
+
+
+def _lw(base: float) -> float:
+    """A line width of the main plot (flux, error, continuum, model) times
+    the factor of Settings > Appearance (1 by default: the widths of before)."""
+    return base * line_width_factor()
+
 
 # Default limits of the normalized flux: linear, and with the logarithmic
 # F scale (F78), which needs a positive lower limit (saturated lines are
@@ -588,7 +596,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
         cache; the decimated ones are cached by view (the arrays they come
         from, ``source``, and the cut), which saves ~0.2 s at each plot of a
         spectrum of 3 million pixels."""
-        if len(arrays.x) <= DECIMATION_THRESHOLD:
+        if len(arrays.x) <= downsample_threshold(DECIMATION_THRESHOLD):
             return arrays
         view.use_decimation = True
         key = ('decimated', source, view.final_slice.start, view.final_slice.stop)
@@ -699,27 +707,27 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
                         linestyle='None', marker='.', markersize=view.scatter_ms,
                         color=err_color, alpha=0.7, rasterized=True)
             elif view.use_decimation:
-                ax.plot(x_data, dy_data, lw=0.8, color=err_color, rasterized=True, label=label)
+                ax.plot(x_data, dy_data, lw=_lw(0.8), color=err_color, rasterized=True, label=label)
             else:
-                ax.step(x_data, dy_data, where='mid', lw=0.8, color=err_color, rasterized=True, label=label)
+                ax.step(x_data, dy_data, where='mid', lw=_lw(0.8), color=err_color, rasterized=True, label=label)
         else:
             # OPTION B: Plot Error as Band around Flux (y +/- dy)
             if view.is_scatter:
                 # fmt='none' ensures no connecting lines
                 ax.errorbar(x_data, y_data, xerr=dx_data,
-                            fmt='none', ecolor=ERROR_COLOR, elinewidth=0.8,
+                            fmt='none', ecolor=ERROR_COLOR, elinewidth=_lw(0.8),
                             alpha=0.5, rasterized=True, zorder=0.9, label='bin size')
                 ax.errorbar(x_data, y_data, yerr=dy_data,
-                            fmt='none', ecolor=ERROR_COLOR, elinewidth=0.8,
+                            fmt='none', ecolor=ERROR_COLOR, elinewidth=_lw(0.8),
                             alpha=0.5, rasterized=True, zorder=0.9, label=label)
             elif view.use_decimation:
                 # Use plot() for decimated data (fast)
-                ax.plot(x_data, y_data - dy_data, lw=0.3, color=ERROR_COLOR, rasterized=True, label=label)
-                ax.plot(x_data, y_data + dy_data, lw=0.3, color=ERROR_COLOR, rasterized=True)
+                ax.plot(x_data, y_data - dy_data, lw=_lw(0.3), color=ERROR_COLOR, rasterized=True, label=label)
+                ax.plot(x_data, y_data + dy_data, lw=_lw(0.3), color=ERROR_COLOR, rasterized=True)
             else:
                 # Use step() for non-decimated data (correct)
-                ax.step(x_data, y_data - dy_data, where='mid', lw=0.3, color=ERROR_COLOR, rasterized=True, label=label)
-                ax.step(x_data, y_data + dy_data, where='mid', lw=0.3, color=ERROR_COLOR, rasterized=True)
+                ax.step(x_data, y_data - dy_data, where='mid', lw=_lw(0.3), color=ERROR_COLOR, rasterized=True, label=label)
+                ax.step(x_data, y_data + dy_data, where='mid', lw=_lw(0.3), color=ERROR_COLOR, rasterized=True)
 
     @staticmethod
     def _plot_flux(ax, arrays: '_PlotArrays', view: '_PlotView'):
@@ -732,9 +740,9 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
                     linestyle='None', marker='.', markersize=view.scatter_ms, markeredgewidth=0,
                     color=plot_colour('flux'), alpha=0.7, rasterized=True)
         elif view.use_decimation:
-            ax.plot(arrays.x, arrays.y, label="Spectrum (decimated)", lw=0.5, color=plot_colour('flux'), rasterized=True)
+            ax.plot(arrays.x, arrays.y, label="Spectrum (decimated)", lw=_lw(0.5), color=plot_colour('flux'), rasterized=True)
         else:
-            ax.step(arrays.x, arrays.y, where='mid', label="Spectrum", lw=0.5, color=plot_colour('flux'), rasterized=True)
+            ax.step(arrays.x, arrays.y, where='mid', label="Spectrum", lw=_lw(0.5), color=plot_colour('flux'), rasterized=True)
 
     def _plot_continuum_and_model(self, ax, arrays: '_PlotArrays'):
         """The continuum (normalization) and the absorption model, when
@@ -743,7 +751,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
             if arrays.norm is not None:
                 ax.plot(
                     arrays.x, arrays.norm, linestyle='--',
-                    color='black', lw=0.8, label='Normalization', rasterized=True
+                    color='black', lw=_lw(0.8), label='Normalization', rasterized=True
                 )
             else:
                 logger.debug("Normalization requested but spec.norm is None.")
@@ -751,7 +759,7 @@ class SpectrumPlotWidget(PlotMouseMixin, ContinuumEditorMixin, QWidget):
         if self.main_window.model_checkbox.isChecked():
             if arrays.model is not None:
                 ax.plot(arrays.x, arrays.model, ls='-', color=plot_colour('model'),
-                        lw=plot_colour('model_lw'), alpha=plot_colour('model_alpha'),
+                        lw=_lw(plot_colour('model_lw')), alpha=plot_colour('model_alpha'),
                         label='Absorption model', rasterized=True)
 
     def _plot_aux_column(self, ax, spec, arrays: '_PlotArrays', view: '_PlotView'):

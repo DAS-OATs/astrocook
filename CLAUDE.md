@@ -86,6 +86,11 @@ Current version: 2.7.0 (prepared in PR 14, 13 November 2026). Python ≥3.12.
   table and velocity plot in `inspector_table.py` and `velocity_plot.py`. A
   new method goes in the module of its theme; `tests/test_gui_structure.py`
   checks the interface of the split classes.
+  The user's settings (phase 7-quater, U2): `gui/settings.py` builds the
+  `QSettings` (`app_settings()`, the only place: the tests redirect it to a
+  folder of their own) and holds the keys, defaults and readers of
+  *Edit > Settings...* (`gui/settings_dialog.py`). A setting is about the
+  interface only: nothing outside `gui/` reads it, and none changes a number.
 - `astrocook/io/` – loaders and V1 → V2 migration. The tables of the files are
   read by the names of their columns by `io/tables.py` (phase 7-ter, T2), shared
   by the loader of the text tables and `import_model`.

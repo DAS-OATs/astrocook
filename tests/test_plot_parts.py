@@ -189,7 +189,7 @@ def test_floating_toolbar(qtbot, window):
     # Guido's request): flush with the bottom left corner of the plot area,
     # fading, with a tab at its right edge that shows or hides it, as View >
     # Show Toolbar does
-    from PySide6.QtCore import QSettings
+    from astrocook.gui.settings import app_settings
     viewer = window.plot_viewer
     toolbar, tab = viewer.toolbar, viewer.toolbar.tab
     assert viewer.main_layout.indexOf(toolbar) == -1
@@ -216,7 +216,7 @@ def test_floating_toolbar(qtbot, window):
     assert not toolbar.isVisible() and tab.isVisible()
     assert tab.geometry().left() == 0
     assert not window.show_toolbar_action.isChecked()
-    assert QSettings("Astrocook", "AstrocookV2").value("show_toolbar") in (False, "false")
+    assert app_settings().value("show_toolbar") in (False, "false")
     window.show_toolbar_action.trigger()
     assert toolbar.isVisible() and tab.geometry().left() == toolbar.width()
     tab.click()
@@ -260,20 +260,20 @@ def test_inspector_toolbar_width(qtbot, window):
 def test_inspector_toolbar_remembered(qtbot, window):
     # The toolbar of the velocity plot, shown or hidden by its tab, as the
     # user left it (Guido)
-    from PySide6.QtCore import QSettings
+    from astrocook.gui.settings import app_settings
     from astrocook.gui.velocity_plot import INSPECTOR_TOOLBAR_KEY
     window._on_view_system_inspector()
     toolbar = window.system_inspector.vel_plot.toolbar
     assert toolbar.isVisible()
     toolbar.tab.click()
     assert not toolbar.isVisible()
-    assert QSettings("Astrocook", "AstrocookV2").value(INSPECTOR_TOOLBAR_KEY) in (False, "false")
+    assert app_settings().value(INSPECTOR_TOOLBAR_KEY) in (False, "false")
     from astrocook.gui.system_inspector import SystemInspector
     other = SystemInspector(window)
     qtbot.addWidget(other)
     assert other.vel_plot.toolbar.isHidden()
     toolbar.tab.click()
-    assert QSettings("Astrocook", "AstrocookV2").value(INSPECTOR_TOOLBAR_KEY) in (True, "true")
+    assert app_settings().value(INSPECTOR_TOOLBAR_KEY) in (True, "true")
 
 
 def test_status_bars_look_the_same(qtbot, window):

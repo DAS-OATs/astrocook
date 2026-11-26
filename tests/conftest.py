@@ -44,6 +44,28 @@ def _gaps_file(tmp_path, monkeypatch):
     monkeypatch.setenv("ASTROCOOK_GAPS_FILE", str(tmp_path / "gaps.jsonl"))
 
 
+@pytest.fixture(autouse=True)
+def _isolated_qsettings(tmp_path_factory, monkeypatch):
+    """``QSettings`` of a test never reads or writes the user's real ones
+    (phase 7-quater, U2): before this the GUI tests wrote the recent files,
+    the theme and the working folder of the machine they ran on. Every test
+    gets its own folder of INI files (``astrocook.gui.settings.app_settings`` uses the INI format, on every
+    platform; the two-argument ``QSettings(org, app)`` ignores the default
+    format, so the code and the tests go through that function)."""
+    try:
+        from PySide6.QtCore import QSettings
+        from astrocook.gui import settings
+    except ImportError:  # the core tests need no Qt
+        yield
+        return
+    # Not inside ``tmp_path``: tests list the content of their own folder
+    folder = tmp_path_factory.mktemp("qsettings")
+    for scope in (QSettings.Scope.UserScope, QSettings.Scope.SystemScope):
+        QSettings.setPath(QSettings.Format.IniFormat, scope, str(folder))
+    monkeypatch.setattr(settings, "SETTINGS_FORMAT", QSettings.Format.IniFormat)
+    yield
+
+
 def pytest_addoption(parser):
     parser.addoption(
         "--update-snapshots", action="store_true", default=False,
