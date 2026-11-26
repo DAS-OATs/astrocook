@@ -68,6 +68,9 @@ scriptable API. Author and maintainer: Guido Cupani (INAF–OATs).
 Current version: 2.9.0 (25 November 2026: 2.8.0 of 21 November plus the
 PRs U1 and U2 of phase 7-quater, from the branch `release/2.8.x`,
 without phase 7; master still says 2.7.0). Python ≥3.12.
+License: GPLv3 or later (`LICENSE`), copyright INAF. To cite: the paper Cupani
+et al. 2026 (Proc. SPIE 14155, 141551X, doi:10.1117/12.3101756) and the Zenodo
+DOI of the software, 10.5281/zenodo.1346736 (`CITATION.cff`, README, `docs/credits.md`).
 
 ## Architecture (v2)
 - `astrocook/core/` – immutable dataclasses (`structures.py`), `Spectrum`,

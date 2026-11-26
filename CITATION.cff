@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-message: "If you use Astrocook in your research, please cite the paper below. To cite the software itself, use the DOI of the software."
+message: "If you use Astrocook in your research, please cite the paper below (Cupani et al. 2026). To cite the software itself, use the DOI of the software."
 title: "Astrocook"
 abstract: "Astrocook is a Python package for the analysis of quasar spectra: continuum fitting, identification of absorption systems and Voigt fitting, with a PySide6 graphical interface and a scriptable API."
 type: software
@@ -20,15 +20,15 @@ keywords:
   - absorption lines
 preferred-citation:
   type: conference-paper
-  # TODO: check the exact title (not verified: no network access to ADS/Crossref)
+  # TODO: title, co-authors and name of the proceedings of Cupani et al. 2026
+  # (not verified: no network access to ADS/Crossref)
   title: "Astrocook"
   authors:
-    # TODO: complete with the co-authors of the paper, in the order of the publication
     - family-names: Cupani
       given-names: Guido
-  collection-title: "Proceedings of the SPIE, Software and Cyberinfrastructure for Astronomy VI"
+  collection-title: "Proceedings of the SPIE"
   collection-type: proceedings
-  volume: 11452
-  start: 114521U
-  year: 2020
-  doi: 10.1117/12.2561343
+  volume: 14155
+  start: 141551X
+  year: 2026
+  doi: 10.1117/12.3101756
