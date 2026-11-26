@@ -65,9 +65,10 @@ screenshots (PRs 11, 12): estimate 2 h for those.
 Astrocook: a Python package for the analysis of quasar spectra (continuum,
 identification of absorption systems, Voigt fitting). PySide6 GUI +
 scriptable API. Author and maintainer: Guido Cupani (INAF–OATs).
-Current version: 2.9.1 (27 November 2026: 2.9.0 of 26 November plus the
+Current version: 2.9.1 (26 November 2026, the same day as 2.9.0, plus the
 LICENSE, the citation and the publication on PyPI, from the branch
-`release/2.8.x`, without phase 7; master still says 2.7.0). Python ≥3.12.
+`release/2.8.x`, without phase 7; master still says 2.7.0). It is on PyPI
+(`pip install astrocook`). Python ≥3.12.
 License: GPLv3 or later (`LICENSE`), copyright INAF. To cite: the paper Cupani
 et al. 2026 (Proc. SPIE 14155, 141551X, doi:10.1117/12.3101756) and the Zenodo
 DOI of the software, 10.5281/zenodo.1346736 (`CITATION.cff`, README, `docs/credits.md`).
@@ -279,14 +280,13 @@ per-object results, enters this public repository (`ROADMAP.md`, phase
 7, "Data and blindness").
 
 Open constraints:
-- #549 (first PyPI publication): release 2.9.1 (from `release/2.8.x`, PRs
-  #831 and #832, 27 November 2026) has the LICENSE and the workflow
-  `.github/workflows/publish.yml` (trusted publishing); it waits for the
-  publishers on PyPI and TestPyPI, the environments `pypi` and `testpypi`
-  and the test on TestPyPI (Guido). After the publication: the DOI of INAF
-  (abstract prepared, the version to indicate is 2.9.1; Zenodo's DOI is the
-  one in use). Until #549 is closed each new PR goes on its own `claude/...`
-  branch (say which).
+- The DOI of INAF (`10.20371/INAF/SW/...`): requested by Guido on 26
+  November 2026 for release 2.9.1 (abstract prepared); the answer is pending
+  and it is not decided whether to keep it beside Zenodo's DOI, which is the
+  one in use. The publication on PyPI (#549) is done: 2.9.1 of 26 November
+  (trusted publishing by `.github/workflows/publish.yml`; a release goes to
+  PyPI, a manual run to TestPyPI). The branches of the PRs need no longer be
+  `claude/...` for the license.
 - Waiting for data from Guido: sessions for the log replay, sample files for
   the loaders, X-Shooter VIS/NIR data (F15).
 - One PR at a time: wait for the merge before opening the next. New
