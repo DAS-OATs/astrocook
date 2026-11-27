@@ -136,6 +136,15 @@ Each fit leaves a warning on the components whose result is not reliable:
 * **No uncertainties:** the fit could not compute the errors of the component (the value is not constrained). Its **ID** is highlighted in red.
 * **Not fitted:** the fit of its group failed during **Refit All**; the component keeps the values it had before. Its **ID** is highlighted in red.
 
+Other warnings say that a value is there but is not a measurement (phase 7). The fit sets them on the components it fits, from the fitted values, and changes no number; nothing drops or treats differently a component because of them. A ⚠ in the cell of the parameter concerned marks them, without a colour:
+
+* **Unresolved** (on b): b is below half the b of the instrumental profile, b_inst = c / (1.665 R) (4.0 km/s at R = 45000), R being the resolution at the strongest line of the series. The line is narrower than the resolution: b is not measured.
+* **Saturated** (on logN): the optical depth at the centre of the weakest line of the series in the fit is above 3 (a transmission below 5% at the centre), on the profile before the convolution, so that a saturation hidden by a low resolution is seen too. logN is not measured: the line is on the flat part of the curve of growth. A doublet whose weaker line is not saturated is not flagged, nor is a damped H I (logN ≥ 19), whose wings constrain logN.
+* **Large errors** (on the parameter whose error is too large): the error of logN above 1 dex, the error of b above b, or the error of z in velocity above the width of the line (the larger of b and b_inst). The errors have no meaning. Only for finite errors (otherwise **No uncertainties**).
+* **On a telluric absorption** (on the ID): a line of the series falls where the `telluric` column of the spectrum (see [External models](external_models.md)) is deeper than 5%, within twice the width of the line. The errors of the component are not to be trusted. Never set without the column.
+
+The thresholds are judgement calls, measured on the mocks of the benchmark: the methods text names the flags, the scripts read them in the `flags` of each component, and an agent filters by one with `components_list(flag=...)`.
+
 A ⚠ before the ID marks every component with a warning, and its tooltip (on the cell, or on its tick in the velocity plot, drawn dashed) says what happened and what to do. Check **Only flagged** to list only these components, and click **Select Flagged** to select them all, e.g. to refit them with **Refit Selected** (table menu), which uses the wide bounds of the manual fits. Editing a parameter of a component clears its warnings; a new fit sets them again.
 
 ```{image} ../_static/absorbers_flags.png
