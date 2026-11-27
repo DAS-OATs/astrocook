@@ -26,7 +26,7 @@ rich systems (a true ion of a system found by an accepted test).
 Not a test: run it by hand. Usage::
 
     python benchmarks/validate_sweep.py [--workers N] [--json out.json]
-        [--sweep HI|all|none]
+        [--sweep HI|all|none] [--evidence record|decide]
 """
 import argparse
 import dataclasses
@@ -94,6 +94,14 @@ def ion_metrics(systems, sweep):
             d["found"] += any(t["species"] == species and t["right"]
                               and vm._dv(t["z"], s["z"]) <= vm.SWEEP_PRESENT_KMS
                               for t in tests)
+            # Recounted by each criterion recorded (the evidence, PR
+            # 7c.4d-quater; first order, as vm._sweep_by_criterion)
+            for crit, tie in vm.SWEEP_DECISIONS.items():
+                d.setdefault(f"found_{crit}", 0)
+                d[f"found_{crit}"] += any(
+                    t["species"] == species and f"d_{crit}" in t and t[f"d_{crit}"] <= tie
+                    and t["match"] and vm._dv(t["z"], s["z"]) <= vm.SWEEP_PRESENT_KMS
+                    for t in tests)
     return out
 
 
@@ -123,8 +131,8 @@ def summarize(records):
     for r in records:
         for k, v in r["ions"].items():
             d = ions.setdefault(k, dict(n=0, found=0))
-            d["n"] += v["n"]
-            d["found"] += v["found"]
+            for key, val in v.items():
+                d[key] = d.get(key, 0) + val
     for d in ions.values():
         d["completeness"] = d["found"] / d["n"] if d["n"] else None
     out["ions"] = ions
@@ -163,6 +171,10 @@ def print_summary(s):
     print("  ions of the rich systems found: " + ", ".join(
         f"{k} {v['found']}/{v['n']} ({fmt(v['completeness'])})"
         for k, v in sorted(s["ions"].items())))
+    for crit in vm.SWEEP_DECISIONS:
+        if any(v.get(f"found_{crit}") for v in s["ions"].values()):
+            print(f"  recounted by {crit}: " + ", ".join(
+                f"{k} {v.get(f'found_{crit}', 0)}/{v['n']}" for k, v in sorted(s["ions"].items())))
     vm.print_sweep(s["sweep"])
 
 
@@ -173,10 +185,13 @@ def main():
     parser.add_argument("--sweep", choices=["HI", "all", "none"], default="all",
                         help="the species of the sweep (default all: the rarer species "
                              "are what these mocks measure)")
+    parser.add_argument("--evidence", choices=["record", "decide"], default=None,
+                        help="the Laplace evidence (PR 7c.4d-quater): recorded, or deciding")
     parser.add_argument("--multiplets", default="CIV,SiIV,MgII,Ly_ab",
                         help="the species of identify_lines")
     args = parser.parse_args()
-    vm.set_chain(dict(method="hypotheses", multiplets=args.multiplets, sweep=args.sweep))
+    vm.set_chain(dict(method="hypotheses", multiplets=args.multiplets, sweep=args.sweep,
+                      evidence=args.evidence))
     t0 = time.time()
     result = run(args.workers)
     result["seconds"] = time.time() - t0

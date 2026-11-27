@@ -75,6 +75,14 @@ from astrocook.mocks.physics import C_KMS  # noqa: E402
 
 SCENARIOS = ("doublet_vs_lya", "doublet_vs_lyab", "coincidence", "alias", "detection")
 CRITERIA = ("chi2", "aic", "aicc", "bic", "spic", "spic_a", "spic_b")
+#: The Laplace evidence (PR 7c.4d-quater, ``astrocook.fitting.evidence``),
+#: -2 ln Z, after the fit only: ``evidence`` with the priors of population
+#: of each species (incidence, columns, b), ``ev_noinc`` the same without the
+#: incidence (every species one component per unit z: the columns and b
+#: alone), with ``--evidence``
+EVIDENCE = ("evidence", "ev_noinc")
+#: The criteria of the tables (EVIDENCE added by ``--evidence``)
+SHOWN = list(CRITERIA)
 MODES = ("aod", "fit")
 GRID = dict(snr=(10.0, 30.0, 100.0), resol=(8900.0, 45000.0))
 #: Bins of the significance of the weaker line (sigma, as ``vm.is_detectable``)
@@ -129,6 +137,8 @@ class Trial:
     #: Evaluate and fit on an ``EvaluationWindow`` of the pixels (PR 7c.4a)
     #: instead of the whole spectrum
     window: bool = False
+    #: The Laplace evidence too (PR 7c.4d-quater; on the window)
+    evidence: bool = False
 
 
 # --- The truth ------------------------------------------------------------
@@ -265,6 +275,24 @@ def measure_window(win: EvaluationWindow, systs: SystemList) -> Dict[str, Option
     return {c: getattr(ev, c) for c in CRITERIA} | {"k": ev.k, "n": ev.n_pixels}
 
 
+def measure_evidence(win: EvaluationWindow, systs: SystemList) -> Dict[str, Optional[float]]:
+    """-2 ln Z of a fitted hypothesis on the window, with and without the
+    incidence (:data:`EVIDENCE`); None where the curvature is not
+    positive."""
+    from astrocook.fitting import evidence as E
+    out: Dict[str, Optional[float]] = {}
+    for name, incidence in zip(EVIDENCE, (True, False), strict=True):
+        priors = {}
+        for c in systs.components:
+            p = E.free_line(E.species_of(c.series), c.z)
+            priors[c.uuid] = p if incidence else E.ComponentPrior(0.0, p.population)
+        try:
+            out[name] = E.window_evidence(win, systs, priors).criterion
+        except np.linalg.LinAlgError:
+            out[name] = None
+    return out
+
+
 def short_fit(spec, systs: SystemList) -> SystemList:
     if not systs.components:
         return systs
@@ -290,8 +318,11 @@ def run_trial(trial: Trial) -> Dict:
             out[f"{key}_fit"] = measure(spec, short_fit(spec, systs), pixels)
         else:
             out[f"{key}_aod"] = measure_window(win, systs)
-            out[f"{key}_fit"] = measure_window(win, win.fit(
-                systs, max_nfev=FIT_NFEV, b_max=FIT_B_MAX, logN_max=FIT_LOGN_MAX))
+            fitted = win.fit(systs, max_nfev=FIT_NFEV, b_max=FIT_B_MAX, logN_max=FIT_LOGN_MAX)
+            out[f"{key}_fit"] = measure_window(win, fitted)
+            if trial.evidence:
+                out[f"{key}_fit"].update(measure_evidence(win, fitted))
+                out[f"{key}_fit"]["b"] = [float(c.b) for c in fitted.components]
     out["seconds"] = time.perf_counter() - t0
     return out
 
@@ -300,7 +331,7 @@ def run_trial(trial: Trial) -> Dict:
 
 def delta(rec: Dict, mode: str, crit: str) -> Optional[float]:
     """IC(false) - IC(true): positive when the criterion picks the truth."""
-    t, f = rec[f"true_{mode}"][crit], rec[f"false_{mode}"][crit]
+    t, f = rec[f"true_{mode}"].get(crit), rec[f"false_{mode}"].get(crit)
     return None if t is None or f is None else f - t
 
 
@@ -332,13 +363,14 @@ def sig_bin(sigma: float) -> str:
 
 
 def table(records: List[Dict], mode: str, rows, row_of, title: str) -> str:
-    head = f"| {title} | n | " + " | ".join(CRITERIA) + " |"
-    lines = [head, "|" + "---|" * (len(CRITERIA) + 2)]
+    crits = [c for c in SHOWN if mode == "fit" or c not in EVIDENCE]
+    head = f"| {title} | n | " + " | ".join(crits) + " |"
+    lines = [head, "|" + "---|" * (len(crits) + 2)]
     for row in rows:
         sel = [r for r in records if row_of(r) == row]
         if not sel:
             continue
-        cells = [f"{picks(sel, mode, c)[0]:.2f}" for c in CRITERIA]
+        cells = [f"{picks(sel, mode, c)[0]:.2f}" for c in crits]
         lines.append(f"| {row} | {len(sel)} | " + " | ".join(cells) + " |")
     return "\n".join(lines)
 
@@ -355,12 +387,12 @@ def summary(records: List[Dict]) -> str:
             out.append(table(recs, mode, [f"S/N {s:g}, R {R:g}" for s, R in cells],
                              lambda r: f"S/N {r['snr']:g}, R {r['resol']:g}", "cell"))
     out.append("\n### Median weight of the truth, exp(-dIC/2) normalised, by scenario (fit)\n")
-    out.append("| scenario | " + " | ".join(CRITERIA) + " |")
-    out.append("|" + "---|" * (len(CRITERIA) + 1))
+    out.append("| scenario | " + " | ".join(SHOWN) + " |")
+    out.append("|" + "---|" * (len(SHOWN) + 1))
     for scen in SCENARIOS:
         recs = [r for r in records if r["scenario"] == scen and r["sigma"] >= 3]
         out.append(f"| {scen} | " + " | ".join(
-            f"{picks(recs, 'fit', c)[1]:.2f}" for c in CRITERIA) + " |")
+            f"{picks(recs, 'fit', c)[1]:.2f}" for c in SHOWN) + " |")
     out.append("\n### Prior odds Ly-a : CIV (fit, sigma >= 3), fraction that picks the truth\n")
     out.append("| scenario | odds | aic | bic | spic |")
     out.append("|---|---|---|---|---|")
@@ -383,10 +415,15 @@ def main(argv=None) -> None:
     parser.add_argument("--scenarios", nargs="*", default=list(SCENARIOS))
     parser.add_argument("--window", action="store_true",
                         help="evaluate and fit on a window of the pixels (PR 7c.4a)")
+    parser.add_argument("--evidence", action="store_true",
+                        help="the Laplace evidence too (PR 7c.4d-quater; implies --window)")
     args = parser.parse_args(argv)
+    if args.evidence:
+        args.window = True
+        SHOWN.extend(EVIDENCE)
     logging.basicConfig(level=logging.WARNING)
     logging.getLogger("astrocook").setLevel(logging.ERROR)
-    trials = [Trial(s, snr, R, seed, args.window) for s in args.scenarios for snr in GRID["snr"]
+    trials = [Trial(s, snr, R, seed, args.window, args.evidence) for s in args.scenarios for snr in GRID["snr"]
               for R in GRID["resol"] for seed in range(args.trials)]
     t0 = time.perf_counter()
     with Pool(args.workers) as pool:
