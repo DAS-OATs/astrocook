@@ -172,7 +172,26 @@ class SystemInspector(QWidget):
         l_toolbar.addStretch() # Push checkbox to the left
         
         left_layout.addLayout(l_toolbar)
-        left_layout.addWidget(self.table_view)
+        # The Details panel below the table (7d.9), in a splitter so that its
+        # height can be changed; collapsed by its header. Below the table,
+        # not the plot (Guido, 27 November 2026): the table scrolls, so the
+        # panel only hides some rows, while the plot would be redrawn at
+        # each change of its height
+        self.details = DetailsPanel()
+        self.details.component_clicked.connect(self._on_member_clicked)
+        shown = app_settings().value(DETAILS_SHOWN_KEY, True)
+        self.details.toggle.setChecked(str(shown).lower() not in ("false", "0"))
+        self.details.set_expanded(self.details.toggle.isChecked())
+        self.details.toggle.toggled.connect(self._on_details_toggled)
+        self.table_splitter = QSplitter(Qt.Vertical)
+        self.table_splitter.setHandleWidth(9)
+        self.table_splitter.addWidget(self.table_view)
+        self.table_splitter.addWidget(self.details)
+        self.table_splitter.setStretchFactor(0, 3)
+        self.table_splitter.setStretchFactor(1, 1)
+        self.table_splitter.setCollapsible(0, False)
+        self.table_splitter.setSizes([520, 240])
+        left_layout.addWidget(self.table_splitter, 1)
         
         splitter.addWidget(left_widget)
         
@@ -280,23 +299,7 @@ class SystemInspector(QWidget):
         r_layout.addLayout(c_layout)
         
         self.vel_plot = VelocityPlotWidget(self)
-        # The Details panel below the plot (7d.9), in a splitter so that its
-        # height can be changed; collapsed by its header
-        self.details = DetailsPanel()
-        self.details.component_clicked.connect(self._on_member_clicked)
-        shown = app_settings().value(DETAILS_SHOWN_KEY, True)
-        self.details.toggle.setChecked(str(shown).lower() not in ("false", "0"))
-        self.details.set_expanded(self.details.toggle.isChecked())
-        self.details.toggle.toggled.connect(self._on_details_toggled)
-        self.plot_splitter = QSplitter(Qt.Vertical)
-        self.plot_splitter.setHandleWidth(9)
-        self.plot_splitter.addWidget(self.vel_plot)
-        self.plot_splitter.addWidget(self.details)
-        self.plot_splitter.setStretchFactor(0, 3)
-        self.plot_splitter.setStretchFactor(1, 1)
-        self.plot_splitter.setCollapsible(0, False)
-        self.plot_splitter.setSizes([520, 240])
-        r_layout.addWidget(self.plot_splitter, 1)
+        r_layout.addWidget(self.vel_plot, 1)
         self._details_pixels = (None, None)  # (spectrum, FitPixels)
         
         splitter.addWidget(right_widget)

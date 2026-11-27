@@ -46,9 +46,9 @@ def _text(html_):
 def test_group(qapp):
     a, b = _pair()
     text = _text(group_html(a, [a, b]))
-    for part in ("Reduced χ²", "1.12", "95 pixels", "120.50 on 110 pixels",
-                 "132.50 / 148.70", "Free parameters", "6", "yes, 17 evaluations",
-                 "absorbers.refit_all", "Fitted together (2)", "CIV at z = 3.00010 (ID 2)"):
+    for part in ("Reduced χ²", "1.12", "95 constraining pixels", "120.50 on 110 pixels",
+                 "132.50 / 148.70", "Free parameters", "6", "yes (17 evaluations)",
+                 "refit_all", "Fitted together (2)", "CIV at z = 3.00010 (ID 2)"):
         assert part in text, part
     # The other member is a link that selects it
     assert f"href='{MEMBER_SCHEME}:{b.uuid}'" in group_html(a, [a, b])

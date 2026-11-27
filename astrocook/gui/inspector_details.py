@@ -1,6 +1,6 @@
 """The Details panel of the System Inspector (phase 7, PR 7d.9).
 
-Below the velocity plot, collapsible, it follows the selection of the
+Below the table, collapsible, it follows the selection of the
 table (not the cursor) and says what the tooltip of a cell could not hold,
 in three sections, each shown only when it has something to say:
 
@@ -93,18 +93,19 @@ def group_html(comp: ComponentData, components: Sequence[ComponentData]) -> str:
     if rec.converged is None:
         conv = "unknown"
     elif rec.converged:
-        conv = f"yes, {rec.nfev} evaluations" if rec.nfev is not None else "yes"
+        conv = f"yes ({rec.nfev} evaluations)" if rec.nfev is not None else "yes"
     else:
         conv = (f"<b>no</b>: stopped at {rec.max_nfev} evaluations, the values may not "
                 "be at the minimum" if rec.max_nfev is not None else "<b>no</b>")
     rows = [
         _row("Reduced χ²", f"{_num(rec.chi2_reduced)} "
-             f"(on the {rec.n_constraining} pixels that constrain the parameters)"),
+             f"({rec.n_constraining} constraining pixels)"),
         _row("χ²", f"{_num(rec.chi2)} on {rec.n_pix} pixels"),
         _row("AIC / BIC", f"{_num(rec.aic)} / {_num(rec.bic)}"),
         _row("Free parameters", str(rec.n_free)),
         _row("Converged", conv),
-        _row("Recipe", html.escape(rec.recipe or "none (a script)")),
+        # A break allowed after the dot: the column can be narrow
+        _row("Recipe", html.escape(rec.recipe or "none (a script)").replace(".", ".\u200b")),
         _row("When", _local_time(rec.time)),
     ]
     out = _heading("Group fit") + _table(rows)
@@ -185,8 +186,8 @@ def component_html(comp: ComponentData, pixels: Optional[FitPixels],
             crit.append(_row("Telluric depth", f"{_num(q.telluric_depth, '{:.3f}')} "
                              f"(on a telluric line above {TELLURIC_DEPTH:g})"))
         out += (_heading("The criteria of the flags")
-                + "<p style='margin: 0 0 2px 0'>On the lines of the series in the "
-                  "spectrum (the fit takes those in its pixels).</p>" + _table(crit))
+                + "<p style='margin: 0 0 2px 0'>On the lines in the spectrum (the fit: "
+                  "those in its pixels).</p>" + _table(crit))
     _, messages = flag_cue(comp)
     if messages:
         out += _heading("Flags") + "<br>".join(f"⚠ {html.escape(m)}" for m in messages)
