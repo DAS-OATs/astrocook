@@ -513,6 +513,7 @@
 <span class="c1"># InvalidParameter is defined with the other exceptions of the recipes</span>
 <span class="c1"># (phase 6-bis, PR 3) and raised here</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.recipes.errors</span><span class="w"> </span><span class="kn">import</span> <span class="n">InvalidParameter</span><span class="p">,</span> <span class="n">RecipeError</span><span class="p">,</span> <span class="n">RecipeFailed</span><span class="p">,</span> <span class="n">reason_of</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.fitting.fit_record</span><span class="w"> </span><span class="kn">import</span> <span class="n">running_recipe</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
@@ -772,7 +773,9 @@
             <span class="n">session</span> <span class="o">=</span> <span class="n">fill</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">outermost</span><span class="o">=</span><span class="n">_DEPTH</span><span class="o">.</span><span class="n">get</span><span class="p">()</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">session</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="p">:</span>
                 <span class="bp">self</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)(</span><span class="n">session</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">method</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">converted</span><span class="p">)</span>
+            <span class="c1"># The recipe of the statistics of the fits it runs (7d.9)</span>
+            <span class="k">with</span> <span class="n">running_recipe</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">spec</span><span class="o">.</span><span class="n">category</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">spec</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">method</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">converted</span><span class="p">)</span>
         <span class="k">except</span> <span class="n">RecipeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="n">e</span><span class="o">.</span><span class="n">enter</span><span class="p">(</span><span class="o">*</span><span class="n">where</span><span class="p">)</span>
             <span class="k">raise</span>

@@ -1,0 +1,7 @@
+astrocook.fitting.fit\_record module
+====================================
+
+.. automodule:: astrocook.fitting.fit_record
+   :members:
+   :show-inheritance:
+   :undoc-members:

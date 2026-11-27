@@ -734,6 +734,98 @@
 </div>
 
     
+<div class="viewcode-block" id="FitRecord">
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.FitRecord">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">FitRecord</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The statistics of one fit of a group of components (phase 7, PR 7d.9).</span>
+
+<span class="sd">    Made by :class:`~astrocook.fitting.voigt_fitter.VoigtFitter` at each</span>
+<span class="sd">    fit (:mod:`astrocook.fitting.fit_record`) and held by reference by</span>
+<span class="sd">    each component it fitted (``ComponentData.fit``): the numbers are in</span>
+<span class="sd">    one place, not copied on each component. Saved in the ``.acs2``</span>
+<span class="sd">    archive once per fit (``io/archive_data.py``), the components with its</span>
+<span class="sd">    ``id``. Shown by the Details panel of the System Inspector and by</span>
+<span class="sd">    ``components_list`` of the MCP server.</span>
+<span class="sd">    """</span>
+    <span class="n">chi2</span><span class="p">:</span> <span class="nb">float</span>
+<span class="w">    </span><span class="sd">""" Sum of the squared normalized residuals on the pixels of the fit. """</span>
+    <span class="n">n_pix</span><span class="p">:</span> <span class="nb">int</span>
+<span class="w">    </span><span class="sd">""" The pixels of the fit. """</span>
+    <span class="n">n_free</span><span class="p">:</span> <span class="nb">int</span>
+<span class="w">    </span><span class="sd">""" The free parameters of the fit. """</span>
+    <span class="n">aic</span><span class="p">:</span> <span class="nb">float</span>
+<span class="w">    </span><span class="sd">""" chi2 + 2 n_free (``fitting.model_evaluation.information_criteria``). """</span>
+    <span class="n">bic</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">""" chi2 + n_free ln n_pix (None without pixels). """</span>
+    <span class="n">chi2_reduced</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">""" The reduced chi2 that scales the errors, on the pixels that</span>
+<span class="sd">    constrain the free parameters (issue #534): the ``chi2`` of the</span>
+<span class="sd">    components. None if the errors could not be computed. """</span>
+    <span class="n">n_constraining</span><span class="p">:</span> <span class="nb">int</span>
+<span class="w">    </span><span class="sd">""" The pixels that constrain the free parameters. """</span>
+    <span class="n">members</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">""" The uuids of the components fitted (the active ones). """</span>
+    <span class="n">converged</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">""" Whether the optimizer converged (False: it stopped at ``max_nfev``);</span>
+<span class="sd">    None if unknown. """</span>
+    <span class="n">nfev</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">""" The evaluations of the model. """</span>
+    <span class="n">max_nfev</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">""" The limit of the evaluations. """</span>
+    <span class="n">message</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span>
+<span class="w">    </span><span class="sd">""" The message of the optimizer. """</span>
+    <span class="n">recipe</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">""" The recipe that ran the fit, ``category.name`` (the outermost one,</span>
+<span class="sd">    the one the user ran); None outside a recipe. """</span>
+    <span class="n">time</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span>
+<span class="w">    </span><span class="sd">""" When, ISO 8601 in UTC. """</span>
+    <span class="n">bounds</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+<span class="w">    </span><span class="sd">""" The bounds of the free parameters of the members, ``(uuid,</span>
+<span class="sd">    parameter, lower, upper)``, ``parameter`` one of ``z``, ``logN``,</span>
+<span class="sd">    ``b``, ``btur`` (the bounds of the constraint model, narrowed by the</span>
+<span class="sd">    window of the fit in z and by ``b_max`` and ``logN_max``). """</span>
+    <span class="n">final</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="w">    </span><span class="sd">""" True when the statistics were computed again at the final values,</span>
+<span class="sd">    without fitting (``refit_all``: the neighbours of the group fitted</span>
+<span class="sd">    later, issue #534); ``converged`` and ``nfev`` are those of the fit. """</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">""" Its identifier, the reference of the components in the archive. """</span>
+
+<div class="viewcode-block" id="FitRecord.to_dict">
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.FitRecord.to_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="p">{</span><span class="n">f</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dataclass_fields__</span><span class="p">}</span>
+        <span class="n">out</span><span class="p">[</span><span class="s1">'members'</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">members</span><span class="p">)</span>
+        <span class="n">out</span><span class="p">[</span><span class="s1">'bounds'</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">out</span></div>
+
+
+<div class="viewcode-block" id="FitRecord.from_dict">
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.FitRecord.from_dict">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">d</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s1">'FitRecord'</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The record of :meth:`to_dict`; a key that this version does not</span>
+<span class="sd">        know is ignored."""</span>
+        <span class="n">known</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">__dataclass_fields__</span><span class="p">}</span>
+        <span class="n">known</span><span class="p">[</span><span class="s1">'members'</span><span class="p">]</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">u</span><span class="p">)</span> <span class="k">for</span> <span class="n">u</span> <span class="ow">in</span> <span class="n">known</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'members'</span><span class="p">,</span> <span class="p">()))</span>
+        <span class="n">known</span><span class="p">[</span><span class="s1">'bounds'</span><span class="p">]</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">((</span><span class="nb">str</span><span class="p">(</span><span class="n">u</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">lo</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="n">hi</span><span class="p">))</span>
+                                <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span> <span class="ow">in</span> <span class="n">known</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'bounds'</span><span class="p">,</span> <span class="p">()))</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">known</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FitRecord.bounds_of">
+<a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.FitRecord.bounds_of">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">bounds_of</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">param</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">"""The bounds of a free parameter of a member in this fit, or None."""</span>
+        <span class="k">for</span> <span class="n">u</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">u</span> <span class="o">==</span> <span class="n">uuid</span> <span class="ow">and</span> <span class="n">p</span> <span class="o">==</span> <span class="n">param</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+</div>
+
+
+
 <div class="viewcode-block" id="ComponentData">
 <a class="viewcode-back" href="../../../api/astrocook.core.structures.html#astrocook.core.structures.ComponentData">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -787,6 +879,11 @@
 <span class="sd">    ``large_errors``, ``telluric_overlap``, see</span>
 <span class="sd">    :mod:`astrocook.fitting.component_flags`). Cleared when a parameter is</span>
 <span class="sd">    edited, and set again by the next fit. """</span>
+    <span class="n">fit</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">FitRecord</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">compare</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">""" The statistics of the last fit of the group of the component (phase</span>
+<span class="sd">    7, PR 7d.9), shared with the other components of that fit. Cleared, as</span>
+<span class="sd">    the flags, when a parameter is edited. Not compared: two components</span>
+<span class="sd">    with the same values are equal whatever fit gave them. """</span>
 
     <span class="c1"># V2 IDENTIFIER: Stable, Global, Immutable</span>
     <span class="n">uuid</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()))</span>

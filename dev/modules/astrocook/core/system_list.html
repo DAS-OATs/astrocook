@@ -648,11 +648,15 @@
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_valid_changes</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">changes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""The changes that apply to a component; editing a fitted parameter</span>
-<span class="sd">    clears the flags left by the last fit (#517), unless they are set too."""</span>
+<span class="sd">    clears the flags left by the last fit (#517), unless they are set too,</span>
+<span class="sd">    and its statistics (phase 7, PR 7d.9: they describe the fitted values)."""</span>
     <span class="n">valid_fields</span> <span class="o">=</span> <span class="p">{</span><span class="n">f</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">fields</span><span class="p">(</span><span class="n">comp</span><span class="p">)}</span>
     <span class="n">out</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">changes</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">valid_fields</span><span class="p">}</span>
-    <span class="k">if</span> <span class="n">_FITTED_PARAMETERS</span> <span class="o">&amp;</span> <span class="n">out</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="ow">and</span> <span class="s1">'flags'</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">out</span><span class="p">:</span>
-        <span class="n">out</span><span class="p">[</span><span class="s1">'flags'</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+    <span class="k">if</span> <span class="n">_FITTED_PARAMETERS</span> <span class="o">&amp;</span> <span class="n">out</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">if</span> <span class="s1">'flags'</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">out</span><span class="p">:</span>
+            <span class="n">out</span><span class="p">[</span><span class="s1">'flags'</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+        <span class="k">if</span> <span class="s1">'fit'</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">out</span><span class="p">:</span>
+            <span class="n">out</span><span class="p">[</span><span class="s1">'fit'</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">return</span> <span class="n">out</span>
 
 
