@@ -249,7 +249,10 @@ each in `ROADMAP.md`, the detail in `ROADMAP_HISTORY.md`). Release 2.7.1
 PyPI. The
 reference of the mock benchmark, on both grids (`full` and `robustness`),
 is `benchmarks/results/validate_mocks_robustness_baseline.json`,
-regenerated in phase 7, PR 7c.1 (the scoring of the doublets, F68): a PR
+regenerated in phase 7, PR 7c.1 (the scoring of the doublets, F68), and
+again in PR 7c.4d-ter (26 November 2026), after PR #825, whose analytic
+Jacobian changed on purpose the errors of the pipelines (the widths of the
+pulls in the third decimal; every count the same): a PR
 that must not change the results is checked with
 `validate_mocks.py --compare` against it; the results of 2.2.0
 (`validate_mocks_baseline.json`) are kept as history

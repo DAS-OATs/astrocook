@@ -90,7 +90,8 @@ C_KMS = 299792.458
 #: detected together (design, section 8): the doublets of the table, and
 #: two pairs each for FeII and SiII (their strongest lines that are not
 #: blended with each other). An edge of the graph is a pair of regions at
-#: the lag of a pair
+#: the lag of a pair. The pair of CII is CII_1334/CII_1036 since F173 (PR
+#: 7c.4d-ter; before, CII_1334 and the excited CII*_1335)
 ANCHOR_PAIRS: Dict[str, Tuple[Tuple[str, str], ...]] = {
     **{name: ((lines[0], lines[1]),) for name, lines in STANDARD_MULTIPLETS.items()
        if len(lines) == 2 and not name.startswith("Ly")},

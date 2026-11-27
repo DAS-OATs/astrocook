@@ -48,19 +48,30 @@ METAL_MULTIPLETS = {
     'OVI': ['OVI_1031', 'OVI_1037'],
     'MgII': ['MgII_2796', 'MgII_2803'],
     'AlIII': ['AlIII_1854', 'AlIII_1862'],
-    'CII': ['CII_1334', 'CII*_1335'],
+    # CII and SiII hold their ground-state lines only; the excited
+    # fine-structure lines are series of their own, CII* and SiII* below: a
+    # component has one column for all the lines of its series, and the
+    # excited level is usually orders of magnitude less populated than the
+    # ground state (F173, phase 7, PR 7c.4d-ter; until then CII held
+    # CII*_1335 and SiII held SiII*_1264). CII_1036 added with it: the other
+    # ground-state line of C II above the Lyman limit
+    'CII': ['CII_1334', 'CII_1036'],
     'ZnII': ['ZnII_2026', 'ZnII_2062'], 
     'NaI': ['NaI_5891', 'NaI_5897'],
     'CaII': ['CaII_3934', 'CaII_3969'],
     
     # Complex multiplets
     'NI': ['NI_963', 'NI_964', 'NI_965', 'NI_1134a', 'NI_1134b', 'NI_1134c', 'NI_1199', 'NI_1200', 'NI_1201'],
-    'SiII': ['SiII_1260', 'SiII_1526', 'SiII_1193', 'SiII_1190', 'SiII*_1264', 'SiII_1304', 'SiII_1808'],
+    'SiII': ['SiII_1260', 'SiII_1526', 'SiII_1193', 'SiII_1190', 'SiII_1304', 'SiII_1808'],
     'SII': ['SII_1250', 'SII_1253', 'SII_1259'],
     'CrII': ['CrII_2056', 'CrII_2062', 'CrII_2066'],
     'MnII': ['MnII_2576', 'MnII_2594', 'MnII_2606'],
     'FeII': ['FeII_1608', 'FeII_1611', 'FeII_2249', 'FeII_2260', 'FeII_2344', 'FeII_2367', 'FeII_2374', 'FeII_2382', 'FeII_2586', 'FeII_2600'],
     'NiII': ['NiII_1317', 'NiII_1370', 'NiII_1454', 'NiII_1709', 'NiII_1741', 'NiII_1751'],
+
+    # Excited fine-structure lines, apart from their ground state (F173)
+    'CII*': ['CII*_1335'],
+    'SiII*': ['SiII*_1264'],
 }
 
 HYDROGEN_MULTIPLETS = {

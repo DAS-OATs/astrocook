@@ -343,7 +343,8 @@ what changed from the text above, found on the mocks):
   damped systems (NI, SII, NiII, CrII, ZnII, MnII) are in the table, not in
   `SWEEP_ALL` (half the false species and half the time on the mocks with
   rich systems); CII and SiII as their ground-state
-  lines (F173); only the systems of the metal anchors, not those of the
+  lines (F173: custom series in PR 7c.4d, the standard multiplets since PR
+  7c.4d-ter, which took the excited lines out of them); only the systems of the metal anchors, not those of the
   Ly-a/Ly-b pairs (the metals of the forest off by default, decision 2);
 - the H I one component at the column-weighted redshift of the anchor,
   the metals one per component of the anchor; N from the AOD as the least
