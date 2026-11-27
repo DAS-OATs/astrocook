@@ -860,7 +860,9 @@ class SystemList:
         # --- STEP 2: Transitive Closure (Friends-of-Friends) ---
         for _ in range(max_depth):
             added_count = 0
-            current_members = [comp_map[u] for u in group_uuids if u in comp_map]
+            # The members in the order of the list, not of the set: the
+            # order of a set of random UUIDs changes from run to run (F175)
+            current_members = [c for c in self.components if c.uuid in group_uuids]
             if not current_members: break
 
             # Identify candidate UUIDs nearby in observed wavelength space
@@ -877,20 +879,26 @@ class SystemList:
                     for i in range(idx_start, idx_end):
                         candidate_uuids.add(all_uuids[i])
 
-                    # --- Explicit Link Traversal ---
-                    # Components linked via constraints MUST be in the same group, 
-                    # even if they are far apart in wavelength (e.g. CIV and SiIV).
-                    for m in current_members:
-                        if m.uuid in constraints_map:
-                            for constr in constraints_map[m.uuid].values():
-                                if hasattr(constr, 'target_uuid') and constr.target_uuid:
-                                    candidate_uuids.add(constr.target_uuid)
+            # --- Explicit Link Traversal ---
+            # Components linked via constraints MUST be in the same group,
+            # even if they are far apart in wavelength (e.g. CIV and SiIV).
+            # It was inside the loop of the lines, with a loop of its own on
+            # the members as ``m``: from the second line of a multiplet on,
+            # the window above was centred at the z of the last member in
+            # the order of the set, and a component blended with that line
+            # was missed or not by the order of the UUIDs (F175, phase 7,
+            # PR 7c.4d-ter-bis)
+            for m in current_members:
+                if m.uuid in constraints_map:
+                    for constr in constraints_map[m.uuid].values():
+                        if hasattr(constr, 'target_uuid') and constr.target_uuid:
+                            candidate_uuids.add(constr.target_uuid)
 
-                    # Also check if anyone links TO our current members (Inverse search)
-                    for cand_uuid, c_map in constraints_map.items():
-                        for constr in c_map.values():
-                            if hasattr(constr, 'target_uuid') and constr.target_uuid in group_uuids:
-                                candidate_uuids.add(cand_uuid)
+            # Also check if anyone links TO our current members (Inverse search)
+            for cand_uuid, c_map in constraints_map.items():
+                for constr in c_map.values():
+                    if hasattr(constr, 'target_uuid') and constr.target_uuid in group_uuids:
+                        candidate_uuids.add(cand_uuid)
 
             # --- STEP 3: Detailed Physics and Constraint Validation ---
             for cand_uuid in candidate_uuids:
@@ -946,11 +954,14 @@ class SystemList:
             groups, as in ``refit_all``.
         """
         comp_map = {c.uuid: c for c in self.components}
+        # Ties of z and series broken by the order of the list, not of
+        # the set (F175)
+        position = {c.uuid: i for i, c in enumerate(self.components)}
         todo = {u for u in seed_uuids if u in comp_map}
         # Seeds in a deterministic order (increasing z): the depth-limited
         # group depends on the seed, and the iteration order of a set of
         # random UUIDs changes from run to run
-        seed_order = sorted(todo, key=lambda u: (comp_map[u].z, comp_map[u].series))
+        seed_order = sorted(todo, key=lambda u: (comp_map[u].z, comp_map[u].series, position[u]))
         groups = []
         for seed in seed_order:
             if seed not in todo:
@@ -959,7 +970,7 @@ class SystemList:
             if not group:
                 todo.discard(seed)
                 continue
-            group_list = sorted(group, key=lambda u: (comp_map[u].z, comp_map[u].series))
+            group_list = sorted(group, key=lambda u: (comp_map[u].z, comp_map[u].series, position[u]))
             if max_size is None or len(group_list) <= max_size:
                 groups.append(group_list)
             else:
