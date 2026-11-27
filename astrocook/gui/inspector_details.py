@@ -39,6 +39,12 @@ from ..fitting.component_flags import (
     SATURATED_TAU, TELLURIC_DEPTH, UNRESOLVED_RATIO, FitPixels, flag_quantities)
 from .inspector_table import C_KMS, dz_kms, flag_cue, pretty_expression
 
+#: The width of the panel (pixels) from which the sections are in two columns
+TWO_COLUMNS_WIDTH = 640
+
+#: The text of the panel when no component is selected
+NOTHING_SELECTED = "Select a component in the table to see its details."
+
 #: The anchor of a member of the group, followed by its uuid
 MEMBER_SCHEME = "component"
 
@@ -256,7 +262,10 @@ class DetailsPanel(QWidget):
         self.browser.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         layout.addWidget(self.browser, 1)
         self._comp: Optional[ComponentData] = None
+        self._parts: List[str] = []
+        self._has_group = False
         self._expanded = True
+        self.browser.setHtml(f"<p style='color: gray'>{NOTHING_SELECTED}</p>")
 
     def set_expanded(self, expanded: bool) -> None:
         """Show or hide the panel (hidden, the splitter gives its height to
@@ -294,18 +303,37 @@ class DetailsPanel(QWidget):
         """Show the details of ``comp`` (None: nothing selected)."""
         self._comp = comp
         if comp is None:
-            self.browser.setHtml("<p>Select a component in the table.</p>")
+            self._parts = []
+            self.browser.setHtml(f"<p style='color: gray'>{NOTHING_SELECTED}</p>")
             return
-        parts = self.sections(comp, components, constraints or {}, pixels, param)
-        # Two columns, to use the width of the plot: the group on the left,
-        # the component and the parameter on the right
-        group = parts[0] if comp.fit is not None or comp.chi2 is not None else ""
-        rest = parts[1:] if group else parts
-        cells = [p for p in (group, "".join(rest)) if p]
-        row = "".join(f"<td valign='top' style='padding-right: 18px' width='{100 // len(cells)}%'>"
-                      f"{c}</td>" for c in cells)
-        self.browser.setHtml("<div style='font-size: 12px'><table width='100%'><tr>"
-                             f"{row}</tr></table></div>")
+        self._parts = self.sections(comp, components, constraints or {}, pixels, param)
+        self._has_group = comp.fit is not None or comp.chi2 is not None
+        self._render()
+
+    def _two_columns(self) -> bool:
+        return self.browser.viewport().width() >= TWO_COLUMNS_WIDTH
+
+    def _render(self) -> None:
+        """Lay the sections out: in two columns when the panel is wide (the
+        group on the left, the component and the parameter on the right),
+        else one after the other."""
+        parts = self._parts
+        self._columns = self._two_columns()
+        if self._columns and self._has_group and len(parts) > 1:
+            cells = [parts[0], "".join(parts[1:])]
+            row = "".join(f"<td valign='top' style='padding-right: 18px' width='50%'>{c}</td>"
+                          for c in cells)
+            body = f"<table width='100%'><tr>{row}</tr></table>"
+        else:
+            body = "<hr>".join(parts)
+        self.browser.setHtml(f"<div style='font-size: 12px'>{body}</div>")
+
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+        # Laid out again only when the number of columns changes
+        if (self._comp is not None and self._parts
+                and self._two_columns() != getattr(self, '_columns', None)):
+            self._render()
 
     def text(self) -> str:
         """The text shown (for the tests)."""

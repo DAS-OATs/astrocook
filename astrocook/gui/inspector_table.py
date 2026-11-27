@@ -144,10 +144,12 @@ def tooltip_line(comp, attr: str, constraint, components) -> str:
     if attr not in ERR_MAP and attr != 'id':
         messages = []
     if len(messages) == 1:
-        return f"\u26a0 {messages[0]}"
+        # Rich text, so that Qt wraps a long message instead of running off
+        # the screen
+        return f"<qt>\u26a0 {html.escape(messages[0])}</qt>"
     if messages:
         names = ", ".join(f.replace('_', ' ') for f in (getattr(comp, 'flags', ()) or ()))
-        return f"\u26a0 {len(messages)} warnings ({names}): see Details"
+        return f"<qt>\u26a0 {len(messages)} warnings ({html.escape(names)}): see Details</qt>"
     if attr not in ERR_MAP:
         return ""
     target = getattr(constraint, 'target_uuid', None)

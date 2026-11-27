@@ -175,3 +175,18 @@ def test_the_panel_collapses(inspector):
     # Not updated while collapsed; updated when expanded again
     inspector.details_cb.setChecked(True)
     assert "ID 1" in inspector.details.text()
+
+
+def test_one_column_when_narrow(qapp):
+    from astrocook.gui.inspector_details import NOTHING_SELECTED, TWO_COLUMNS_WIDTH
+    a, b = _pair()
+    panel = DetailsPanel()
+    assert NOTHING_SELECTED in panel.text()
+    panel.resize(TWO_COLUMNS_WIDTH + 200, 300)
+    panel.show()
+    panel.show_component(a, [a, b])
+    assert "<td" in panel.browser.toHtml() and panel._columns
+    panel.resize(TWO_COLUMNS_WIDTH // 2, 300)
+    qapp.processEvents()
+    assert not panel._columns and "Group fit" in panel.text()
+    panel.close()
