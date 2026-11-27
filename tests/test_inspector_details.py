@@ -138,7 +138,7 @@ def inspector(qapp):
     insp = _gui().SystemInspector(None)
     insp.current_session = Session("s", None, spec=spec, systs=systs)
     insp.table_model.update_data(systs.components, {})
-    insp.details.toggle.setChecked(True)
+    insp.details_cb.setChecked(True)
     return insp
 
 
@@ -169,9 +169,9 @@ def test_a_member_clicked_is_selected(inspector):
 
 
 def test_the_panel_collapses(inspector):
-    inspector.details.toggle.setChecked(False)
-    assert not inspector.details.browser.isVisibleTo(inspector.details)
+    inspector.details_cb.setChecked(False)
+    assert not inspector.details.isVisibleTo(inspector)
     _select(inspector, 0)
     # Not updated while collapsed; updated when expanded again
-    inspector.details.toggle.setChecked(True)
+    inspector.details_cb.setChecked(True)
     assert "ID 1" in inspector.details.text()

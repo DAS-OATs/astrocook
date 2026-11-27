@@ -1,6 +1,6 @@
 """The Details panel of the System Inspector (phase 7, PR 7d.9).
 
-Below the table, collapsible, it follows the selection of the
+Below the table, shown or hidden by the box "Details" above it, it follows the selection of the
 table (not the cursor) and says what the tooltip of a cell could not hold,
 in three sections, each shown only when it has something to say:
 
@@ -31,8 +31,8 @@ from datetime import datetime
 from typing import Callable, Dict, List, Optional, Sequence
 
 import numpy as np
-from PySide6.QtCore import QUrl, Qt, Signal
-from PySide6.QtWidgets import QSizePolicy, QTextBrowser, QToolButton, QVBoxLayout, QWidget
+from PySide6.QtCore import QUrl, Signal
+from PySide6.QtWidgets import QSizePolicy, QTextBrowser, QVBoxLayout, QWidget
 
 from ..core.structures import ComponentData, FitRecord
 from ..fitting.component_flags import (
@@ -238,8 +238,10 @@ def parameter_html(comp: ComponentData, param: Optional[str], constraint,
 # --- The widget ------------------------------------------------------------------
 
 class DetailsPanel(QWidget):
-    """The Details panel: a header that collapses it and the text of the
-    sections of the selected component."""
+    """The Details panel: the text of the sections of the selected
+    component. Shown or hidden by the box "Details" of the inspector,
+    above the table (no header of its own: it took a row and a wide
+    button, Guido, 27 November 2026)."""
 
     #: The uuid of a member of the group, clicked
     component_clicked = Signal(str)
@@ -247,34 +249,23 @@ class DetailsPanel(QWidget):
     def __init__(self, parent: Optional[QWidget] = None):
         super().__init__(parent)
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 4, 0, 0)
-        layout.setSpacing(2)
-        self.toggle = QToolButton()
-        self.toggle.setText("Details")
-        self.toggle.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
-        self.toggle.setCheckable(True)
-        self.toggle.setChecked(True)
-        self.toggle.setArrowType(Qt.ArrowType.DownArrow)
-        self.toggle.setAutoRaise(True)
-        self.toggle.setToolTip("Show or hide the details of the selected component")
-        self.toggle.toggled.connect(self.set_expanded)
+        layout.setContentsMargins(0, 0, 0, 0)
         self.browser = QTextBrowser()
         self.browser.setOpenLinks(False)
         self.browser.anchorClicked.connect(self._on_anchor)
         self.browser.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        layout.addWidget(self.toggle)
         layout.addWidget(self.browser, 1)
         self._comp: Optional[ComponentData] = None
+        self._expanded = True
 
     def set_expanded(self, expanded: bool) -> None:
-        self.toggle.setArrowType(Qt.ArrowType.DownArrow if expanded else Qt.ArrowType.RightArrow)
-        self.browser.setVisible(expanded)
-        # Collapsed, the splitter gives it only the height of its header
-        self.setMaximumHeight(16777215 if expanded  # QWIDGETSIZE_MAX
-                              else self.toggle.sizeHint().height() + 6)
+        """Show or hide the panel (hidden, the splitter gives its height to
+        the table)."""
+        self._expanded = bool(expanded)
+        self.setVisible(self._expanded)
 
     def is_expanded(self) -> bool:
-        return self.toggle.isChecked()
+        return self._expanded
 
     def _on_anchor(self, url: QUrl) -> None:
         text = url.toString()

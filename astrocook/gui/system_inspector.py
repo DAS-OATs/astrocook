@@ -170,19 +170,26 @@ class SystemInspector(QWidget):
         l_toolbar.addWidget(self.flagged_cb)
         l_toolbar.addWidget(self.select_flagged_btn)
         l_toolbar.addStretch() # Push checkbox to the left
+        # Shows or hides the Details panel below the table (7d.9), at the
+        # right end, as Resid. of the plot
+        self.details_cb = QCheckBox("Details")
+        self.details_cb.setToolTip("Show the details of the selected component below the "
+                                   "table: the statistics of its group fit, the quantities "
+                                   "of its warnings, the parameter of the current cell")
+        l_toolbar.addWidget(self.details_cb)
         
         left_layout.addLayout(l_toolbar)
         # The Details panel below the table (7d.9), in a splitter so that its
-        # height can be changed; collapsed by its header. Below the table,
+        # height can be changed; shown by the box Details. Below the table,
         # not the plot (Guido, 27 November 2026): the table scrolls, so the
         # panel only hides some rows, while the plot would be redrawn at
         # each change of its height
         self.details = DetailsPanel()
         self.details.component_clicked.connect(self._on_member_clicked)
         shown = app_settings().value(DETAILS_SHOWN_KEY, True)
-        self.details.toggle.setChecked(str(shown).lower() not in ("false", "0"))
-        self.details.set_expanded(self.details.toggle.isChecked())
-        self.details.toggle.toggled.connect(self._on_details_toggled)
+        self.details_cb.setChecked(str(shown).lower() not in ("false", "0"))
+        self.details.set_expanded(self.details_cb.isChecked())
+        self.details_cb.toggled.connect(self._on_details_toggled)
         self.table_splitter = QSplitter(Qt.Vertical)
         self.table_splitter.setHandleWidth(9)
         self.table_splitter.addWidget(self.table_view)
@@ -529,6 +536,7 @@ class SystemInspector(QWidget):
 
     def _on_details_toggled(self, expanded: bool):
         app_settings().setValue(DETAILS_SHOWN_KEY, expanded)
+        self.details.set_expanded(expanded)
         if expanded:
             self._update_details()
 
