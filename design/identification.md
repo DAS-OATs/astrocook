@@ -472,7 +472,13 @@ the module are as quoted by later papers and reviews.
    under-modelled (a region of several lines with fewer components) and a
    species with lines on several regions fills them. No prior on the
    values of the parameters removes a better fit; the evidence moves the
-   decisions at the margin, in both directions.
+   decisions at the margin, in both directions. A second run of the rich
+   mocks deciding by the evidence (`--evidence decide`, the first pass
+   and the sweep): the rarer species accepted 302, purity 0.785 (SpIC_H
+   282, 0.809); the ions found AlII 54, CII 55, FeII 9, MgI 28, OI 20,
+   SiII 25, SiIII 30 (213 -> 221 of 579); the metals of the first pass
+   (completeness/purity) CIV 0.688/0.958 -> 0.736/0.977, SiIV 0.778/0.939
+   -> 0.806/0.887, MgII 0.931/0.940 -> 0.931/0.972.
 3. *The telluric doublets* (cases `telluric` and `combined` of the grid
    robustness, 72 mocks; `validate_mocks.py --grid robustness --cases
    telluric combined --method hypotheses`, the sweep of the H I, with
@@ -535,9 +541,8 @@ option, the form in which the prior of the incidence (section 3.4, 7c.4g)
 enters if it enters, with its calibration on the twins; the width as the
 filter of the candidates of the sweep (direction 4), not as a prior of the
 decision; the tellurics by their hypothesis (7c.5). Not measured: the
-sweep decided by the evidence (second order: the recount is first order;
-a run of `validate_sweep.py --evidence decide` would give it), the
-sensitivity to the values of the priors (the incidence of the H I, the
+grid full decided by the evidence (the recount is first order; the rich
+mocks were run deciding by it), the sensitivity to the values of the priors (the incidence of the H I, the
 0.5 of a species at a system), the twins and the development spectra.
 
 ## 4. The experiment: controlled pairs of alternatives
