@@ -485,6 +485,30 @@ def test_captured_warnings_shown(ready, monkeypatch):
                                  "<ul><li>b at the bound</li></ul>")
 
 
+def test_the_messages_open_on_the_window_that_asked(ready, monkeypatch, qtbot):
+    """The warnings of a refit asked from the System Inspector open on it,
+    not on the main window, which came to the front (Guido, PR 7d.9)."""
+    from PySide6.QtWidgets import QWidget
+    window = ready
+    shown = _messages(window, monkeypatch)
+    origin = QWidget()
+    qtbot.addWidget(origin)
+    origin.show()
+    window._recipe_origin = origin
+    window._captured_warnings = ["b at the bound"]
+    state = window.active_history.current_state
+    window._process_recipe_result((state.with_new_spectrum(state.spec), "refit_all", {}))
+    assert shown[-1]["parent"] is origin
+    window._captured_warnings = []
+    window._on_recipe_error(("Recipe Error: smooth", "boom", "Traceback ..."))
+    assert shown[-1]["parent"] is origin
+    # A window no longer shown: the main window
+    origin.hide()
+    assert window._result_parent() is window
+    window._recipe_origin = None
+    assert window._result_parent() is window
+
+
 # --- Errors and Stop ------------------------------------------------------------------------
 
 def test_internal_error(ready, monkeypatch):
