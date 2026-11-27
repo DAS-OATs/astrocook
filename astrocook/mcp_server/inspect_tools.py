@@ -18,7 +18,8 @@ from mcp.server.mcpserver import Image, MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import BaseModel, Field
 
-from astrocook.mcp_server.outputs import _jsonable
+from astrocook.methods_text import FLAG_NAMES
+from astrocook.mcp_server.outputs import FLAG_GLOSSARY, _jsonable
 from astrocook.core.column_names import internal_column
 from astrocook.recipes._spectrum import spec_of
 from astrocook.mcp_server.session_tools import SESSION_ID
@@ -42,9 +43,7 @@ class ComponentInfo(BaseModel):
     btur: float = Field(description="Turbulent broadening (km/s); 0 if not used.")
     chi2r: Optional[float] = Field(description=(
         "Reduced chi2 of the fit group of the component, at its last fit."))
-    flags: list[str] = Field(description=(
-        "Warnings left by the last fit (a parameter at a bound, errors "
-        "that could not be computed, 'not_fitted')."))
+    flags: list[str] = Field(description=FLAG_GLOSSARY)
     group: int = Field(description=(
         "The fit group: components with the same number are fitted "
         "together (their lines overlap or they are linked), as Refit All "
@@ -131,6 +130,10 @@ def register_inspect_tools(server: MCPServer, store: SessionStore) -> None:
         z_max: Annotated[Optional[float], Field(description="Only z <= z_max.")] = None,
         flagged_only: Annotated[bool, Field(description=(
             "Only the components with a flag."))] = False,
+        flag: Annotated[Optional[str], Field(description=(
+            "Only the components with this flag (e.g. 'saturated', "
+            "'unresolved'; the flags are listed in the description of the "
+            "output)."))] = None,
         offset: Annotated[int, Field(ge=0, description=(
             "Skip the first matching components (to read a long list in "
             "pages)."))] = 0,
@@ -140,6 +143,9 @@ def register_inspect_tools(server: MCPServer, store: SessionStore) -> None:
         """List the absorption components of a session, with their errors,
         the reduced chi2 and flags of their last fit, their fit group and
         their constraints, by redshift."""
+        if flag is not None and flag not in FLAG_NAMES:
+            raise ToolError(f"Unknown flag '{flag}'; the flags are: "
+                            f"{', '.join(FLAG_NAMES)}.")
         with store.state_lock:
             session = store.get(session_id).current_state
             systs = session.systs
@@ -151,7 +157,8 @@ def register_inspect_tools(server: MCPServer, store: SessionStore) -> None:
                        if (wanted is None or c.series in wanted)
                        and (z_min is None or c.z >= z_min)
                        and (z_max is None or c.z <= z_max)
-                       and (not flagged_only or c.flags)]
+                       and (not flagged_only or c.flags)
+                       and (flag is None or flag in c.flags)]
             first: dict[tuple, float] = {}
             for c in sorted(comps, key=lambda c: c.z):
                 first.setdefault((groups.get(c.uuid), c.series), c.z)

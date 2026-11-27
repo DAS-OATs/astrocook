@@ -281,7 +281,10 @@ class ComponentData:
     :data:`astrocook.fitting.voigt_fitter.COMPONENT_FLAGS`: a parameter
     ended at a bound of the fit, or the uncertainties could not be
     computed; or ``not_fitted`` (phase 6-bis): Refit All could not fit its
-    group, and it keeps its values from before. Cleared when a parameter is
+    group, and it keeps its values from before; or a value that is not a
+    measurement (phase 7, PR 7d.2: ``unresolved``, ``saturated``,
+    ``large_errors``, ``telluric_overlap``, see
+    :mod:`astrocook.fitting.component_flags`). Cleared when a parameter is
     edited, and set again by the next fit. """
 
     # V2 IDENTIFIER: Stable, Global, Immutable

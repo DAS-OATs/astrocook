@@ -11,6 +11,7 @@ import numpy as np
 from typing import List, Literal, Tuple, Dict, Any, Optional, Union, overload
 
 from astrocook.core.atomic_data import ATOM_DATA, STANDARD_MULTIPLETS, is_multiplet, series_lines
+from astrocook.fitting.component_flags import FitPixels, measurement_flags, with_measurement_flags
 from astrocook.fitting.lsf import PixelLSF
 from astrocook.core.spectrum import Spectrum
 from astrocook.core.structures import ComponentData
@@ -262,6 +263,7 @@ class VoigtFitter:
         self._global_resol_val = 0.0
         self._global_resol_unit = 'R'
         r_pix = self._spectrum.resolution()
+        self._r_pix = r_pix  # for the flags of the components (7d.2)
         finite = r_pix[np.isfinite(r_pix)]
         if finite.size == r_pix.size and finite.size and np.all(finite == finite[0]):
             self._global_resol_val = float(finite[0])
@@ -651,6 +653,7 @@ class VoigtFitter:
         full_errors = np.full(len(is_free_mask), np.nan)
         full_errors[is_free_mask] = errors
         active = self._constraints._active_uuids
+        pixels = self._fit_pixels()
         comps = []
         for i, c in enumerate(self._system_list.components):
             if active is not None and c.uuid not in active:
@@ -663,7 +666,11 @@ class VoigtFitter:
                     new[name] = full_errors[j]
                 elif j in linked_errors:
                     new[name] = linked_errors[j]
-            comps.append(dataclasses.replace(c, **new))
+            c = dataclasses.replace(c, **new)
+            # The flags of 7d.2 on the new errors (those of #517 describe
+            # the last fit, and stay)
+            comps.append(dataclasses.replace(c, flags=with_measurement_flags(
+                c.flags, measurement_flags(c, pixels))))
         return SystemList(dataclasses.replace(self._system_list._data, components=comps))
 
     def _cap_upper(self, bounds: Tuple[np.ndarray, np.ndarray], offset: int,
@@ -701,6 +708,15 @@ class VoigtFitter:
             elif hi - value <= tol:
                 flags.append(high)
         return tuple(dict.fromkeys(flags))
+
+    def _fit_pixels(self) -> FitPixels:
+        """What the flags of 7d.2 read of the spectrum: the pixels, their
+        R, those of the last fit, the telluric transmission (the column
+        ``telluric``, also when the flux is already corrected: the errors
+        there are those of a corrected flux)."""
+        tell = self._spectrum.get_column('telluric')
+        return FitPixels(wave=self._x_ang, resol=self._r_pix, fit_mask=self._fit_mask,
+                         telluric=None if tell is None else np.asarray(tell.value, dtype=float))
 
     def _cap_b(self, bounds: Tuple[np.ndarray, np.ndarray],
                b_max: float) -> Tuple[np.ndarray, np.ndarray]:
@@ -1228,6 +1244,7 @@ class VoigtFitter:
         
         new_components = []
         old_components = self._system_list.components
+        pixels = self._fit_pixels()
         active_uuids = None
         if hasattr(self, '_constraints'):
             # The constraint model stores the active set in _active_uuids
@@ -1277,6 +1294,9 @@ class VoigtFitter:
                 if any(e is not None and np.isnan(e)
                        for e in (dz_new, dlogN_new, db_new, dbtur_new)):
                     comp_flags += ('nan_errors',)
+                is_active = True
+            else:
+                is_active = False
 
             new_comp = dataclasses.replace(old_comp,
                 z=p_fitted_full[idx], 
@@ -1291,6 +1311,11 @@ class VoigtFitter:
                 resol=comp_resol,
                 flags=comp_flags
             )
+            if is_active:
+                # The flags of the values that are not measured (7d.2),
+                # computed on the fitted values: annotations only
+                new_comp = dataclasses.replace(new_comp, flags=with_measurement_flags(
+                    new_comp.flags, measurement_flags(new_comp, pixels)))
             new_components.append(new_comp)
             
         # Report the components whose uncertainties could not be computed

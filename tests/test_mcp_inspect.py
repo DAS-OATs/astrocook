@@ -100,6 +100,27 @@ def test_components_list_filters_by_series_and_flags(mock_archive):
     assert ok(flagged)["n_matched"] >= n_flagged
 
 
+def test_components_list_filters_by_flag(tmp_path):
+    """The filter by one flag (phase 7, PR 7d.2): a saturated CIV (the weaker
+    line at a central optical depth of about 20); an unknown flag is an
+    error that lists the flags."""
+    truth = MockTruth(components=[MockComponent("CIV", 1.9, 15.0, 8.0)],
+                      lam_min_nm=440.0, lam_max_nm=460.0, dv_kms=2.5,
+                      resol=45000.0, snr=50.0, z_em=2.0, seed=1)
+    path = tmp_path / "mock.acs2"
+    Session("mock", None, spec=generate(truth)).save(str(path))
+    *_, saturated, unresolved, unknown = calls(
+        build_server(), open_mock(path), add("CIV", 1.9, logN=14.5), add("CIV", 1.95),
+        ("components_list", {"session_id": "mock", "flag": "saturated"}),
+        ("components_list", {"session_id": "mock", "flag": "unresolved"}),
+        ("components_list", {"session_id": "mock", "flag": "wrong"}))
+    listed = ok(saturated)
+    assert listed["n_components"] == 2 and listed["n_matched"] == 1
+    assert listed["components"][0]["flags"] == ["saturated"]
+    assert ok(unresolved)["n_matched"] == 0
+    assert "unresolved" in error_text(unknown)
+
+
 def test_components_list_shows_the_constraints(mock_archive):
     async def go():
         async with Client(build_server()) as client:

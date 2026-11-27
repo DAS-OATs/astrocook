@@ -11,6 +11,7 @@ from PySide6.QtWidgets import QStyledItemDelegate
 from typing import Any, Dict, List, Optional, Set
 
 from ..core.structures import ComponentData
+from ..fitting.component_flags import large_error_params
 from .plot_style import plot_colour
 from .theme import FLAG_BOUND_COLOR, FLAG_NAN_COLOR, FROZEN_TEXT, link_colours  # noqa: F401 (re-exported)
 
@@ -62,15 +63,41 @@ _BOUND_FLAGS = {
                               "pipelines): the line may be broader; refit with Refit Selected "
                               "(bound 300 km/s)."),
 }
+#: The values that are not measured (phase 7, PR 7d.2): the parameter of
+#: each flag (None: the whole component) and one line for the tooltip. No
+#: colour: the warning sign in the cell of the parameter
+_MEASUREMENT_FLAGS = {
+    'unresolved': ('b', "Unresolved: b below half the instrumental b, b is not measured."),
+    'saturated': ('logN', "Saturated: the weakest line of the series is saturated, "
+                          "logN is not measured."),
+    'large_errors': (None, "Errors too large to have a meaning."),
+    'telluric_overlap': (None, "On a telluric absorption: the errors are not to be trusted."),
+}
 _NAN_MESSAGE = "The uncertainties could not be computed: the value is not constrained."
 _NOT_FITTED_MESSAGE = ("The fit of its group failed (Refit All): the values are those from "
                        "before the fit; refit it, e.g. with Refit Selected.")
 
 
+def _measurement_params(comp, flag: str) -> tuple:
+    """The parameters whose cells carry the warning sign of a flag of 7d.2
+    (``large_errors``: those whose errors are too large)."""
+    if flag == 'large_errors':
+        return large_error_params(comp)
+    param = _MEASUREMENT_FLAGS[flag][0]
+    return (param,) if param else ()
+
+
+def measurement_sign(comp, attr: str) -> bool:
+    """Whether the cell of the parameter ``attr`` carries the warning sign
+    of a value not measured (7d.2)."""
+    return any(attr in _measurement_params(comp, f)
+               for f in (getattr(comp, 'flags', ()) or ()) if f in _MEASUREMENT_FLAGS)
+
+
 def flag_cue(comp, attr: Optional[str] = None):
     """Colour and message of the flags of ``comp`` (#517): for a parameter
-    ``attr``, its bound flag; without, all its flags. ``(None, [])`` if
-    there is none."""
+    ``attr``, its flags (a bound; a value not measured, 7d.2, which have
+    no colour); without, all its flags. ``(None, [])`` if there is none."""
     flags = getattr(comp, 'flags', ()) or ()
     messages, color = [], None
     for flag in flags:
@@ -79,6 +106,9 @@ def flag_cue(comp, attr: Optional[str] = None):
             if attr is None or attr == param:
                 messages.append(text)
                 color = plot_colour('flag_bound')
+        elif flag in _MEASUREMENT_FLAGS:
+            if attr is None or attr in _measurement_params(comp, flag):
+                messages.append(_MEASUREMENT_FLAGS[flag][1])
         elif flag == 'nan_errors' and attr is None:
             messages.append(_NAN_MESSAGE)
             color = color or plot_colour('flag_nan')
@@ -353,6 +383,9 @@ class SystemTableModel(QAbstractTableModel):
                 if val is None: return ""
                 if attr == 'id' and comp.flags:
                     return f"\u26a0 {val}"
+                # The warning sign in the cell of a value not measured
+                # (7d.2); the bounds have their colour
+                sign = "\u26a0 " if comp.flags and measurement_sign(comp, attr) else ""
                 
                 if isinstance(val, (int, float)):
                     val_str = val_fmt.format(val)
@@ -376,9 +409,9 @@ class SystemTableModel(QAbstractTableModel):
                                 err_str = f"{dz_kms(comp.z, err_val):.2f} km/s"
                             else:
                                 err_str = err_fmt.format(err_val)
-                            return f"{val_str} ± {err_str}"
+                            return f"{sign}{val_str} ± {err_str}"
                 
-                return val_str
+                return f"{sign}{val_str}"
 
         return None
 
