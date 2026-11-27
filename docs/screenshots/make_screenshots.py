@@ -963,6 +963,40 @@ def absorbers_flags(s: Studio):
 
 
 @scene
+def absorbers_details(s: Studio):
+    """The Details panel of the System Inspector (phase 7, PR 7d.9): a
+    component of the metal system selected, the cell of its logN current,
+    the panel wide enough for its two columns (the group fit on the left;
+    the component, the criteria of its flags and the parameter on the
+    right)."""
+    w = s.analysed()
+    s.limits(x=(465, 472))
+    state = w.active_history.current_state
+    siiv, civ = _metal_system(state)
+    system = [c for c in state.systs.components
+              if c.series in ("CIV", "SiIV") and abs(c.z - 2.3555) < 0.003]
+    # A component with a warning, if the system has one: its flag is shown
+    comp = max(system, key=lambda c: (bool(c.flags), c.series == "CIV", c.logN))
+    inspector = s.inspector(size=(1400, 860))
+    left = inspector.table_splitter.parentWidget()
+    left.parentWidget().setSizes([780, 620])
+    inspector.table_splitter.setSizes([350, 410])
+    s.pump(1.0)
+    rows = s.select_components(inspector, comp)
+    view = inspector.table_view
+    col = [i for i in range(view.model().columnCount())
+           if view.model().headerData(i, Qt.Orientation.Horizontal) == "logN"][0]
+    from PySide6.QtCore import QItemSelectionModel
+    view.selectionModel().setCurrentIndex(
+        rows[0].siblingAtColumn(col), QItemSelectionModel.SelectionFlag.ClearAndSelect
+        | QItemSelectionModel.SelectionFlag.Rows)
+    s.pump(1.5)
+    insp = grab(inspector)
+    inspector.hide()
+    return framed(insp, inspector.windowTitle())
+
+
+@scene
 def absorbers_no_continuum(s: Studio):
     """The System Inspector of a session just opened: no continuum, no
     systems; the message with its button instead of the plot."""
