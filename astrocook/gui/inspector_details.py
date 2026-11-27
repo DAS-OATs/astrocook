@@ -17,9 +17,11 @@ in three sections, each shown only when it has something to say:
    state, the formula of its link with the names of the components, the
    bounds of its last fit.
 
-The upper limits (7d.7) and the plot of the tabulated LSF (7d.8) will add
-their own sections here: :meth:`DetailsPanel.sections` is the one place
-that lists them.
+The upper limits (7d.7) have a section of their own: for a row of a limit,
+the limit alone (:func:`limit_html`); for a component, after the others,
+the limits at its redshift (:func:`limits_here_html`). The plot of the
+tabulated LSF (7d.8) will add its own: :meth:`DetailsPanel.sections` is
+the one place that lists them.
 
 The HTML of each section is built by a function of the data only, so that
 the tests read it without a window.
@@ -35,6 +37,7 @@ from PySide6.QtCore import QUrl, Signal
 from PySide6.QtWidgets import QSizePolicy, QTextBrowser, QVBoxLayout, QWidget
 
 from ..core.structures import ComponentData, FitRecord
+from ..core.upper_limits import UpperLimit
 from ..fitting.component_flags import (
     SATURATED_TAU, TELLURIC_DEPTH, UNRESOLVED_RATIO, FitPixels, flag_quantities)
 from .inspector_table import C_KMS, dz_kms, flag_cue, pretty_expression
@@ -241,6 +244,89 @@ def parameter_html(comp: ComponentData, param: Optional[str], constraint,
     return out
 
 
+# --- 4. The upper limits (7d.7) ---------------------------------------------------
+
+#: A limit is shown with a component when it took its redshift, or is within
+#: this velocity of it (km/s)
+LIMIT_HERE_KMS = 10.0
+
+_METHOD_WORDS = {
+    "profile": ("the χ² profile on fixed pixels: a component with z and b fixed, the "
+                "components with a line on the pixels refitted at each log N; the limit "
+                "where χ² rises by {s:g}² above its minimum"),
+    "ew": ("the noise of the equivalent width within one FWHM of each line, on the "
+           "linear part of the curve of growth; {s:g} times the error of the column "
+           "(what absorbs there is not accounted for)"),
+}
+
+
+def limit_html(lim: UpperLimit, components: Sequence[ComponentData]) -> str:
+    """The details of an upper limit: how it was computed, on which lines
+    and pixels, how far from a detection, the components refitted."""
+    b_text = f"{lim.b:.2f} km/s, fixed"
+    if lim.b_inst > 0 and abs(lim.b - lim.b_inst) < 1e-6:
+        b_text += " (the instrumental b at the strongest line)"
+    elif lim.b_inst > 0:
+        b_text += f" (b<sub>inst</sub> = {lim.b_inst:.2f} km/s)"
+    detected = lim.significance > lim.sigma
+    if lim.method == "profile":
+        best = ("below the scan" if lim.logN_best is None
+                else f"log N = {lim.logN_best:.2f}")
+    else:
+        best = ("none" if lim.logN_best is None
+                else f"log N = {lim.logN_best:.2f} (the equivalent width measured)")
+    sig = f"{lim.significance:.1f} σ (best: {best})"
+    if detected:
+        sig = f"<b>{sig}</b>: detected, the limit is not meaningful"
+    ranges = ", ".join(f"{lo:.2f}–{hi:.2f}" for lo, hi in lim.ranges_nm[:4])
+    if len(lim.ranges_nm) > 4:
+        ranges += f" and {len(lim.ranges_nm) - 4} more"
+    rows = [
+        _row("log N", f"&lt; {lim.logN_lim:.2f} ({lim.sigma:g} σ)"),
+        _row("z", f"{lim.z:.6f}"),
+        _row("b", b_text),
+        _row("Method", html.escape(lim.method) + ": "
+             + _METHOD_WORDS.get(lim.method, "").format(s=lim.sigma)),
+        _row("Lines", html.escape(", ".join(lim.transitions))),
+    ]
+    if lim.skipped:
+        rows.append(_row("Left out", html.escape(", ".join(lim.skipped))
+                         + " (outside the spectrum or without valid pixels)"))
+    rows += [
+        _row("Pixels", f"{lim.n_pix} ({ranges} nm)"),
+        _row("Over no absorption", sig),
+        _row("Recipe", html.escape(lim.recipe or "none (a script)").replace(".", ".\u200b")),
+        _row("When", _local_time(lim.time)),
+    ]
+    out = _heading(f"Upper limit: {html.escape(lim.series)}") + _table(rows)
+    by_uuid = {c.uuid: c for c in components}
+    named = []
+    if lim.ref_uuid and lim.ref_uuid in by_uuid:
+        named.append(("Redshift of", [lim.ref_uuid]))
+    if lim.refitted:
+        named.append(("Refitted at each step", list(lim.refitted)))
+    for label, uuids in named:
+        links = [f"<a href='{MEMBER_SCHEME}:{u}'>{component_name(by_uuid[u])}</a>"
+                 if u in by_uuid else "a component since removed" for u in uuids]
+        out += f"<p style='margin: 4px 0 2px 0'>{label}:</p>" + "<br>".join(links)
+    out += ("<p style='margin: 4px 0 2px 0; color: gray'>Not a component: outside the "
+            "model. Removed when the data or the components on its pixels change.</p>")
+    return out
+
+
+def limits_here_html(comp: ComponentData, limits: Sequence[UpperLimit]) -> str:
+    """The upper limits at the redshift of ``comp``, one line each; empty if
+    none."""
+    here = [lim for lim in limits
+            if lim.ref_uuid == comp.uuid
+            or abs(lim.z - comp.z) / (1 + comp.z) * C_KMS < LIMIT_HERE_KMS]
+    if not here:
+        return ""
+    lines = [f"{html.escape(lim.series)}: log N &lt; {lim.logN_lim:.2f} "
+             f"({lim.sigma:g} σ, {html.escape(lim.method)})" for lim in here]
+    return _heading("Upper limits at this redshift") + "<br>".join(lines)
+
+
 # --- The widget ------------------------------------------------------------------
 
 class DetailsPanel(QWidget):
@@ -262,6 +348,7 @@ class DetailsPanel(QWidget):
         self.browser.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         layout.addWidget(self.browser, 1)
         self._comp: Optional[ComponentData] = None
+        self._limit: Optional[UpperLimit] = None
         self._parts: List[str] = []
         self._has_group = False
         self._expanded = True
@@ -284,14 +371,15 @@ class DetailsPanel(QWidget):
     @staticmethod
     def sections(comp: ComponentData, components: Sequence[ComponentData],
                  constraints: Dict[str, object], pixels: Optional[FitPixels],
-                 param: Optional[str]) -> List[str]:
+                 param: Optional[str], limits: Sequence[UpperLimit] = ()) -> List[str]:
         """The HTML of the sections that have something to say, in order:
-        group, component, parameter (7d.7 will add the upper limits)."""
+        group, component, parameter, the upper limits at its redshift."""
         parts: List[Callable[[], str]] = [
             lambda: group_html(comp, components),
             lambda: component_html(comp, pixels, constraints),
             lambda: parameter_html(comp, param, constraints.get(param) if param else None,
                                    components),
+            lambda: limits_here_html(comp, limits),
         ]
         return [s for s in (p() for p in parts) if s]
 
@@ -299,15 +387,27 @@ class DetailsPanel(QWidget):
                        components: Sequence[ComponentData] = (),
                        constraints: Optional[Dict[str, object]] = None,
                        pixels: Optional[FitPixels] = None,
-                       param: Optional[str] = None) -> None:
+                       param: Optional[str] = None,
+                       limits: Sequence[UpperLimit] = ()) -> None:
         """Show the details of ``comp`` (None: nothing selected)."""
         self._comp = comp
+        self._limit = None
         if comp is None:
             self._parts = []
             self.browser.setHtml(f"<p style='color: gray'>{NOTHING_SELECTED}</p>")
             return
-        self._parts = self.sections(comp, components, constraints or {}, pixels, param)
+        self._parts = self.sections(comp, components, constraints or {}, pixels, param,
+                                    limits)
         self._has_group = comp.fit is not None or comp.chi2 is not None
+        self._render()
+
+    def show_limit(self, lim: UpperLimit,
+                   components: Sequence[ComponentData] = ()) -> None:
+        """Show the details of an upper limit (a row of the table, 7d.7)."""
+        self._comp = None
+        self._limit = lim
+        self._parts = [limit_html(lim, components)]
+        self._has_group = False
         self._render()
 
     def _two_columns(self) -> bool:
@@ -331,7 +431,7 @@ class DetailsPanel(QWidget):
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
         # Laid out again only when the number of columns changes
-        if (self._comp is not None and self._parts
+        if ((self._comp is not None or self._limit is not None) and self._parts
                 and self._two_columns() != getattr(self, '_columns', None)):
             self._render()
 
@@ -341,5 +441,5 @@ class DetailsPanel(QWidget):
 
 
 __all__ = ["DetailsPanel", "group_html", "component_html", "parameter_html",
-           "component_name", "MEMBER_SCHEME"]
+           "limit_html", "limits_here_html", "component_name", "MEMBER_SCHEME"]
 

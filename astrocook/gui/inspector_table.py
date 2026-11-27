@@ -11,9 +11,10 @@ import numpy as np
 from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, Signal, QSortFilterProxyModel
 from PySide6.QtGui import QBrush, QColor, QFont, QPalette
 from PySide6.QtWidgets import QStyledItemDelegate
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Sequence, Set
 
 from ..core.structures import ComponentData
+from ..core.upper_limits import UpperLimit
 from ..fitting.component_flags import large_error_params
 from .plot_style import plot_colour
 from .theme import FLAG_BOUND_COLOR, FLAG_NAN_COLOR, FROZEN_TEXT, link_colours  # noqa: F401 (re-exported)
@@ -188,6 +189,32 @@ _HIGHLIGHTED_TEXT = QPalette.ColorRole.HighlightedText
 _TABLE_ROLES = frozenset({_DISPLAY, _EDIT, _TOOLTIP, _FONT, _FOREGROUND,
                           _BACKGROUND, _ALIGNMENT, _USER})
 
+def limit_tooltip(lim: UpperLimit) -> str:
+    """One line for the row of an upper limit (the rest in the Details
+    panel)."""
+    return (f"Upper limit ({lim.sigma:g} sigma, method '{lim.method}', b = {lim.b:.1f} km/s "
+            f"fixed): not a component, outside the model.")
+
+
+def _limit_data(lim: UpperLimit, attr: str, role):
+    """The cell ``attr`` of the row of an upper limit (7d.7): grey, italic,
+    logN as "< 12.34", no errors."""
+    if role == _USER:
+        return {'id': np.inf, 'series': lim.series, 'z': lim.z, 'logN': lim.logN_lim,
+                'b': lim.b, 'btur': 0.0}[attr]
+    if role == _FOREGROUND:
+        return QBrush(QColor(FROZEN_TEXT))
+    if role == _FONT:
+        font = QFont(); font.setItalic(True)
+        return font
+    if role == _TOOLTIP:
+        return limit_tooltip(lim)
+    if role in (_DISPLAY, _EDIT):
+        return {'id': "UL", 'series': lim.series, 'z': f"{lim.z:.6f}",
+                'logN': lim.label(), 'b': f"{lim.b:.2f}", 'btur': ""}[attr]
+    return None
+
+
 class LinkColorDelegate(QStyledItemDelegate):
     def initStyleOption(self, option, index):
         super().initStyleOption(option, index)
@@ -203,6 +230,9 @@ class SystemTableModel(QAbstractTableModel):
     def __init__(self, components: Optional[List[ComponentData]] = None):
         super().__init__()
         self._components = components if components else []
+        #: The upper limits (7d.7): rows of their own after the components,
+        #: grey, not editable, outside the model
+        self._limits: List[UpperLimit] = []
         self._primary_uuids: Set[Any] = set()
         self._secondary_uuids: Set[Any] = set()
 
@@ -213,12 +243,15 @@ class SystemTableModel(QAbstractTableModel):
         # when the palette switches between light and dark
         self._link_color_map: Dict[Any, Any] = {}
 
-    def update_data(self, components: List[ComponentData], constraints_map: Optional[dict] = None):
+    def update_data(self, components: List[ComponentData], constraints_map: Optional[dict] = None,
+                    limits: Sequence[UpperLimit] = ()):
         """
-        Updates the model with new components and constraint data.
+        Updates the model with new components, constraint data and upper
+        limits.
         """
         self.beginResetModel()
         self._components = components
+        self._limits = list(limits)
         self._constraints_map = constraints_map if constraints_map else {}
         # The links may have changed while the group stays selected, and
         # set_highlighted_uuids skips an unchanged selection (F13)
@@ -233,9 +266,9 @@ class SystemTableModel(QAbstractTableModel):
         self._secondary_uuids = secondary_uuids
         self._update_link_colors()
 
-        if self._components:
+        if self.rowCount():
             top_left = self.index(0, 0)
-            bottom_right = self.index(len(self._components) - 1, len(COLUMNS) - 1)
+            bottom_right = self.index(self.rowCount() - 1, len(COLUMNS) - 1)
             self.dataChanged.emit(top_left, bottom_right, [_BACKGROUND])
 
     def _update_link_colors(self):
@@ -272,16 +305,18 @@ class SystemTableModel(QAbstractTableModel):
     def refresh_colours(self):
         """Draw the table again with the colours of the palette (it switched
         between light and dark)."""
-        if self._components:
+        if self.rowCount():
             self.dataChanged.emit(self.index(0, 0),
-                                  self.index(len(self._components) - 1, len(COLUMNS) - 1),
+                                  self.index(self.rowCount() - 1, len(COLUMNS) - 1),
                                   [_FOREGROUND, _BACKGROUND])
 
-    def rowCount(self, parent=_NO_PARENT): return len(self._components)
+    def rowCount(self, parent=_NO_PARENT): return len(self._components) + len(self._limits)
     def columnCount(self, parent=_NO_PARENT): return len(COLUMNS)
     
     def flags(self, index):
         if not index.isValid(): return _NO_ITEM_FLAGS
+        if index.row() >= len(self._components):
+            return super().flags(index)
         return super().flags(index) | _ITEM_IS_EDITABLE if COLUMNS[index.column()] in EDITABLE_COLS else super().flags(index)
 
     def data(self, index, role=Qt.DisplayRole):
@@ -289,9 +324,11 @@ class SystemTableModel(QAbstractTableModel):
         # the cheap answers first
         if role not in _TABLE_ROLES or not index.isValid(): return None
         if role == _ALIGNMENT: return _ALIGN_CENTER
-        comp = self._components[index.row()]
         col_name = COLUMNS[index.column()]
         attr = COL_MAP[col_name]
+        if index.row() >= len(self._components):
+            return _limit_data(self._limits[index.row() - len(self._components)], attr, role)
+        comp = self._components[index.row()]
 
         # Sorting (raw float)
         if role == _USER:
@@ -435,7 +472,20 @@ class SystemTableModel(QAbstractTableModel):
         return COLUMNS[section] if role == _DISPLAY and orientation == _HORIZONTAL else None
 
     def get_component_at(self, row: int): 
+        """The component of a row; None for a row of an upper limit."""
         return self._components[row] if 0 <= row < len(self._components) else None
+
+    def get_limit_at(self, row: int) -> Optional[UpperLimit]:
+        """The upper limit of a row; None for a row of a component."""
+        k = row - len(self._components)
+        return self._limits[k] if 0 <= k < len(self._limits) else None
+
+    def row_of_limit(self, uuid: str) -> int:
+        """The row of the upper limit ``uuid``; -1 if none."""
+        for k, lim in enumerate(self._limits):
+            if lim.uuid == uuid:
+                return len(self._components) + k
+        return -1
     
 # --- Proxy Model ---
 class SystemSortFilterProxyModel(QSortFilterProxyModel):
@@ -473,7 +523,13 @@ class SystemSortFilterProxyModel(QSortFilterProxyModel):
 
     def filterAcceptsRow(self, source_row, source_parent):
         comp = self.sourceModel().get_component_at(source_row)
-        if not comp: return False
+        if not comp:
+            lim = self.sourceModel().get_limit_at(source_row)
+            if lim is None or self.flagged_only:
+                return False
+            # In the group view, the limits on the pixels of the group
+            return (not self.group_filtering_enabled
+                    or bool(self.allowed_uuids & (set(lim.refitted) | {lim.ref_uuid})))
         if self.flagged_only and not comp.flags:
             return False
         # If group filtering is on, only show components in the Fluid Group

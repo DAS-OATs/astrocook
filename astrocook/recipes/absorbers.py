@@ -277,6 +277,26 @@ def _methods_evaluate_model(p):
             f"(chi2, AIC, AICc, BIC and the SpIC of Webb et al. 2021){p.menu}")
 
 
+
+def _methods_upper_limit(p):
+    where = (f"z = {p['z']}" if p.given('z') else "the redshift of the selected component")
+    b = (f"b = {p['b']} km/s" if p.given('b') and p.raw('b') is not None
+         else "b equal to the instrumental b at its strongest line")
+    if p.raw('method') == 'ew':
+        how = (f"from the error of the equivalent width within one FWHM of each line, on the "
+               f"linear part of the curve of growth, the lines combined by inverse variance, at "
+               f"{p['sigma']} sigma")
+    else:
+        how = (f"by the profile likelihood on fixed pixels: a component with z and b fixed, "
+               f"the components with a line on the pixels refitted at each log N, the limit "
+               f"where the chi2 rises by {p['sigma']}^2 above its minimum")
+    return (f"An upper limit on the column of {series_name(str(p.raw('series')))} at {where} "
+            f"was computed with {b}, {how}{p.menu}")
+
+
+def _methods_delete_upper_limit(p):
+    return f"An upper limit was deleted{p.menu}"
+
 def _methods_clean_negligible(p):
     broad = (f"b > {p['max_b']} km/s and log N < 13" if p.raw('combined_check')
              else f"b > {p['max_b']} km/s")
@@ -639,6 +659,33 @@ ABSORBERS_RECIPES_SCHEMAS = {
             {"name": "min_b", "type": float, "default": 3.0, "min": 0, "doc": "Components narrower than this (km/s) are removed."},
             {"name": "combined_check", "type": bool, "default": True, "doc": "True: remove a component broader than max_b only if it is also weak (logN < 13); False: remove all of them."}
         ],
+    },
+    "upper_limit": {
+        "methods": _methods_upper_limit,
+        "references": ("SciPy",),
+        "brief": "Compute an upper limit on the column of a species.",
+        "url": "tutorials/absorption_systems.html#upper-limits",
+        "menu": "Absorbers > &Upper Limit",
+        "requires": ("resolution", "continuum"),
+        "details": "The log N below which a species not detected lies at a redshift, from the chi2 with the blends refitted or from the noise; kept out of the model, removed when its pixels change.",
+        "params": [
+            {"name": "series", "type": str, "default": "", "doc": "Species or transition, e.g. 'SiIV' (all its lines) or 'SiIV_1402'."},
+            {"name": "z", "type": float, "default": None, "optional": True, "gt": -1, "doc": "Redshift (or uuid)."},
+            {"name": "uuid", "type": str, "default": None, "optional": True, "gui_hidden": True, "doc": "Take the redshift of this component."},
+            {"name": "b", "type": float, "default": None, "optional": True, "min": 1, "max": 300, "doc": "Doppler parameter, fixed (km/s); None: the instrumental b at the strongest line."},
+            {"name": "sigma", "type": float, "default": 3.0, "gt": 0, "doc": "Confidence (sigma): the chi2 rises by sigma^2 at the limit."},
+            {"name": "method", "type": str, "default": "profile", "choices": ["profile", "ew"], "doc": "'profile': chi2 profile with the blends refitted; 'ew': quick, from the noise alone."}
+        ],
+    },
+    "delete_upper_limit": {
+        "methods": _methods_delete_upper_limit,
+        "brief": "Delete an upper limit.",
+        "url": "tutorials/absorption_systems.html#upper-limits",
+        "details": "Deletes an upper limit computed by Upper Limit.",
+        "params": [
+            {"name": "uuid", "type": str, "default": "", "gui_hidden": True, "doc": "Identifier of the upper limit."}
+        ],
+        "gui_hidden": True
     },
 }
 
@@ -3050,6 +3097,118 @@ class RecipeAbsorbers:
         return self._session.with_new_spectrum(new_spec)
 
 
+    @typed_recipe
+    def upper_limit(self, series: str = "", z: Optional[float] = None,
+                    uuid: Optional[str] = None, b: Optional[float] = None,
+                    sigma: float = 3.0, method: str = "profile") -> 'Session':
+        """
+        Compute an upper limit on the column of a species not detected (F156).
+
+        The limit is stored apart from the model, in the system list
+        (:mod:`astrocook.core.upper_limits`): the System Inspector shows it
+        as a row of its own, and it is saved in the archive. It is removed
+        when the data or the components on its pixels change; a limit of
+        the same series within 1 km/s is replaced. Delegates to
+        :func:`astrocook.fitting.upper_limits.upper_limit`.
+
+        Parameters
+        ----------
+        series : str
+            Species (all its lines, e.g. ``'SiIV'``) or transition
+            (``'SiIV_1402'``). Required.
+        z : float, optional
+            Redshift. Give it or ``uuid``.
+        uuid : str, optional
+            Take the redshift of this component.
+        b : float, optional
+            Doppler parameter, fixed (km/s). Defaults to ``None``: the
+            instrumental b at the strongest line.
+        sigma : float, optional
+            Confidence (sigma). Defaults to ``3.0``: the chi2 rises by 9 at
+            the limit.
+        method : str, optional
+            ``'profile'`` (the default): the profile likelihood on fixed
+            pixels, the components with a line there refitted at each log N;
+            ``'ew'``: from the noise of the equivalent width alone.
+
+        Returns
+        -------
+        Session
+            A new session whose system list holds the limit. The limit is
+            reported in ``extra['upper_limit']`` of the result.
+        """
+        from astrocook.core.upper_limits import limits_of, with_limits
+        from astrocook.fitting.upper_limits import upper_limit
+
+        check_series(series, 'series')
+        if (z is None) == (uuid is None):
+            raise InvalidParameter("z, uuid: give one of them (the redshift, or the "
+                                   "component whose redshift to take)")
+        systs = self._session.systs
+        if uuid is not None:
+            check_uuids(self._session, [uuid], 'uuid')
+            comp = systs.get_component_by_uuid(uuid)
+            assert comp is not None  # checked above
+            z = comp.z
+        assert z is not None
+        spec = spec_of(self._session)
+        try:
+            lim = upper_limit(spec, systs, series, z, b=b, sigma=sigma, method=method,
+                              ref_uuid=uuid, check_stop=_fit_cancelled)
+        except ValueError as e:
+            raise RecipeFailed(f"No upper limit on {series} at z = {z:.5f}: {e}.") from None
+
+        if lim.skipped:
+            logger.info(f"Lines of {series} left out (outside the spectrum or without valid "
+                        f"pixels): {', '.join(lim.skipped)}.")
+        if lim.significance > sigma:
+            if method == "ew":
+                logger.warning(
+                    f"The pixels of {series} at z = {z:.5f} absorb ({lim.significance:.1f} "
+                    f"sigma): the limit from the noise is a sensitivity, not a limit; use the "
+                    f"method 'profile', which refits what absorbs there.")
+            else:
+                best = "" if lim.logN_best is None else f", log N {lim.logN_best:.2f} at the minimum"
+                logger.warning(
+                    f"{series} at z = {z:.5f} is detected at {lim.significance:.1f} sigma "
+                    f"(with b = {lim.b:.1f} km/s{best}): the limit is not meaningful; a "
+                    f"component would describe it.")
+        logger.info(f"Upper limit on {series} at z = {z:.5f}: log N < {lim.logN_lim:.2f} "
+                    f"({sigma:g} sigma, b = {lim.b:.1f} km/s, method '{method}', "
+                    f"{lim.n_pix} pixels, {len(lim.refitted)} component"
+                    f"{'s' if len(lim.refitted) != 1 else ''} refitted).")
+        report("upper_limit", upper_limit_summary(lim))
+
+        kept = tuple(old for old in limits_of(systs)
+                     if not (old.series == lim.series
+                             and abs(old.z - lim.z) / (1 + lim.z) * 299792.458 < SAME_LIMIT_KMS))
+        if len(kept) < len(limits_of(systs)):
+            logger.info(f"It replaces the earlier limit on {series} at this redshift.")
+        return self._session.with_new_system_list(with_limits(systs, kept + (lim,)))
+
+    @typed_recipe
+    def delete_upper_limit(self, uuid: str = "") -> 'Session':
+        """
+        Delete an upper limit.
+
+        Parameters
+        ----------
+        uuid : str
+            Identifier of the upper limit (``UpperLimit.uuid``).
+
+        Returns
+        -------
+        Session
+            A new session without the limit.
+        """
+        from astrocook.core.upper_limits import limits_of, with_limits
+        limits = limits_of(self._session.systs)
+        kept = tuple(lim for lim in limits if lim.uuid != uuid)
+        if len(kept) == len(limits):
+            raise InvalidParameter(f"uuid: there is no upper limit {uuid!r} in the session")
+        return self._session.with_new_system_list(with_limits(self._session.systs, kept))
+
+
 #: The columns of the spectrum itself, which the residuals cannot replace
 CORE_COLUMNS = ("x", "xmin", "xmax", "y", "dy", "cont", "model")
 
@@ -3096,6 +3255,19 @@ def _counted_components(session, systs, uuids, series: str, z_min, z_max) -> lis
             and (not wanted or c.series in wanted or c.series == series.strip())
             and (z_min is None or c.z >= z_min) and (z_max is None or c.z <= z_max)]
 
+
+#: A limit of the same series within this velocity of a new one is replaced
+#: by it (km/s): the same redshift, to the rounding of a z typed by hand
+SAME_LIMIT_KMS = 1.0
+
+
+def upper_limit_summary(lim) -> dict:
+    """What a reader of a limit needs (the MCP outputs, ``extra``): its
+    fields without the fingerprints."""
+    d = lim.to_dict()
+    for key in ("components", "data", "reach_nm"):
+        d.pop(key, None)
+    return d
 
 # Old names (phase 6-quater, PR 6): see astrocook/_renamed.py
 __getattr__ = renamed(__name__, {"RecipeAbsorbersV2": "RecipeAbsorbers"})

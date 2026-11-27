@@ -340,6 +340,7 @@ class Session:
         new_session = Session(**constructor_args)
         new_session.log_manager = self.log_manager 
         new_session.saved_with_version = self.saved_with_version
+        new_session._drop_stale_limits()
         return new_session
 
     def with_new_system_list(self, new_systs: SystemList) -> 'Session':
@@ -356,6 +357,12 @@ class Session:
         Session
             A shallow copy of the session pointing to the new system list.
         """
+        # A list built anew (not from the old one) keeps the upper limits of
+        # the session, then checked as any other change (phase 7, PR 7d.7)
+        from astrocook.core.upper_limits import META_KEY, limits_of, with_limits
+        if (new_systs is not None and META_KEY not in new_systs._data.meta
+                and limits_of(self.systs)):
+            new_systs = with_limits(new_systs, limits_of(self.systs))
         constructor_args = {
             'name': self.name,
             'gui': self._gui,
@@ -365,7 +372,28 @@ class Session:
         new_session = Session(**constructor_args)
         new_session.log_manager = self.log_manager
         new_session.saved_with_version = self.saved_with_version
+        new_session._drop_stale_limits()
         return new_session
+
+    def _drop_stale_limits(self) -> None:
+        """Remove the upper limits that no longer describe the data and the
+        model on their pixels (phase 7, PR 7d.7, Guido, 27 November 2026):
+        a limit is not recomputed, it is removed with a WARNING that says
+        why, and listed in ``extra['upper_limits_removed']`` of the result
+        of the recipe."""
+        from astrocook.core.upper_limits import limits_of
+        if not limits_of(self.systs):
+            return
+        from astrocook.fitting.upper_limits import drop_stale
+        from astrocook.recipes.result import report
+        self.systs, removed = drop_stale(self.spec, self.systs)
+        for lim, why in removed:
+            logger.warning(f"The upper limit on {lim.series} at z = {lim.z:.5f} was removed: "
+                           f"{why}. Run Upper Limit again to compute it on the new state.")
+        if removed:
+            report("upper_limits_removed", [
+                {"uuid": lim.uuid, "series": lim.series, "z": lim.z, "reason": why}
+                for lim, why in removed])
     
     def save(self, file_path: str, 
              initial_session: Optional['Session'] = None, 

@@ -307,6 +307,14 @@ class VelocityPlotWidget(QWidget):
         else:
             self._update_plot()
 
+    def show_redshift(self, session, z: float) -> None:
+        """The transitions typed above at ``z``, without a component (the
+        row of an upper limit, 7d.7)."""
+        self._current_session = session
+        self._current_component = None
+        self._selected_components = []
+        self.set_center_redshift(z)
+
     def plot_system(self, session, component: ComponentData, selected_components: Optional[List[ComponentData]] = None):
         is_new_component = (self._current_component != component)
         

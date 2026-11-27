@@ -45,7 +45,7 @@ RECIPE_LAYOUT = {
     "Continuum": ("estimate_auto", None, "find_absorbed", "fit_continuum", None,
                   "fit_powerlaw"),
     "Absorbers": ("doublets_auto", "lya_auto", None, "identify_lines", "refit_all",
-                  "clean_negligible", None, "evaluate_model"),
+                  "clean_negligible", None, "evaluate_model", "upper_limit"),
 }
 #: Recipes with an action but no entry in the menu, and no ``menu`` key in
 #: the registry (kept for when they come back)

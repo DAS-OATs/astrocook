@@ -74,7 +74,7 @@ def test_what_needs_the_continuum():
                      "doublets_auto", "lya_auto", "forest_auto", "metals_auto",
                      "add_component", "add_linked_system", "fit_component",
                      "optimize_system", "fit_bayesian", "refit_all",
-                     "evaluate_model"}
+                     "evaluate_model", "upper_limit"}
     # Every recipe that fits (or evaluates a model, phase 7 PR 7a.5) needs the resolution too (F99)
     for name in needs - {"identify_lines", "populate_from_identification"}:
         assert "resolution" in find_recipe(name).requires, name

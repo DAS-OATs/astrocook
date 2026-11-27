@@ -332,3 +332,27 @@ from astrocook.recipes.result import run
 result = run(session, "absorbers.evaluate_model", x_ranges="403.5-407.5, 448.5-450.5")
 print(result.extra["evaluation"]["spic"])
 ```
+
+### Upper Limits
+
+When a species is not detected at a redshift (e.g. Si IV at the redshift of a C IV system), **Absorbers > Upper Limit...** gives the column density below which it lies: $\log N < \log N_\mathrm{lim}$ at a confidence of **sigma** (default 3). In the System Inspector, right-click a component and choose **Upper Limit at This Redshift...** to open it with the redshift of the component; in scripts and for agents, `uuid` takes the redshift of a component instead of `z`.
+
+The **series** is a species (all its lines, e.g. `SiIV`) or a single transition (`SiIV_1402`). Its lines outside the spectrum, or without valid pixels, are left out (the log names them). The line is assumed to have a fixed Doppler parameter **b**: by default the instrumental one at its strongest line, $b_\mathrm{inst} = c / (1.665\,R)$ (4.0 km/s at $R = 45000$), the narrowest line the spectrum can show; give a larger b for a species expected to be broader (e.g. thermally or with the b of the system), and the limit grows with it.
+
+Two methods:
+
+- **profile** (the default): the profile likelihood on fixed pixels. A component of the species, with z and b fixed, is added with its $\log N$ fixed at each step; the components that have a line on the pixels are refitted at each step (from their values in the list), so that a blend absorbs what it can; $\chi^2$ is measured on the same pixels each time. The limit is the $\log N$ above the minimum of $\chi^2$ where it rises by sigma² (9 for 3σ). The pixels are those within $\pm(3\,\mathrm{FWHM} + 5\,b)$ of each line, with the pixels the fit of the refitted components takes from the data.
+- **ew**: a quick estimate from the noise alone. The error of the equivalent width on the pixels within one FWHM of each line ($b$ and $b_\mathrm{inst}$ in quadrature), converted to a column on the linear part of the curve of growth, $N = 1.13\times10^{20}\, W_r / (f \lambda^2)$ ($W_r$ and $\lambda$ in Å), the lines combined by inverse variance; the limit is sigma times the error of the column. It ignores what absorbs there: where the pixels absorb (a blend, the wing of another line), it is a sensitivity, not a limit, and the recipe says so.
+
+If the minimum of $\chi^2$ is far below no absorption (more than sigma, in σ), the species is detected and the limit is not meaningful: the recipe warns, and a component describes it better.
+
+A limit is not a component: it is never part of the model, and it is not fitted. The System Inspector shows it as a row of its own after the components (ID `UL`, $\log N$ as "< 12.34", grey, without errors); selected, it shows its lines in the velocity plot and its details in the Details panel (the method, the lines, the pixels, how far from a detection, the components refitted). The Details panel of a component lists the limits at its redshift. A limit of the same series at the same redshift (within 1 km/s) replaces the earlier one; **Delete** (or the context menu) removes a selected limit.
+
+A limit describes the data and the model on its pixels when it was computed: it is **removed** (with a warning that says why) when they change, not recomputed: a new continuum or flux, a component edited, refitted, added or deleted with a line on its pixels, or the component whose redshift it took deleted. Compute the limits last, on the final model. They are saved in the `.acs2` archive (a file of their own, `<name>_upper_limits.json`), and listed by `components_list` of the MCP server.
+
+```python
+from astrocook.recipes.result import run
+
+result = run(session, "absorbers.upper_limit", series="SiIV", z=2.34122)
+print(result.extra["upper_limit"]["logN_lim"])
+```

@@ -190,3 +190,111 @@ def test_one_column_when_narrow(qapp):
     qapp.processEvents()
     assert not panel._columns and "Group fit" in panel.text()
     panel.close()
+
+
+# --- The upper limits (7d.7) ----------------------------------------------------------
+
+def _limit(**kw):
+    from astrocook.core.upper_limits import UpperLimit
+    d = dict(series="SiIV", z=3.0, b=4.0, logN_lim=11.84, sigma=3.0, method="profile",
+             transitions=("SiIV_1393", "SiIV_1402"), ranges_nm=((557.4, 557.8),),
+             n_pix=40, b_inst=4.0, logN_best=11.2, significance=1.3,
+             recipe="absorbers.upper_limit", time="2026-11-27T10:00:00+00:00")
+    d.update(kw)
+    return UpperLimit(**d)
+
+
+def test_the_section_of_a_limit(qapp):
+    from astrocook.gui.inspector_details import limit_html
+    a, b = _pair()
+    text = _text(limit_html(_limit(refitted=(a.uuid,), ref_uuid=b.uuid), [a, b]))
+    assert "Upper limit: SiIV" in text and "< 11.84 (3 σ)" in text
+    assert "the instrumental b at the strongest line" in text
+    assert "χ² profile" in text and "SiIV_1393, SiIV_1402" in text
+    assert "40 (557.40–557.80 nm)" in text and "1.3 σ (best: log N = 11.20)" in text
+    assert "Redshift of:\nCIV at z = 3.00010 (ID 2)" in text
+    assert "Refitted at each step:\nCIV at z = 3.00000 (ID 1)" in text
+    assert "Not a component" in text
+    detected = _text(limit_html(_limit(significance=8.0, method="ew", b=10.0,
+                                       skipped=("SiIV_1402",)), []))
+    assert "detected, the limit is not meaningful" in detected
+    assert "b_inst = 4.00 km/s" in detected.replace("binst", "b_inst")
+    assert "Left out" in detected and "noise of the equivalent width" in detected
+
+
+def test_the_limits_at_the_redshift_of_a_component(qapp):
+    from astrocook.gui.inspector_details import limits_here_html
+    a, b = _pair()
+    far = _limit(series="NV", z=3.01)
+    parts = DetailsPanel.sections(a, [a, b], {}, None, None, [_limit(), far])
+    assert "Upper limits at this redshift" in _text(parts[-1])
+    assert "SiIV: log N < 11.84 (3 σ, profile)" in _text(parts[-1])
+    assert "NV" not in _text(parts[-1])
+    assert limits_here_html(a, [far]) == ""
+    assert limits_here_html(a, [dataclasses.replace(far, ref_uuid=a.uuid)]) != ""
+
+
+@pytest.fixture
+def with_limits(inspector):
+    a = inspector.table_model.get_component_at(0)
+    limits = [_limit(refitted=(a.uuid,)), _limit(series="NV", z=3.002, logN_lim=12.9)]
+    systs = inspector.current_session.systs
+    inspector.table_model.update_data(systs.components, {}, limits)
+    return inspector, limits
+
+
+def test_the_rows_of_the_limits(with_limits):
+    from PySide6.QtCore import Qt
+    from astrocook.gui.theme import FROZEN_TEXT
+    insp, limits = with_limits
+    model = insp.table_model
+    assert model.rowCount() == 5
+    row = model.row_of_limit(limits[0].uuid)
+    assert row == 3 and model.get_component_at(row) is None
+    assert model.get_limit_at(row) is limits[0] and model.get_limit_at(0) is None
+    cols = _gui().COLUMNS
+    cell = {c: model.index(row, cols.index(c)) for c in cols}
+    assert [model.data(cell[c]) for c in cols] == ["UL", "SiIV", "3.000000", "< 11.84",
+                                                   "4.00", ""]
+    assert model.data(cell["logN"], Qt.ItemDataRole.ForegroundRole).color().name() \
+        == FROZEN_TEXT.lower() or model.data(cell["logN"], Qt.ItemDataRole.ForegroundRole)
+    assert model.data(cell["logN"], Qt.ItemDataRole.FontRole).italic()
+    assert not (model.flags(cell["logN"]) & Qt.ItemFlag.ItemIsEditable)
+    assert "outside the model" in model.data(cell["z"], Qt.ItemDataRole.ToolTipRole)
+    # Sorted by z among the components
+    assert model.data(cell["z"], Qt.ItemDataRole.UserRole) == 3.0
+    # Not among the flagged; in the group view, with the components refitted
+    insp.proxy_model.set_flagged_only(True)
+    assert all(insp.proxy_model.mapToSource(insp.proxy_model.index(r, 0)).row() < 3
+               for r in range(insp.proxy_model.rowCount()))
+    insp.proxy_model.set_flagged_only(False)
+    insp.proxy_model.set_allowed_uuids({model.get_component_at(0).uuid})
+    insp.proxy_model.set_group_filter_enabled(True)
+    shown = [insp.proxy_model.mapToSource(insp.proxy_model.index(r, 0)).row()
+             for r in range(insp.proxy_model.rowCount())]
+    assert 3 in shown and 4 not in shown
+
+
+def _select_limit(insp, lim):
+    src = insp.table_model.index(insp.table_model.row_of_limit(lim.uuid), 0)
+    _select(insp, insp.proxy_model.mapFromSource(src).row())
+
+
+def test_a_row_of_a_limit_in_the_panel(with_limits):
+    insp, limits = with_limits
+    _select_limit(insp, limits[1])
+    assert "Upper limit: NV" in insp.details.text()
+    assert insp.z_in.text() == "3.00200" and insp.trans_in.text() == "NV"
+    assert insp._selected_component() is None
+    _select(insp, 0)
+    text = insp.details.text()
+    assert "ID 1" in text and "Upper limits at this redshift" in text
+
+
+def test_a_limit_is_deleted_from_the_table(with_limits, monkeypatch):
+    insp, limits = with_limits
+    asked = []
+    monkeypatch.setattr(insp, "_forward", lambda name, params: asked.append((name, params)))
+    _select_limit(insp, limits[0])
+    insp._delete_selected_by_key()
+    assert asked == [("delete_upper_limit", {"uuid": limits[0].uuid})]

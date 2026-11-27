@@ -18,6 +18,10 @@ data of the session), each with the name and the version of its schema:
   once, with the record of each component; in memory they are not in the
   metadata but in the components (``ComponentData.fit``), which
   :attr:`ArchiveDatum.get` and :attr:`ArchiveDatum.put` read and fill.
+- ``upper_limits`` (``.json``): the upper limits on the column of the
+  species not detected (phase 7, PR 7d.7),
+  :class:`~astrocook.core.upper_limits.UpperLimit`, in the metadata of the
+  system list.
 
 A datum is added by an entry of :data:`DATA`. The archives saved before
 this module open unchanged (they have no such files), and a version that
@@ -38,6 +42,9 @@ import numpy as np
 from astrocook.core.identification import META_KEY as IDENTIFICATION_KEY
 from astrocook.core.identification import Identification
 from astrocook.core.structures import FitRecord
+from astrocook.core.upper_limits import META_KEY as UPPER_LIMITS_KEY
+from astrocook.core.upper_limits import from_file_dict as _limits_from_dict
+from astrocook.core.upper_limits import to_file_dict as _limits_to_dict
 
 logger = logging.getLogger(__name__)
 
@@ -181,6 +188,18 @@ def _put_fit_records(systs: Any, value: Dict[str, Any]) -> None:
             object.__setattr__(c, "fit", record)
 
 
+# --- upper limits (JSON) ---
+
+def _write_upper_limits(value: Any, path: str) -> None:
+    with open(path, "w") as f:
+        json.dump(_limits_to_dict(tuple(value)), f, indent=1)
+
+
+def _read_upper_limits(path: str) -> Any:
+    with open(path) as f:
+        return _limits_from_dict(json.load(f))
+
+
 #: The structured data of the archive
 DATA: Tuple[ArchiveDatum, ...] = (
     ArchiveDatum("identification", "spec", IDENTIFICATION_KEY, "json",
@@ -191,6 +210,8 @@ DATA: Tuple[ArchiveDatum, ...] = (
     ArchiveDatum("fit_records", "systs", "fit_records", "json",
                  _write_fit_records, _read_fit_records, "the statistics of the fits",
                  get=_get_fit_records, put=_put_fit_records),
+    ArchiveDatum("upper_limits", "systs", UPPER_LIMITS_KEY, "json",
+                 _write_upper_limits, _read_upper_limits, "the upper limits"),
 )
 
 
@@ -221,7 +242,7 @@ def write_data(session: Any, folder: str, base_name: str,
         else:
             meta = owner._data.meta if owner is not None else {}
             value = meta.get(datum.meta_key)
-        if value is None or (isinstance(value, dict) and not value):
+        if value is None or (isinstance(value, (dict, tuple, list)) and not value):
             continue
         name = _file_name(base_name, datum, suffix)
         datum.write(value, os.path.join(folder, name))
