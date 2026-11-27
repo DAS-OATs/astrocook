@@ -83,6 +83,17 @@ def test_components_list(mock_archive):
     assert [c["uuid"] for c in p["components"]] == [comps[1]["uuid"]] and p["truncated"]
     # Nothing logged by the reading tools
     assert len(ok(history)["states"]) == 5
+    # The statistics of their last fits, one entry per fit (7d.9)
+    fits = info["fits"]
+    assert sorted(fits) == sorted({c["fit_id"] for c in comps})
+    for c in comps:
+        stats = fits[c["fit_id"]]
+        assert c["uuid"] in stats["members"]
+        assert stats["chi2r"] == pytest.approx(c["chi2r"])
+        assert stats["aic"] == pytest.approx(stats["chi2"] + 2 * stats["n_free"])
+        assert stats["recipe"] == "absorbers.add_component" and stats["converged"]
+    # Only those of the components listed
+    assert list(p["fits"]) == [comps[1]["fit_id"]]
 
 
 def test_components_list_filters_by_series_and_flags(mock_archive):

@@ -26,6 +26,7 @@ from typing import Any, Callable, Dict, Mapping
 # InvalidParameter is defined with the other exceptions of the recipes
 # (phase 6-bis, PR 3) and raised here
 from astrocook.recipes.errors import InvalidParameter, RecipeError, RecipeFailed, reason_of
+from astrocook.fitting.fit_record import running_recipe
 
 logger = logging.getLogger(__name__)
 
@@ -271,7 +272,9 @@ def typed_recipe(method: Callable) -> Callable:
             session = fill(self._session, spec, outermost=_DEPTH.get() == 1)
             if session is not self._session:
                 self = type(self)(session)
-            return method(self, **converted)
+            # The recipe of the statistics of the fits it runs (7d.9)
+            with running_recipe(f"{spec.category}.{spec.name}"):
+                return method(self, **converted)
         except RecipeError as e:
             e.enter(*where)
             raise

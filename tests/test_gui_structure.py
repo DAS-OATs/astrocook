@@ -94,6 +94,8 @@ MAIN_WINDOW |= {'_set_appearance', '_set_toolbar_visible', '_restore_view_settin
                 '_align_combo_labels'}
 #: ... and the status bar (phase 5-bis)
 MAIN_WINDOW |= {'_setup_status_bar', 'show_status', '_report_recipe_outcome', '_toolbar_room'}
+#: ... and the window of the messages of a recipe (phase 7, PR 7d.9)
+MAIN_WINDOW |= {'_result_parent'}
 #: ... and the files: opened in the background, recent, the window geometry
 #: (phase 5-bis)
 MAIN_WINDOW |= {'_load_session', 'open_files', '_open_files_in_background', '_recent_files',

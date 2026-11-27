@@ -62,7 +62,8 @@ def test_display_and_edit(filled):
     assert _data(filled, 0, "Trans.", Qt.DisplayRole) == "CIV"
     # The error of z in velocity, c dz / (1 + z) (visual review of phase 5-bis)
     assert _data(filled, 0, "z", Qt.DisplayRole) == "2.000000 ± 1.50 km/s"
-    assert "± 1.50e-05 (1.50 km/s)" in _data(filled, 0, "z", Qt.ToolTipRole)
+    # One line of tooltip (7d.9): dz as a redshift is in the Details panel
+    assert _data(filled, 0, "z", Qt.ToolTipRole) == "Free"
     assert _data(filled, 0, "logN", Qt.DisplayRole) == "13.000 ± 0.050"
     assert _data(filled, 0, "b", Qt.DisplayRole) == "10.00 ± 1.25"
     # No error without one, for a linked or a frozen parameter
@@ -100,8 +101,8 @@ def test_fonts_and_colours(filled):
 
 def test_tooltip(filled):
     tip = _data(filled, 1, "b", Qt.ToolTipRole)
-    assert "<b>Status:</b> Linked" in tip and "<b>Target:</b> CIV (z=2.00000)" in tip
-    assert "⚠" not in tip
+    # One line (7d.9): the state of the parameter; the rest in Details
+    assert tip == "Linked: CIV.b"
     assert "Frozen" in _data(filled, 2, "logN", Qt.ToolTipRole)
     assert "Free" in _data(filled, 0, "z", Qt.ToolTipRole)
     assert "lower bound of the fit (1 km/s)" in _data(filled, 0, "b", Qt.ToolTipRole)
@@ -148,8 +149,7 @@ def test_tooltip_of_a_link_by_expression(model):
         is_free=False, target_uuid=None, expression=f"p['{c1.uuid}'].b * 0.5")}}
     model.update_data([c1, c2, c3], cons)
     tip = _data(model, 1, "b", Qt.ToolTipRole)
-    assert "<b>Status:</b> Linked" in tip and "<b>Target:</b> Unknown" in tip
-    assert "<code>CIV.b * 0.5</code>" in tip
+    assert tip == "Linked: CIV.b * 0.5"
 
 
 # --- The proxy: filters and sorting -------------------------------------------------------

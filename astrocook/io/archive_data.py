@@ -13,6 +13,11 @@ data of the session), each with the name and the version of its schema:
 - ``bayesian_samples`` (``.npz``, without pickle): the samples of
   ``fit_bayesian`` (``bayesian_results`` in the metadata of the system
   list, read by the corner plot).
+- ``fit_records`` (``.json``): the statistics of the group fits (phase 7,
+  PR 7d.9), :class:`~astrocook.core.structures.FitRecord`, each written
+  once, with the record of each component; in memory they are not in the
+  metadata but in the components (``ComponentData.fit``), which
+  :attr:`ArchiveDatum.get` and :attr:`ArchiveDatum.put` read and fill.
 
 A datum is added by an entry of :data:`DATA`. The archives saved before
 this module open unchanged (they have no such files), and a version that
@@ -26,18 +31,22 @@ import json
 import logging
 import os
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import numpy as np
 
 from astrocook.core.identification import META_KEY as IDENTIFICATION_KEY
 from astrocook.core.identification import Identification
+from astrocook.core.structures import FitRecord
 
 logger = logging.getLogger(__name__)
 
 #: The version of the schema of the Bayesian samples
 BAYESIAN_SCHEMA_VERSION = 1
 BAYESIAN_SCHEMA_NAME = "astrocook.bayesian_samples"
+#: The version of the schema of the statistics of the fits
+FIT_RECORDS_SCHEMA_VERSION = 1
+FIT_RECORDS_SCHEMA_NAME = "astrocook.fit_records"
 
 
 @dataclass(frozen=True)
@@ -56,6 +65,11 @@ class ArchiveDatum:
     ``KeyError``) if it cannot."""
     what: str
     """What it is, in words, for the messages."""
+    get: Optional[Callable[[Any], Any]] = None
+    """Reads the value from its owner; None: ``meta[meta_key]``."""
+    put: Optional[Callable[[Any, Any], None]] = None
+    """Gives a value read to its owner, just read from the archive (in
+    place: no one else holds it yet); None: into ``meta[meta_key]``."""
 
 
 # --- identification (JSON) ---
@@ -121,6 +135,52 @@ def _read_bayesian(path: str) -> Dict[str, dict]:
     return out
 
 
+# --- statistics of the group fits (JSON; 7d.9) ---
+
+def _get_fit_records(systs: Any) -> Any:
+    """``{'records': {id: FitRecord}, 'components': {uuid: id}}``; None
+    if no component holds a record."""
+    components = {c.uuid: c.fit.id for c in systs.components if c.fit is not None}
+    if not components:
+        return None
+    records = {}
+    for c in systs.components:
+        if c.fit is not None:
+            records.setdefault(c.fit.id, c.fit)
+    return {"records": records, "components": components}
+
+
+def _write_fit_records(value: Any, path: str) -> None:
+    with open(path, "w") as f:
+        json.dump({"schema": FIT_RECORDS_SCHEMA_NAME,
+                   "schema_version": FIT_RECORDS_SCHEMA_VERSION,
+                   "records": [r.to_dict() for r in value["records"].values()],
+                   "components": value["components"]}, f, indent=1)
+
+
+def _read_fit_records(path: str) -> Dict[str, Any]:
+    with open(path) as f:
+        d = json.load(f)
+    if d.get("schema") != FIT_RECORDS_SCHEMA_NAME:
+        raise ValueError(f"not the statistics of the fits: schema {d.get('schema')!r}")
+    version = int(d.get("schema_version", 0))
+    if version > FIT_RECORDS_SCHEMA_VERSION:
+        raise ValueError(f"the version {version} of the schema is not known to this "
+                         f"Astrocook (it reads up to {FIT_RECORDS_SCHEMA_VERSION})")
+    records = {r["id"]: FitRecord.from_dict(r) for r in d["records"]}
+    return {"records": records, "components": dict(d["components"])}
+
+
+def _put_fit_records(systs: Any, value: Dict[str, Any]) -> None:
+    """Give each component of ``systs``, just read, its record (frozen
+    dataclasses, set in place as the loader sets their uuid)."""
+    records, of = value["records"], value["components"]
+    for c in systs.components:
+        record = records.get(of.get(c.uuid))
+        if record is not None:
+            object.__setattr__(c, "fit", record)
+
+
 #: The structured data of the archive
 DATA: Tuple[ArchiveDatum, ...] = (
     ArchiveDatum("identification", "spec", IDENTIFICATION_KEY, "json",
@@ -128,6 +188,9 @@ DATA: Tuple[ArchiveDatum, ...] = (
                  "the identification of the regions"),
     ArchiveDatum("bayesian_samples", "systs", "bayesian_results", "npz",
                  _write_bayesian, _read_bayesian, "the samples of the Bayesian fit"),
+    ArchiveDatum("fit_records", "systs", "fit_records", "json",
+                 _write_fit_records, _read_fit_records, "the statistics of the fits",
+                 get=_get_fit_records, put=_put_fit_records),
 )
 
 
@@ -153,8 +216,11 @@ def write_data(session: Any, folder: str, base_name: str,
     owners = {"spec": session.spec, "systs": session.systs}
     for datum in DATA:
         owner = owners[datum.owner]
-        meta = owner._data.meta if owner is not None else {}
-        value = meta.get(datum.meta_key)
+        if datum.get is not None:
+            value = datum.get(owner) if owner is not None else None
+        else:
+            meta = owner._data.meta if owner is not None else {}
+            value = meta.get(datum.meta_key)
         if value is None or (isinstance(value, dict) and not value):
             continue
         name = _file_name(base_name, datum, suffix)
@@ -173,12 +239,18 @@ def read_data(archive_root: str, spec: Any, systs: Any, suffix: str = "") -> Non
     """
     folder, base_name = os.path.split(archive_root)
     found: Dict[str, Dict[str, Any]] = {"spec": {}, "systs": {}}
+    owners = {"spec": spec, "systs": systs}
     for datum in DATA:
         path = os.path.join(folder, _file_name(base_name, datum, suffix))
         if not os.path.exists(path):
             continue
         try:
-            found[datum.owner][datum.meta_key] = datum.read(path)
+            value = datum.read(path)
+            if datum.put is not None:
+                if owners[datum.owner] is not None:
+                    datum.put(owners[datum.owner], value)
+            else:
+                found[datum.owner][datum.meta_key] = value
         except (ValueError, OSError, KeyError, TypeError) as e:
             logger.warning(f"The archive holds {datum.what}, but it cannot be read "
                            f"({e}): the session is opened without it.")

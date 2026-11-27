@@ -110,6 +110,21 @@ class FlagQuantities:
     resol: float
     tau0_weakest: float
     telluric_depth: Optional[float]
+    strongest: str = ""
+    """The name of the strongest line (that of R and b_inst)."""
+    weakest: str = ""
+    """The name of the weakest line in the fit (that of tau_0)."""
+
+
+def spectrum_pixels(spectrum) -> FitPixels:
+    """What the flags read of a whole spectrum (:class:`FitPixels`, no
+    pixels of a fit): for the quantities of the criteria shown by the
+    Details panel of the System Inspector (7d.9), as the fitter takes them."""
+    import astropy.units as au
+    tell = spectrum.get_column('telluric')
+    return FitPixels(wave=spectrum.x.to(au.Angstrom).value,
+                     resol=np.asarray(spectrum.resolution(), dtype=float),
+                     telluric=None if tell is None else np.asarray(tell.value, dtype=float))
 
 
 def b_instrumental(resol: float) -> float:
@@ -183,6 +198,7 @@ def flag_quantities(comp: ComponentData, pix: FitPixels
         lines = fitted or lines
     weakest = min(lines, key=lambda at: at['f'] * at['wave'])
     tau0 = central_tau(weakest, comp.logN, b_tot)
+    names = {id(ATOM_DATA[t]): t for t in series_lines(comp.series) if t in ATOM_DATA}
 
     depth: Optional[float] = None
     if pix.telluric is not None:
@@ -192,7 +208,8 @@ def flag_quantities(comp: ComponentData, pix: FitPixels
         finite = finite[np.isfinite(finite)]
         depth = float(finite.max()) if finite.size else None
     return FlagQuantities(b_inst=b_inst, resol=resol, tau0_weakest=tau0,
-                          telluric_depth=depth), lines
+                          telluric_depth=depth, strongest=names.get(id(strongest), ""),
+                          weakest=names.get(id(weakest), "")), lines
 
 
 def large_error_params(comp: ComponentData, b_inst: float = 0.0) -> Tuple[str, ...]:

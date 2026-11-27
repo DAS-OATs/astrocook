@@ -160,5 +160,9 @@ def test_system_inspector_shows_the_links(qtbot, metals):
     model.update_data(comps, metals.systs.constraint_model.v2_constraints_by_uuid)
     row = [int(c.id) for c in comps].index(147)
     tip = model.data(model.index(row, COLUMNS.index("b")), Qt.ToolTipRole)
-    assert "<b>Target:</b> CIV (z=1.94004)" in tip
-    assert f"CIV.b*{RATIO}" in tip
+    # One line since 7d.9; the target is in the Details panel
+    assert tip == f"Linked: CIV.b*{RATIO}"
+    from astrocook.gui.inspector_details import parameter_html
+    constraint = metals.systs.constraint_model.v2_constraints_by_uuid[comps[row].uuid]["b"]
+    details = parameter_html(comps[row], "b", constraint, comps)
+    assert "CIV at z = 1.94004" in details and f".b*{RATIO}" in details

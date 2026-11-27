@@ -12,6 +12,7 @@ from typing import List, Literal, Tuple, Dict, Any, Optional, Union, overload
 
 from astrocook.core.atomic_data import ATOM_DATA, STANDARD_MULTIPLETS, is_multiplet, series_lines
 from astrocook.fitting.component_flags import FitPixels, measurement_flags, with_measurement_flags
+from astrocook.fitting.fit_record import final_record, fit_record, previous_fit
 from astrocook.fitting.lsf import PixelLSF
 from astrocook.core.spectrum import Spectrum
 from astrocook.core.structures import ComponentData
@@ -548,6 +549,13 @@ class VoigtFitter:
         return self._lsf.matrix(None, key='none')
 
     @staticmethod
+    def _constraining(jac: np.ndarray) -> np.ndarray:
+        """The pixels that constrain the free parameters: the rows of the
+        Jacobian that are not negligible (issue #534)."""
+        row_norm = np.sqrt(np.sum(jac ** 2, axis=1))
+        return row_norm > 1e-3 * np.max(row_norm) if row_norm.size else row_norm.astype(bool)
+
+    @staticmethod
     def _scaled_errors(residuals: np.ndarray, jac: np.ndarray
                        ) -> Tuple[np.ndarray, float, np.ndarray]:
         """Parameter errors sqrt(diag((J^T J)^-1)) scaled by sqrt(reduced chi2).
@@ -563,8 +571,7 @@ class VoigtFitter:
         parameters, ``_linked_errors``).
         """
         n_par = jac.shape[1]
-        row_norm = np.sqrt(np.sum(jac ** 2, axis=1))
-        used = row_norm > 1e-3 * np.max(row_norm) if row_norm.size else row_norm.astype(bool)
+        used = VoigtFitter._constraining(jac)
         dof = max(1, int(np.sum(used)) - n_par)
         red_chi2 = float(np.sum(residuals[used] ** 2) / dof)
         cov = pinv(jac.T @ jac)
@@ -654,12 +661,18 @@ class VoigtFitter:
         full_errors[is_free_mask] = errors
         active = self._constraints._active_uuids
         pixels = self._fit_pixels()
+        fitted = [c for c in self._system_list.components
+                  if active is None or c.uuid in active]
+        # The statistics of the group at the final values (7d.9), with the
+        # convergence of its last fit
+        record = final_record(previous_fit(fitted), r0, len(p0), red_chi2,
+                              int(np.sum(self._constraining(jac))), [c.uuid for c in fitted])
         comps = []
         for i, c in enumerate(self._system_list.components):
             if active is not None and c.uuid not in active:
                 comps.append(c); continue
             idx = i * 4
-            new: Dict[str, Any] = {'chi2': red_chi2}
+            new: Dict[str, Any] = {'chi2': red_chi2, 'fit': record}
             for name, j in (('dz', idx), ('dlogN', idx + 1), ('db', idx + 2),
                             ('dbtur', idx + 3)):
                 if is_free_mask[j]:
@@ -708,6 +721,21 @@ class VoigtFitter:
             elif hi - value <= tol:
                 flags.append(high)
         return tuple(dict.fromkeys(flags))
+
+    def _bounds_by_member(self, bounds: Tuple[np.ndarray, np.ndarray]
+                          ) -> List[Tuple[str, str, float, float]]:
+        """The bounds of the free parameters of the fit, ``(uuid, parameter,
+        lower, upper)``, for its record (7d.9)."""
+        is_free_mask = self._constraints._param_map['is_free']
+        free_idx_map = np.cumsum(is_free_mask) - 1
+        out = []
+        for i, comp in enumerate(self._system_list.components):
+            for k, name in enumerate(('z', 'logN', 'b', 'btur')):
+                idx = i * 4 + k
+                if idx < len(is_free_mask) and is_free_mask[idx]:
+                    j = free_idx_map[idx]
+                    out.append((comp.uuid, name, float(bounds[0][j]), float(bounds[1][j])))
+        return out
 
     def _fit_pixels(self) -> FitPixels:
         """What the flags of 7d.2 read of the spectrum: the pixels, their
@@ -1226,9 +1254,11 @@ class VoigtFitter:
         p_free_errors = np.zeros_like(res.x)
         is_free_mask = self._constraints._param_map['is_free']
         red_chi2: float = 0
+        record_chi2: Optional[float] = None
         linked_errors = {}
         try:
             p_free_errors, red_chi2, cov = self._scaled_errors(res.fun, res.jac)
+            record_chi2 = red_chi2
             linked_errors = self._linked_errors(res.x, cov)
             logger.debug(f"Errors calculated: {p_free_errors}")
         except (ValueError, ArithmeticError, KeyError, TypeError) as e:
@@ -1250,6 +1280,13 @@ class VoigtFitter:
             # The constraint model stores the active set in _active_uuids
             if hasattr(self._constraints, '_active_uuids'):
                 active_uuids = self._constraints._active_uuids
+        # The statistics of the fit (7d.9): one record, held by each
+        # component fitted
+        record = fit_record(
+            res.fun, len(res.x), record_chi2, int(np.sum(self._constraining(res.jac))),
+            [c.uuid for c in old_components if active_uuids is None or c.uuid in active_uuids],
+            converged=bool(res.success), nfev=res.nfev, max_nfev=max_nfev,
+            message=res.message, bounds=self._bounds_by_member(bounds))
 
         for i, old_comp in enumerate(old_components):
             idx = i * 4
@@ -1284,9 +1321,11 @@ class VoigtFitter:
             # fitted components ignored later changes of the spectrum
             comp_chi2 = old_comp.chi2
             comp_resol = old_comp.resol
+            comp_fit = old_comp.fit
             
             if active_uuids is None or old_comp.uuid in active_uuids:
                 comp_chi2 = red_chi2
+                comp_fit = record
             
             comp_flags = old_comp.flags
             if active_uuids is None or old_comp.uuid in active_uuids:
@@ -1309,7 +1348,8 @@ class VoigtFitter:
                 dbtur=dbtur_new,
                 chi2=comp_chi2,
                 resol=comp_resol,
-                flags=comp_flags
+                flags=comp_flags,
+                fit=comp_fit
             )
             if is_active:
                 # The flags of the values that are not measured (7d.2),

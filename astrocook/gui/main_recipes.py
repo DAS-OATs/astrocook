@@ -221,6 +221,8 @@ class MainRecipesMixin(HostBase):
         Slot called when a recipe is requested (Dialog OR Context Menu).
         """
         if not self.active_history: return
+        # The window that asked for it, where its messages open (7d.9)
+        self._recipe_origin = QApplication.activeWindow()
 
         # --- 1. THE INTERCEPT (MUST BE AT THE TOP) ---
         if recipe_name == "export_ascii":
@@ -478,6 +480,20 @@ class MainRecipesMixin(HostBase):
         worker.signals.stopped.connect(self._on_recipe_stopped)
         self.thread_pool.start(worker)
 
+    def _result_parent(self):
+        """The parent of the messages of the result of a recipe: the window
+        that asked for it (e.g. the System Inspector), if it is still shown,
+        else the main window. Before (reported by Guido in PR 7d.9), the
+        warnings of a refit from the inspector opened on the main window,
+        which came to the front."""
+        origin = getattr(self, '_recipe_origin', None)
+        try:
+            if origin is not None and origin.isVisible():
+                return origin
+        except RuntimeError:  # the window was deleted
+            pass
+        return self
+
     def _report_recipe_outcome(self, recipe_name: str, new_state):
         """One line in the status bar: the recipe, its time, the change of
         the number of components, the warnings (their dialog stays). A
@@ -622,9 +638,7 @@ class MainRecipesMixin(HostBase):
                  warn_refit = True
 
             if warn_resolution or warn_refit:
-                msg_parent = self
-                if hasattr(self, 'system_inspector') and self.system_inspector and self.system_inspector.isVisible():
-                    msg_parent = self.system_inspector
+                msg_parent = self._result_parent()
 
                 title = "Resolution Updated" if warn_resolution else "Parameters Updated"
                 header = "Resolution updated internally." if warn_resolution else "Component parameters updated."
@@ -664,7 +678,8 @@ class MainRecipesMixin(HostBase):
                         header="Process completed with warnings",
                         text=msg_text,
                         buttons=QMessageBox.StandardButton.Ok,
-                        icon_name="icon_3d_HR.png" # or a warning icon
+                        icon_name="icon_3d_HR.png", # or a warning icon
+                        parent=self._result_parent()
                     )
 
             self._report_recipe_outcome(recipe_name, new_sessions[-1])
@@ -853,6 +868,7 @@ class MainRecipesMixin(HostBase):
             # --- CASE C: the prerequisite is asked again (FT8) ---
             assert pending is not None and last is not None
             self._show_custom_message(
+                parent=self._result_parent(),
                 title="Recipe Failed",
                 header=title,
                 text=f"{message}\n\nThe recipe {pending['name']} is waiting: "
@@ -865,6 +881,7 @@ class MainRecipesMixin(HostBase):
         elif trace:
             # --- CASE A: System Crash (Show Traceback) ---
             self._show_custom_message(
+                parent=self._result_parent(),
                 title="Internal Error",
                 header=title, # e.g. "Recipe Error: fit_continuum"
                 text=message,
@@ -876,6 +893,7 @@ class MainRecipesMixin(HostBase):
         else:
             # --- CASE B: User Error (Offer Retry) ---
             ret = self._show_custom_message(
+                parent=self._result_parent(),
                 title="Recipe Failed",
                 header=title,   
                 text=message,   
