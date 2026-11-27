@@ -14,6 +14,7 @@ from typing import List, Optional, cast
 
 from astrocook.gui.settings import app_settings
 from ..core.structures import ComponentData
+from ..core.upper_limits import UpperLimit, limits_of
 from ..core.atomic_data import STANDARD_MULTIPLETS, ATOM_DATA, is_multiplet, series_lines
 from ..core.resolution import resolution_at
 from ..fitting import bayesian_fitter
@@ -396,9 +397,10 @@ class SystemInspector(QWidget):
         if session and session.systs and session.systs.constraint_model:
             constraints = session.systs.constraint_model.v2_constraints_by_uuid
             
-        self.table_model.update_data(new_comps, constraints)
+        limits = limits_of(session.systs) if session else ()
+        self.table_model.update_data(new_comps, constraints, limits)
         self._update_column_visibility()
-        self.empty_label.setVisible(not new_comps)
+        self.empty_label.setVisible(not new_comps and not limits)
         
         # 3. Determine Selection Target
         max_id_new = max([c.id for c in new_comps], default=0) if new_comps else 0
@@ -499,6 +501,43 @@ class SystemInspector(QWidget):
             return None
         return self.table_model.get_component_at(self.proxy_model.mapToSource(indexes[0]).row())
 
+    def _selected_limit(self) -> Optional[UpperLimit]:
+        """The upper limit of the first selected row, if it is one (7d.7)."""
+        indexes = self.table_view.selectionModel().selectedRows()
+        if not indexes:
+            return None
+        return self.table_model.get_limit_at(self.proxy_model.mapToSource(indexes[0]).row())
+
+    def _selected_limits(self) -> List[UpperLimit]:
+        out = []
+        for idx in self.table_view.selectionModel().selectedRows():
+            lim = self.table_model.get_limit_at(self.proxy_model.mapToSource(idx).row())
+            if lim is not None:
+                out.append(lim)
+        return out
+
+    def _show_limit_redshift(self, lim: UpperLimit) -> None:
+        """The velocity plot at the redshift of an upper limit, with its
+        lines (a row of a limit selected, 7d.7)."""
+        self._manual_trans_edit = False
+        self._manual_base_text = lim.series
+        self.trans_in.setText(lim.series)
+        self.z_in.setText(f"{lim.z:.5f}")
+        self._update_trans_box_visuals()
+        self._parse(lim.series)
+        self.vel_plot.show_redshift(self.current_session, lim.z)
+
+    def _delete_limits(self, limits: List[UpperLimit]) -> None:
+        """Delete upper limits, one recipe each (7d.7)."""
+        for lim in limits:
+            self._forward("delete_upper_limit", {"uuid": lim.uuid})
+
+    def _ask_upper_limit(self, comp: ComponentData) -> None:
+        """Open Upper Limit at the redshift of ``comp`` (7d.7)."""
+        if self.main_window:
+            self.main_window._launch_recipe_dialog(
+                "absorbers", "upper_limit", initial_params={"z": f"{comp.z:.6f}"})
+
     def _spectrum_pixels(self):
         """The pixels of the spectrum for the criteria of the flags, kept
         while the spectrum is the same."""
@@ -520,7 +559,11 @@ class SystemInspector(QWidget):
             return
         comp = self._selected_component()
         if comp is None:
-            self.details.show_component(None)
+            lim = self._selected_limit()
+            if lim is not None:
+                self.details.show_limit(lim, self.table_model._components)
+            else:
+                self.details.show_component(None)
             return
         param = None
         current = self.table_view.selectionModel().currentIndex()
@@ -532,7 +575,8 @@ class SystemInspector(QWidget):
                 param = attr
         constraints = self.table_model._constraints_map.get(comp.uuid, {})
         self.details.show_component(comp, self.table_model._components, constraints,
-                                    self._spectrum_pixels(), param)
+                                    self._spectrum_pixels(), param,
+                                    self.table_model._limits)
 
     def _on_details_toggled(self, expanded: bool):
         app_settings().setValue(DETAILS_SHOWN_KEY, expanded)
@@ -556,6 +600,11 @@ class SystemInspector(QWidget):
         idx_source = self.proxy_model.mapToSource(idx_proxy)
         primary_row = idx_source.row()
         primary_comp = self.table_model.get_component_at(primary_row)
+        primary_limit = self.table_model.get_limit_at(primary_row)
+        if primary_comp is None and primary_limit is not None and self.current_session:
+            self._update_group_definition([])
+            self._show_limit_redshift(primary_limit)
+            return
         
         selected_comps = []
         for idx in indexes:
@@ -654,7 +703,7 @@ class SystemInspector(QWidget):
         target_row = -1
         for r in range(self.table_model.rowCount()):
             c = self.table_model.get_component_at(r)
-            if c.uuid == uuid:
+            if c is not None and c.uuid == uuid:
                 target_row = r
                 break
         
@@ -720,6 +769,9 @@ class SystemInspector(QWidget):
         comps = self._get_selected_components()
         if comps:
             self._delete_list(comps)
+        limits = self._selected_limits()
+        if limits:
+            self._delete_limits(limits)
 
     def _get_selected_components(self) -> List[ComponentData]:
         rows = self.table_view.selectionModel().selectedRows()
@@ -740,7 +792,20 @@ class SystemInspector(QWidget):
         col_name = COLUMNS[idx_source.column()]
         param_attr = COL_MAP.get(col_name)
 
-        if not clicked_comp: return
+        if not clicked_comp:
+            clicked_limit = self.table_model.get_limit_at(idx_source.row())
+            if clicked_limit is not None:
+                limits = self._selected_limits()
+                if clicked_limit not in limits:
+                    limits = [clicked_limit]
+                m = QMenu(self)
+                n = len(limits)
+                act = QAction(f"Delete Upper Limit{f' ({n} items)' if n > 1 else ''}", m)
+                act.setShortcuts(list(self.DELETE_KEYS))
+                act.triggered.connect(lambda: self._delete_limits(limits))
+                m.addAction(act)
+                m.exec(self.table_view.mapToGlobal(pos))
+            return
         
         selected_comps = self._get_selected_components()
         
@@ -877,6 +942,14 @@ class SystemInspector(QWidget):
         act_del.setShortcuts(list(self.DELETE_KEYS))
         act_del.triggered.connect(lambda: self._delete_list(selected_comps))
         m.addAction(act_del)
+
+        # 7d.7: a species not detected at the redshift of the component
+        act_limit = QAction("Upper Limit at This Redshift...", m)
+        act_limit.triggered.connect(lambda: self._ask_upper_limit(clicked_comp))
+        if not self.has_continuum():
+            act_limit.setEnabled(False)
+            act_limit.setToolTip(NO_CONTINUUM_TIP)
+        m.addAction(act_limit)
 
         m.addSeparator()
         m.addSection("Bayesian Fitting")

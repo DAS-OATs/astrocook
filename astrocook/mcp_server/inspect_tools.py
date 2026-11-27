@@ -21,6 +21,7 @@ from pydantic import BaseModel, Field
 from astrocook.methods_text import FLAG_NAMES
 from astrocook.mcp_server.outputs import FLAG_GLOSSARY, _jsonable
 from astrocook.core.column_names import internal_column
+from astrocook.core.upper_limits import limits_of
 from astrocook.fitting.fit_record import records_of
 from astrocook.recipes._spectrum import spec_of
 from astrocook.mcp_server.session_tools import SESSION_ID
@@ -96,6 +97,24 @@ def fit_stats(record) -> FitStats:
         time=record.time, final=record.final, members=list(record.members))
 
 
+class UpperLimitInfo(BaseModel):
+    """An upper limit on the column of a species not detected (not a
+    component: outside the model)."""
+    uuid: str
+    series: str
+    z: float
+    logN_lim: float = Field(description="The limit: log N below this (cm^-2).")
+    sigma: float = Field(description="Its confidence (sigma).")
+    b: float = Field(description="The b assumed, fixed (km/s).")
+    method: str = Field(description="'profile' (chi2 profile, blends refitted) or 'ew'.")
+    significance: float = Field(description=(
+        "How much better the best log N is than none, in sigma; above sigma "
+        "the species is detected and the limit is not meaningful."))
+    transitions: list[str] = Field(description="The lines that constrain it.")
+    n_pix: int = Field(description="Its pixels.")
+    refitted: list[str] = Field(description="The components refitted at each step.")
+
+
 class ComponentList(BaseModel):
     session_id: str
     n_components: int = Field(description="Components in the session.")
@@ -108,6 +127,9 @@ class ComponentList(BaseModel):
     fits: dict[str, FitStats] = Field(default_factory=dict, description=(
         "The statistics of the last fits of the components listed, by their "
         "fit_id: one entry for the components fitted together."))
+    upper_limits: list[UpperLimitInfo] = Field(default_factory=list, description=(
+        "The upper limits (absorbers_upper_limit) that match series, z_min "
+        "and z_max: species not detected, outside the model."))
 
 
 def fit_groups(session) -> dict[str, int]:
@@ -186,7 +208,8 @@ def register_inspect_tools(server: MCPServer, store: SessionStore) -> None:
         """List the absorption components of a session, with their errors,
         the reduced chi2 and flags of their last fit, their fit group and
         their constraints, by redshift; the statistics of their last fits
-        (chi2, AIC, BIC, pixels, convergence) in 'fits'."""
+        (chi2, AIC, BIC, pixels, convergence) in 'fits'; the upper limits on
+        the species not detected in 'upper_limits'."""
         if flag is not None and flag not in FLAG_NAMES:
             raise ToolError(f"Unknown flag '{flag}'; the flags are: "
                             f"{', '.join(FLAG_NAMES)}.")
@@ -218,10 +241,19 @@ def register_inspect_tools(server: MCPServer, store: SessionStore) -> None:
                     dv_kms=(c.z - z0) / (1 + z0) * C_KMS))
             fits = {fid: fit_stats(r) for fid, r in records_of(
                 matched[offset:offset + max_listed]).items()}
+            limits = [UpperLimitInfo(
+                uuid=lim.uuid, series=lim.series, z=lim.z, logN_lim=lim.logN_lim,
+                sigma=lim.sigma, b=lim.b, method=lim.method,
+                significance=lim.significance, transitions=list(lim.transitions),
+                n_pix=lim.n_pix, refitted=list(lim.refitted))
+                for lim in sorted(limits_of(systs), key=lambda lim: (lim.z, lim.series))
+                if (wanted is None or lim.series in wanted)
+                and (z_min is None or lim.z >= z_min) and (z_max is None or lim.z <= z_max)]
             return ComponentList(
                 session_id=session_id, n_components=len(comps), n_matched=len(matched),
                 n_groups=len(set(groups.values())), components=listed,
-                truncated=offset + max_listed < len(matched), fits=fits)
+                truncated=offset + max_listed < len(matched), fits=fits,
+                upper_limits=limits)
 
     @server.tool()
     def spectrum_read(

@@ -117,7 +117,8 @@ DOI of the software, 10.5281/zenodo.1346736 (`CITATION.cff`, README, `docs/credi
   interface only: nothing outside `gui/` reads it, and none changes a number.
 - `astrocook/io/` – loaders and V1 → V2 migration. The structured data
   that a FITS header cannot hold (the identification of
-  `core/identification.py`, the Bayesian samples) are files of their own
+  `core/identification.py`, the Bayesian samples, the upper limits of
+  `core/upper_limits.py`) are files of their own
   in the `.acs2` tar, by the table of `io/archive_data.py` (phase 7, PR
   7c.3): a new one gets its entry there. The tables of the files are read by the names of
   their columns by `io/tables.py` (phase 7-ter, T2), shared by the loader
