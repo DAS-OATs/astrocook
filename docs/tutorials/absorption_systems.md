@@ -102,6 +102,11 @@ Below the table, the **Details** panel shows the selected component (it follows 
 * **Component**: its values with their uncertainties ($\delta z$ also as a redshift), its resolution, and the quantities behind its warnings, so that each can be checked: $R$ and $b_\mathrm{inst}$ at the strongest line of the series (**Unresolved**), the optical depth at the centre of the weakest line (**Saturated**), the deepest telluric absorption within the reach of its lines (**On a telluric absorption**, with a `telluric` column). They are computed on the lines of the series in the spectrum; the fit takes those with pixels in the fit, so for a series with a line outside the fit they can differ. Then each warning, in one line.
 * **Parameter**: when the current cell is a parameter (`z`, `logN`, `b`, `btur`), its state, the formula of its link with the names of the components, and its bounds in the last fit (for `z`, the window of the fit).
 
+```{image} ../_static/absorbers_details.png
+:alt: The System Inspector with the Details panel below the table: on the left the group fit of the selected CIV component (reduced chi2, AIC, BIC, convergence, recipe, the components fitted together); on the right the component, the criteria of its flags and its logN, the current cell
+:align: center
+```
+
 The same statistics are in `components_list` of the MCP server (`fits`, one entry for the components fitted together), and in the `fit` of each component for a script, saved in the archive with the session.
 
 #### Understanding Resolution Priority
