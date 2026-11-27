@@ -716,15 +716,29 @@ They can be added when an analysis needs them.</p>
 <h2>Series and multiplets<a class="headerlink" href="#series-and-multiplets" title="Link to this heading">#</a></h2>
 <p>A series is written as a list of transitions (<code class="docutils literal notranslate"><span class="pre">CIV_1548,CIV_1550</span></code>) or by a
 name. Astrocook knows two kinds of names:</p>
-<ul class="simple">
+<ul>
 <li><p><strong>Standard multiplets</strong> (<code class="docutils literal notranslate"><span class="pre">STANDARD_MULTIPLETS</span></code>): the groups used by the
 identification and the automatic fits, strongest line first.</p>
-<ul>
-<li><p>Doublets: <code class="docutils literal notranslate"><span class="pre">CIV</span></code>, <code class="docutils literal notranslate"><span class="pre">SiIV</span></code>, <code class="docutils literal notranslate"><span class="pre">NV</span></code>, <code class="docutils literal notranslate"><span class="pre">OVI</span></code>, <code class="docutils literal notranslate"><span class="pre">MgII</span></code>, <code class="docutils literal notranslate"><span class="pre">AlIII</span></code>, <code class="docutils literal notranslate"><span class="pre">CII</span></code> (with
-C II* 1335), <code class="docutils literal notranslate"><span class="pre">ZnII</span></code>, <code class="docutils literal notranslate"><span class="pre">NaI</span></code>, <code class="docutils literal notranslate"><span class="pre">CaII</span></code>.</p></li>
+<ul class="simple">
+<li><p>Doublets: <code class="docutils literal notranslate"><span class="pre">CIV</span></code>, <code class="docutils literal notranslate"><span class="pre">SiIV</span></code>, <code class="docutils literal notranslate"><span class="pre">NV</span></code>, <code class="docutils literal notranslate"><span class="pre">OVI</span></code>, <code class="docutils literal notranslate"><span class="pre">MgII</span></code>, <code class="docutils literal notranslate"><span class="pre">AlIII</span></code>, <code class="docutils literal notranslate"><span class="pre">CII</span></code> (C II
+1334 and 1036), <code class="docutils literal notranslate"><span class="pre">ZnII</span></code>, <code class="docutils literal notranslate"><span class="pre">NaI</span></code>, <code class="docutils literal notranslate"><span class="pre">CaII</span></code>.</p></li>
 <li><p>Multiplets: <code class="docutils literal notranslate"><span class="pre">NI</span></code>, <code class="docutils literal notranslate"><span class="pre">SiII</span></code>, <code class="docutils literal notranslate"><span class="pre">SII</span></code>, <code class="docutils literal notranslate"><span class="pre">CrII</span></code>, <code class="docutils literal notranslate"><span class="pre">MnII</span></code>, <code class="docutils literal notranslate"><span class="pre">FeII</span></code>, <code class="docutils literal notranslate"><span class="pre">NiII</span></code>.</p></li>
+<li><p>Excited fine-structure lines: <code class="docutils literal notranslate"><span class="pre">CII*</span></code> (C II* 1335) and <code class="docutils literal notranslate"><span class="pre">SiII*</span></code> (Si II*
+1264).</p></li>
 <li><p>Hydrogen: <code class="docutils literal notranslate"><span class="pre">Lyman</span></code> (Ly-α to Ly-8), <code class="docutils literal notranslate"><span class="pre">Ly_a</span></code>, <code class="docutils literal notranslate"><span class="pre">Ly_ab</span></code>.</p></li>
 </ul>
+<p>A component has one column for all the lines of its series. <code class="docutils literal notranslate"><span class="pre">CII</span></code> and
+<code class="docutils literal notranslate"><span class="pre">SiII</span></code> hold the lines of the ground state only, and the excited
+fine-structure lines are series of their own, <code class="docutils literal notranslate"><span class="pre">CII*</span></code> and <code class="docutils literal notranslate"><span class="pre">SiII*</span></code>, fitted
+with a column of their own: the excited level is populated only in dense
+or strongly irradiated gas, and is usually orders of magnitude weaker
+than the ground state. Until version 2.9 <code class="docutils literal notranslate"><span class="pre">CII</span></code> held C II 1334 and
+C II* 1335, and <code class="docutils literal notranslate"><span class="pre">SiII</span></code> held Si II* 1264 among its lines, so a component of
+<code class="docutils literal notranslate"><span class="pre">CII</span></code> or <code class="docutils literal notranslate"><span class="pre">SiII</span></code> put the excited line at the column of the ground state
+(Si II* 1264 as strong as Si II 1260). A <code class="docutils literal notranslate"><span class="pre">CII</span></code> or <code class="docutils literal notranslate"><span class="pre">SiII</span></code> component of an
+older session or archive is read with the new lines, so its model and its
+fit change: add a <code class="docutils literal notranslate"><span class="pre">CII*</span></code> or <code class="docutils literal notranslate"><span class="pre">SiII*</span></code> component where the excited line is
+seen (F173, phase 7, PR 7c.4d-ter).</p>
 </li>
 <li><p><strong>Series of the V1 syntax</strong>, used by the redshift cursor of the GUI and
 for older sessions. Each is the set of the transitions in the table with

@@ -126,10 +126,25 @@ name. Astrocook knows two kinds of names:
 
 - **Standard multiplets** (`STANDARD_MULTIPLETS`): the groups used by the
   identification and the automatic fits, strongest line first.
-  - Doublets: `CIV`, `SiIV`, `NV`, `OVI`, `MgII`, `AlIII`, `CII` (with
-    C II* 1335), `ZnII`, `NaI`, `CaII`.
+  - Doublets: `CIV`, `SiIV`, `NV`, `OVI`, `MgII`, `AlIII`, `CII` (C II
+    1334 and 1036), `ZnII`, `NaI`, `CaII`.
   - Multiplets: `NI`, `SiII`, `SII`, `CrII`, `MnII`, `FeII`, `NiII`.
+  - Excited fine-structure lines: `CII*` (C II* 1335) and `SiII*` (Si II*
+    1264).
   - Hydrogen: `Lyman` (Ly-α to Ly-8), `Ly_a`, `Ly_ab`.
+
+  A component has one column for all the lines of its series. `CII` and
+  `SiII` hold the lines of the ground state only, and the excited
+  fine-structure lines are series of their own, `CII*` and `SiII*`, fitted
+  with a column of their own: the excited level is populated only in dense
+  or strongly irradiated gas, and is usually orders of magnitude weaker
+  than the ground state. Until version 2.9 `CII` held C II 1334 and
+  C II* 1335, and `SiII` held Si II* 1264 among its lines, so a component of
+  `CII` or `SiII` put the excited line at the column of the ground state
+  (Si II* 1264 as strong as Si II 1260). A `CII` or `SiII` component of an
+  older session or archive is read with the new lines, so its model and its
+  fit change: add a `CII*` or `SiII*` component where the excited line is
+  seen (F173, phase 7, PR 7c.4d-ter).
 - **Series of the V1 syntax**, used by the redshift cursor of the GUI and
   for older sessions. Each is the set of the transitions in the table with
   the same name before the underscore (e.g. `MgII` gives its six lines from

@@ -549,13 +549,12 @@
 <span class="c1">#: the anchors (each tested at the systems of the others: a SiIV too weak</span>
 <span class="c1">#: for its pair at the redshift of a CIV), the single lines of the design</span>
 <span class="c1">#: (section 3.5), the rarer ions of the damped systems, and the H I (Ly-a</span>
-<span class="c1">#: and Ly-b). The series of CII and SiII are written as their ground-state</span>
-<span class="c1">#: lines (a custom series, ``series_lines``): the standard multiplets also</span>
-<span class="c1">#: hold the excited fine-structure lines CII*_1335 and SiII*_1264, which a</span>
-<span class="c1">#: model would put at the column of the ground state (F173). The species of</span>
-<span class="c1">#: the optical (NaI, CaII) and the lines below 912 A of the table left out:</span>
-<span class="c1">#: never in the coverage of the forest and the red side of a UV spectrum, or</span>
-<span class="c1">#: below the Lyman limit</span>
+<span class="c1">#: and Ly-b). CII and SiII are their standard multiplets, the ground-state</span>
+<span class="c1">#: lines only since F173 (PR 7c.4d-ter; in PR 7c.4d custom series of the</span>
+<span class="c1">#: same lines, since the multiplets held the excited lines CII*_1335 and</span>
+<span class="c1">#: SiII*_1264). The species of the optical (NaI, CaII) and the lines below</span>
+<span class="c1">#: 912 A of the table left out: never in the coverage of the forest and the</span>
+<span class="c1">#: red side of a UV spectrum, or below the Lyman limit</span>
 <span class="n">SWEEP_SPECIES</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">"HI"</span><span class="p">:</span> <span class="s2">"Ly_ab"</span><span class="p">,</span>
     <span class="s2">"CIV"</span><span class="p">:</span> <span class="s2">"CIV"</span><span class="p">,</span>
@@ -564,9 +563,9 @@
     <span class="s2">"NV"</span><span class="p">:</span> <span class="s2">"NV"</span><span class="p">,</span>
     <span class="s2">"OVI"</span><span class="p">:</span> <span class="s2">"OVI"</span><span class="p">,</span>
     <span class="s2">"AlIII"</span><span class="p">:</span> <span class="s2">"AlIII"</span><span class="p">,</span>
-    <span class="s2">"CII"</span><span class="p">:</span> <span class="s2">"CII_1036,CII_1334"</span><span class="p">,</span>
+    <span class="s2">"CII"</span><span class="p">:</span> <span class="s2">"CII"</span><span class="p">,</span>
     <span class="s2">"CIII"</span><span class="p">:</span> <span class="s2">"CIII_977"</span><span class="p">,</span>
-    <span class="s2">"SiII"</span><span class="p">:</span> <span class="s2">"SiII_1190,SiII_1193,SiII_1260,SiII_1304,SiII_1526,SiII_1808"</span><span class="p">,</span>
+    <span class="s2">"SiII"</span><span class="p">:</span> <span class="s2">"SiII"</span><span class="p">,</span>
     <span class="s2">"SiIII"</span><span class="p">:</span> <span class="s2">"SiIII_1206"</span><span class="p">,</span>
     <span class="s2">"OI"</span><span class="p">:</span> <span class="s2">"OI_1039,OI_1302"</span><span class="p">,</span>
     <span class="s2">"AlII"</span><span class="p">:</span> <span class="s2">"AlII_1670"</span><span class="p">,</span>
