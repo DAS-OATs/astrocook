@@ -136,8 +136,21 @@ SCREEN_DELTA: Optional[float] = None
 #: group is split at its weakest edges, so that the n + 1 hypotheses stay
 #: few and the windows short
 MAX_GROUP = 6
-#: The criteria of the weights: SpIC_H (default), BIC, AIC
-CRITERIA = ("spic", "bic", "aic")
+#: The criteria of the weights: SpIC_H (default), BIC, AIC; ``"evidence"``
+#: (-2 ln Z, :mod:`astrocook.fitting.evidence`) an experiment of PR
+#: 7c.4d-quater, not a choice of the recipe
+CRITERIA = ("spic", "bic", "aic", "evidence")
+#: The Laplace evidence of the hypotheses (PR 7c.4d-quater, an experiment;
+#: :mod:`astrocook.fitting.evidence`): None, not computed (the default);
+#: ``"record"``, computed after each evaluation and recorded next to the
+#: criteria (``evidence``, -2 ln Z), the decisions by the criterion;
+#: ``"decide"``, the decisions by it (the criterion ``"evidence"``). The
+#: default of the ``evidence`` of :func:`identify_hypotheses`
+EVIDENCE: Optional[str] = None
+EVIDENCE_CHOICES = (None, "record", "decide")
+#: The criterion of a hypothesis whose evidence cannot be computed (the
+#: curvature of its posterior not positive): never the best
+EVIDENCE_FAILED = 1e12
 #: The short fit of the finalists (the experiment of the design, section 4:
 #: 300 evaluations; the bounds those of the experiment, wider in b than
 #: the 50 km/s of the pipelines, as the unidentified lines can be blends)
@@ -261,6 +274,9 @@ class _Comp:
     """The FWHM of its peak."""
     fwhm_kms: float = 0.0
     """The instrumental FWHM at its peak."""
+    z_prior: Optional[Tuple[float, float]] = None
+    """The range of z of a component at a known system (the sweep): its
+    prior in the evidence (PR 7c.4d-quater)."""
 
 
 @dataclasses.dataclass
@@ -727,12 +743,60 @@ def _build(h: _Hyp, cands: Mapping[int, _Candidate], v, flux, err) -> None:
     h.uuids = [c.uuid for c in systs.components]
 
 
-def _measure(win: EvaluationWindow, systs: SystemList) -> Dict[str, float]:
+def _measure(win: EvaluationWindow, systs: SystemList, ctx: Optional[_Context] = None,
+             roles: Optional[Mapping[str, _Comp]] = None) -> Dict[str, float]:
+    """The criteria of ``systs`` on the window; with ``ctx`` computing the
+    evidence (PR 7c.4d-quater) and the roles of its components by uuid, its
+    -2 ln Z as ``evidence``."""
     ev = win.evaluate(systs, min_influence=0.0)
     out = {"chi2": ev.chi2, "aic": ev.aic, "aicc": ev.aicc, "bic": ev.bic,
            "spic": ev.spic, "spic_a": ev.spic_a, "spic_b": ev.spic_b,
            "k": ev.k, "n": ev.n_pixels, "chi2_reduced": ev.chi2_reduced}
+    if ctx is not None and ctx.evidence and roles is not None:
+        out["evidence"] = _evidence(ctx, win, systs, roles)
     return {k: float(val) for k, val in out.items() if val is not None}
+
+
+def _roles(h: _Hyp) -> Dict[str, _Comp]:
+    return dict(zip(h.uuids, h.comps, strict=True))
+
+
+def _zone(ctx: _Context, z: float) -> str:
+    """The zone of a line of the placeholder at ``z``."""
+    vel = C_KMS * np.log(_wave_nm(PLACEHOLDER) * (1.0 + z))
+    return "forest" if ctx.forest[0] < vel < ctx.forest[1] else (
+        "red" if vel >= ctx.forest[1] else "blue")
+
+
+def _prior(ctx: _Context, comp: _Comp, z: float):
+    """The prior of the evidence of a component by its role (PR
+    7c.4d-quater): the species of an anchor, the H I of the forest for the
+    assumed Ly-a, the incidence of the regions of its zone for an
+    unidentified line, the species at its system for a component of the
+    sweep."""
+    from astrocook.fitting import evidence as E
+    species = E.species_of(comp.series)
+    if comp.role == "sweep" and comp.z_prior is not None:
+        return E.at_system(species, comp.z_prior)
+    if comp.role == "lya":
+        return E.free_line("HI", z)
+    if comp.role == "unidentified":
+        return E.unidentified(ctx.region_rates.get(_zone(ctx, z), 1.0))
+    return E.free_line(species, z)
+
+
+def _evidence(ctx: _Context, win: EvaluationWindow, systs: SystemList,
+              roles: Mapping[str, _Comp]) -> float:
+    """-2 ln Z of ``systs`` on the window (:data:`EVIDENCE_FAILED` when it
+    cannot be computed)."""
+    from astrocook.fitting import evidence as E
+    priors = {c.uuid: _prior(ctx, roles[c.uuid], c.z) for c in systs.components
+              if c.uuid in roles}
+    try:
+        return E.window_evidence(win, systs, priors).criterion
+    except (KeyError, ValueError, np.linalg.LinAlgError, NoPixelsToFit) as e:
+        logger.debug(f"The evidence of a hypothesis could not be computed ({e}).")
+        return EVIDENCE_FAILED
 
 
 def _label(h: _Hyp, cands: Mapping[int, _Candidate]) -> str:
@@ -773,6 +837,11 @@ class _Context:
         self.screen = screen
         self.temper = temper
         self.lya = lya
+        self.evidence: Optional[str] = None
+        """The Laplace evidence (:data:`EVIDENCE`)."""
+        self.region_rates: Dict[str, float] = {}
+        """The regions per unit z of the placeholder in each zone: the
+        incidence of an unidentified line in the evidence."""
         self.x_range: Optional[Tuple[float, float]] = None
         """The range of the regions (nm), when limited: the sweep tests only
         the lines in it (the pixels outside have no regions, and their
@@ -826,7 +895,7 @@ def _evaluate_group(ctx: _Context, regions: List[_Region], edges: List[_Candidat
         win = _window(ctx, [h.systs for h in hyps if h.systs is not None], ids)
         for h in hyps:
             assert h.systs is not None
-            h.aod = _measure(win, h.systs)
+            h.aod = _measure(win, h.systs, ctx, _roles(h))
     except ValueError as e:
         # No valid pixel around the group: the default labels, unevaluated
         logger.debug(f"A group of regions {ids} cannot be evaluated ({e}).")
@@ -859,7 +928,7 @@ def _evaluate_group(ctx: _Context, regions: List[_Region], edges: List[_Candidat
             h.reason = f"screen: {crit} {d:.1f} above the best by the AOD (threshold {ctx.screen:g})"
             h.weight = 0.0
             continue
-        _fit(win, h)
+        _fit(win, h, ctx)
         _refine(ctx, win, h, cands, v)
 
     finalists = [h for h in hyps if h.fit is not None]
@@ -881,10 +950,10 @@ def _evaluate_group(ctx: _Context, regions: List[_Region], edges: List[_Candidat
                          *_components(regions, [cands[a] for a in anchors], v, fwhm, ctx.lya))
             _build(trial, cands, v, flux, err)
             assert trial.systs is not None
-            trial.aod = _measure(win, trial.systs)
+            trial.aod = _measure(win, trial.systs, ctx, _roles(trial))
             if trial.aod.get("k", 0.0) > MAX_FIT_K:
                 continue
-            _fit(win, trial)
+            _fit(win, trial, ctx)
             _refine(ctx, win, trial, cands, v)
             hyps.insert(len(hyps) - 1, trial)
             if trial.fit is not None and trial.fit[crit] < current.fit[crit]:  # type: ignore[index]
@@ -967,7 +1036,8 @@ def _refine(ctx: _Context, win: EvaluationWindow, h: _Hyp,
             try:
                 fitted = win.fit(trial, max_nfev=FIT_NFEV, b_max=FIT_B_MAX,
                                  logN_max=FIT_LOGN_MAX)
-                measured = _measure(win, fitted)
+                measured = _measure(win, fitted, ctx, {**_roles(h), trial.components[-1].uuid:
+                                                       comp})
             except (NoPixelsToFit, ValueError, np.linalg.LinAlgError):
                 continue
             if best is None or measured[crit] < best[2][crit]:
@@ -979,13 +1049,14 @@ def _refine(ctx: _Context, win: EvaluationWindow, h: _Hyp,
         h.uuids.append(uuid)
 
 
-def _fit(win: EvaluationWindow, h: _Hyp) -> None:
-    """The short fit of a finalist and its evaluation after it."""
+def _fit(win: EvaluationWindow, h: _Hyp, ctx: Optional[_Context] = None) -> None:
+    """The short fit of a finalist and its evaluation after it (the evidence
+    too, with ``ctx`` computing it)."""
     assert h.systs is not None
     try:
         h.fitted = win.fit(h.systs, max_nfev=FIT_NFEV, b_max=FIT_B_MAX,
                            logN_max=FIT_LOGN_MAX)
-        h.fit = _measure(win, h.fitted)
+        h.fit = _measure(win, h.fitted, ctx, _roles(h))
     except (NoPixelsToFit, ValueError, np.linalg.LinAlgError) as e:
         # A fit that fails leaves the hypothesis out of the comparison
         h.status = ident.Status.DROPPED
@@ -1013,7 +1084,8 @@ def identify_hypotheses(spec: Spectrum, multiplets: Sequence[str],
                         temper: bool = False, refine: bool = True, sweep: str = "HI",
                         z_em_margin_kms: float = 3000.0,
                         x_range: Optional[Tuple[float, float]] = None,
-                        params: Optional[Mapping[str, Any]] = None) -> HypothesesResult:
+                        params: Optional[Mapping[str, Any]] = None,
+                        evidence: Optional[str] = None) -> HypothesesResult:
     """The identification as a comparison between hypotheses (see the
     module) of the regions of ``spec``.
 
@@ -1053,6 +1125,11 @@ def identify_hypotheses(spec: Spectrum, multiplets: Sequence[str],
         Only the regions whose centre is in this range of wavelength (nm).
     params : mapping, optional
         The parameters of the recipe, for the structure.
+    evidence : str, optional
+        The Laplace evidence of the hypotheses (PR 7c.4d-quater, an
+        experiment): ``"record"`` (computed and recorded next to the
+        criteria) or ``"decide"`` (the decisions by it, in place of
+        ``criterion``); None: :data:`EVIDENCE` (not computed by default).
 
     Raises
     ------
@@ -1061,6 +1138,14 @@ def identify_hypotheses(spec: Spectrum, multiplets: Sequence[str],
         criterion, species or choice of the sweep.
     """
     t0 = time.perf_counter()
+    if evidence is None:
+        evidence = EVIDENCE
+    if evidence not in EVIDENCE_CHOICES:
+        raise ValueError(f"Unknown evidence '{evidence}': one of record, decide.")
+    if evidence == "decide":
+        criterion = "evidence"
+    elif criterion == "evidence":
+        evidence = "decide"
     if criterion not in CRITERIA:
         raise ValueError(f"Unknown criterion '{criterion}': one of {', '.join(CRITERIA)}.")
     from astrocook.fitting.hypotheses_sweep import SWEEP_CHOICES
@@ -1098,6 +1183,9 @@ def identify_hypotheses(spec: Spectrum, multiplets: Sequence[str],
     ctx = _Context(spec, fixed if fixed is not None and fixed.components else None,
                    criterion, screen, temper, lya, labels, forest, refine)
     ctx.x_range = x_range
+    ctx.evidence = evidence
+    if evidence:
+        ctx.region_rates = _region_rates(regions, x_nm, z_em)
     results = [_evaluate_group(ctx, [by_id[i] for i in g_ids], g_edges, v, flux, err, fwhm)
                for g_ids, g_edges in groups]
     swept = None
@@ -1110,6 +1198,7 @@ def identify_hypotheses(spec: Spectrum, multiplets: Sequence[str],
     run_params.update(multiplets=list(multiplets), criterion=criterion, prefilter=prefilter,
                       screen=screen, max_group=max_group, temper=temper, refine=refine,
                       sweep=sweep, max_added=MAX_ADDED, split_gaps=SPLIT_GAPS,
+                      evidence=evidence,
                       z_em_margin_kms=z_em_margin_kms, seconds=round(seconds, 3))
     if swept is not None:
         run_params["sweep_seconds"] = round(swept.seconds, 3)
@@ -1124,6 +1213,25 @@ def identify_hypotheses(spec: Spectrum, multiplets: Sequence[str],
                 + (f", {sum(t.accepted for t in swept.tests)} species added by the sweep"
                    if swept is not None else "") + f", in {seconds:.1f} s.")
     return HypothesesResult(new_spec, seconds, len(regions), len(results), n_compared, n_hyps)
+
+
+def _region_rates(regions: Sequence[_Region], x_nm: np.ndarray, z_em: float
+                  ) -> Dict[str, float]:
+    """The regions per unit z of the placeholder in each zone of the
+    spectrum (the incidence of an unidentified line in the evidence, PR
+    7c.4d-quater: measured on the spectrum, F174 direction 2)."""
+    from astrocook.fitting import evidence as E
+    lam_pl = _wave_nm(PLACEHOLDER)
+    lim = (1.0 + z_em) * float(xem_d['Ly_lim'].to_value(au.nm))
+    lya = (1.0 + z_em) * float(xem_d['Ly_a'].to_value(au.nm))
+    lo, hi = float(np.nanmin(x_nm)), float(np.nanmax(x_nm))
+    edges = {"blue": (lo, min(hi, lim)), "forest": (max(lo, lim), min(hi, lya)),
+             "red": (max(lo, lya), hi)}
+    coverage = {k: (a / lam_pl - 1.0, b / lam_pl - 1.0) for k, (a, b) in edges.items() if b > a}
+    centres = [x_nm[(r.lo + r.hi) // 2] / lam_pl - 1.0 for r in regions]
+    zones = [r.zone for r in regions]
+    keep = [i for i, zn in enumerate(zones) if zn in coverage]
+    return E.region_rates([centres[i] for i in keep], [zones[i] for i in keep], coverage)
 
 
 def _output(spec: Spectrum, x_nm: np.ndarray, regions: List[_Region], labels: np.ndarray,

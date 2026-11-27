@@ -373,6 +373,178 @@ what changed from the text above, found on the mocks):
   accepted species an edge from the strong line of the anchor to the
   region of its strongest line.
 
+### 3.6 The evidence in place of a criterion (PR 7c.4d-quater, an experiment)
+
+(Guido, 26 November 2026.) The failures of the prototype share one form:
+two hypotheses with the same chi2 (a line of the forest fitted as CII or
+SiIII as well as Ly-a; two telluric lines at the lag of MgII, F172; a single
+line at a known redshift against a free line, decided by `SWEEP_TIE`), where
+AIC, BIC and SpIC count the parameters but not how plausible their values
+are. The experiment: the Laplace approximation of the evidence, with priors
+of population per species from the literature, measured against SpIC_H and
+BIC where they fail. An option, no default changed:
+`identify_hypotheses(evidence="record")` computes it next to the criteria
+(`evidence` in the criteria of the structure, -2 ln Z), `"decide"` decides by
+it (the criterion `"evidence"`, no tie in the sweep); the module
+`astrocook/fitting/evidence.py`; not an option of the recipe.
+
+*The evidence.* ln Z = -chi2/2 + ln pi(theta_0) + (1/2) g^T H^-1 g + (k/2)
+ln 2 pi - (1/2) ln det H at the end of the short fit, H = J^T J (the
+analytic Jacobian of PR 7c.4d-bis, on the pixels of the comparison) plus the
+curvature of -ln pi (its concave part), g the gradient of ln pi (the step to
+the maximum of the posterior; that of the likelihood left out: a fit
+stopped before convergence gained the Gauss-Newton step, which overestimates,
+2160 in ln Z in one trial). A weak Gaussian on every parameter (200 km/s in
+z, 3 dex in log N, 50 km/s in b) keeps a parameter that the pixels do not
+constrain finite: it is part of the prior (a cut-off of the power law of the
+columns below detection). Exact for a linear Gaussian model (a test). The
+cost: one Jacobian per evaluation, about three models.
+
+*The priors.* Each component an absorber of a Poisson process, density
+rho_s(z) phi_s(log N) g_s(b): the incidence per unit z above a column, a
+power law of the columns, the distribution of b. From the literature, never
+from the generator of the mocks (built from similar literature: so the mocks
+are an optimistic test of these priors, and the twins and the development
+spectra are the real one):
+
+| species | incidence | columns | b |
+|---|---|---|---|
+| H I (assumed Ly-a, the Ly-a/Ly-b pairs) | 6.1 (1+z)^2.47 above log N 13.64 (Kim et al. 2002) | beta 1.5 (Kim et al. 2001; Hu et al. 1995) | Gaussian 28 +- 10 km/s (Hu et al. 1995), the cut-off at 20 km/s not applied |
+| CIV | 10 per unit z above log N 12.5 (the systems of D'Odorico et al. 2010, about two components each) | beta 1.8 (Songaila 2001) | lognormal, median 10 km/s, 0.4 in ln b (Rauch et al. 1996: fewer than 8% below 6 km/s) |
+| SiIV | a third of the CIV | as CIV | as CIV |
+| MgII | 5 above log N 12 at z ~ 1 (Churchill et al. 1999; Nestor et al. 2005) | as CIV | as CIV |
+| a species at a known system (the sweep) | 0.5 (a choice, not from the literature) uniform over the profile of the anchor; the H I of the system 1 | beta 1.8 above 12 (H I: the forest) | as CIV (H I: the forest) |
+| unidentified | the regions per unit z of the spectrum in their zone (measured, F174 direction 2) | uniform over 11-15 | log-uniform 1-100 km/s |
+
+arXiv was not reachable from the session: the values marked "to verify" in
+the module are as quoted by later papers and reviews.
+
+*Results* (the four measures of the plan):
+
+1. *The controlled pairs* (section 4, `identification_hypotheses.py
+   --evidence --trials 100`, 3000 trials; `evidence` with the priors,
+   `ev_noinc` the same with every incidence equal: the columns and b
+   alone), the fraction that picks the truth after the fit, by the
+   significance of the weaker line (3-5, 5-10, >10 sigma):
+
+   | scenario | SpIC_H | BIC | evidence | ev_noinc |
+   |---|---|---|---|---|
+   | `doublet_vs_lya` | 0.98 / 0.97 / 0.99 | 1.00 / 0.99 / 1.00 | 0.33 / 0.51 / 0.91 | 0.93 / 0.91 / 0.99 |
+   | `doublet_vs_lyab` | 1.00 / 0.99 / 1.00 | 1.00 / 1.00 / 1.00 | 0.65 / 0.91 / 1.00 | 1.00 / 1.00 / 1.00 |
+   | `coincidence` | 0.82 / 0.87 / 0.97 | 0.73 / 0.86 / 0.95 | 1.00 / 1.00 / 1.00 | 0.84 / 0.88 / 0.95 |
+   | `alias` | 1.00 / 1.00 / 1.00 | 1.00 / 1.00 / 1.00 | 0.68 / 0.99 / 1.00 | 0.92 / 1.00 / 1.00 |
+   | `detection` | 1.00 / 1.00 / 1.00 | 1.00 / 1.00 / 1.00 | 1.00 / 1.00 / 1.00 | 0.99 / 1.00 / 1.00 |
+
+   The incidence decides: it adds 16.6 to -2 ln Z of the two Ly-a against
+   the CIV (the H I of the forest at z 3.1 is 20 times as frequent as the
+   CIV per unit z, and two of them are needed), the prior odds of section
+   4.3 made from the literature, of the order of the odds 100 there. It
+   fixes every coincidence and loses most of the true doublets of the
+   forest below 10 sigma when the Ly-a alone is modelled. The experiment
+   has the two truths in equal numbers, not the forest's proportions, so a
+   fraction "right" here is not the measure of a prior: with the
+   literature incidence the evidence says that a weak pair at the lag of
+   CIV in the forest is more often two H I, which is the claim of section
+   3.4, and only the calibration on spectra with the real proportions (the
+   twins) can say whether it is right. The columns and b alone
+   (`ev_noinc`) do no better than SpIC_H: in the mocks the b of the CIV
+   (4-20 km/s) and of the H I (15-40) overlap, and a CIV fitted as two Ly-a
+   keeps its narrow b, which the prior of the forest penalises, but not more
+   than the 3 parameters the SpIC counts.
+2. *The sweep* (`validate_sweep.py --sweep all --evidence record`, 36 mocks
+   with rich systems; `validate_mocks.py --grid full --method hypotheses
+   --sweep all --evidence record`, 135 mocks with no ion but CIV, SiIV, MgII
+   and the H I). The decisions recounted from the differences recorded,
+   first order (the run decided by SpIC_H, the later tests saw its
+   decisions). Grid full, the rarer species accepted, all false: SpIC_H 369,
+   BIC 329, evidence 366 (CII 77 / 73 / 52, OI 74 / 69 / 43, SiIII 82 / 74 /
+   81, NV 64 / 57 / 77, SiII 37 / 26 / 52, FeII 11 / 9 / 21, SiIV 18 / 16 /
+   30); the H I of the sweep 161 (155 right) / 159 / 197 (182 right). Of
+   the 108 false species that tie in the SpIC (the same model) the evidence
+   rejects 79; of the 261 that win in the SpIC by the chi2 it keeps 202; of
+   the 739 the SpIC rejects it accepts 135. The rich mocks: the ions found
+   SpIC_H / evidence AlII 45 / 49, CII 58 / 48, FeII 11 / 10, MgI 26 / 29,
+   OI 23 / 18, SiII 23 / 25, SiIII 27 / 26 of 101 (37 for FeII and MgI);
+   the rarer species accepted 282 / 276, purity 0.809 / 0.804 (BIC 272,
+   0.827); the H I 46 / 55, purity 0.98 / 0.95. The evidence resolves the
+   ties as intended, but the false species of the forest are mostly not
+   ties: they win on the chi2, where the labels of the forest are
+   under-modelled (a region of several lines with fewer components) and a
+   species with lines on several regions fills them. No prior on the
+   values of the parameters removes a better fit; the evidence moves the
+   decisions at the margin, in both directions. A second run of the rich
+   mocks deciding by the evidence (`--evidence decide`, the first pass
+   and the sweep): the rarer species accepted 302, purity 0.785 (SpIC_H
+   282, 0.809); the ions found AlII 54, CII 55, FeII 9, MgI 28, OI 20,
+   SiII 25, SiIII 30 (213 -> 221 of 579); the metals of the first pass
+   (completeness/purity) CIV 0.688/0.958 -> 0.736/0.977, SiIV 0.778/0.939
+   -> 0.806/0.887, MgII 0.931/0.940 -> 0.931/0.972.
+3. *The telluric doublets* (cases `telluric` and `combined` of the grid
+   robustness, 72 mocks; `validate_mocks.py --grid robustness --cases
+   telluric combined --method hypotheses`, the sweep of the H I, with
+   `--evidence record`, whose decisions are those of SpIC_H, and with
+   `--evidence decide`, a second run deciding by the evidence; SpIC_H /
+   evidence): the false candidates on the tellurics CIV 88 / 90, MgII 60 /
+   50, SiIV 19 / 22, Ly-a 67 / 68; purity CIV 0.553 / 0.569, SiIV 0.592 /
+   0.618, MgII 0.527 / 0.638; completeness CIV 0.685 / 0.731, SiIV 0.662 /
+   0.713, MgII 0.681 / 0.708; the fit 559 / 585 true components, 285 / 250
+   spurious; the credibility ECE 0.243 / 0.246, Brier 0.269 / 0.250; the H I
+   of the sweep 86 / 106 accepted (purity 0.94 / 0.93); the median time to
+   identify 6.3 / 6.0 s (both runs with the evidence computed). Two telluric
+   lines at the lag of a doublet are real absorption with a compatible
+   ratio: the doublet explains them as well as two unidentified lines, and
+   its incidence is not small against that of the unidentified lines on
+   the red side, which the telluric bands themselves raise. The evidence
+   takes off 10 of the 60 false MgII; the rest needs the hypothesis that
+   knows the tellurics (7c.5, F172).
+4. *The widths* (F174 direction 4; `validate_widths.py`, 27 mocks of the
+   rich grid at z_em 3.5, R 8900, 45000, 140000; the default lines of the
+   forest of an accepted hypothesis matched to the true line nearest to
+   their Ly-a within the larger of half the FWHM and 10 km/s). Almost all
+   of them keep the AOD parameters of a region that no pair links (fewer
+   than 20% fitted), so their b is that of the AOD. The median b of the
+   H I 16-35 km/s, of the true metal lines 8-13; the fraction below 12
+   km/s: the metals 0.61-0.83 at R >= 45000 and 0.23-0.26 at R 8900, the
+   H I 0.03-0.16 (0.36 at S/N 10, R 140000); the ratio of the priors of b
+   (`B_METAL` against `B_FOREST`) calls metal 0.77-0.94 of the metals at R
+   >= 45000 (0.63-0.76 at 8900) and 0.17-0.54 of the H I. The H I lines are
+   6-13 times as many as the metal lines: at S/N 30, R 45000, b < 12 km/s
+   marks 76 metals and 61 H I (purity 0.55), the ratio of the priors 97 and
+   204 (0.32). The width is a filter of candidates at R >= 45000, not a
+   decision, as F174 said; at R 8900 it does not separate. The mocks draw
+   the b of the forest from a lognormal with a floor at 10 km/s and the
+   metals from 4-15 km/s: real spectra separate less.
+
+*What it says.* The evidence does not separate where the criteria fail.
+It decides the true ties (the same model, a single line at a known
+redshift against a free line) with a reason, where `SWEEP_TIE` gave them
+to the known redshift (it rejects 79 of the 108 false ties of the grid
+full), but the dominant failures are not ties: the false species of the
+forest win on the chi2 of under-modelled regions, and the telluric
+doublets are real absorption with the ratio of a doublet; no prior on the
+values of the parameters removes a better fit. Its numbers move at the
+margin, in both directions (the grid full 369 -> 366 false rarer species;
+the tellurics MgII purity 0.53 -> 0.64, CIV and SiIV +0.02-0.03, the
+completeness +0.03-0.05, ECE the same). What it does carry is the
+incidence, the strongest lever of the controlled pairs: with the
+literature values it fixes every chance coincidence of two Ly-a and loses
+most of the weak doublets of the forest, the trade of section 4.3, now with
+odds from the literature instead of chosen ones; whether that is right in
+the forest is a question of calibration on spectra with the real
+proportions (the twins, F164), not of the mocks. The width (direction 4)
+is a filter of candidates at R >= 45000 (the metal lines of the forest
+mostly below 12 km/s, the H I mostly above), not a decision.
+
+Proposed for 7e.1 and 7c.4g (to decide with Guido): the evidence not at the
+centre of the comparison on this evidence, SpIC_H kept; the evidence an
+option, the form in which the prior of the incidence (section 3.4, 7c.4g)
+enters if it enters, with its calibration on the twins; the width as the
+filter of the candidates of the sweep (direction 4), not as a prior of the
+decision; the tellurics by their hypothesis (7c.5). Not measured: the
+grid full decided by the evidence (the recount is first order; the rich
+mocks were run deciding by it), the sensitivity to the values of the priors (the incidence of the H I, the
+0.5 of a species at a system), the twins and the development spectra.
+
 ## 4. The experiment: controlled pairs of alternatives
 
 `benchmarks/identification_hypotheses.py`. Each trial is a mock (flat

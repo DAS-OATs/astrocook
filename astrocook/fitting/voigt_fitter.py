@@ -972,9 +972,16 @@ class VoigtFitter:
                         mask |= (self._x_ang > lam_obs - dw) & (self._x_ang < lam_obs + dw)
         return mask & self._valid_mask
 
-    def prepare_fit_context(self, z_window_kms: float = 20.0) -> Tuple[np.ndarray, np.ndarray]:
+    def prepare_fit_context(self, z_window_kms: float = 20.0,
+                            pixels: Optional[np.ndarray] = None) -> Tuple[np.ndarray, np.ndarray]:
         """
         Prepares the internal state for fitting (masks, background, vectorized data).
+
+        ``pixels``: the pixels of the residuals (the valid ones among them) in
+        place of those the components take from the data
+        (:meth:`feature_mask`); used by the Laplace evidence
+        (:mod:`astrocook.fitting.evidence`, PR 7c.4d-quater), whose Jacobian
+        is on the pixels of a comparison.
         
         Returns
         -------
@@ -991,7 +998,10 @@ class VoigtFitter:
 
         active_components = [c for c in self._system_list.components if c.uuid in active_uuids] if active_uuids else self._system_list.components
 
-        self._fit_mask = self.feature_mask(active_components, z_window_kms)
+        if pixels is None:
+            self._fit_mask = self.feature_mask(active_components, z_window_kms)
+        else:
+            self._fit_mask = np.asarray(pixels, dtype=bool) & self._valid_mask
         self._link_input_cache = None
         
         if np.any(self._fit_mask):

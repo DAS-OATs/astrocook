@@ -385,6 +385,10 @@ def set_chain(options):
         # refinement off, as ``refine=False``)
         n = int(CHAIN["max_added"])
         hypotheses.MAX_ADDED = None if n < 0 else n
+    if "evidence" in CHAIN:
+        # The Laplace evidence of the hypotheses (PR 7c.4d-quater):
+        # "record" or "decide"
+        hypotheses.EVIDENCE = CHAIN["evidence"]
     if "split_gaps" in CHAIN:
         # The split of the regions at their gaps (PR 7c.4c-bis)
         hypotheses.SPLIT_GAPS = bool(CHAIN["split_gaps"])
@@ -603,11 +607,17 @@ def _sweep_test(h, truth):
     true = [c for c in truth.components
             if series is not None and _shares_lines(series, c.series)]
     accepted = str(h.status) == "accepted"
-    return dict(species=species, accepted=accepted, status=str(h.status),
+    crit = h.criteria
+    match = bool(any(_dv(o.z, c.z) <= MATCH_KMS for o in own for c in true))
+    # The criteria of the test and of the labels (the Laplace evidence of PR
+    # 7c.4d-quater when it was computed): the decision of each can be
+    # recounted (first order: the later tests saw the decisions of the run)
+    deltas = {f"d_{k}": float(crit[k] - crit[f"labels_{k}"]) for k in ("spic", "bic", "evidence")
+              if k in crit and f"labels_{k}" in crit}
+    return dict(species=species, accepted=accepted, status=str(h.status), match=match, **deltas,
                 weight=float(h.weight or 0.0), z=z_sys,
                 present=bool(any(_dv(c.z, z_sys) <= SWEEP_PRESENT_KMS for c in true)),
-                right=bool(accepted and any(_dv(o.z, c.z) <= MATCH_KMS
-                                            for o in own for c in true)),
+                right=bool(accepted and match),
                 replaced_lya=int(h.criteria.get("replaced_lya", 0)),
                 replaced_unidentified=int(h.criteria.get("replaced_unidentified", 0)),
                 hi_z=[o.z for o in own] if species == "HI" and accepted else [])
@@ -700,11 +710,49 @@ def sweep_summary(rows_by_record):
                                  if t["accepted"] and t["right"] == (ok == "right"))
                 for k in ("lya", "unidentified") for ok in ("right", "wrong")}
     return dict(n_tests=len(tests), by_species=by_species,
+                by_criterion=_sweep_by_criterion(tests),
                 rare=purity(lambda t: t["species"] != "HI"),
                 hi_tests=purity(lambda t: t["species"] == "HI"),
                 hi_of_systems=hi, replaced=replaced,
                 calibration=calibration_summary([dict(weight=t["weight"], right=t["present"])
                                                  for t in tests]))
+
+
+#: The decision of a test of the sweep by each criterion recorded, from its
+#: difference with the labels (the tie of SWEEP_TIE for the information
+#: criteria, none for the evidence, PR 7c.4d-quater)
+SWEEP_DECISIONS = {"spic": 0.1, "bic": 0.1, "evidence": 0.0}
+
+
+def _sweep_by_criterion(tests):
+    """The tests of the sweep recounted by each criterion recorded (the
+    evidence of PR 7c.4d-quater): per species accepted and right (accepted,
+    a component on a true one), the rarer species and the H I. First order:
+    the run decided by its own criterion, the later tests saw its decisions."""
+    out = {}
+    for crit, tie in SWEEP_DECISIONS.items():
+        sel = [t for t in tests if f"d_{crit}" in t]
+        if not sel:
+            continue
+        per = {}
+        for t in sel:
+            acc = t[f"d_{crit}"] <= tie
+            d = per.setdefault(t["species"], dict(n=0, accepted=0, right=0, present=0,
+                                                  present_accepted=0))
+            d["n"] += 1
+            d["accepted"] += acc
+            d["right"] += acc and t["match"]
+            d["present"] += t["present"]
+            d["present_accepted"] += acc and t["present"]
+        rare = [v for k, v in per.items() if k != "HI"]
+        n_rare = sum(v["accepted"] for v in rare)
+        r_rare = sum(v["right"] for v in rare)
+        hi = per.get("HI", dict(accepted=0, right=0))
+        out[crit] = dict(n=len(sel), by_species=per, rare=dict(
+            n=n_rare, right=r_rare, purity=r_rare / n_rare if n_rare else None),
+            hi=dict(n=hi["accepted"], right=hi["right"],
+                    purity=hi["right"] / hi["accepted"] if hi["accepted"] else None))
+    return out
 
 
 def print_sweep(sw):
@@ -718,6 +766,12 @@ def print_sweep(sw):
           f"{sw['hi_of_systems']['n_found']}/{sw['hi_of_systems']['n_covered']} "
           f"({fmt(sw['hi_of_systems']['completeness'])}); default lines replaced "
           f"{sw['replaced']}")
+    for crit, d in (sw.get("by_criterion") or {}).items():
+        print(f"  recounted by {crit} ({d['n']} tests): rarer species accepted "
+              f"{d['rare']['n']}, right {d['rare']['right']}, purity {fmt(d['rare']['purity'])}; "
+              f"H I accepted {d['hi']['n']}, purity {fmt(d['hi']['purity'])}; by species "
+              + ", ".join(f"{k} {v['accepted']}/{v['right']}/{v['present']}"
+                          for k, v in sorted(d["by_species"].items())))
     print("  by species (tests/accepted/right/present/present and accepted): " + ", ".join(
         f"{k} {v['n']}/{v['accepted']}/{v['right']}/{v['present']}/{v['present_accepted']}"
         for k, v in sorted(sw["by_species"].items())))
@@ -1408,17 +1462,20 @@ def completeness_by_significance(records, species=None):
     return out
 
 
-def grid_points(grid):
+def grid_points(grid, cases=None):
+    """The points of ``grid``; of the grid robustness only the ``cases``
+    given (all with None)."""
     g = GRIDS[grid]
     points = [(snr, resol, z_em, seed) for snr in g["snr"] for resol in g["resol"]
               for z_em in g["z_em"] for seed in g["seeds"]]
     if "cases" in g:
-        points = [(*p, case) for case in g["cases"] for p in points]
+        points = [(*p, case) for case in g["cases"] if cases is None or case in cases
+                  for p in points]
     return points
 
 
-def run(grid="full", workers=1):
-    points = grid_points(grid)
+def run(grid="full", workers=1, cases=None):
+    points = grid_points(grid, cases)
     if workers > 1:
         with Pool(workers, initializer=set_chain, initargs=(dict(CHAIN),)) as pool:
             records = pool.map(run_point, points, chunksize=1)
@@ -1632,18 +1689,26 @@ def main():
                         default=None,
                         help="the regions not split at their gaps (method hypotheses, "
                              "as PR 7c.4c)")
+    parser.add_argument("--cases", nargs="*", default=None, choices=ROBUSTNESS_CASES,
+                        help="only these cases of the grid robustness (a measure on part of "
+                             "it: not for --save-reference)")
+    parser.add_argument("--evidence", choices=["record", "decide"], default=None,
+                        help="the Laplace evidence of the hypotheses (PR 7c.4d-quater, "
+                             "method hypotheses): recorded next to the criteria, or deciding")
     parser.add_argument("--sweep", choices=["HI", "all", "none"], default=None,
                         help="the species of the sweep of the anchored systems (method "
                              "hypotheses; default that of identify_lines, HI; 'none' as "
                              "PR 7c.4c-bis)")
     args = parser.parse_args()
+    if args.cases is not None and args.save_reference:
+        parser.error("--save-reference needs the whole grid (no --cases)")
     set_chain(dict(method=args.method, multiplets=args.multiplets, max_added=args.max_added,
-                   sweep=args.sweep,
+                   sweep=args.sweep, evidence=args.evidence,
                    split_gaps=args.split_gaps,
                    doublets_multiplets=args.doublets_multiplets, prefilter=args.prefilter,
                    screen=args.screen, criterion=args.criterion, temper=args.temper))
     t0 = time.time()
-    result = run(args.grid, args.workers)
+    result = run(args.grid, args.workers, args.cases)
     result["chain"] = dict(CHAIN)
     result["seconds"] = time.time() - t0
     print_summary(result)

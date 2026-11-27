@@ -395,7 +395,12 @@ def _start(s: _System, species: str, series: str, lines: Sequence[str], zc: floa
         if species == "HI":
             b = max(b, HI_B)
         systs = systs.add_component(series, z, logN=logn, b=b)
-        comps.append(H._Comp(series, z, -1, -1, "sweep", None, rng))
+        # The prior of the evidence (PR 7c.4d-quater): uniform in z over the
+        # profile of the anchor (for the H I, HI_B wider, as its core)
+        pad = HI_B if species == "HI" else 0.0
+        z_prior = ((1.0 + zc) * np.exp((span[0] - pad) / H.C_KMS) - 1.0,
+                   (1.0 + zc) * np.exp((span[1] + pad) / H.C_KMS) - 1.0)
+        comps.append(H._Comp(series, z, -1, -1, "sweep", None, rng, z_prior=z_prior))
     return systs, comps
 
 
@@ -437,14 +442,15 @@ def _fit_labels(ctx: H._Context, win: EvaluationWindow, model: _Model, uuids: Se
     h.systs = model.subset(uuids)
     h.uuids = list(uuids)
     if uuids:
-        H._fit(win, h)
+        H._fit(win, h, ctx)
     else:
-        h.fitted, h.fit = h.systs, H._measure(win, h.systs)
+        h.fitted, h.fit = h.systs, H._measure(win, h.systs, ctx, H._roles(h))
     H._refine(ctx, win, h, cands, v, extra)
     return h
 
 
-def _drop(win: EvaluationWindow, h: H._Hyp, gone: Set[str]) -> None:
+def _drop(win: EvaluationWindow, h: H._Hyp, gone: Set[str],
+          ctx: Optional[H._Context] = None) -> None:
     """The components ``gone`` left out of ``h``, the rest fitted again."""
     assert h.fitted is not None
     data = {c.uuid: c for c in h.fitted.components}
@@ -452,7 +458,7 @@ def _drop(win: EvaluationWindow, h: H._Hyp, gone: Set[str]) -> None:
     h.comps = [h.comps[i] for i in idx]
     h.uuids = [h.uuids[i] for i in idx]
     h.systs = SystemList(SystemListData(components=[data[u] for u in h.uuids]))
-    H._fit(win, h)
+    H._fit(win, h, ctx)
 
 
 def _own(h: H._Hyp) -> List[str]:
@@ -468,12 +474,12 @@ def _outside(h: H._Hyp, zc: float, span: Tuple[float, float]) -> Set[str]:
             if not span[0] <= H.C_KMS * np.log((1.0 + data[u].z) / (1.0 + zc)) <= span[1]}
 
 
-def _fit_species(win: EvaluationWindow, h: H._Hyp, zc: float, span: Tuple[float, float]
-                 ) -> str:
+def _fit_species(win: EvaluationWindow, h: H._Hyp, zc: float, span: Tuple[float, float],
+                 ctx: Optional[H._Context] = None) -> str:
     """The short fit of "Y at z": its components that leave the profile of
     the anchor, then those without influence (:data:`SWEEP_INFLUENCE`),
     dropped and the rest fitted again. An empty string, or why it failed."""
-    H._fit(win, h)
+    H._fit(win, h, ctx)
     for step in ("out", "influence"):
         if h.fit is None:
             return h.reason
@@ -487,7 +493,7 @@ def _fit_species(win: EvaluationWindow, h: H._Hyp, zc: float, span: Tuple[float,
             return ("its components out of the profile of the anchor" if step == "out"
                     else "no component with an influence on the pixels")
         if gone:
-            _drop(win, h, gone)
+            _drop(win, h, gone, ctx)
     if h.fit is None:
         return h.reason
     return "" if not _outside(h, zc, span) else "its components out of the profile of the anchor"
@@ -546,7 +552,7 @@ def _test(ctx: H._Context, model: _Model, s: _System, species: str, cands, v, fl
     except ValueError as e:
         test.reason = f"not evaluated: {e}"
         return test
-    why = _fit_species(win, hyp, zc, span)
+    why = _fit_species(win, hyp, zc, span, ctx)
     if why:
         test.reason = why
         return test
@@ -568,7 +574,9 @@ def _decide(ctx: H._Context, model: _Model, test: SweepTest, gone: Sequence[str]
         return test
     d = h.fit[crit] - lab.fit[crit]
     test.weight = float(1.0 / (1.0 + np.exp(np.clip(0.5 * d, -700, 700))))
-    test.accepted = d <= SWEEP_TIE
+    # With the evidence no tie: the prior of the known redshift is in it
+    # (PR 7c.4d-quater)
+    test.accepted = d <= (0.0 if crit == "evidence" else SWEEP_TIE)
     names = {"lya": "assumed Ly-a", "unidentified": "unidentified"}
     what = ", ".join(f"{sum(1 for u in gone if model.defaults[u].role == r)} {n}"
                      for r, n in names.items()
@@ -636,7 +644,7 @@ def structure(test: SweepTest, cands: Mapping[int, H._Candidate], gid: int,
     criteria = {k: val for k, val in stats.items() if k not in ("k", "n", "chi2", "chi2_reduced")}
     if test.labels.fit is not None:
         criteria.update({f"labels_{k}": val for k, val in test.labels.fit.items()
-                         if k in ("chi2", "spic", "bic", "aic")})
+                         if k in ("chi2", "spic", "bic", "aic", "evidence")})
     # The default lines it replaced, by their role (an accepted test)
     for role in ("lya", "unidentified"):
         criteria[f"replaced_{role}"] = float(sum(r == role for r in test.from_kinds))
