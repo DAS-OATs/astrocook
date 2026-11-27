@@ -152,11 +152,15 @@ _FITTED_PARAMETERS = {'z', 'logN', 'b', 'btur'}
 
 def _valid_changes(comp, changes: dict) -> dict:
     """The changes that apply to a component; editing a fitted parameter
-    clears the flags left by the last fit (#517), unless they are set too."""
+    clears the flags left by the last fit (#517), unless they are set too,
+    and its statistics (phase 7, PR 7d.9: they describe the fitted values)."""
     valid_fields = {f.name for f in dataclasses.fields(comp)}
     out = {k: v for k, v in changes.items() if k in valid_fields}
-    if _FITTED_PARAMETERS & out.keys() and 'flags' not in out:
-        out['flags'] = ()
+    if _FITTED_PARAMETERS & out.keys():
+        if 'flags' not in out:
+            out['flags'] = ()
+        if 'fit' not in out:
+            out['fit'] = None
     return out
 
 

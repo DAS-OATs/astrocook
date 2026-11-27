@@ -311,3 +311,10 @@ def test_what_changed_in_the_components():
         "edge of the window of the fit: a parameter at a bound has an unreliable value "
         "and error.")
     assert _flags_sentence(after, []) is None
+    # The values that are not measured (phase 7, PR 7d.2)
+    comps = [SimpleNamespace(uuid="a", flags=("saturated",)),
+             SimpleNamespace(uuid="b", flags=("saturated", "unresolved"))]
+    after = SimpleNamespace(systs=SimpleNamespace(components=comps))
+    assert _flags_sentence(after, ["a", "b"]) == (
+        "At the end, 2 components have a saturated weakest line (log N is not measured) "
+        "and 1 has b below half the instrumental b (unresolved: b is not measured).")

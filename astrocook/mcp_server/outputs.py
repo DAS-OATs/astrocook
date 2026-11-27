@@ -270,6 +270,22 @@ def identification_summary(session: Session, max_listed: int,
 
 # --- Fit ---------------------------------------------------------------
 
+#: The glossary of the flags of a component (#517; phase 7, PR 7d.2), the
+#: description of its ``flags`` in the outputs and in ``components_list``
+FLAG_GLOSSARY = (
+    "Warnings left by the last fit of the component. A parameter at a bound "
+    "of the fit, its value and error not reliable: 'z_at_window', "
+    "'logN_at_lower_bound', 'logN_at_upper_bound', 'b_at_lower_bound', "
+    "'b_at_upper_bound' (the upper bounds of the automatic fits are max_logN "
+    "and max_b). A value that is not measured: 'unresolved' (b below half "
+    "the instrumental b: b is not measured), 'saturated' (central optical "
+    "depth of the weakest line of the series above 3: logN is not measured; "
+    "never for a damped HI), 'large_errors' (dlogN > 1, db > b, or the error "
+    "of z above the width of the line), 'telluric_overlap' (a line on a "
+    "telluric absorption deeper than 5%: errors not to be trusted). "
+    "'nan_errors' (the uncertainties could not be computed), 'not_fitted' "
+    "(the fit of its group failed: the values from before).")
+
 class Component(BaseModel):
     uuid: str = Field(description="Identifier of the component.")
     series: str
@@ -281,12 +297,7 @@ class Component(BaseModel):
     db: Optional[float]
     chi2r: Optional[float] = Field(description=(
         "Reduced chi2 of the fit group of the component."))
-    flags: list[str] = Field(description=(
-        "Warnings left by the fit: 'z_at_window', 'logN_at_lower_bound', "
-        "'logN_at_upper_bound', 'b_at_lower_bound', 'b_at_upper_bound' (the "
-        "parameter ended at a bound of the fit, so its value and error are "
-        "not reliable; the upper bounds of the automatic fits are max_logN "
-        "and max_b), 'nan_errors' (the uncertainties could not be computed)."))
+    flags: list[str] = Field(description=FLAG_GLOSSARY)
 
 
 class FitSummary(BaseModel):

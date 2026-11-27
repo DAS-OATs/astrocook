@@ -138,9 +138,9 @@ def test_identification_metrics():
     assert m["CIV"]["n_false_associated"] == 0
 
 
-def _comp(series, z, logN, b, dz=1e-5, dlogN=0.05, db=0.5, chi2=1.0):
+def _comp(series, z, logN, b, dz=1e-5, dlogN=0.05, db=0.5, chi2=1.0, flags=()):
     return ComponentData(id=1, z=z, dz=dz, logN=logN, dlogN=dlogN, b=b,
-                           db=db, series=series, chi2=chi2)
+                           db=db, series=series, chi2=chi2, flags=flags)
 
 
 class _Systs:
@@ -150,7 +150,10 @@ class _Systs:
 
 def test_fit_metrics():
     fitted = [_comp("CIV", _z_offset(2.0, 3.0), 14.1, 11.0),
-              _comp("CIV", _z_offset(2.0, 1.0), 12.0, 1.0, dlogN=2.0),
+              # dlogN > 1: the fitter flags it large_errors (7d.2), the
+              # benchmark reads the flag as absurd_errors
+              _comp("CIV", _z_offset(2.0, 1.0), 12.0, 1.0, dlogN=2.0,
+                    flags=("large_errors", "unresolved")),
               _comp("SiIV", _z_offset(2.1, 50.0), 13.5, 8.0),  # too far
               _comp("Ly_a", 2.4, 14.0, 20.0)]  # not a metal: ignored
     m = vm.fit_metrics(None, _systems(), _Systs(fitted))
@@ -162,6 +165,11 @@ def test_fit_metrics():
     assert m["diffs"]["logN"] == pytest.approx([-2.0])
     assert m["flags"]["absurd_errors"] == 1 and m["flags"]["b_at_bound"] == 1
     assert m["n_flagged"] == 1
+    # The flags of 7d.2 counted apart, and the pulls by flag
+    assert m["measurement_flags"] == dict(unresolved=1, saturated=0, large_errors=1,
+                                          telluric_overlap=0)
+    assert len(m["pulls_by_flag"]["unresolved"]["logN"]) == 1
+    assert m["pulls_by_flag"]["none"]["logN"] == []
 
 
 def test_fit_metrics_pulls():
@@ -585,7 +593,8 @@ def test_flag_confusion():
     bad = ComponentData(id=2, z=2.3, dz=1e-5, logN=14.5, dlogN=0.05, b=10.0, db=0.5,
                         series="CIV", chi2=1.0, flags=("logN_at_upper_bound",))
     spurious = ComponentData(id=3, z=2.6, dz=1e-5, logN=12.0, dlogN=3.0, b=1.0, db=0.5,
-                             series="CIV", chi2=1.0, flags=("b_at_lower_bound",))
+                             series="CIV", chi2=1.0,
+                             flags=("b_at_lower_bound", "large_errors"))
     m = vm.fit_metrics(None, true, _Systs([good, bad, spurious]))
     t = m["flag_confusion"]
     assert t["none"] == dict(good=1, pull_gt3=0, spurious=0)

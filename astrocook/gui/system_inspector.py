@@ -10,16 +10,18 @@ from PySide6.QtWidgets import (
     QHeaderView, QAbstractItemView, QMenu, QInputDialog, QDialog, QDialogButtonBox,
     QMessageBox, QLabel, QLineEdit, QCheckBox, QPushButton, QFrame, QSizePolicy, QStatusBar
 )
-from typing import List, cast
+from typing import List, Optional, cast
 
 from astrocook.gui.settings import app_settings
 from ..core.structures import ComponentData
 from ..core.atomic_data import STANDARD_MULTIPLETS, ATOM_DATA, is_multiplet, series_lines
 from ..core.resolution import resolution_at
 from ..fitting import bayesian_fitter
+from ..fitting.component_flags import spectrum_pixels
 
 from .inspector_table import (COL_MAP, COLUMNS, LinkColorDelegate, SystemSortFilterProxyModel,
                               SystemTableModel)
+from .inspector_details import DetailsPanel
 from .velocity_plot import VelocityPlotWidget
 from .theme import (FOCUS_BORDER, SELECTION, SELECTION_TEXT, TOOLTIP_BACKGROUND, TOOLTIP_BORDER,
                     TOOLTIP_TEXT, status_bar_style)
@@ -32,6 +34,8 @@ NO_CONTINUUM_TIP = "Needs a continuum (Continuum > Auto-estimate Continuum...)"
 
 #: The columns of the table shown or hidden by the user, in the settings
 HIDDEN_COLUMNS_KEY = "inspector_hidden_columns"
+#: Whether the Details panel is expanded (7d.9), in the settings
+DETAILS_SHOWN_KEY = "inspector_details_shown"
 
 
 def _corner_installed() -> bool:
@@ -115,6 +119,8 @@ class SystemInspector(QWidget):
                        self.proxy_model.rowsInserted, self.proxy_model.rowsRemoved):
             signal.connect(self._schedule_column_fit)
         self.table_view.selectionModel().selectionChanged.connect(self._on_selection_changed)
+        # The parameter section of the Details panel follows the current cell
+        self.table_view.selectionModel().currentChanged.connect(self._update_details)
         self.table_view.customContextMenuRequested.connect(self._on_context_menu)
         # The columns shown: a menu on the header; btur, almost always a
         # frozen 0, is hidden unless a component uses it (visual review of
@@ -164,9 +170,35 @@ class SystemInspector(QWidget):
         l_toolbar.addWidget(self.flagged_cb)
         l_toolbar.addWidget(self.select_flagged_btn)
         l_toolbar.addStretch() # Push checkbox to the left
+        # Shows or hides the Details panel below the table (7d.9), at the
+        # right end, as Resid. of the plot
+        self.details_cb = QCheckBox("Details")
+        self.details_cb.setToolTip("Show the details of the selected component below the "
+                                   "table: the statistics of its group fit, the quantities "
+                                   "of its warnings, the parameter of the current cell")
+        l_toolbar.addWidget(self.details_cb)
         
         left_layout.addLayout(l_toolbar)
-        left_layout.addWidget(self.table_view)
+        # The Details panel below the table (7d.9), in a splitter so that its
+        # height can be changed; shown by the box Details. Below the table,
+        # not the plot (Guido, 27 November 2026): the table scrolls, so the
+        # panel only hides some rows, while the plot would be redrawn at
+        # each change of its height
+        self.details = DetailsPanel()
+        self.details.component_clicked.connect(self._on_member_clicked)
+        shown = app_settings().value(DETAILS_SHOWN_KEY, True)
+        self.details_cb.setChecked(str(shown).lower() not in ("false", "0"))
+        self.details.set_expanded(self.details_cb.isChecked())
+        self.details_cb.toggled.connect(self._on_details_toggled)
+        self.table_splitter = QSplitter(Qt.Vertical)
+        self.table_splitter.setHandleWidth(9)
+        self.table_splitter.addWidget(self.table_view)
+        self.table_splitter.addWidget(self.details)
+        self.table_splitter.setStretchFactor(0, 3)
+        self.table_splitter.setStretchFactor(1, 1)
+        self.table_splitter.setCollapsible(0, False)
+        self.table_splitter.setSizes([520, 240])
+        left_layout.addWidget(self.table_splitter, 1)
         
         splitter.addWidget(left_widget)
         
@@ -274,7 +306,8 @@ class SystemInspector(QWidget):
         r_layout.addLayout(c_layout)
         
         self.vel_plot = VelocityPlotWidget(self)
-        r_layout.addWidget(self.vel_plot, 1) 
+        r_layout.addWidget(self.vel_plot, 1)
+        self._details_pixels = (None, None)  # (spectrum, FitPixels)
         
         splitter.addWidget(right_widget)
         splitter.setStretchFactor(0, 6); splitter.setStretchFactor(1, 4)
@@ -457,8 +490,63 @@ class SystemInspector(QWidget):
     def _on_group_toggled(self, checked):
         self.proxy_model.set_group_filter_enabled(checked)
 
+    # --- The Details panel (7d.9) ---
+
+    def _selected_component(self) -> Optional[ComponentData]:
+        """The component of the first selected row (that of the plot)."""
+        indexes = self.table_view.selectionModel().selectedRows()
+        if not indexes:
+            return None
+        return self.table_model.get_component_at(self.proxy_model.mapToSource(indexes[0]).row())
+
+    def _spectrum_pixels(self):
+        """The pixels of the spectrum for the criteria of the flags, kept
+        while the spectrum is the same."""
+        spec = self.current_session.spec if self.current_session else None
+        if spec is None:
+            return None
+        if self._details_pixels[0] is not spec:
+            try:
+                pixels = spectrum_pixels(spec)
+            except (ValueError, TypeError, au.UnitConversionError):
+                pixels = None
+            self._details_pixels = (spec, pixels)
+        return self._details_pixels[1]
+
+    def _update_details(self, *args):
+        """Show in the Details panel the selected component and, if the
+        current cell is one of its parameters, that parameter."""
+        if not self.details.is_expanded():
+            return
+        comp = self._selected_component()
+        if comp is None:
+            self.details.show_component(None)
+            return
+        param = None
+        current = self.table_view.selectionModel().currentIndex()
+        if current.isValid():
+            row = self.proxy_model.mapToSource(current).row()
+            current_comp = self.table_model.get_component_at(row)
+            attr = COL_MAP[COLUMNS[current.column()]]
+            if current_comp is not None and current_comp.uuid == comp.uuid:
+                param = attr
+        constraints = self.table_model._constraints_map.get(comp.uuid, {})
+        self.details.show_component(comp, self.table_model._components, constraints,
+                                    self._spectrum_pixels(), param)
+
+    def _on_details_toggled(self, expanded: bool):
+        app_settings().setValue(DETAILS_SHOWN_KEY, expanded)
+        self.details.set_expanded(expanded)
+        if expanded:
+            self._update_details()
+
+    def _on_member_clicked(self, uuid: str):
+        """A member of the group, clicked in the Details panel: selected."""
+        self.focus_on_component(uuid)
+
     def _on_selection_changed(self, sel, desel):
         indexes = self.table_view.selectionModel().selectedRows()
+        self._update_details()
         if not indexes: 
             # Clear group if selection is cleared
             self._update_group_definition([])

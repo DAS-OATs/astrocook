@@ -4,6 +4,9 @@ the proxy that filters and sorts the rows.
 
 Moved out of ``system_inspector.py`` in phase 5 (split of the GUI).
 """
+import html
+import re
+
 import numpy as np
 from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, Signal, QSortFilterProxyModel
 from PySide6.QtGui import QBrush, QColor, QFont, QPalette
@@ -11,6 +14,7 @@ from PySide6.QtWidgets import QStyledItemDelegate
 from typing import Any, Dict, List, Optional, Set
 
 from ..core.structures import ComponentData
+from ..fitting.component_flags import large_error_params
 from .plot_style import plot_colour
 from .theme import FLAG_BOUND_COLOR, FLAG_NAN_COLOR, FROZEN_TEXT, link_colours  # noqa: F401 (re-exported)
 
@@ -39,14 +43,6 @@ def dz_kms(z: float, dz: float) -> float:
     return C_KMS * dz / (1.0 + z)
 
 
-def _dz_tip(comp) -> str:
-    """The error of z in the tooltip of a row: as a redshift and in km/s."""
-    dz = getattr(comp, 'dz', None)
-    if dz is None or not np.isfinite(dz) or dz <= 0:
-        return ""
-    return f" \u00b1 {dz:.2e} ({dz_kms(comp.z, dz):.2f} km/s)"
-
-
 # --- Flags of the fit (#517) ---
 #: Parameter of each bound flag, and what it means for the user
 _BOUND_FLAGS = {
@@ -62,15 +58,41 @@ _BOUND_FLAGS = {
                               "pipelines): the line may be broader; refit with Refit Selected "
                               "(bound 300 km/s)."),
 }
+#: The values that are not measured (phase 7, PR 7d.2): the parameter of
+#: each flag (None: the whole component) and one line for the tooltip. No
+#: colour: the warning sign in the cell of the parameter
+_MEASUREMENT_FLAGS = {
+    'unresolved': ('b', "Unresolved: b below half the instrumental b, b is not measured."),
+    'saturated': ('logN', "Saturated: the weakest line of the series is saturated, "
+                          "logN is not measured."),
+    'large_errors': (None, "Errors too large to have a meaning."),
+    'telluric_overlap': (None, "On a telluric absorption: the errors are not to be trusted."),
+}
 _NAN_MESSAGE = "The uncertainties could not be computed: the value is not constrained."
 _NOT_FITTED_MESSAGE = ("The fit of its group failed (Refit All): the values are those from "
                        "before the fit; refit it, e.g. with Refit Selected.")
 
 
+def _measurement_params(comp, flag: str) -> tuple:
+    """The parameters whose cells carry the warning sign of a flag of 7d.2
+    (``large_errors``: those whose errors are too large)."""
+    if flag == 'large_errors':
+        return large_error_params(comp)
+    param = _MEASUREMENT_FLAGS[flag][0]
+    return (param,) if param else ()
+
+
+def measurement_sign(comp, attr: str) -> bool:
+    """Whether the cell of the parameter ``attr`` carries the warning sign
+    of a value not measured (7d.2)."""
+    return any(attr in _measurement_params(comp, f)
+               for f in (getattr(comp, 'flags', ()) or ()) if f in _MEASUREMENT_FLAGS)
+
+
 def flag_cue(comp, attr: Optional[str] = None):
     """Colour and message of the flags of ``comp`` (#517): for a parameter
-    ``attr``, its bound flag; without, all its flags. ``(None, [])`` if
-    there is none."""
+    ``attr``, its flags (a bound; a value not measured, 7d.2, which have
+    no colour); without, all its flags. ``(None, [])`` if there is none."""
     flags = getattr(comp, 'flags', ()) or ()
     messages, color = [], None
     for flag in flags:
@@ -79,6 +101,9 @@ def flag_cue(comp, attr: Optional[str] = None):
             if attr is None or attr == param:
                 messages.append(text)
                 color = plot_colour('flag_bound')
+        elif flag in _MEASUREMENT_FLAGS:
+            if attr is None or attr in _measurement_params(comp, flag):
+                messages.append(_MEASUREMENT_FLAGS[flag][1])
         elif flag == 'nan_errors' and attr is None:
             messages.append(_NAN_MESSAGE)
             color = color or plot_colour('flag_nan')
@@ -87,6 +112,56 @@ def flag_cue(comp, attr: Optional[str] = None):
             messages.append(_NOT_FITTED_MESSAGE)
             color = color or plot_colour('flag_nan')
     return color, messages
+
+
+_LINK_REF = re.compile(r"""p\[(['"])([^'"]+)\1\]""")
+
+
+def pretty_expression(expression: str, components, name=None) -> str:
+    """The expression of a link with ``p['uuid']`` written as the series
+    of the component (or ``name(component)``), HTML-escaped."""
+    by_uuid = {c.uuid: c for c in components}
+
+    def replace(match):
+        comp = by_uuid.get(match.group(2))
+        if comp is None:
+            return "Unknown"
+        return name(comp) if name else html.escape(comp.series)
+    parts, last = [], 0
+    for m in _LINK_REF.finditer(expression):
+        parts.append(html.escape(expression[last:m.start()]))
+        parts.append(replace(m))
+        last = m.end()
+    parts.append(html.escape(expression[last:]))
+    return "".join(parts)
+
+
+def tooltip_line(comp, attr: str, constraint, components) -> str:
+    """The one line of the tooltip of a cell (7d.9): the reason of its
+    warning sign or colour, else the state of the parameter; the rest is in
+    the Details panel."""
+    _, messages = flag_cue(comp, attr if attr in ERR_MAP else None)
+    if attr not in ERR_MAP and attr != 'id':
+        messages = []
+    if len(messages) == 1:
+        # Rich text, so that Qt wraps a long message instead of running off
+        # the screen
+        return f"<qt>\u26a0 {html.escape(messages[0])}</qt>"
+    if messages:
+        names = ", ".join(f.replace('_', ' ') for f in (getattr(comp, 'flags', ()) or ()))
+        return f"<qt>\u26a0 {len(messages)} warnings ({html.escape(names)}): see Details</qt>"
+    if attr not in ERR_MAP:
+        return ""
+    target = getattr(constraint, 'target_uuid', None)
+    expression = getattr(constraint, 'expression', None)
+    if target or expression:
+        if expression:
+            return f"Linked: {pretty_expression(expression, components)}"
+        ref = next((c for c in components if c.uuid == target), None)
+        return f"Linked to {html.escape(ref.series) if ref else 'Unknown'}"
+    if constraint is not None and not constraint.is_free:
+        return "Frozen: not fitted"
+    return "Free"
 
 
 # Mapping to find the error attribute for a given value attribute
@@ -284,47 +359,9 @@ class SystemTableModel(QAbstractTableModel):
 
             return None
         
-        # 2. Tooltip (Keep existing logic)
+        # 2. Tooltip: one line (7d.9), the rest in the Details panel
         if role == _TOOLTIP:
-             c_chi2 = f"{comp.chi2:.2f}" if comp.chi2 is not None else "N/A"
-             c_resol = f"{comp.resol:.0f}" if comp.resol is not None else "spectrum"
-             tooltip_html = (
-                f"<div style='font-size: 13px'>"
-                f"<b>ID:</b> {comp.id} | <b>{comp.series}</b><br>"
-                f"<b>z:</b> {comp.z:.6f}{_dz_tip(comp)}<br>"
-                f"<b>\u03c7\u00b2:</b> {c_chi2} | <b>R:</b> {c_resol}"
-             )
-             if is_constrained_col:
-                tooltip_html += "<hr style='margin: 4px 0;'>"
-                if is_linked:
-                    target_name = "Unknown"; target_z = ""
-                    if c_data.target_uuid:
-                        for c_ref in self._components:
-                            if c_ref.uuid == c_data.target_uuid:
-                                target_name = c_ref.series; target_z = f" (z={c_ref.z:.5f})"; break
-                    import re
-                    expr_display = c_data.expression if c_data.expression else "Direct Link"
-                    # Clean up expression for display
-                    def replacer(match):
-                        uid = match.group(1)
-                        for c_ref in self._components:
-                            if c_ref.uuid == uid: return c_ref.series
-                        return "Unknown"
-                    expr_pretty = re.sub(r"p\['([^']+)'\]", replacer, expr_display)
-                    expr_pretty = re.sub(r'p\["([^"]+)"\]', replacer, expr_pretty)
-                    tooltip_html += (f"<b>Status:</b> Linked<br>"
-                                     f"<b>Target:</b> {target_name}{target_z}<br>"
-                                     f"<b>Formula:</b> <code>{expr_pretty}</code>")
-                elif not is_free:
-                    tooltip_html += "<b>Status:</b> Frozen (Fixed)"
-                else:
-                    tooltip_html += "<b>Status:</b> Free"
-             _, messages = flag_cue(comp, attr if is_constrained_col else None)
-             if messages:
-                 tooltip_html += "<hr style='margin: 4px 0;'>" + "<br>".join(
-                     f"\u26a0 {m}" for m in messages)
-             tooltip_html += "</div>"
-             return tooltip_html
+            return tooltip_line(comp, attr, c_data, self._components) or None
 
         # 3. DISPLAY & EDIT LOGIC (Refined)
         if role == _DISPLAY or role == _EDIT:
@@ -353,6 +390,9 @@ class SystemTableModel(QAbstractTableModel):
                 if val is None: return ""
                 if attr == 'id' and comp.flags:
                     return f"\u26a0 {val}"
+                # The warning sign in the cell of a value not measured
+                # (7d.2); the bounds have their colour
+                sign = "\u26a0 " if comp.flags and measurement_sign(comp, attr) else ""
                 
                 if isinstance(val, (int, float)):
                     val_str = val_fmt.format(val)
@@ -376,9 +416,9 @@ class SystemTableModel(QAbstractTableModel):
                                 err_str = f"{dz_kms(comp.z, err_val):.2f} km/s"
                             else:
                                 err_str = err_fmt.format(err_val)
-                            return f"{val_str} ± {err_str}"
+                            return f"{sign}{val_str} ± {err_str}"
                 
-                return val_str
+                return f"{sign}{val_str}"
 
         return None
 

@@ -18,8 +18,10 @@ from mcp.server.mcpserver import Image, MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import BaseModel, Field
 
-from astrocook.mcp_server.outputs import _jsonable
+from astrocook.methods_text import FLAG_NAMES
+from astrocook.mcp_server.outputs import FLAG_GLOSSARY, _jsonable
 from astrocook.core.column_names import internal_column
+from astrocook.fitting.fit_record import records_of
 from astrocook.recipes._spectrum import spec_of
 from astrocook.mcp_server.session_tools import SESSION_ID
 from astrocook.mcp_server.sessions import SessionStore
@@ -42,9 +44,10 @@ class ComponentInfo(BaseModel):
     btur: float = Field(description="Turbulent broadening (km/s); 0 if not used.")
     chi2r: Optional[float] = Field(description=(
         "Reduced chi2 of the fit group of the component, at its last fit."))
-    flags: list[str] = Field(description=(
-        "Warnings left by the last fit (a parameter at a bound, errors "
-        "that could not be computed, 'not_fitted')."))
+    flags: list[str] = Field(description=FLAG_GLOSSARY)
+    fit_id: Optional[str] = Field(None, description=(
+        "The last fit of the component: its key in 'fits'; null if it was "
+        "not fitted since it was added or edited."))
     group: int = Field(description=(
         "The fit group: components with the same number are fitted "
         "together (their lines overlap or they are linked), as Refit All "
@@ -57,6 +60,42 @@ class ComponentInfo(BaseModel):
         "the same series."))
 
 
+class FitStats(BaseModel):
+    """The statistics of one fit of a group of components (the Details panel
+    of the System Inspector)."""
+    chi2: float = Field(description="chi2 on the pixels of the fit.")
+    n_pix: int = Field(description="Pixels of the fit.")
+    n_free: int = Field(description="Free parameters.")
+    aic: float = Field(description="chi2 + 2 n_free.")
+    bic: Optional[float] = Field(description="chi2 + n_free ln n_pix.")
+    chi2r: Optional[float] = Field(description=(
+        "Reduced chi2 on the pixels that constrain the free parameters, the "
+        "one that scales the errors (chi2r of the components)."))
+    n_constraining: int = Field(description="Pixels that constrain the free parameters.")
+    converged: Optional[bool] = Field(description=(
+        "False: the optimizer stopped at max_nfev, the values may not be at "
+        "the minimum."))
+    nfev: Optional[int] = Field(description="Evaluations of the model.")
+    max_nfev: Optional[int]
+    recipe: Optional[str] = Field(description="The recipe that ran the fit.")
+    time: str = Field(description="When, ISO 8601 UTC.")
+    final: bool = Field(description=(
+        "The statistics recomputed at the final values without fitting "
+        "(refit_all, after the neighbours were fitted); converged and nfev "
+        "are those of the fit."))
+    members: list[str] = Field(description="The uuids of the components fitted together.")
+
+
+def fit_stats(record) -> FitStats:
+    """The statistics of a :class:`~astrocook.core.structures.FitRecord`."""
+    return FitStats(
+        chi2=record.chi2, n_pix=record.n_pix, n_free=record.n_free, aic=record.aic,
+        bic=_optional(record.bic), chi2r=_optional(record.chi2_reduced),
+        n_constraining=record.n_constraining, converged=record.converged,
+        nfev=record.nfev, max_nfev=record.max_nfev, recipe=record.recipe,
+        time=record.time, final=record.final, members=list(record.members))
+
+
 class ComponentList(BaseModel):
     session_id: str
     n_components: int = Field(description="Components in the session.")
@@ -66,6 +105,9 @@ class ComponentList(BaseModel):
         "The components that match, by redshift (at most max_listed, from "
         "offset)."))
     truncated: bool
+    fits: dict[str, FitStats] = Field(default_factory=dict, description=(
+        "The statistics of the last fits of the components listed, by their "
+        "fit_id: one entry for the components fitted together."))
 
 
 def fit_groups(session) -> dict[str, int]:
@@ -131,6 +173,10 @@ def register_inspect_tools(server: MCPServer, store: SessionStore) -> None:
         z_max: Annotated[Optional[float], Field(description="Only z <= z_max.")] = None,
         flagged_only: Annotated[bool, Field(description=(
             "Only the components with a flag."))] = False,
+        flag: Annotated[Optional[str], Field(description=(
+            "Only the components with this flag (e.g. 'saturated', "
+            "'unresolved'; the flags are listed in the description of the "
+            "output)."))] = None,
         offset: Annotated[int, Field(ge=0, description=(
             "Skip the first matching components (to read a long list in "
             "pages)."))] = 0,
@@ -139,7 +185,11 @@ def register_inspect_tools(server: MCPServer, store: SessionStore) -> None:
     ) -> ComponentList:
         """List the absorption components of a session, with their errors,
         the reduced chi2 and flags of their last fit, their fit group and
-        their constraints, by redshift."""
+        their constraints, by redshift; the statistics of their last fits
+        (chi2, AIC, BIC, pixels, convergence) in 'fits'."""
+        if flag is not None and flag not in FLAG_NAMES:
+            raise ToolError(f"Unknown flag '{flag}'; the flags are: "
+                            f"{', '.join(FLAG_NAMES)}.")
         with store.state_lock:
             session = store.get(session_id).current_state
             systs = session.systs
@@ -151,7 +201,8 @@ def register_inspect_tools(server: MCPServer, store: SessionStore) -> None:
                        if (wanted is None or c.series in wanted)
                        and (z_min is None or c.z >= z_min)
                        and (z_max is None or c.z <= z_max)
-                       and (not flagged_only or c.flags)]
+                       and (not flagged_only or c.flags)
+                       and (flag is None or flag in c.flags)]
             first: dict[tuple, float] = {}
             for c in sorted(comps, key=lambda c: c.z):
                 first.setdefault((groups.get(c.uuid), c.series), c.z)
@@ -162,12 +213,15 @@ def register_inspect_tools(server: MCPServer, store: SessionStore) -> None:
                     uuid=c.uuid, series=c.series, z=c.z, dz=_optional(c.dz),
                     logN=c.logN, dlogN=_optional(c.dlogN), b=c.b, db=_optional(c.db),
                     btur=c.btur, chi2r=_optional(c.chi2), flags=list(c.flags),
+                    fit_id=c.fit.id if c.fit is not None else None,
                     group=groups.get(c.uuid, -1), constraints=_constraints(systs, c.uuid),
                     dv_kms=(c.z - z0) / (1 + z0) * C_KMS))
+            fits = {fid: fit_stats(r) for fid, r in records_of(
+                matched[offset:offset + max_listed]).items()}
             return ComponentList(
                 session_id=session_id, n_components=len(comps), n_matched=len(matched),
                 n_groups=len(set(groups.values())), components=listed,
-                truncated=offset + max_listed < len(matched))
+                truncated=offset + max_listed < len(matched), fits=fits)
 
     @server.tool()
     def spectrum_read(

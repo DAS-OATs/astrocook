@@ -37,12 +37,13 @@ also join the blended components.
 import dataclasses
 import logging
 import re
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence
 
 import numpy as np
 
 from astrocook.core.spectrum import Spectrum
 from astrocook.core.system_list import SystemList
+from astrocook.fitting.fit_record import information_criteria
 from astrocook.fitting.voigt_fitter import VoigtFitter, chi2_of
 
 logger = logging.getLogger(__name__)
@@ -112,19 +113,6 @@ class ModelEvaluation:
                if f.name not in ("residuals", "velocity_components")}
         out["velocity_components"] = [v.as_dict() for v in self.velocity_components]
         return out
-
-
-def information_criteria(chi2: float, n: int, k: int
-                         ) -> Tuple[float, Optional[float], Optional[float]]:
-    """(AIC, AICc, BIC): AIC = chi2 + 2k, AICc = AIC + 2k(k+1)/(n-k-1) (None if n - k - 1 <= 0)
-    and BIC = chi2 + k ln n (None without pixels); chi2 stands for
-    -2 ln L, whose constant does not matter between models on the same
-    pixels (as in ``metals_auto``)."""
-    aic = chi2 + 2 * k
-    aicc = aic + 2 * k * (k + 1) / (n - k - 1) if n - k - 1 > 0 else None
-    bic = chi2 + k * np.log(n) if n > 0 else None
-    return (float(aic), None if aicc is None else float(aicc),
-            None if bic is None else float(bic))
 
 
 def spic(chi2: float, terms: Sequence[VelocityComponent], f: float) -> float:

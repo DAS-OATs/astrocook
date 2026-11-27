@@ -87,7 +87,8 @@ COLUMN_NAMES: Dict[str, Optional[str]] = {
 }
 
 #: How the text names the flags the fit leaves on the components
-#: (``voigt_fitter.COMPONENT_FLAGS``, and ``not_fitted`` of Refit all)
+#: (``voigt_fitter.COMPONENT_FLAGS``, ``not_fitted`` of Refit all, and the
+#: values that are not measured, ``component_flags.MEASUREMENT_FLAGS``)
 FLAG_NAMES: Dict[str, str] = {
     'z_at_window': "z at the edge of the window of the fit",
     'logN_at_lower_bound': "log N at the lower bound of the fit",
@@ -96,6 +97,10 @@ FLAG_NAMES: Dict[str, str] = {
     'b_at_upper_bound': "b at the upper bound of the fit",
     'nan_errors': "no uncertainties (they could not be computed)",
     'not_fitted': "the values from before the fit (the fit of the group failed)",
+    'unresolved': "b below half the instrumental b (unresolved: b is not measured)",
+    'saturated': "a saturated weakest line (log N is not measured)",
+    'large_errors': "uncertainties too large to have a meaning",
+    'telluric_overlap': "a line on a telluric absorption (uncertainties not to be trusted)",
 }
 
 #: The kinds of notes left out of the text (the declared gaps are listed in

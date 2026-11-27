@@ -91,9 +91,18 @@ This table lists every component in the model.
 * **Sort:** Click any column header to sort the list (e.g., by Redshift or Series).
 * **Keys:** The arrows move the selection, and the plot follows it. `Return` refits the selected components (**Refit Selected**), `Delete` (or `Backspace`) deletes them; while a value is being edited in a cell, `Return` only confirms it and `Backspace` only edits the text; `Ctrl+Z` (`Cmd+Z` on Mac) and `Ctrl+Shift+Z` undo and redo, also in this window. The keys are shown next to the entries of the right-click menu.
 * **Status line:** At the bottom of the inspector, how the last recipe went (e.g. a refit) and, on the right, the position of the mouse in the velocity plot.
-* **Tooltips:** Hover over a row to see detailed fit statistics ($\chi^2$) and constraints status.
+* **Tooltips:** Hover over a cell to see, in one line, the reason of its warning (⚠ or colour) or the state of the parameter (free, frozen, linked and its formula). The rest is in the **Details** panel.
 * **Resolution:** Right-click a component to set a specific **Resolution ($R$)** for that line, overriding the global session default.
 * **Only group:** Check the box above the table to show only the group of the selected components: the components linked to them, blended with them or close in velocity, which are fitted together with them. Right-clicking a component in the main plot and choosing **Inspect ... (its group)** (e.g. *Inspect CIV (its group)*) opens the inspector this way.
+
+#### The Details panel
+Below the table, the **Details** panel shows the selected component (it follows the selection of the table, not the mouse). Check or uncheck **Details** above the table to show or hide it (the inspector remembers it), and drag the line above it to change its height: the table scrolls, so the panel only hides some of its rows. It has up to three parts, each shown only when it has something to say; when the panel is wide they stand in two columns (the group on the left, the component and the parameter on the right), otherwise one below the other:
+
+* **Group fit**: the statistics of the last fit of the group of the component: the reduced $\chi^2_\nu$ (the one that scales the uncertainties, on the pixels that constrain the parameters), $\chi^2$ and the number of pixels of the fit, AIC $= \chi^2 + 2k$ and BIC $= \chi^2 + k \ln n$ ($k$ free parameters, $n$ pixels; the same definitions as **Evaluate Model**), whether the fit converged and in how many evaluations of the model (a fit that stops at the maximum may not be at the minimum), the recipe that ran it and when. Below, the components fitted together: click one to select it. After **Refit All** the statistics are computed again at the final values, once the neighbours were fitted (as the uncertainties). A component edited by hand has no statistics until it is fitted again; a session saved by an earlier version has only the reduced $\chi^2_\nu$.
+* **Component**: its values with their uncertainties ($\delta z$ also as a redshift), its resolution, and the quantities behind its warnings, so that each can be checked: $R$ and $b_\mathrm{inst}$ at the strongest line of the series (**Unresolved**), the optical depth at the centre of the weakest line (**Saturated**), the deepest telluric absorption within the reach of its lines (**On a telluric absorption**, with a `telluric` column). They are computed on the lines of the series in the spectrum; the fit takes those with pixels in the fit, so for a series with a line outside the fit they can differ. Then each warning, in one line.
+* **Parameter**: when the current cell is a parameter (`z`, `logN`, `b`, `btur`), its state, the formula of its link with the names of the components, and its bounds in the last fit (for `z`, the window of the fit).
+
+The same statistics are in `components_list` of the MCP server (`fits`, one entry for the components fitted together), and in the `fit` of each component for a script, saved in the archive with the session.
 
 #### Understanding Resolution Priority
 Astrocook handles instrumental resolution ($R$) flexibly to support both constant-resolution survey spectra and variable-resolution echelle data. The resolution of a spectrum lives in its `resol` column (visible in the Data Inspector): resolving power $R$ if dimensionless, FWHM if in km/s. The Voigt fitting engine and the velocity plots use it according to this hierarchy:
@@ -117,7 +126,7 @@ The boxes above the plot are in three groups, separated by thin lines: what the 
 * **Residuals:** Check the **Resid.** box to show a residual plot below each transition panel.
 
 ```{image} ../_static/absorbers_system_inspector.png
-:alt: The System Inspector showing a metal doublet
+:alt: The System Inspector showing a metal doublet, with the Details panel of the selected component below the table
 :align: center
 ```
 
@@ -135,6 +144,15 @@ Each fit leaves a warning on the components whose result is not reliable:
 * **A parameter at a bound of the fit:** z at the edge of the fit window, logN or b at their lower or upper bound. The automatic pipelines fit with tighter upper bounds (**Max b** = 50 km/s, **Max logN** = 19) than the manual fits (300 km/s, 23), so a component at one of those bounds may be broader or stronger in reality. The cell of the parameter is highlighted.
 * **No uncertainties:** the fit could not compute the errors of the component (the value is not constrained). Its **ID** is highlighted in red.
 * **Not fitted:** the fit of its group failed during **Refit All**; the component keeps the values it had before. Its **ID** is highlighted in red.
+
+Other warnings say that a value is there but is not a measurement (phase 7). The fit sets them on the components it fits, from the fitted values, and changes no number; nothing drops or treats differently a component because of them. A ⚠ in the cell of the parameter concerned marks them, without a colour:
+
+* **Unresolved** (on b): b is below half the b of the instrumental profile, b_inst = c / (1.665 R) (4.0 km/s at R = 45000), R being the resolution at the strongest line of the series. The line is narrower than the resolution: b is not measured.
+* **Saturated** (on logN): the optical depth at the centre of the weakest line of the series in the fit is above 3 (a transmission below 5% at the centre), on the profile before the convolution, so that a saturation hidden by a low resolution is seen too. logN is not measured: the line is on the flat part of the curve of growth. A doublet whose weaker line is not saturated is not flagged, nor is a damped H I (logN ≥ 19), whose wings constrain logN.
+* **Large errors** (on the parameter whose error is too large): the error of logN above 1 dex, the error of b above b, or the error of z in velocity above the width of the line (the larger of b and b_inst). The errors have no meaning. Only for finite errors (otherwise **No uncertainties**).
+* **On a telluric absorption** (on the ID): a line of the series falls where the `telluric` column of the spectrum (see [External models](external_models.md)) is deeper than 5%, within twice the width of the line. The errors of the component are not to be trusted. Never set without the column.
+
+The thresholds are judgement calls, measured on the mocks of the benchmark: the methods text names the flags, the scripts read them in the `flags` of each component, and an agent filters by one with `components_list(flag=...)`.
 
 A ⚠ before the ID marks every component with a warning, and its tooltip (on the cell, or on its tick in the velocity plot, drawn dashed) says what happened and what to do. Check **Only flagged** to list only these components, and click **Select Flagged** to select them all, e.g. to refit them with **Refit Selected** (table menu), which uses the wide bounds of the manual fits. Editing a parameter of a component clears its warnings; a new fit sets them again.
 
@@ -207,7 +225,7 @@ All the recipes of this section that name components (`update_component`, `updat
 **Absorbers > Detect doublet anchor redshift** finds the redshift at which a transition in this session and another in a second session (e.g. the two lines of a doublet, extracted into two sessions) overlap best: the product of their absorption depths, on the flux normalized by the continuum (until version 2.6.0 the flux was taken as normalized, so a spectrum in physical units gave a wrong redshift). The two transitions must cover a range of redshift in common: otherwise the recipe stops (it returned 0).
 
 ### Uncertainties
-In the table, the uncertainty of `z` is shown as a velocity, $c\,\delta z/(1+z)$ in km/s, which compares directly with `b`; the tooltip of the row gives it also as $\delta z$. The exported tables keep $\delta z$.
+In the table, the uncertainty of `z` is shown as a velocity, $c\,\delta z/(1+z)$ in km/s, which compares directly with `b`; the **Details** panel gives it also as $\delta z$. The exported tables keep $\delta z$.
 
 The uncertainties of the fitted parameters are the square roots of the diagonal of the covariance matrix, scaled by $\sqrt{\chi^2_\nu}$ of the fit (as in Astrocook v1): they stay correct when the error spectrum is off by a constant factor. The reduced $\chi^2_\nu$ is stored with each component and computed only on the pixels that constrain the fitted parameters; after the automatic pipelines it refers to the final model. A large $\chi^2_\nu$ (and large uncertainties) means that the model does not describe the data well, e.g. an unresolved blend: such components are worth inspecting and refitting by hand. If the uncertainties cannot be computed (an ill-conditioned fit), they are shown as NaN and the log names the components.
 

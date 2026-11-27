@@ -80,3 +80,30 @@ def test_only_flagged_and_select_flagged(qapp):
     assert inspector.proxy_model.rowCount() == 2
     inspector.flagged_cb.setChecked(False)
     assert inspector.proxy_model.rowCount() == 3
+
+
+def test_measurement_flags_in_the_table(qapp):
+    """The flags of 7d.2: the warning sign in the cell of the parameter
+    concerned, one line in its tooltip, no colour."""
+    comps = [ComponentData(id=1, z=3.0, dz=1e-5, logN=15.2, dlogN=0.3, b=1.5,
+                           db=0.4, series="Ly_a", flags=("unresolved", "saturated")),
+             ComponentData(id=2, z=3.01, dz=1e-5, logN=12.0, dlogN=1.5, b=20.0,
+                           db=1.0, series="Ly_a", flags=("large_errors", "telluric_overlap"))]
+    inspector = _gui().SystemInspector(None)
+    inspector.current_session = SimpleNamespace(systs=SystemList(SystemListData(components=comps)))
+    inspector.table_model.update_data(comps, {})
+    assert _cell(inspector, 0, "b", Qt.DisplayRole).startswith("⚠ 1.50")
+    assert _cell(inspector, 0, "logN", Qt.DisplayRole).startswith("⚠ 15.200")
+    assert not _cell(inspector, 0, "z", Qt.DisplayRole).startswith("⚠")
+    assert "Unresolved" in _cell(inspector, 0, "b", Qt.ToolTipRole)
+    assert "Saturated" not in _cell(inspector, 0, "b", Qt.ToolTipRole)
+    assert "Saturated" in _cell(inspector, 0, "logN", Qt.ToolTipRole)
+    for column in ("z", "logN", "b"):
+        assert _cell(inspector, 0, column, Qt.BackgroundRole) is None
+    # large_errors on the parameter whose error is too large (dlogN > 1)
+    assert _cell(inspector, 1, "logN", Qt.DisplayRole).startswith("⚠")
+    assert not _cell(inspector, 1, "b", Qt.DisplayRole).startswith("⚠")
+    # telluric_overlap on the whole component: the ID and its tooltip
+    # Two flags on the ID: their names in one line (7d.9)
+    assert "telluric overlap" in _cell(inspector, 1, "ID", Qt.ToolTipRole)
+    assert flag_cue(comps[1])[0] is None

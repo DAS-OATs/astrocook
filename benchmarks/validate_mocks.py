@@ -82,6 +82,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from astrocook.core.atomic_data import ATOM_DATA, STANDARD_MULTIPLETS  # noqa: E402
+from astrocook.fitting.component_flags import MEASUREMENT_FLAGS  # noqa: E402
 from astrocook.fitting.voigt_fitter import COMPONENT_FLAGS  # noqa: E402
 from astrocook.mocks import (  # noqa: E402
     DLA_LOGN, LYMAN_SERIES, QSO_EMISSION_LINES, QSO_EMISSION_LINES_FULL,
@@ -760,11 +761,16 @@ def calibration_tables(rows):
 
 
 def _flags(c):
+    """The flags of the benchmark (the old ones: ``n_flagged``). The absurd
+    errors of F52 are the flag ``large_errors`` of the fitter since phase 7,
+    PR 7d.2 (one definition: before, dlogN > 1 or db > b computed here; the
+    fitter adds the error of z above the width of the line), kept under the
+    key ``absurd_errors`` for the comparison."""
     flags = []
     errors = [c.dz, c.dlogN, c.db]
     if any(e is None or not np.isfinite(e) for e in errors):
         flags.append("nan_errors")
-    elif (c.dlogN > 1.0) or (c.db > c.b):
+    elif "large_errors" in (c.flags or ()):
         flags.append("absurd_errors")
     if abs(c.logN - LOGN_BOUNDS[0]) < 0.02 or abs(c.logN - LOGN_BOUNDS[1]) < 0.02:
         flags.append("logN_at_bound")
@@ -803,7 +809,11 @@ def system_column(system, fitted):
     inside = [f for f in fitted if f.series == system["species"] and lo <= f.z <= hi]
     true_logN = float(np.log10(np.sum([10**c.logN for c in comps])))
     out = dict(species=system["species"], n_true=len(comps), n_fitted=len(inside),
-               true_logN=true_logN, fit_logN=None, dlogN=None)
+               true_logN=true_logN, fit_logN=None, dlogN=None,
+               # The flags of 7d.2 of the fitted components (F59: the share
+               # of the residual in the saturated or unresolved ones)
+               measurement_flags=sorted({f for c in inside for f in (c.flags or ())
+                                         if f in MEASUREMENT_FLAGS}))
     if inside:
         n = np.array([10**f.logN for f in inside])
         out["fit_logN"] = float(np.log10(n.sum()))
@@ -839,8 +849,10 @@ def fit_metrics(truth, systems, systs):
     pulls = {"z": [], "logN": [], "b": []}
     diffs = {"z": [], "logN": [], "b": []}
     by_category = {k: {"z": [], "logN": [], "b": []} for k in PULL_CATEGORIES}
+    by_flag = {k: {"z": [], "logN": [], "b": []} for k in (*MEASUREMENT_FLAGS, "none")}
     for f, t, j in matches:
         category = pull_category(t, n_in_system[j], fitted)
+        flag_keys = [k for k in MEASUREMENT_FLAGS if k in (f.flags or ())] or ["none"]
         for par, err in (("z", f.dz), ("logN", f.dlogN), ("b", f.db)):
             d = getattr(f, par) - getattr(t, par)
             if par == "z":
@@ -850,6 +862,8 @@ def fit_metrics(truth, systems, systs):
             if err is not None and np.isfinite(err) and err > 0:
                 pulls[par].append(d / err)
                 by_category[category][par].append(d / err)
+                for k in flag_keys:
+                    by_flag[k][par].append(d / err)
     flags = [_flags(c) for c in fitted]
     return dict(
         systems=[system_column(s, fitted) for s in systems],
@@ -858,6 +872,11 @@ def fit_metrics(truth, systems, systs):
         n_flagged=sum(bool(f) for f in flags),
         flags={k: sum(k in f for f in flags)
                for k in ("nan_errors", "absurd_errors", "logN_at_bound", "b_at_bound")},
+        # The flags of 7d.2, apart from n_flagged (the old ones), and the
+        # pulls of the matched components by flag ("none": without any)
+        measurement_flags={k: sum(k in (c.flags or ()) for c in fitted)
+                           for k in MEASUREMENT_FLAGS},
+        pulls_by_flag=by_flag,
         diffs=diffs, pulls=pulls, pulls_by_category=by_category,
         flag_confusion=flag_confusion(fitted, classes),
         chi2r=[float(c.chi2) for c in fitted if c.chi2 is not None])
@@ -1159,7 +1178,8 @@ def flag_confusion(fitted, classes):
     ``any`` and ``none``) and class against the truth (TRUTH_CLASSES)."""
     table = {k: dict.fromkeys(TRUTH_CLASSES, 0) for k in (*CONFUSION_FLAGS, "any", "none")}
     for f, cls in zip(fitted, classes, strict=True):
-        flags = set(f.flags or ()) | ({"absurd_errors"} & set(_flags(f)))
+        # The flags of 7d.2 are counted apart (measurement_flags)
+        flags = (set(f.flags or ()) - set(MEASUREMENT_FLAGS)) | ({"absurd_errors"} & set(_flags(f)))
         flags |= {"nan_errors"} & set(_flags(f))
         for k in flags & set(CONFUSION_FLAGS):
             table[k][cls] += 1
@@ -1267,6 +1287,13 @@ def summarize(records, key=None):
                      "n_flagged")}
     fit["flags"] = {k: sum(r["fit"]["flags"][k] for r in records)
                     for k in records[0]["fit"]["flags"]}
+    if "measurement_flags" in records[0]["fit"]:
+        fit["measurement_flags"] = {k: sum(r["fit"]["measurement_flags"][k] for r in records)
+                                    for k in records[0]["fit"]["measurement_flags"]}
+        fit["pulls_by_flag"] = {
+            k: {par: _stats([p for r in records for p in r["fit"]["pulls_by_flag"][k][par]])
+                for par in ("z", "logN", "b")}
+            for k in records[0]["fit"]["pulls_by_flag"]}
     for par in ("z", "logN", "b"):
         fit[f"diff_{par}"] = _stats([d for r in records for d in r["fit"]["diffs"][par]])
         fit[f"pull_{par}"] = _stats([p for r in records for p in r["fit"]["pulls"][par]])
