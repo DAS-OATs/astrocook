@@ -104,5 +104,6 @@ def test_measurement_flags_in_the_table(qapp):
     assert _cell(inspector, 1, "logN", Qt.DisplayRole).startswith("⚠")
     assert not _cell(inspector, 1, "b", Qt.DisplayRole).startswith("⚠")
     # telluric_overlap on the whole component: the ID and its tooltip
-    assert "telluric" in _cell(inspector, 1, "ID", Qt.ToolTipRole)
+    # Two flags on the ID: their names in one line (7d.9)
+    assert "telluric overlap" in _cell(inspector, 1, "ID", Qt.ToolTipRole)
     assert flag_cue(comps[1])[0] is None

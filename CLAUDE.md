@@ -106,7 +106,8 @@ DOI of the software, 10.5281/zenodo.1346736 (`CITATION.cff`, README, `docs/credi
   `SpectrumPlotWidget` (`pyside_plot.py`) those of the continuum editor and
   of the mouse (`continuum_editor.py`, `plot_mouse.py`), and its
   `plot_spectrum` calls one method per layer; the System Inspector keeps its
-  table and velocity plot in `inspector_table.py` and `velocity_plot.py`. A
+  table, velocity plot and Details panel in `inspector_table.py`,
+  `velocity_plot.py` and `inspector_details.py` (phase 7, PR 7d.9). A
   new method goes in the module of its theme; `tests/test_gui_structure.py`
   checks the interface of the split classes.
   The user's settings (phase 7-quater, U2): `gui/settings.py` builds the

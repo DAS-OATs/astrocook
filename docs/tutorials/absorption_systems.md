@@ -91,7 +91,7 @@ This table lists every component in the model.
 * **Sort:** Click any column header to sort the list (e.g., by Redshift or Series).
 * **Keys:** The arrows move the selection, and the plot follows it. `Return` refits the selected components (**Refit Selected**), `Delete` (or `Backspace`) deletes them; while a value is being edited in a cell, `Return` only confirms it and `Backspace` only edits the text; `Ctrl+Z` (`Cmd+Z` on Mac) and `Ctrl+Shift+Z` undo and redo, also in this window. The keys are shown next to the entries of the right-click menu.
 * **Status line:** At the bottom of the inspector, how the last recipe went (e.g. a refit) and, on the right, the position of the mouse in the velocity plot.
-* **Tooltips:** Hover over a row to see detailed fit statistics ($\chi^2$) and constraints status.
+* **Tooltips:** Hover over a cell to see, in one line, the reason of its warning (⚠ or colour) or the state of the parameter (free, frozen, linked and its formula). The rest is in the **Details** panel.
 * **Resolution:** Right-click a component to set a specific **Resolution ($R$)** for that line, overriding the global session default.
 * **Only group:** Check the box above the table to show only the group of the selected components: the components linked to them, blended with them or close in velocity, which are fitted together with them. Right-clicking a component in the main plot and choosing **Inspect ... (its group)** (e.g. *Inspect CIV (its group)*) opens the inspector this way.
 
@@ -109,6 +109,15 @@ The fit does not write the resolution it used into the components: changing the 
 
 ### Right Panel: Velocity Plot
 A zoomed-in view of the selected system in velocity space.
+
+#### The Details panel
+Below the velocity plot, the **Details** panel shows the selected component (it follows the selection of the table, not the mouse). Click its header to collapse it (the inspector remembers it), and drag the line above it to change its height. It has up to three parts, each shown only when it has something to say:
+
+* **Group fit** (left): the statistics of the last fit of the group of the component: the reduced $\chi^2_\nu$ (the one that scales the uncertainties, on the pixels that constrain the parameters), $\chi^2$ and the number of pixels of the fit, AIC $= \chi^2 + 2k$ and BIC $= \chi^2 + k \ln n$ ($k$ free parameters, $n$ pixels; the same definitions as **Evaluate Model**), whether the fit converged and in how many evaluations of the model (a fit that stops at the maximum may not be at the minimum), the recipe that ran it and when. Below, the components fitted together: click one to select it. After **Refit All** the statistics are computed again at the final values, once the neighbours were fitted (as the uncertainties). A component edited by hand has no statistics until it is fitted again; a session saved by an earlier version has only the reduced $\chi^2_\nu$.
+* **Component** (right): its values with their uncertainties ($\delta z$ also as a redshift), its resolution, and the quantities behind its warnings, so that each can be checked: $R$ and $b_\mathrm{inst}$ at the strongest line of the series (**Unresolved**), the optical depth at the centre of the weakest line (**Saturated**), the deepest telluric absorption within the reach of its lines (**On a telluric absorption**, with a `telluric` column). They are computed on the lines of the series in the spectrum; the fit takes those with pixels in the fit, so for a series with a line outside the fit they can differ. Then each warning, in one line.
+* **Parameter**: when the current cell is a parameter (`z`, `logN`, `b`, `btur`), its state, the formula of its link with the names of the components, and its bounds in the last fit (for `z`, the window of the fit).
+
+The same statistics are in `components_list` of the MCP server (`fits`, one entry for the components fitted together), and in the `fit` of each component for a script, saved in the archive with the session.
 The boxes above the plot are in three groups, separated by thin lines: what the plot shows (**Trans.**, **z**, **Δv**), the starting values and fit window of a new component (**logN**, **b**, **Fit ±**), and the residuals (**Resid.**). Each box has a tooltip.
 * **Navigation:** The plot centers on the selected component. You can manually edit the **Redshift (z)** and **Velocity Range ($\pm v$)** using the text boxes above the plot.
 * **Scroll:** If a system has many transitions (e.g., Lyman series), use the scrollbar on the right to page through them.
@@ -216,7 +225,7 @@ All the recipes of this section that name components (`update_component`, `updat
 **Absorbers > Detect doublet anchor redshift** finds the redshift at which a transition in this session and another in a second session (e.g. the two lines of a doublet, extracted into two sessions) overlap best: the product of their absorption depths, on the flux normalized by the continuum (until version 2.6.0 the flux was taken as normalized, so a spectrum in physical units gave a wrong redshift). The two transitions must cover a range of redshift in common: otherwise the recipe stops (it returned 0).
 
 ### Uncertainties
-In the table, the uncertainty of `z` is shown as a velocity, $c\,\delta z/(1+z)$ in km/s, which compares directly with `b`; the tooltip of the row gives it also as $\delta z$. The exported tables keep $\delta z$.
+In the table, the uncertainty of `z` is shown as a velocity, $c\,\delta z/(1+z)$ in km/s, which compares directly with `b`; the **Details** panel gives it also as $\delta z$. The exported tables keep $\delta z$.
 
 The uncertainties of the fitted parameters are the square roots of the diagonal of the covariance matrix, scaled by $\sqrt{\chi^2_\nu}$ of the fit (as in Astrocook v1): they stay correct when the error spectrum is off by a constant factor. The reduced $\chi^2_\nu$ is stored with each component and computed only on the pixels that constrain the fitted parameters; after the automatic pipelines it refers to the final model. A large $\chi^2_\nu$ (and large uncertainties) means that the model does not describe the data well, e.g. an unresolved blend: such components are worth inspecting and refitting by hand. If the uncertainties cannot be computed (an ill-conditioned fit), they are shown as NaN and the log names the components.
 

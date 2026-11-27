@@ -236,6 +236,86 @@ class SpectrumData:
                    z_ref=z_ref)
     
 @dataclass(frozen=True)
+class FitRecord:
+    """The statistics of one fit of a group of components (phase 7, PR 7d.9).
+
+    Made by :class:`~astrocook.fitting.voigt_fitter.VoigtFitter` at each
+    fit (:mod:`astrocook.fitting.fit_record`) and held by reference by
+    each component it fitted (``ComponentData.fit``): the numbers are in
+    one place, not copied on each component. Saved in the ``.acs2``
+    archive once per fit (``io/archive_data.py``), the components with its
+    ``id``. Shown by the Details panel of the System Inspector and by
+    ``components_list`` of the MCP server.
+    """
+    chi2: float
+    """ Sum of the squared normalized residuals on the pixels of the fit. """
+    n_pix: int
+    """ The pixels of the fit. """
+    n_free: int
+    """ The free parameters of the fit. """
+    aic: float
+    """ chi2 + 2 n_free (``fitting.model_evaluation.information_criteria``). """
+    bic: Optional[float]
+    """ chi2 + n_free ln n_pix (None without pixels). """
+    chi2_reduced: Optional[float]
+    """ The reduced chi2 that scales the errors, on the pixels that
+    constrain the free parameters (issue #534): the ``chi2`` of the
+    components. None if the errors could not be computed. """
+    n_constraining: int
+    """ The pixels that constrain the free parameters. """
+    members: Tuple[str, ...]
+    """ The uuids of the components fitted (the active ones). """
+    converged: Optional[bool] = None
+    """ Whether the optimizer converged (False: it stopped at ``max_nfev``);
+    None if unknown. """
+    nfev: Optional[int] = None
+    """ The evaluations of the model. """
+    max_nfev: Optional[int] = None
+    """ The limit of the evaluations. """
+    message: str = ""
+    """ The message of the optimizer. """
+    recipe: Optional[str] = None
+    """ The recipe that ran the fit, ``category.name`` (the outermost one,
+    the one the user ran); None outside a recipe. """
+    time: str = ""
+    """ When, ISO 8601 in UTC. """
+    bounds: Tuple[Tuple[str, str, float, float], ...] = ()
+    """ The bounds of the free parameters of the members, ``(uuid,
+    parameter, lower, upper)``, ``parameter`` one of ``z``, ``logN``,
+    ``b``, ``btur`` (the bounds of the constraint model, narrowed by the
+    window of the fit in z and by ``b_max`` and ``logN_max``). """
+    final: bool = False
+    """ True when the statistics were computed again at the final values,
+    without fitting (``refit_all``: the neighbours of the group fitted
+    later, issue #534); ``converged`` and ``nfev`` are those of the fit. """
+    id: str = field(default_factory=lambda: uuid.uuid4().hex)
+    """ Its identifier, the reference of the components in the archive. """
+
+    def to_dict(self) -> Dict[str, Any]:
+        out = {f: getattr(self, f) for f in self.__dataclass_fields__}
+        out['members'] = list(self.members)
+        out['bounds'] = [list(b) for b in self.bounds]
+        return out
+
+    @classmethod
+    def from_dict(cls, d: Dict[str, Any]) -> 'FitRecord':
+        """The record of :meth:`to_dict`; a key that this version does not
+        know is ignored."""
+        known = {k: v for k, v in d.items() if k in cls.__dataclass_fields__}
+        known['members'] = tuple(str(u) for u in known.get('members', ()))
+        known['bounds'] = tuple((str(u), str(p), float(lo), float(hi))
+                                for u, p, lo, hi in known.get('bounds', ()))
+        return cls(**known)
+
+    def bounds_of(self, uuid: str, param: str) -> Optional[Tuple[float, float]]:
+        """The bounds of a free parameter of a member in this fit, or None."""
+        for u, p, lo, hi in self.bounds:
+            if u == uuid and p == param:
+                return lo, hi
+        return None
+
+
+@dataclass(frozen=True)
 class ComponentData:
     """
     Immutable data structure for a single absorption component (Voigt profile).
@@ -286,6 +366,11 @@ class ComponentData:
     ``large_errors``, ``telluric_overlap``, see
     :mod:`astrocook.fitting.component_flags`). Cleared when a parameter is
     edited, and set again by the next fit. """
+    fit: Optional[FitRecord] = field(default=None, compare=False)
+    """ The statistics of the last fit of the group of the component (phase
+    7, PR 7d.9), shared with the other components of that fit. Cleared, as
+    the flags, when a parameter is edited. Not compared: two components
+    with the same values are equal whatever fit gave them. """
 
     # V2 IDENTIFIER: Stable, Global, Immutable
     uuid: str = field(default_factory=lambda: str(uuid.uuid4()))
