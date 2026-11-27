@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>astrocook.fitting.component_flags &#8212; Astrocook dev documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../static/styles/theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+<link href="../../../static/styles/pydata-sphinx-theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../static/sphinx-design.min.css?v=6a604523" />
+    <link rel="stylesheet" type="text/css" href="../../../static/css/custom.css?v=e8a3a7b7" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../static/scripts/fontawesome.js?digest=75c7c72ae941e8b558d8"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
+<link rel="preload" as="script" href="../../../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
+
+    <script src="../../../static/documentation_options.js?v=3ce10a4d"></script>
+    <script src="../../../static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../../../static/design-tabs.js?v=fcb327ea"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'modules/astrocook/fitting/component_flags';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'dev';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="color-scheme" content="light dark"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="dev" />
+  
+    
+    <script src="../../../static/searchtools.js"></script>
+    <script src="../../../static/language_data.js"></script>
+    <script src="../../../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation" aria-expanded="false" aria-controls="pst-primary-sidebar-modal">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../static/icon_3d_HR.png" class="logo__image only-light" alt=""/>
+    <img src="../../../static/icon_3d_HR.png" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">Astrocook</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../settings.html">
+    Settings
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../science.html">
+    Science
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../reference.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../credits.html">
+    Credits
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../changelog.html">
+    Changelog
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal" tabindex="-1"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../settings.html">
+    Settings
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../science.html">
+    Science
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../reference.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../credits.html">
+    Credits
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../changelog.html">
+    Changelog
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-house"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">astrocook.fitting.component_flags</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for astrocook.fitting.component_flags</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""The flags of the components whose values are not measured (phase 7, PR</span>
+<span class="sd">7d.2; findings register F52, F116).</span>
+
+<span class="sd">The fit leaves on each component it fits the flags of #517 (a parameter at</span>
+<span class="sd">a bound, ``nan_errors``: ``voigt_fitter.COMPONENT_FLAGS``); this module adds</span>
+<span class="sd">those that say a value is there but is not a measurement:</span>
+
+<span class="sd">- ``unresolved``: b is not measured, the line is narrower than the</span>
+<span class="sd">  resolution;</span>
+<span class="sd">- ``saturated``: log N is not measured, the weakest line of the series in</span>
+<span class="sd">  the fit is saturated;</span>
+<span class="sd">- ``large_errors``: the errors have no meaning (F52);</span>
+<span class="sd">- ``telluric_overlap``: a line of the series falls on a telluric</span>
+<span class="sd">  absorption, so its errors are not to be trusted.</span>
+
+<span class="sd">They describe the last fit, as those of #517, and are annotations only: no</span>
+<span class="sd">number of the fit and no decision of a pipeline depends on them (design:</span>
+<span class="sd">``ROADMAP.md``, phase 7, "The flags of 7d.2", agreed with Guido on 26</span>
+<span class="sd">November 2026). :func:`measurement_flags` is a pure function of the</span>
+<span class="sd">component, the atomic data, the resolution and the telluric column, called</span>
+<span class="sd">by the fitter on the components it fits.</span>
+
+<span class="sd">The thresholds are heuristics; what supports each is written next to it,</span>
+<span class="sd">and the measurement on the mocks is in the PR of 7d.2.</span>
+<span class="sd">"""</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Tuple</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.special</span><span class="w"> </span><span class="kn">import</span> <span class="n">wofz</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.atomic_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">ATOM_DATA</span><span class="p">,</span> <span class="n">series_lines</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ComponentData</span>
+
+<span class="n">C_KMS</span> <span class="o">=</span> <span class="mf">299792.458</span>
+
+<span class="c1">#: The flags of this module, in the order they are added to</span>
+<span class="c1">#: ``ComponentData.flags`` (after those of #517)</span>
+<span class="n">MEASUREMENT_FLAGS</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'unresolved'</span><span class="p">,</span> <span class="s1">'saturated'</span><span class="p">,</span> <span class="s1">'large_errors'</span><span class="p">,</span> <span class="s1">'telluric_overlap'</span><span class="p">)</span>
+
+<span class="c1">#: FWHM / b of a Gaussian profile, 2 sqrt(ln 2): the b of the instrumental</span>
+<span class="c1">#: profile of resolving power R is c / (1.665 R) (4.0 km/s at R = 45000)</span>
+<span class="n">FWHM_OVER_B</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">2.0</span><span class="p">))</span>
+
+<span class="c1">#: ``unresolved``: b below this fraction of the instrumental b. A line with</span>
+<span class="c1">#: b &lt; b_inst / 2 has an observed width within 12 per cent of the</span>
+<span class="c1">#: instrumental one (sqrt(1 + 1/4) = 1.12), so its b is set by a few per</span>
+<span class="c1">#: cent of the observed width, below what a fit at the usual S/N resolves</span>
+<span class="c1">#: (F116: b = 1.4-2.8 km/s at R = 45000, b_inst = 4.0 km/s, judged</span>
+<span class="c1">#: unreliable by both agents of the trials of PR 7 of phase 6-ter)</span>
+<span class="n">UNRESOLVED_RATIO</span> <span class="o">=</span> <span class="mf">0.5</span>
+
+<span class="c1">#: ``saturated``: the central optical depth of the weakest line of the</span>
+<span class="c1">#: series above this. tau_0 = 3 is a transmission of 5 per cent at the</span>
+<span class="c1">#: centre of the intrinsic profile: from there the core is flat and log N</span>
+<span class="c1">#: moves the equivalent width only through the wings (the flat part of the</span>
+<span class="c1">#: curve of growth)</span>
+<span class="n">SATURATED_TAU</span> <span class="o">=</span> <span class="mf">3.0</span>
+
+<span class="c1">#: A damped H I (log N at or above this) is not flagged ``saturated``: its</span>
+<span class="c1">#: Lorentzian wings constrain log N</span>
+<span class="n">DAMPED_LOGN</span> <span class="o">=</span> <span class="mf">19.0</span>
+
+<span class="c1">#: ``large_errors`` (F52): the error of log N above this (dex), the rule of</span>
+<span class="c1">#: the benchmark since phase 4 (``_flags`` of ``validate_mocks.py``: a</span>
+<span class="c1">#: factor of 10 in N is no measurement). The other two: db &gt; b, and the</span>
+<span class="c1">#: error of z in velocity above max(b, b_inst), the width of the line</span>
+<span class="n">LARGE_DLOGN</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+<span class="c1">#: ``telluric_overlap``: the telluric depth 1 - T above this within the</span>
+<span class="c1">#: reach of a line. 5 per cent is about the noise of a pixel at S/N 20, the</span>
+<span class="c1">#: lowest of the real spectra of the benchmark: a shallower telluric line</span>
+<span class="c1">#: is below the noise of every spectrum of the sample (the threshold of the</span>
+<span class="c1">#: plan of 7d.2; its counts on the mocks with tellurics are in the PR)</span>
+<span class="n">TELLURIC_DEPTH</span> <span class="o">=</span> <span class="mf">0.05</span>
+
+<span class="c1">#: ``telluric_overlap``: the reach of a line, in units of max(b, b_inst)</span>
+<span class="c1">#: around its centre: two Doppler widths hold the core of a Gaussian line</span>
+<span class="c1">#: down to exp(-4), 2 per cent of its central depth</span>
+<span class="n">TELLURIC_REACH</span> <span class="o">=</span> <span class="mf">2.0</span>
+
+<span class="c1">#: Prefactor of the central optical depth, pi e^2 / (m_e c) in the units of</span>
+<span class="c1">#: the fitter (N in cm^-2, lambda in Angstrom, b in km/s): the same of</span>
+<span class="c1">#: ``voigt_fitter._line_terms``</span>
+<span class="n">_TAU_PREFACTOR</span> <span class="o">=</span> <span class="mf">1.4974e-15</span>
+
+
+<div class="viewcode-block" id="FitPixels">
+<a class="viewcode-back" href="../../../api/astrocook.fitting.component_flags.html#astrocook.fitting.component_flags.FitPixels">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">FitPixels</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""What the flags read of the spectrum of a fit, on its pixels: the</span>
+<span class="sd">    centres (Angstrom), the resolving power R of each (NaN where it is not</span>
+<span class="sd">    known), the pixels of the fit (None: all) and the telluric</span>
+<span class="sd">    transmission (None: no ``telluric`` column)."""</span>
+    <span class="n">wave</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+    <span class="n">resol</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+    <span class="n">fit_mask</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">telluric</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="FlagQuantities">
+<a class="viewcode-back" href="../../../api/astrocook.fitting.component_flags.html#astrocook.fitting.component_flags.FlagQuantities">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">FlagQuantities</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The quantities of the criteria of a component, so that a flag can be</span>
+<span class="sd">    checked (the panel of 7d.9 will show them): the instrumental b and R</span>
+<span class="sd">    at the strongest line, the central optical depth of the weakest line,</span>
+<span class="sd">    the largest telluric depth within the reach of its lines (None without</span>
+<span class="sd">    the column)."""</span>
+    <span class="n">b_inst</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">resol</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">tau0_weakest</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">telluric_depth</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="b_instrumental">
+<a class="viewcode-back" href="../../../api/astrocook.fitting.component_flags.html#astrocook.fitting.component_flags.b_instrumental">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">b_instrumental</span><span class="p">(</span><span class="n">resol</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The b (km/s) of a Gaussian instrumental profile of resolving power</span>
+<span class="sd">    ``resol``; 0 if it is not known."""</span>
+    <span class="k">if</span> <span class="n">resol</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">resol</span><span class="p">)</span> <span class="ow">or</span> <span class="n">resol</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">0.0</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">C_KMS</span> <span class="o">/</span> <span class="p">(</span><span class="n">FWHM_OVER_B</span> <span class="o">*</span> <span class="n">resol</span><span class="p">))</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_lines</span><span class="p">(</span><span class="n">series</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">ATOM_DATA</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">series_lines</span><span class="p">(</span><span class="n">series</span><span class="p">)</span> <span class="k">if</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">ATOM_DATA</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="central_tau">
+<a class="viewcode-back" href="../../../api/astrocook.fitting.component_flags.html#astrocook.fitting.component_flags.central_tau">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">central_tau</span><span class="p">(</span><span class="n">atom</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">logN</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">b_kms</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The optical depth at the centre of the intrinsic Voigt profile of a</span>
+<span class="sd">    line (before the convolution with the instrumental profile)."""</span>
+    <span class="n">b_safe</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">b_kms</span><span class="p">),</span> <span class="mf">0.1</span><span class="p">)</span>  <span class="c1"># as the fitter</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">atom</span><span class="p">[</span><span class="s1">'gamma'</span><span class="p">]</span> <span class="o">*</span> <span class="n">atom</span><span class="p">[</span><span class="s1">'wave'</span><span class="p">]</span> <span class="o">*</span> <span class="mf">1e-13</span> <span class="o">/</span> <span class="p">(</span><span class="mf">4.0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">b_safe</span><span class="p">)</span>
+    <span class="n">tau0</span> <span class="o">=</span> <span class="n">_TAU_PREFACTOR</span> <span class="o">*</span> <span class="mf">10.0</span> <span class="o">**</span> <span class="n">logN</span> <span class="o">*</span> <span class="n">atom</span><span class="p">[</span><span class="s1">'f'</span><span class="p">]</span> <span class="o">*</span> <span class="n">atom</span><span class="p">[</span><span class="s1">'wave'</span><span class="p">]</span> <span class="o">/</span> <span class="n">b_safe</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">tau0</span> <span class="o">*</span> <span class="n">wofz</span><span class="p">(</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">a</span><span class="p">)</span><span class="o">.</span><span class="n">real</span><span class="p">)</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_window</span><span class="p">(</span><span class="n">pix</span><span class="p">:</span> <span class="n">FitPixels</span><span class="p">,</span> <span class="n">centre</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">half_kms</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The indices of the pixels within ``half_kms`` of ``centre``; the</span>
+<span class="sd">    nearest one if none."""</span>
+    <span class="n">half</span> <span class="o">=</span> <span class="n">centre</span> <span class="o">*</span> <span class="n">half_kms</span> <span class="o">/</span> <span class="n">C_KMS</span>
+    <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">pix</span><span class="o">.</span><span class="n">wave</span><span class="p">,</span> <span class="p">[</span><span class="n">centre</span> <span class="o">-</span> <span class="n">half</span><span class="p">,</span> <span class="n">centre</span> <span class="o">+</span> <span class="n">half</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">hi</span> <span class="o">&gt;</span> <span class="n">lo</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">lo</span><span class="p">,</span> <span class="n">hi</span><span class="p">)</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">pix</span><span class="o">.</span><span class="n">wave</span><span class="p">,</span> <span class="n">centre</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">pix</span><span class="o">.</span><span class="n">wave</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">abs</span><span class="p">(</span><span class="n">pix</span><span class="o">.</span><span class="n">wave</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">centre</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">abs</span><span class="p">(</span><span class="n">pix</span><span class="o">.</span><span class="n">wave</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">centre</span><span class="p">):</span>
+        <span class="n">i</span> <span class="o">-=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">i</span><span class="p">])</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_resol_at</span><span class="p">(</span><span class="n">comp</span><span class="p">:</span> <span class="n">ComponentData</span><span class="p">,</span> <span class="n">pix</span><span class="p">:</span> <span class="n">FitPixels</span><span class="p">,</span> <span class="n">centre</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""R at a wavelength, as the fit takes it: the component's own, else the</span>
+<span class="sd">    spectrum's at the nearest pixel."""</span>
+    <span class="k">if</span> <span class="n">comp</span><span class="o">.</span><span class="n">resol</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">comp</span><span class="o">.</span><span class="n">resol</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">comp</span><span class="o">.</span><span class="n">resol</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">pix</span><span class="o">.</span><span class="n">wave</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="s1">'nan'</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">pix</span><span class="o">.</span><span class="n">resol</span><span class="p">[</span><span class="n">_window</span><span class="p">(</span><span class="n">pix</span><span class="p">,</span> <span class="n">centre</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]])</span>
+
+
+<div class="viewcode-block" id="flag_quantities">
+<a class="viewcode-back" href="../../../api/astrocook.fitting.component_flags.html#astrocook.fitting.component_flags.flag_quantities">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">flag_quantities</span><span class="p">(</span><span class="n">comp</span><span class="p">:</span> <span class="n">ComponentData</span><span class="p">,</span> <span class="n">pix</span><span class="p">:</span> <span class="n">FitPixels</span>
+                    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">FlagQuantities</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">dict</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">"""The quantities of the criteria of ``comp`` and the lines of its</span>
+<span class="sd">    series in the fit (those with a pixel of the fit within their reach;</span>
+<span class="sd">    all those in the spectrum if none). ``(None, [])`` if no line of the</span>
+<span class="sd">    series is known or falls in the spectrum."""</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="n">_lines</span><span class="p">(</span><span class="n">comp</span><span class="o">.</span><span class="n">series</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">lines</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">pix</span><span class="o">.</span><span class="n">wave</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="p">[]</span>
+    <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span> <span class="o">=</span> <span class="n">pix</span><span class="o">.</span><span class="n">wave</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">pix</span><span class="o">.</span><span class="n">wave</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="n">at</span> <span class="k">for</span> <span class="n">at</span> <span class="ow">in</span> <span class="n">lines</span> <span class="k">if</span> <span class="n">lo</span> <span class="o">&lt;=</span> <span class="n">at</span><span class="p">[</span><span class="s1">'wave'</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">comp</span><span class="o">.</span><span class="n">z</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">hi</span><span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">lines</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="p">[]</span>
+    <span class="n">b_tot</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">hypot</span><span class="p">(</span><span class="n">comp</span><span class="o">.</span><span class="n">b</span><span class="p">,</span> <span class="n">comp</span><span class="o">.</span><span class="n">btur</span> <span class="ow">or</span> <span class="mf">0.0</span><span class="p">))</span>
+
+    <span class="c1"># R and b_inst at the strongest line (the largest f lambda)</span>
+    <span class="n">strongest</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">lines</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">at</span><span class="p">:</span> <span class="n">at</span><span class="p">[</span><span class="s1">'f'</span><span class="p">]</span> <span class="o">*</span> <span class="n">at</span><span class="p">[</span><span class="s1">'wave'</span><span class="p">])</span>
+    <span class="n">resol</span> <span class="o">=</span> <span class="n">_resol_at</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">pix</span><span class="p">,</span> <span class="n">strongest</span><span class="p">[</span><span class="s1">'wave'</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">comp</span><span class="o">.</span><span class="n">z</span><span class="p">))</span>
+    <span class="n">b_inst</span> <span class="o">=</span> <span class="n">b_instrumental</span><span class="p">(</span><span class="n">resol</span><span class="p">)</span>
+    <span class="n">reach</span> <span class="o">=</span> <span class="n">TELLURIC_REACH</span> <span class="o">*</span> <span class="nb">max</span><span class="p">(</span><span class="n">b_tot</span><span class="p">,</span> <span class="n">b_inst</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">pix</span><span class="o">.</span><span class="n">fit_mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">fitted</span> <span class="o">=</span> <span class="p">[</span><span class="n">at</span> <span class="k">for</span> <span class="n">at</span> <span class="ow">in</span> <span class="n">lines</span>
+                  <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">pix</span><span class="o">.</span><span class="n">fit_mask</span><span class="p">[</span><span class="n">_window</span><span class="p">(</span><span class="n">pix</span><span class="p">,</span> <span class="n">at</span><span class="p">[</span><span class="s1">'wave'</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">comp</span><span class="o">.</span><span class="n">z</span><span class="p">),</span> <span class="n">reach</span><span class="p">)])]</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="n">fitted</span> <span class="ow">or</span> <span class="n">lines</span>
+    <span class="n">weakest</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">lines</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">at</span><span class="p">:</span> <span class="n">at</span><span class="p">[</span><span class="s1">'f'</span><span class="p">]</span> <span class="o">*</span> <span class="n">at</span><span class="p">[</span><span class="s1">'wave'</span><span class="p">])</span>
+    <span class="n">tau0</span> <span class="o">=</span> <span class="n">central_tau</span><span class="p">(</span><span class="n">weakest</span><span class="p">,</span> <span class="n">comp</span><span class="o">.</span><span class="n">logN</span><span class="p">,</span> <span class="n">b_tot</span><span class="p">)</span>
+
+    <span class="n">depth</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">pix</span><span class="o">.</span><span class="n">telluric</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">depths</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">pix</span><span class="o">.</span><span class="n">telluric</span><span class="p">[</span><span class="n">_window</span><span class="p">(</span><span class="n">pix</span><span class="p">,</span> <span class="n">at</span><span class="p">[</span><span class="s1">'wave'</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">comp</span><span class="o">.</span><span class="n">z</span><span class="p">),</span> <span class="n">reach</span><span class="p">)]</span>
+                  <span class="k">for</span> <span class="n">at</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">]</span>
+        <span class="n">finite</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">depths</span><span class="p">)</span>
+        <span class="n">finite</span> <span class="o">=</span> <span class="n">finite</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">finite</span><span class="p">)]</span>
+        <span class="n">depth</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">finite</span><span class="o">.</span><span class="n">max</span><span class="p">())</span> <span class="k">if</span> <span class="n">finite</span><span class="o">.</span><span class="n">size</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">FlagQuantities</span><span class="p">(</span><span class="n">b_inst</span><span class="o">=</span><span class="n">b_inst</span><span class="p">,</span> <span class="n">resol</span><span class="o">=</span><span class="n">resol</span><span class="p">,</span> <span class="n">tau0_weakest</span><span class="o">=</span><span class="n">tau0</span><span class="p">,</span>
+                          <span class="n">telluric_depth</span><span class="o">=</span><span class="n">depth</span><span class="p">),</span> <span class="n">lines</span></div>
+
+
+
+<div class="viewcode-block" id="large_error_params">
+<a class="viewcode-back" href="../../../api/astrocook.fitting.component_flags.html#astrocook.fitting.component_flags.large_error_params">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">large_error_params</span><span class="p">(</span><span class="n">comp</span><span class="p">:</span> <span class="n">ComponentData</span><span class="p">,</span> <span class="n">b_inst</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The parameters whose errors have no meaning (F52): ``'logN'`` if dlogN</span>
+<span class="sd">    &gt; 1, ``'b'`` if db &gt; b, ``'z'`` if the error of z in velocity exceeds</span>
+<span class="sd">    max(b, b_inst). Empty unless the three errors are finite (otherwise the</span>
+<span class="sd">    flag is ``nan_errors``)."""</span>
+    <span class="n">dz</span><span class="p">,</span> <span class="n">dlogN</span><span class="p">,</span> <span class="n">db</span> <span class="o">=</span> <span class="n">comp</span><span class="o">.</span><span class="n">dz</span><span class="p">,</span> <span class="n">comp</span><span class="o">.</span><span class="n">dlogN</span><span class="p">,</span> <span class="n">comp</span><span class="o">.</span><span class="n">db</span>
+    <span class="k">if</span> <span class="n">dz</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">dlogN</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">db</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">([</span><span class="n">dz</span><span class="p">,</span> <span class="n">dlogN</span><span class="p">,</span> <span class="n">db</span><span class="p">])):</span>
+        <span class="k">return</span> <span class="p">()</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">dlogN</span> <span class="o">&gt;</span> <span class="n">LARGE_DLOGN</span><span class="p">:</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">'logN'</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">db</span> <span class="o">&gt;</span> <span class="n">comp</span><span class="o">.</span><span class="n">b</span><span class="p">:</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">'b'</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">C_KMS</span> <span class="o">*</span> <span class="n">dz</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">comp</span><span class="o">.</span><span class="n">z</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">max</span><span class="p">(</span><span class="n">comp</span><span class="o">.</span><span class="n">b</span><span class="p">,</span> <span class="n">b_inst</span><span class="p">):</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">'z'</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">out</span><span class="p">)</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_is_hydrogen</span><span class="p">(</span><span class="n">series</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="n">_lines</span><span class="p">(</span><span class="n">series</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">all</span><span class="p">(</span><span class="n">at</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'mass'</span><span class="p">,</span> <span class="mf">99.0</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">2.0</span> <span class="k">for</span> <span class="n">at</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="measurement_flags">
+<a class="viewcode-back" href="../../../api/astrocook.fitting.component_flags.html#astrocook.fitting.component_flags.measurement_flags">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">measurement_flags</span><span class="p">(</span><span class="n">comp</span><span class="p">:</span> <span class="n">ComponentData</span><span class="p">,</span> <span class="n">pix</span><span class="p">:</span> <span class="n">FitPixels</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The flags of :data:`MEASUREMENT_FLAGS` of a fitted component, in their</span>
+<span class="sd">    order: ``unresolved`` (b &lt; 0.5 b_inst, R at the strongest line of the</span>
+<span class="sd">    series), ``saturated`` (the central optical depth of the weakest line</span>
+<span class="sd">    of the series in the fit above 3, on the intrinsic profile; not for a</span>
+<span class="sd">    damped H I), ``large_errors`` (:func:`large_error_params`),</span>
+<span class="sd">    ``telluric_overlap`` (a line of the series in the fit where the</span>
+<span class="sd">    ``telluric`` column has 1 - T &gt; 0.05 within 2 max(b, b_inst) of its</span>
+<span class="sd">    centre; never without the column)."""</span>
+    <span class="n">q</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">flag_quantities</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">pix</span><span class="p">)</span>
+    <span class="n">b_inst</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">b_inst</span> <span class="k">if</span> <span class="n">q</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mf">0.0</span>
+    <span class="n">flags</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">q</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">b_tot</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">hypot</span><span class="p">(</span><span class="n">comp</span><span class="o">.</span><span class="n">b</span><span class="p">,</span> <span class="n">comp</span><span class="o">.</span><span class="n">btur</span> <span class="ow">or</span> <span class="mf">0.0</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">b_inst</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">b_tot</span> <span class="o">&lt;</span> <span class="n">UNRESOLVED_RATIO</span> <span class="o">*</span> <span class="n">b_inst</span><span class="p">:</span>
+            <span class="n">flags</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">'unresolved'</span><span class="p">)</span>
+        <span class="n">damped</span> <span class="o">=</span> <span class="n">_is_hydrogen</span><span class="p">(</span><span class="n">comp</span><span class="o">.</span><span class="n">series</span><span class="p">)</span> <span class="ow">and</span> <span class="n">comp</span><span class="o">.</span><span class="n">logN</span> <span class="o">&gt;=</span> <span class="n">DAMPED_LOGN</span>
+        <span class="k">if</span> <span class="n">q</span><span class="o">.</span><span class="n">tau0_weakest</span> <span class="o">&gt;</span> <span class="n">SATURATED_TAU</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">damped</span><span class="p">:</span>
+            <span class="n">flags</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">'saturated'</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">large_error_params</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span> <span class="n">b_inst</span><span class="p">):</span>
+        <span class="n">flags</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">'large_errors'</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">q</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">q</span><span class="o">.</span><span class="n">telluric_depth</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">q</span><span class="o">.</span><span class="n">telluric_depth</span> <span class="o">&gt;</span> <span class="n">TELLURIC_DEPTH</span><span class="p">:</span>
+        <span class="n">flags</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">'telluric_overlap'</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">flags</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="with_measurement_flags">
+<a class="viewcode-back" href="../../../api/astrocook.fitting.component_flags.html#astrocook.fitting.component_flags.with_measurement_flags">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">with_measurement_flags</span><span class="p">(</span><span class="n">flags</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">new</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""``flags`` with those of :data:`MEASUREMENT_FLAGS` replaced by ``new``</span>
+<span class="sd">    (the others kept, in their order)."""</span>
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">flags</span> <span class="k">if</span> <span class="n">f</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">MEASUREMENT_FLAGS</span><span class="p">)</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">new</span><span class="p">)</span></div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8"></script>
+<script defer src="../../../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2017-2026, INAF – Istituto Nazionale di Astrofisica.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.2.0.
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.24.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

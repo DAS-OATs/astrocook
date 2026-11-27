@@ -498,6 +498,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">overload</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.atomic_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">ATOM_DATA</span><span class="p">,</span> <span class="n">STANDARD_MULTIPLETS</span><span class="p">,</span> <span class="n">is_multiplet</span><span class="p">,</span> <span class="n">series_lines</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.fitting.component_flags</span><span class="w"> </span><span class="kn">import</span> <span class="n">FitPixels</span><span class="p">,</span> <span class="n">measurement_flags</span><span class="p">,</span> <span class="n">with_measurement_flags</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.fitting.lsf</span><span class="w"> </span><span class="kn">import</span> <span class="n">PixelLSF</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.spectrum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Spectrum</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">astrocook.core.structures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ComponentData</span>
@@ -768,6 +769,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_val</span> <span class="o">=</span> <span class="mf">0.0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_unit</span> <span class="o">=</span> <span class="s1">'R'</span>
         <span class="n">r_pix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spectrum</span><span class="o">.</span><span class="n">resolution</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_r_pix</span> <span class="o">=</span> <span class="n">r_pix</span>  <span class="c1"># for the flags of the components (7d.2)</span>
         <span class="n">finite</span> <span class="o">=</span> <span class="n">r_pix</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">r_pix</span><span class="p">)]</span>
         <span class="k">if</span> <span class="n">finite</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="n">r_pix</span><span class="o">.</span><span class="n">size</span> <span class="ow">and</span> <span class="n">finite</span><span class="o">.</span><span class="n">size</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">finite</span> <span class="o">==</span> <span class="n">finite</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_global_resol_val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">finite</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
@@ -1160,6 +1162,7 @@
         <span class="n">full_errors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">is_free_mask</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
         <span class="n">full_errors</span><span class="p">[</span><span class="n">is_free_mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">errors</span>
         <span class="n">active</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_constraints</span><span class="o">.</span><span class="n">_active_uuids</span>
+        <span class="n">pixels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fit_pixels</span><span class="p">()</span>
         <span class="n">comps</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_system_list</span><span class="o">.</span><span class="n">components</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">active</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">c</span><span class="o">.</span><span class="n">uuid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">active</span><span class="p">:</span>
@@ -1172,7 +1175,11 @@
                     <span class="n">new</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">full_errors</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
                 <span class="k">elif</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">linked_errors</span><span class="p">:</span>
                     <span class="n">new</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">linked_errors</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
-            <span class="n">comps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="o">**</span><span class="n">new</span><span class="p">))</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="o">**</span><span class="n">new</span><span class="p">)</span>
+            <span class="c1"># The flags of 7d.2 on the new errors (those of #517 describe</span>
+            <span class="c1"># the last fit, and stay)</span>
+            <span class="n">comps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">with_measurement_flags</span><span class="p">(</span>
+                <span class="n">c</span><span class="o">.</span><span class="n">flags</span><span class="p">,</span> <span class="n">measurement_flags</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">pixels</span><span class="p">))))</span>
         <span class="k">return</span> <span class="n">SystemList</span><span class="p">(</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_system_list</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="n">components</span><span class="o">=</span><span class="n">comps</span><span class="p">))</span></div>
 
 
@@ -1211,6 +1218,15 @@
             <span class="k">elif</span> <span class="n">hi</span> <span class="o">-</span> <span class="n">value</span> <span class="o">&lt;=</span> <span class="n">tol</span><span class="p">:</span>
                 <span class="n">flags</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">high</span><span class="p">)</span>
         <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">flags</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_fit_pixels</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FitPixels</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""What the flags of 7d.2 read of the spectrum: the pixels, their</span>
+<span class="sd">        R, those of the last fit, the telluric transmission (the column</span>
+<span class="sd">        ``telluric``, also when the flux is already corrected: the errors</span>
+<span class="sd">        there are those of a corrected flux)."""</span>
+        <span class="n">tell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_spectrum</span><span class="o">.</span><span class="n">get_column</span><span class="p">(</span><span class="s1">'telluric'</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">FitPixels</span><span class="p">(</span><span class="n">wave</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_x_ang</span><span class="p">,</span> <span class="n">resol</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_r_pix</span><span class="p">,</span> <span class="n">fit_mask</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_fit_mask</span><span class="p">,</span>
+                         <span class="n">telluric</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">tell</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">tell</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">))</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_cap_b</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bounds</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
                <span class="n">b_max</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
@@ -1749,6 +1765,7 @@
         
         <span class="n">new_components</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">old_components</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_system_list</span><span class="o">.</span><span class="n">components</span>
+        <span class="n">pixels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fit_pixels</span><span class="p">()</span>
         <span class="n">active_uuids</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">'_constraints'</span><span class="p">):</span>
             <span class="c1"># The constraint model stores the active set in _active_uuids</span>
@@ -1798,6 +1815,9 @@
                 <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">e</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
                        <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="p">(</span><span class="n">dz_new</span><span class="p">,</span> <span class="n">dlogN_new</span><span class="p">,</span> <span class="n">db_new</span><span class="p">,</span> <span class="n">dbtur_new</span><span class="p">)):</span>
                     <span class="n">comp_flags</span> <span class="o">+=</span> <span class="p">(</span><span class="s1">'nan_errors'</span><span class="p">,)</span>
+                <span class="n">is_active</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">is_active</span> <span class="o">=</span> <span class="kc">False</span>
 
             <span class="n">new_comp</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">old_comp</span><span class="p">,</span>
                 <span class="n">z</span><span class="o">=</span><span class="n">p_fitted_full</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> 
@@ -1812,6 +1832,11 @@
                 <span class="n">resol</span><span class="o">=</span><span class="n">comp_resol</span><span class="p">,</span>
                 <span class="n">flags</span><span class="o">=</span><span class="n">comp_flags</span>
             <span class="p">)</span>
+            <span class="k">if</span> <span class="n">is_active</span><span class="p">:</span>
+                <span class="c1"># The flags of the values that are not measured (7d.2),</span>
+                <span class="c1"># computed on the fitted values: annotations only</span>
+                <span class="n">new_comp</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">new_comp</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">with_measurement_flags</span><span class="p">(</span>
+                    <span class="n">new_comp</span><span class="o">.</span><span class="n">flags</span><span class="p">,</span> <span class="n">measurement_flags</span><span class="p">(</span><span class="n">new_comp</span><span class="p">,</span> <span class="n">pixels</span><span class="p">)))</span>
             <span class="n">new_components</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_comp</span><span class="p">)</span>
             
         <span class="c1"># Report the components whose uncertainties could not be computed</span>

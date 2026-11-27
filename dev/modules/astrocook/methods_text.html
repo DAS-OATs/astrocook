@@ -574,7 +574,8 @@
 <span class="p">}</span>
 
 <span class="c1">#: How the text names the flags the fit leaves on the components</span>
-<span class="c1">#: (``voigt_fitter.COMPONENT_FLAGS``, and ``not_fitted`` of Refit all)</span>
+<span class="c1">#: (``voigt_fitter.COMPONENT_FLAGS``, ``not_fitted`` of Refit all, and the</span>
+<span class="c1">#: values that are not measured, ``component_flags.MEASUREMENT_FLAGS``)</span>
 <span class="n">FLAG_NAMES</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s1">'z_at_window'</span><span class="p">:</span> <span class="s2">"z at the edge of the window of the fit"</span><span class="p">,</span>
     <span class="s1">'logN_at_lower_bound'</span><span class="p">:</span> <span class="s2">"log N at the lower bound of the fit"</span><span class="p">,</span>
@@ -583,6 +584,10 @@
     <span class="s1">'b_at_upper_bound'</span><span class="p">:</span> <span class="s2">"b at the upper bound of the fit"</span><span class="p">,</span>
     <span class="s1">'nan_errors'</span><span class="p">:</span> <span class="s2">"no uncertainties (they could not be computed)"</span><span class="p">,</span>
     <span class="s1">'not_fitted'</span><span class="p">:</span> <span class="s2">"the values from before the fit (the fit of the group failed)"</span><span class="p">,</span>
+    <span class="s1">'unresolved'</span><span class="p">:</span> <span class="s2">"b below half the instrumental b (unresolved: b is not measured)"</span><span class="p">,</span>
+    <span class="s1">'saturated'</span><span class="p">:</span> <span class="s2">"a saturated weakest line (log N is not measured)"</span><span class="p">,</span>
+    <span class="s1">'large_errors'</span><span class="p">:</span> <span class="s2">"uncertainties too large to have a meaning"</span><span class="p">,</span>
+    <span class="s1">'telluric_overlap'</span><span class="p">:</span> <span class="s2">"a line on a telluric absorption (uncertainties not to be trusted)"</span><span class="p">,</span>
 <span class="p">}</span>
 
 <span class="c1">#: The kinds of notes left out of the text (the declared gaps are listed in</span>

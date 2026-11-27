@@ -8,6 +8,7 @@ Submodules
    :maxdepth: 4
 
    astrocook.fitting.bayesian_fitter
+   astrocook.fitting.component_flags
    astrocook.fitting.evaluation_window
    astrocook.fitting.hypotheses
    astrocook.fitting.hypotheses_sweep

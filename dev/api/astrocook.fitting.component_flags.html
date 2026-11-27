@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>astrocook.fitting.component_flags module &#8212; Astrocook dev documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../static/styles/theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+<link href="../static/styles/pydata-sphinx-theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../static/sphinx-design.min.css?v=6a604523" />
+    <link rel="stylesheet" type="text/css" href="../static/css/custom.css?v=e8a3a7b7" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../static/scripts/fontawesome.js?digest=75c7c72ae941e8b558d8"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
+<link rel="preload" as="script" href="../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
+
+    <script src="../static/documentation_options.js?v=3ce10a4d"></script>
+    <script src="../static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../static/design-tabs.js?v=fcb327ea"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'api/astrocook.fitting.component_flags';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = 'https://das-oats.github.io/astrocook/switcher.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'dev';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="astrocook.fitting.evaluation_window module" href="astrocook.fitting.evaluation_window.html" />
+    <link rel="prev" title="astrocook.fitting.bayesian_fitter module" href="astrocook.fitting.bayesian_fitter.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="color-scheme" content="light dark"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="dev" />
+  
+    
+    <script src="../static/searchtools.js"></script>
+    <script src="../static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation" aria-expanded="false" aria-controls="pst-primary-sidebar-modal">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../static/icon_3d_HR.png" class="logo__image only-light" alt=""/>
+    <img src="../static/icon_3d_HR.png" class="logo__image only-dark pst-js-only" alt=""/>
+  
+  
+    <p class="title logo__title">Astrocook</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../settings.html">
+    Settings
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../science.html">
+    Science
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" current active">
+  <a class="nav-link dropdown-item nav-internal" href="../reference.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../credits.html">
+    Credits
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../changelog.html">
+    Changelog
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button type="button" class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page" aria-expanded="false" aria-controls="pst-secondary-sidebar-modal">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal" tabindex="-1"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../settings.html">
+    Settings
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../tutorials/index.html">
+    Tutorials
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../science.html">
+    Science
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../reference.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../credits.html">
+    Credits
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../changelog.html">
+    Changelog
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/das-oats/astrocook" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button type="button" id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+  <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Data structures and operations</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="astrocook.core.html">astrocook.core package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.column_names.html">astrocook.core.column_names module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.debug_hooks.html">astrocook.core.debug_hooks module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.identification.html">astrocook.core.identification module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.line_detection.html">astrocook.core.line_detection module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.model_grid.html">astrocook.core.model_grid module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.resolution.html">astrocook.core.resolution module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.session.html">astrocook.core.session module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.session_manager.html">astrocook.core.session_manager module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.spectrum.html">astrocook.core.spectrum module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.structures.html">astrocook.core.structures module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.system_list.html">astrocook.core.system_list module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.telluric.html">astrocook.core.telluric module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.templates.html">astrocook.core.templates module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.core.units.html">astrocook.core.units module</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">High-level analysis recipes available in the menus</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="astrocook.recipes.html">astrocook.recipes package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.absorbers.html">astrocook.recipes.absorbers module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.continuum.html">astrocook.recipes.continuum module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.edit.html">astrocook.recipes.edit module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.errors.html">astrocook.recipes.errors module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.file.html">astrocook.recipes.file module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.flux.html">astrocook.recipes.flux module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.messages.html">astrocook.recipes.messages module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.params.html">astrocook.recipes.params module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.prerequisites.html">astrocook.recipes.prerequisites module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.progress.html">astrocook.recipes.progress module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.registry.html">astrocook.recipes.registry module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.recipes.result.html">astrocook.recipes.result module</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Modeling and fitting logic</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="astrocook.fitting.html">astrocook.fitting package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.bayesian_fitter.html">astrocook.fitting.bayesian_fitter module</a></li>
+<li class="toctree-l2 current active"><a aria-current="page" class="current reference internal" href="#">astrocook.fitting.component_flags module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.evaluation_window.html">astrocook.fitting.evaluation_window module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.hypotheses.html">astrocook.fitting.hypotheses module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.hypotheses_sweep.html">astrocook.fitting.hypotheses_sweep module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.lsf.html">astrocook.fitting.lsf module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.model_evaluation.html">astrocook.fitting.model_evaluation module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.voigt_fitter.html">astrocook.fitting.voigt_fitter module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.fitting.voigt_model.html">astrocook.fitting.voigt_model module</a></li>
+</ul>
+</details></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Synthetic spectra with known parameters, for testing</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="astrocook.mocks.html">astrocook.mocks package</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.generate.html">astrocook.mocks.generate module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.physics.html">astrocook.mocks.physics module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.populations.html">astrocook.mocks.populations module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.telluric.html">astrocook.mocks.telluric module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.truth.html">astrocook.mocks.truth module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="astrocook.mocks.truthmap.html">astrocook.mocks.truthmap module</a></li>
+</ul>
+</details></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-house"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../reference.html" class="nav-link">API Reference</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="astrocook.fitting.html" class="nav-link">astrocook.fitting package</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">astrocook.fitting.component_flags module</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="module-astrocook.fitting.component_flags">
+<span id="astrocook-fitting-component-flags-module"></span><h1>astrocook.fitting.component_flags module<a class="headerlink" href="#module-astrocook.fitting.component_flags" title="Link to this heading">#</a></h1>
+<p>The flags of the components whose values are not measured (phase 7, PR
+7d.2; findings register F52, F116).</p>
+<p>The fit leaves on each component it fits the flags of #517 (a parameter at
+a bound, <code class="docutils literal notranslate"><span class="pre">nan_errors</span></code>: <code class="docutils literal notranslate"><span class="pre">voigt_fitter.COMPONENT_FLAGS</span></code>); this module adds
+those that say a value is there but is not a measurement:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">unresolved</span></code>: b is not measured, the line is narrower than the
+resolution;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">saturated</span></code>: log N is not measured, the weakest line of the series in
+the fit is saturated;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">large_errors</span></code>: the errors have no meaning (F52);</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">telluric_overlap</span></code>: a line of the series falls on a telluric
+absorption, so its errors are not to be trusted.</p></li>
+</ul>
+<p>They describe the last fit, as those of #517, and are annotations only: no
+number of the fit and no decision of a pipeline depends on them (design:
+<code class="docutils literal notranslate"><span class="pre">ROADMAP.md</span></code>, phase 7, “The flags of 7d.2”, agreed with Guido on 26
+November 2026). <a class="reference internal" href="#astrocook.fitting.component_flags.measurement_flags" title="astrocook.fitting.component_flags.measurement_flags"><code class="xref py py-func docutils literal notranslate"><span class="pre">measurement_flags()</span></code></a> is a pure function of the
+component, the atomic data, the resolution and the telluric column, called
+by the fitter on the components it fits.</p>
+<p>The thresholds are heuristics; what supports each is written next to it,
+and the measurement on the mocks is in the PR of 7d.2.</p>
+<dl class="py data">
+<dt class="sig sig-object py" id="astrocook.fitting.component_flags.MEASUREMENT_FLAGS">
+<span class="sig-prename descclassname"><span class="pre">astrocook.fitting.component_flags.</span></span><span class="sig-name descname"><span class="pre">MEASUREMENT_FLAGS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('unresolved',</span> <span class="pre">'saturated',</span> <span class="pre">'large_errors',</span> <span class="pre">'telluric_overlap')</span></span><a class="headerlink" href="#astrocook.fitting.component_flags.MEASUREMENT_FLAGS" title="Link to this definition">#</a></dt>
+<dd><p>The flags of this module, in the order they are added to
+<code class="docutils literal notranslate"><span class="pre">ComponentData.flags</span></code> (after those of #517)</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="astrocook.fitting.component_flags.FWHM_OVER_B">
+<span class="sig-prename descclassname"><span class="pre">astrocook.fitting.component_flags.</span></span><span class="sig-name descname"><span class="pre">FWHM_OVER_B</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">np.float64(1.6651092223153954)</span></span><a class="headerlink" href="#astrocook.fitting.component_flags.FWHM_OVER_B" title="Link to this definition">#</a></dt>
+<dd><p>the b of the instrumental
+profile of resolving power R is c / (1.665 R) (4.0 km/s at R = 45000)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>FWHM / b of a Gaussian profile, 2 sqrt(ln 2)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="astrocook.fitting.component_flags.UNRESOLVED_RATIO">
+<span class="sig-prename descclassname"><span class="pre">astrocook.fitting.component_flags.</span></span><span class="sig-name descname"><span class="pre">UNRESOLVED_RATIO</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.5</span></span><a class="headerlink" href="#astrocook.fitting.component_flags.UNRESOLVED_RATIO" title="Link to this definition">#</a></dt>
+<dd><p>b below this fraction of the instrumental b. A line with
+b &lt; b_inst / 2 has an observed width within 12 per cent of the
+instrumental one (sqrt(1 + 1/4) = 1.12), so its b is set by a few per
+cent of the observed width, below what a fit at the usual S/N resolves
+(F116: b = 1.4-2.8 km/s at R = 45000, b_inst = 4.0 km/s, judged
+unreliable by both agents of the trials of PR 7 of phase 6-ter)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">unresolved</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="astrocook.fitting.component_flags.SATURATED_TAU">
+<span class="sig-prename descclassname"><span class="pre">astrocook.fitting.component_flags.</span></span><span class="sig-name descname"><span class="pre">SATURATED_TAU</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3.0</span></span><a class="headerlink" href="#astrocook.fitting.component_flags.SATURATED_TAU" title="Link to this definition">#</a></dt>
+<dd><p>the central optical depth of the weakest line of the
+series above this. tau_0 = 3 is a transmission of 5 per cent at the
+centre of the intrinsic profile: from there the core is flat and log N
+moves the equivalent width only through the wings (the flat part of the
+curve of growth)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">saturated</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="astrocook.fitting.component_flags.DAMPED_LOGN">
+<span class="sig-prename descclassname"><span class="pre">astrocook.fitting.component_flags.</span></span><span class="sig-name descname"><span class="pre">DAMPED_LOGN</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">19.0</span></span><a class="headerlink" href="#astrocook.fitting.component_flags.DAMPED_LOGN" title="Link to this definition">#</a></dt>
+<dd><p>its
+Lorentzian wings constrain log N</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A damped H I (log N at or above this) is not flagged <code class="docutils literal notranslate"><span class="pre">saturated</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="astrocook.fitting.component_flags.LARGE_DLOGN">
+<span class="sig-prename descclassname"><span class="pre">astrocook.fitting.component_flags.</span></span><span class="sig-name descname"><span class="pre">LARGE_DLOGN</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1.0</span></span><a class="headerlink" href="#astrocook.fitting.component_flags.LARGE_DLOGN" title="Link to this definition">#</a></dt>
+<dd><p>the error of log N above this (dex), the rule of
+the benchmark since phase 4 (<code class="docutils literal notranslate"><span class="pre">_flags</span></code> of <code class="docutils literal notranslate"><span class="pre">validate_mocks.py</span></code>: a
+factor of 10 in N is no measurement). The other two: db &gt; b, and the
+error of z in velocity above max(b, b_inst), the width of the line</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">large_errors</span></code> (F52)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="astrocook.fitting.component_flags.TELLURIC_DEPTH">
+<span class="sig-prename descclassname"><span class="pre">astrocook.fitting.component_flags.</span></span><span class="sig-name descname"><span class="pre">TELLURIC_DEPTH</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.05</span></span><a class="headerlink" href="#astrocook.fitting.component_flags.TELLURIC_DEPTH" title="Link to this definition">#</a></dt>
+<dd><p>the telluric depth 1 - T above this within the
+reach of a line. 5 per cent is about the noise of a pixel at S/N 20, the
+lowest of the real spectra of the benchmark: a shallower telluric line
+is below the noise of every spectrum of the sample (the threshold of the
+plan of 7d.2; its counts on the mocks with tellurics are in the PR)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">telluric_overlap</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="astrocook.fitting.component_flags.TELLURIC_REACH">
+<span class="sig-prename descclassname"><span class="pre">astrocook.fitting.component_flags.</span></span><span class="sig-name descname"><span class="pre">TELLURIC_REACH</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2.0</span></span><a class="headerlink" href="#astrocook.fitting.component_flags.TELLURIC_REACH" title="Link to this definition">#</a></dt>
+<dd><p>the reach of a line, in units of max(b, b_inst)
+around its centre: two Doppler widths hold the core of a Gaussian line
+down to exp(-4), 2 per cent of its central depth</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">telluric_overlap</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="astrocook.fitting.component_flags.FitPixels">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">astrocook.fitting.component_flags.</span></span><span class="sig-name descname"><span class="pre">FitPixels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wave</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fit_mask</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">telluric</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/fitting/component_flags.html#FitPixels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.component_flags.FitPixels" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>What the flags read of the spectrum of a fit, on its pixels: the
+centres (Angstrom), the resolving power R of each (NaN where it is not
+known), the pixels of the fit (None: all) and the telluric
+transmission (None: no <code class="docutils literal notranslate"><span class="pre">telluric</span></code> column).</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.fitting.component_flags.FitPixels.wave">
+<span class="sig-name descname"><span class="pre">wave</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span></span><a class="headerlink" href="#astrocook.fitting.component_flags.FitPixels.wave" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.fitting.component_flags.FitPixels.resol">
+<span class="sig-name descname"><span class="pre">resol</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span></span><a class="headerlink" href="#astrocook.fitting.component_flags.FitPixels.resol" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.fitting.component_flags.FitPixels.fit_mask">
+<span class="sig-name descname"><span class="pre">fit_mask</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#astrocook.fitting.component_flags.FitPixels.fit_mask" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.fitting.component_flags.FitPixels.telluric">
+<span class="sig-name descname"><span class="pre">telluric</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#astrocook.fitting.component_flags.FitPixels.telluric" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.fitting.component_flags.FitPixels.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wave</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fit_mask</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">telluric</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#astrocook.fitting.component_flags.FitPixels.__init__" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="astrocook.fitting.component_flags.FlagQuantities">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">astrocook.fitting.component_flags.</span></span><span class="sig-name descname"><span class="pre">FlagQuantities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">b_inst</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tau0_weakest</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">telluric_depth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../modules/astrocook/fitting/component_flags.html#FlagQuantities"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.component_flags.FlagQuantities" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>The quantities of the criteria of a component, so that a flag can be
+checked (the panel of 7d.9 will show them): the instrumental b and R
+at the strongest line, the central optical depth of the weakest line,
+the largest telluric depth within the reach of its lines (None without
+the column).</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.fitting.component_flags.FlagQuantities.b_inst">
+<span class="sig-name descname"><span class="pre">b_inst</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#astrocook.fitting.component_flags.FlagQuantities.b_inst" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.fitting.component_flags.FlagQuantities.resol">
+<span class="sig-name descname"><span class="pre">resol</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#astrocook.fitting.component_flags.FlagQuantities.resol" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.fitting.component_flags.FlagQuantities.tau0_weakest">
+<span class="sig-name descname"><span class="pre">tau0_weakest</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#astrocook.fitting.component_flags.FlagQuantities.tau0_weakest" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="astrocook.fitting.component_flags.FlagQuantities.telluric_depth">
+<span class="sig-name descname"><span class="pre">telluric_depth</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#astrocook.fitting.component_flags.FlagQuantities.telluric_depth" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="astrocook.fitting.component_flags.FlagQuantities.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">b_inst</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tau0_weakest</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">telluric_depth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#astrocook.fitting.component_flags.FlagQuantities.__init__" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.fitting.component_flags.b_instrumental">
+<span class="sig-prename descclassname"><span class="pre">astrocook.fitting.component_flags.</span></span><span class="sig-name descname"><span class="pre">b_instrumental</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../modules/astrocook/fitting/component_flags.html#b_instrumental"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.component_flags.b_instrumental" title="Link to this definition">#</a></dt>
+<dd><p>The b (km/s) of a Gaussian instrumental profile of resolving power
+<code class="docutils literal notranslate"><span class="pre">resol</span></code>; 0 if it is not known.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.fitting.component_flags.central_tau">
+<span class="sig-prename descclassname"><span class="pre">astrocook.fitting.component_flags.</span></span><span class="sig-name descname"><span class="pre">central_tau</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">atom</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logN</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b_kms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../modules/astrocook/fitting/component_flags.html#central_tau"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.component_flags.central_tau" title="Link to this definition">#</a></dt>
+<dd><p>The optical depth at the centre of the intrinsic Voigt profile of a
+line (before the convolution with the instrumental profile).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.fitting.component_flags.flag_quantities">
+<span class="sig-prename descclassname"><span class="pre">astrocook.fitting.component_flags.</span></span><span class="sig-name descname"><span class="pre">flag_quantities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">comp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.ComponentData" title="astrocook.core.structures.ComponentData"><span class="pre">ComponentData</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">pix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#astrocook.fitting.component_flags.FitPixels" title="astrocook.fitting.component_flags.FitPixels"><span class="pre">FitPixels</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#astrocook.fitting.component_flags.FlagQuantities" title="astrocook.fitting.component_flags.FlagQuantities"><span class="pre">FlagQuantities</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../modules/astrocook/fitting/component_flags.html#flag_quantities"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.component_flags.flag_quantities" title="Link to this definition">#</a></dt>
+<dd><p>The quantities of the criteria of <code class="docutils literal notranslate"><span class="pre">comp</span></code> and the lines of its
+series in the fit (those with a pixel of the fit within their reach;
+all those in the spectrum if none). <code class="docutils literal notranslate"><span class="pre">(None,</span> <span class="pre">[])</span></code> if no line of the
+series is known or falls in the spectrum.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.fitting.component_flags.large_error_params">
+<span class="sig-prename descclassname"><span class="pre">astrocook.fitting.component_flags.</span></span><span class="sig-name descname"><span class="pre">large_error_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">comp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.ComponentData" title="astrocook.core.structures.ComponentData"><span class="pre">ComponentData</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">b_inst</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../modules/astrocook/fitting/component_flags.html#large_error_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.component_flags.large_error_params" title="Link to this definition">#</a></dt>
+<dd><p>The parameters whose errors have no meaning (F52): <code class="docutils literal notranslate"><span class="pre">'logN'</span></code> if dlogN
+&gt; 1, <code class="docutils literal notranslate"><span class="pre">'b'</span></code> if db &gt; b, <code class="docutils literal notranslate"><span class="pre">'z'</span></code> if the error of z in velocity exceeds
+max(b, b_inst). Empty unless the three errors are finite (otherwise the
+flag is <code class="docutils literal notranslate"><span class="pre">nan_errors</span></code>).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.fitting.component_flags.measurement_flags">
+<span class="sig-prename descclassname"><span class="pre">astrocook.fitting.component_flags.</span></span><span class="sig-name descname"><span class="pre">measurement_flags</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">comp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="astrocook.core.structures.html#astrocook.core.structures.ComponentData" title="astrocook.core.structures.ComponentData"><span class="pre">ComponentData</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">pix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#astrocook.fitting.component_flags.FitPixels" title="astrocook.fitting.component_flags.FitPixels"><span class="pre">FitPixels</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../modules/astrocook/fitting/component_flags.html#measurement_flags"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.component_flags.measurement_flags" title="Link to this definition">#</a></dt>
+<dd><p>The flags of <a class="reference internal" href="#astrocook.fitting.component_flags.MEASUREMENT_FLAGS" title="astrocook.fitting.component_flags.MEASUREMENT_FLAGS"><code class="xref py py-data docutils literal notranslate"><span class="pre">MEASUREMENT_FLAGS</span></code></a> of a fitted component, in their
+order: <code class="docutils literal notranslate"><span class="pre">unresolved</span></code> (b &lt; 0.5 b_inst, R at the strongest line of the
+series), <code class="docutils literal notranslate"><span class="pre">saturated</span></code> (the central optical depth of the weakest line
+of the series in the fit above 3, on the intrinsic profile; not for a
+damped H I), <code class="docutils literal notranslate"><span class="pre">large_errors</span></code> (<a class="reference internal" href="#astrocook.fitting.component_flags.large_error_params" title="astrocook.fitting.component_flags.large_error_params"><code class="xref py py-func docutils literal notranslate"><span class="pre">large_error_params()</span></code></a>),
+<code class="docutils literal notranslate"><span class="pre">telluric_overlap</span></code> (a line of the series in the fit where the
+<code class="docutils literal notranslate"><span class="pre">telluric</span></code> column has 1 - T &gt; 0.05 within 2 max(b, b_inst) of its
+centre; never without the column).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="astrocook.fitting.component_flags.with_measurement_flags">
+<span class="sig-prename descclassname"><span class="pre">astrocook.fitting.component_flags.</span></span><span class="sig-name descname"><span class="pre">with_measurement_flags</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">flags</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../modules/astrocook/fitting/component_flags.html#with_measurement_flags"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#astrocook.fitting.component_flags.with_measurement_flags" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">flags</span></code> with those of <a class="reference internal" href="#astrocook.fitting.component_flags.MEASUREMENT_FLAGS" title="astrocook.fitting.component_flags.MEASUREMENT_FLAGS"><code class="xref py py-data docutils literal notranslate"><span class="pre">MEASUREMENT_FLAGS</span></code></a> replaced by <code class="docutils literal notranslate"><span class="pre">new</span></code>
+(the others kept, in their order).</p>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="astrocook.fitting.bayesian_fitter.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">astrocook.fitting.bayesian_fitter module</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="astrocook.fitting.evaluation_window.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">astrocook.fitting.evaluation_window module</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal" tabindex="-1"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.component_flags.MEASUREMENT_FLAGS"><code class="docutils literal notranslate"><span class="pre">MEASUREMENT_FLAGS</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.component_flags.FWHM_OVER_B"><code class="docutils literal notranslate"><span class="pre">FWHM_OVER_B</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.component_flags.UNRESOLVED_RATIO"><code class="docutils literal notranslate"><span class="pre">UNRESOLVED_RATIO</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.component_flags.SATURATED_TAU"><code class="docutils literal notranslate"><span class="pre">SATURATED_TAU</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.component_flags.DAMPED_LOGN"><code class="docutils literal notranslate"><span class="pre">DAMPED_LOGN</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.component_flags.LARGE_DLOGN"><code class="docutils literal notranslate"><span class="pre">LARGE_DLOGN</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.component_flags.TELLURIC_DEPTH"><code class="docutils literal notranslate"><span class="pre">TELLURIC_DEPTH</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.component_flags.TELLURIC_REACH"><code class="docutils literal notranslate"><span class="pre">TELLURIC_REACH</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.component_flags.FitPixels"><code class="docutils literal notranslate"><span class="pre">FitPixels</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.component_flags.FitPixels.wave"><code class="docutils literal notranslate"><span class="pre">FitPixels.wave</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.component_flags.FitPixels.resol"><code class="docutils literal notranslate"><span class="pre">FitPixels.resol</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.component_flags.FitPixels.fit_mask"><code class="docutils literal notranslate"><span class="pre">FitPixels.fit_mask</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.component_flags.FitPixels.telluric"><code class="docutils literal notranslate"><span class="pre">FitPixels.telluric</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.component_flags.FitPixels.__init__"><code class="docutils literal notranslate"><span class="pre">FitPixels.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.component_flags.FlagQuantities"><code class="docutils literal notranslate"><span class="pre">FlagQuantities</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.component_flags.FlagQuantities.b_inst"><code class="docutils literal notranslate"><span class="pre">FlagQuantities.b_inst</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.component_flags.FlagQuantities.resol"><code class="docutils literal notranslate"><span class="pre">FlagQuantities.resol</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.component_flags.FlagQuantities.tau0_weakest"><code class="docutils literal notranslate"><span class="pre">FlagQuantities.tau0_weakest</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.component_flags.FlagQuantities.telluric_depth"><code class="docutils literal notranslate"><span class="pre">FlagQuantities.telluric_depth</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.component_flags.FlagQuantities.__init__"><code class="docutils literal notranslate"><span class="pre">FlagQuantities.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.component_flags.b_instrumental"><code class="docutils literal notranslate"><span class="pre">b_instrumental()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.component_flags.central_tau"><code class="docutils literal notranslate"><span class="pre">central_tau()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.component_flags.flag_quantities"><code class="docutils literal notranslate"><span class="pre">flag_quantities()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.component_flags.large_error_params"><code class="docutils literal notranslate"><span class="pre">large_error_params()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.component_flags.measurement_flags"><code class="docutils literal notranslate"><span class="pre">measurement_flags()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#astrocook.fitting.component_flags.with_measurement_flags"><code class="docutils literal notranslate"><span class="pre">with_measurement_flags()</span></code></a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../sources/api/astrocook.fitting.component_flags.rst.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8"></script>
+<script defer src="../static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2017-2026, INAF – Istituto Nazionale di Astrofisica.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.2.0.
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.24.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

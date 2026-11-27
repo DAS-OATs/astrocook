@@ -1,0 +1,7 @@
+astrocook.fitting.component\_flags module
+=========================================
+
+.. automodule:: astrocook.fitting.component_flags
+   :members:
+   :show-inheritance:
+   :undoc-members:
