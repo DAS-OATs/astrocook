@@ -474,7 +474,23 @@ the module are as quoted by later papers and reviews.
    values of the parameters removes a better fit; the evidence moves the
    decisions at the margin, in both directions.
 3. *The telluric doublets* (cases `telluric` and `combined` of the grid
-   robustness): TELLURIC_RESULTS
+   robustness, 72 mocks; `validate_mocks.py --grid robustness --cases
+   telluric combined --method hypotheses`, the sweep of the H I, with
+   `--evidence record`, whose decisions are those of SpIC_H, and with
+   `--evidence decide`, a second run deciding by the evidence; SpIC_H /
+   evidence): the false candidates on the tellurics CIV 88 / 90, MgII 60 /
+   50, SiIV 19 / 22, Ly-a 67 / 68; purity CIV 0.553 / 0.569, SiIV 0.592 /
+   0.618, MgII 0.527 / 0.638; completeness CIV 0.685 / 0.731, SiIV 0.662 /
+   0.713, MgII 0.681 / 0.708; the fit 559 / 585 true components, 285 / 250
+   spurious; the credibility ECE 0.243 / 0.246, Brier 0.269 / 0.250; the H I
+   of the sweep 86 / 106 accepted (purity 0.94 / 0.93); the median time to
+   identify 6.3 / 6.0 s (both runs with the evidence computed). Two telluric
+   lines at the lag of a doublet are real absorption with a compatible
+   ratio: the doublet explains them as well as two unidentified lines, and
+   its incidence is not small against that of the unidentified lines on
+   the red side, which the telluric bands themselves raise. The evidence
+   takes off 10 of the 60 false MgII; the rest needs the hypothesis that
+   knows the tellurics (7c.5, F172).
 4. *The widths* (F174 direction 4; `validate_widths.py`, 27 mocks of the
    rich grid at z_em 3.5, R 8900, 45000, 140000; the default lines of the
    forest of an accepted hypothesis matched to the true line nearest to
@@ -493,7 +509,36 @@ the module are as quoted by later papers and reviews.
    the b of the forest from a lognormal with a floor at 10 km/s and the
    metals from 4-15 km/s: real spectra separate less.
 
-*What it says.* EVIDENCE_VERDICT
+*What it says.* The evidence does not separate where the criteria fail.
+It decides the true ties (the same model, a single line at a known
+redshift against a free line) with a reason, where `SWEEP_TIE` gave them
+to the known redshift (it rejects 79 of the 108 false ties of the grid
+full), but the dominant failures are not ties: the false species of the
+forest win on the chi2 of under-modelled regions, and the telluric
+doublets are real absorption with the ratio of a doublet; no prior on the
+values of the parameters removes a better fit. Its numbers move at the
+margin, in both directions (the grid full 369 -> 366 false rarer species;
+the tellurics MgII purity 0.53 -> 0.64, CIV and SiIV +0.02-0.03, the
+completeness +0.03-0.05, ECE the same). What it does carry is the
+incidence, the strongest lever of the controlled pairs: with the
+literature values it fixes every chance coincidence of two Ly-a and loses
+most of the weak doublets of the forest, the trade of section 4.3, now with
+odds from the literature instead of chosen ones; whether that is right in
+the forest is a question of calibration on spectra with the real
+proportions (the twins, F164), not of the mocks. The width (direction 4)
+is a filter of candidates at R >= 45000 (the metal lines of the forest
+mostly below 12 km/s, the H I mostly above), not a decision.
+
+Proposed for 7e.1 and 7c.4g (to decide with Guido): the evidence not at the
+centre of the comparison on this evidence, SpIC_H kept; the evidence an
+option, the form in which the prior of the incidence (section 3.4, 7c.4g)
+enters if it enters, with its calibration on the twins; the width as the
+filter of the candidates of the sweep (direction 4), not as a prior of the
+decision; the tellurics by their hypothesis (7c.5). Not measured: the
+sweep decided by the evidence (second order: the recount is first order;
+a run of `validate_sweep.py --evidence decide` would give it), the
+sensitivity to the values of the priors (the incidence of the H I, the
+0.5 of a species at a system), the twins and the development spectra.
 
 ## 4. The experiment: controlled pairs of alternatives
 
